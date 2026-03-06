@@ -1,0 +1,59 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "dlopen",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "LoadLibrary"
+      },
+      {
+        "posix": "dlsym",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetProcAddress"
+      },
+      {
+        "posix": "dlclose",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "FreeLibrary"
+      },
+      {
+        "posix": "dlerror",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "FormatMessage"
+      },
+      {
+        "posix": "dladdr",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetModuleHandleEx"
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "RTLD_LAZY",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_NOW",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_GLOBAL",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_LOCAL",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

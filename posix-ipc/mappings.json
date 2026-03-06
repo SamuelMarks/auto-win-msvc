@@ -1,0 +1,69 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "ftok",
+        "source_header": "<sys/ipc.h>",
+        "requires_polyfill": true,
+        "windows_api": "Hash of GetFileInformationByHandle"
+      },
+      {
+        "posix": "msgctl",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgget",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgrcv",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgsnd",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "semctl",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "semget",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "semop",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmat",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmctl",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmdt",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmget",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "uname",
+        "source_header": "<sys/utsname.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetComputerName / GetVersionEx"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct utsname",
+        "source_header": "<sys/utsname.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

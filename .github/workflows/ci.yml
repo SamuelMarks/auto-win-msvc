@@ -1,0 +1,32 @@
+name: MSVC POSIX Monorepo CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        build_type: [Release, Debug]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake
+      # Build the entire monorepo (all 18 subprojects)
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+
+    - name: Build
+      # The CMakeLists.txt mandates strict C89 and MSVC warning level 4 as errors (/W4 /WX).
+      # If any project violates strict C89 or emits a warning, the build will fail here.
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      # Execute every test.c file across the 18 subprojects.
+      run: ctest -C ${{matrix.build_type}} --output-on-failure

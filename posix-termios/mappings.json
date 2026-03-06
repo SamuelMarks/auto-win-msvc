@@ -1,0 +1,472 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "cfgetispeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfgetospeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfsetispeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfsetospeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcdrain",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushConsoleInputBuffer"
+      },
+      {
+        "posix": "tcflow",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcflush",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcgetattr",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetConsoleMode"
+      },
+      {
+        "posix": "tcgetsid",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcsendbreak",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcsetattr",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetConsoleMode"
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "BRKINT",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ICRNL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNBRK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNPAR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "INLCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "INPCK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ISTRIP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXANY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARMRK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OPOST",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONLCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OCRNL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONOCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONLRET",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OFILL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "NLDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CRDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TABDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "BSDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VTDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "FFDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B0",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B50",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B75",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B110",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B134",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B150",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B300",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B600",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B1200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B1800",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B2400",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B4800",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B9600",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B19200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B38400",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CSIZE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS5",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS6",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS7",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS8",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CSTOPB",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CREAD",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARENB",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARODD",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "HUPCL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CLOCAL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHO",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHOE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHOK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHONL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ICANON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IEXTEN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ISIG",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "NOFLSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TOSTOP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSANOW",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSADRAIN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSAFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIOFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCION",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VEOF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VEOL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VERASE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VINTR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VKILL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VMIN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VQUIT",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSTART",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSTOP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSUSP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VTIME",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

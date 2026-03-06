@@ -1,0 +1,258 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [
+      {
+        "posix": "pid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int pid_t;"
+        }
+      },
+      {
+        "posix": "ssize_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "SSIZE_T",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef SSIZE_T ssize_t;"
+        }
+      },
+      {
+        "posix": "mode_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned short mode_t;"
+        }
+      },
+      {
+        "posix": "off_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long off_t;"
+        }
+      },
+      {
+        "posix": "off64_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "__int64",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef __int64 off64_t;"
+        }
+      },
+      {
+        "posix": "uid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int uid_t;"
+        }
+      },
+      {
+        "posix": "gid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int gid_t;"
+        }
+      },
+      {
+        "posix": "useconds_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned int useconds_t;"
+        }
+      },
+      {
+        "posix": "suseconds_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long suseconds_t;"
+        }
+      },
+      {
+        "posix": "dev_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned int dev_t;"
+        }
+      },
+      {
+        "posix": "ino_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned short ino_t;"
+        }
+      },
+      {
+        "posix": "nlink_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef short nlink_t;"
+        }
+      },
+      {
+        "posix": "socklen_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int socklen_t;"
+        }
+      },
+      {
+        "posix": "sa_family_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "ADDRESS_FAMILY",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef ADDRESS_FAMILY sa_family_t;"
+        }
+      },
+      {
+        "posix": "sigset_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long sigset_t;"
+        }
+      },
+      {
+        "posix": "id_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int id_t;"
+        }
+      },
+      {
+        "posix": "key_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int key_t;"
+        }
+      },
+      {
+        "posix": "clock_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long clock_t;"
+        }
+      },
+      {
+        "posix": "time_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "__time64_t",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef __time64_t time_t;"
+        }
+      },
+      {
+        "posix": "timer_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "void*",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef void* timer_t;"
+        }
+      },
+      {
+        "posix": "clockid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int clockid_t;"
+        }
+      },
+      {
+        "posix": "fsblkcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long long fsblkcnt_t;"
+        }
+      },
+      {
+        "posix": "fsfilcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long long fsfilcnt_t;"
+        }
+      },
+      {
+        "posix": "blksize_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long blksize_t;"
+        }
+      },
+      {
+        "posix": "blkcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long blkcnt_t;"
+        }
+      }
+    ],
+    "macros": []
+  }
+}

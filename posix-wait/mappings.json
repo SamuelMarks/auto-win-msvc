@@ -1,0 +1,57 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "cwait",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": false,
+        "msvc": "_cwait",
+        "shim": {
+          "type": "macro",
+          "code": "#define cwait _cwait"
+        }
+      },
+      {
+        "posix": "wait",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "_cwait"
+      },
+      {
+        "posix": "waitid",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "waitpid",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "WNOHANG",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WUNTRACED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WIFEXITED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WEXITSTATUS",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

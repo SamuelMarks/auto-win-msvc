@@ -1,0 +1,6 @@
+{
+  "name": "posix-core",
+  "version": "0.1.0",
+  "description": "POSIX compatibility layer for MSVC (posix-core)",
+  "dependencies": []
+}

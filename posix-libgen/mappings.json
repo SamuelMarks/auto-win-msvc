@@ -1,0 +1,20 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "basename",
+        "source_header": "<libgen.h>",
+        "requires_polyfill": true,
+        "windows_api": "_splitpath_s"
+      },
+      {
+        "posix": "dirname",
+        "source_header": "<libgen.h>",
+        "requires_polyfill": true,
+        "windows_api": "_splitpath_s"
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "endhostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "freeaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "freeaddrinfo"
+      },
+      {
+        "posix": "gai_strerror",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gai_strerror"
+      },
+      {
+        "posix": "getaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getaddrinfo"
+      },
+      {
+        "posix": "gethostbyaddr",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gethostbyaddr"
+      },
+      {
+        "posix": "gethostbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gethostbyname"
+      },
+      {
+        "posix": "gethostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnameinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getnameinfo"
+      },
+      {
+        "posix": "getnetbyaddr",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnetbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getprotobyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getprotobyname"
+      },
+      {
+        "posix": "getprotobynumber",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getprotobynumber"
+      },
+      {
+        "posix": "getprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getservbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getservbyname"
+      },
+      {
+        "posix": "getservbyport",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getservbyport"
+      },
+      {
+        "posix": "getservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sethostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "poll",
+        "source_header": "<poll.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSAPoll"
+      },
+      {
+        "posix": "pselect",
+        "source_header": "<sys/select.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "select",
+        "source_header": "<sys/select.h>",
+        "requires_polyfill": true,
+        "windows_api": "select"
+      },
+      {
+        "posix": "accept",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "accept"
+      },
+      {
+        "posix": "bind",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "bind"
+      },
+      {
+        "posix": "connect",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "connect"
+      },
+      {
+        "posix": "getpeername",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getpeername"
+      },
+      {
+        "posix": "getsockname",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getsockname"
+      },
+      {
+        "posix": "getsockopt",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getsockopt"
+      },
+      {
+        "posix": "listen",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "listen"
+      },
+      {
+        "posix": "recv",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "recv"
+      },
+      {
+        "posix": "recvfrom",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "recvfrom"
+      },
+      {
+        "posix": "recvmsg",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSARecvMsg"
+      },
+      {
+        "posix": "send",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "send"
+      },
+      {
+        "posix": "sendmsg",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSASendMsg"
+      },
+      {
+        "posix": "sendto",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "sendto"
+      },
+      {
+        "posix": "setsockopt",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "setsockopt"
+      },
+      {
+        "posix": "shutdown",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "shutdown"
+      },
+      {
+        "posix": "socket",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "socket"
+      },
+      {
+        "posix": "socketpair",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreatePipe / WSASocket loop"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct msghdr",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

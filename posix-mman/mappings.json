@@ -1,0 +1,111 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "mlock",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualLock"
+      },
+      {
+        "posix": "mlockall",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mmap",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFileMapping / MapViewOfFile"
+      },
+      {
+        "posix": "mprotect",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualProtect"
+      },
+      {
+        "posix": "msync",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushViewOfFile"
+      },
+      {
+        "posix": "munlock",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualUnlock"
+      },
+      {
+        "posix": "munlockall",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "munmap",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "UnmapViewOfFile"
+      },
+      {
+        "posix": "shm_open",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFileMapping"
+      },
+      {
+        "posix": "shm_unlink",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "MAP_SHARED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_PRIVATE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_FIXED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_ANONYMOUS",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_FAILED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_READ",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_WRITE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_EXEC",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_NONE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

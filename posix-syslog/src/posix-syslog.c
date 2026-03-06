@@ -1,0 +1,136 @@
+/* posix-syslog.c - Strict C89 Implementation */
+#include "posix-syslog.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+/* Global state */
+#ifdef _WIN32
+static void* g_EventSource = NULL; /* Used as HANDLE in Windows */
+#endif
+static char* g_Ident = NULL;
+static int g_LogOpt = 0;
+static int g_Facility = LOG_USER;
+static int g_LogMask = 0xFF; /* All priorities by default */
+
+void closelog(void) {
+#ifdef _WIN32
+    if (g_EventSource != NULL) {
+        DeregisterEventSource((HANDLE)g_EventSource);
+        g_EventSource = NULL;
+    }
+#endif
+    if (g_Ident != NULL) {
+        free(g_Ident);
+        g_Ident = NULL;
+    }
+}
+
+void openlog(const char *ident, int option, int facility) {
+    closelog(); /* Clean up previous state if any */
+
+    if (ident != NULL) {
+        size_t len = strlen(ident);
+        g_Ident = (char*)malloc(len + 1);
+        if (g_Ident != NULL) {
+#if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER >= 1400
+            strncpy_s(g_Ident, len + 1, ident, _TRUNCATE);
+#else
+            strncpy(g_Ident, ident, len + 1);
+            g_Ident[len] = '\0';
+#endif
+        }
+    }
+
+    g_LogOpt = option;
+    g_Facility = facility;
+
+#ifdef _WIN32
+    if (g_LogOpt & LOG_NDELAY) {
+        g_EventSource = (void*)RegisterEventSourceA(NULL, g_Ident ? g_Ident : "Application");
+    }
+#endif
+}
+
+int setlogmask(int mask) {
+    int old_mask = g_LogMask;
+    if (mask != 0) {
+        g_LogMask = mask;
+    }
+    return old_mask;
+}
+
+void syslog(int priority, const char *format, ...) {
+    va_list args;
+    char buffer[4096];
+    int prio = LOG_PRI(priority);
+    int written = 0;
+
+#ifdef _WIN32
+    WORD eventType;
+    const char* strings[1];
+#endif
+
+    if (!(g_LogMask & LOG_MASK(prio))) {
+        return;
+    }
+
+    va_start(args, format);
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    written = vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+#elif defined(_MSC_VER)
+    written = _vsnprintf(buffer, sizeof(buffer), format, args);
+#else
+    /* Fallback for other platforms, though this focuses on MSVC */
+    written = vsprintf(buffer, format, args);
+#endif
+    va_end(args);
+
+    if (written < 0) {
+        return;
+    }
+
+    /* Print to stderr if LOG_PERROR is set */
+    if (g_LogOpt & LOG_PERROR) {
+        fprintf(stderr, "%s%s%s\n", g_Ident ? g_Ident : "", g_Ident ? ": " : "", buffer);
+    }
+
+#ifdef _WIN32
+    strings[0] = buffer;
+
+    switch (prio) {
+        case LOG_EMERG:
+        case LOG_ALERT:
+        case LOG_CRIT:
+        case LOG_ERR:
+            eventType = EVENTLOG_ERROR_TYPE;
+            break;
+        case LOG_WARNING:
+            eventType = EVENTLOG_WARNING_TYPE;
+            break;
+        case LOG_NOTICE:
+        case LOG_INFO:
+        case LOG_DEBUG:
+        default:
+            eventType = EVENTLOG_INFORMATION_TYPE;
+            break;
+    }
+
+    if (g_EventSource == NULL) {
+        g_EventSource = (void*)RegisterEventSourceA(NULL, g_Ident ? g_Ident : "Application");
+    }
+
+    if (g_EventSource != NULL) {
+        ReportEventA((HANDLE)g_EventSource, eventType, 0, 0, NULL, 1, 0, strings, NULL);
+    }
+#else
+    /* Non-Windows stub */
+    (void)priority;
+    (void)format;
+#endif
+}

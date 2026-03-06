@@ -1,0 +1,201 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "closelog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "openlog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true,
+        "windows_api": "RegisterEventSource"
+      },
+      {
+        "posix": "setlogmask",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "syslog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReportEvent"
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "LOG_EMERG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ALERT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CRIT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ERR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_WARNING",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NOTICE",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_INFO",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_DEBUG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_KERN",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_USER",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_MAIL",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_DAEMON",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_AUTH",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_SYSLOG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LPR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NEWS",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_UUCP",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CRON",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_AUTHPRIV",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_FTP",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL0",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL1",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL2",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL3",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL4",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL5",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL6",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL7",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_PID",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CONS",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ODELAY",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NDELAY",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NOWAIT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_PERROR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

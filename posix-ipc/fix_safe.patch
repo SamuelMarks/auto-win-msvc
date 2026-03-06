@@ -1,0 +1,54 @@
+--- src/posix-ipc.c
++++ src/posix-ipc.c
+@@ -82,9 +82,15 @@
+     
+     if (key == IPC_PRIVATE) {
+         static int priv_count = 0;
++#ifdef _MSC_VER
++        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_PRIV_%lu_%d", (unsigned long)GetCurrentProcessId(), priv_count++);
++#else
+         sprintf(name, "Local\\SYSV_SHM_PRIV_%lu_%d", (unsigned long)GetCurrentProcessId(), priv_count++);
++#endif
+     } else {
++#ifdef _MSC_VER
++        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_%d", (int)key);
++#else
+         sprintf(name, "Local\\SYSV_SHM_%d", (int)key);
++#endif
+     }
+     
+     if (shmflg & IPC_CREAT) {
+--- tests/test.c
++++ tests/test.c
+@@ -35,7 +35,11 @@
+     addr = shmat(shmid, NULL, 0);
+     ASSERT(addr != (void *)-1);
+     
++#ifdef _MSC_VER
++    strcpy_s((char *)addr, 1024, "Hello Shared Memory");
++#else
+     strcpy((char *)addr, "Hello Shared Memory");
++#endif
+     ASSERT_STR_EQ("Hello Shared Memory", (char *)addr);
+     
+     ASSERT_EQ(0, shmctl(shmid, IPC_STAT, &ds));
+@@ -85,11 +89,19 @@
+     ASSERT(msqid >= 0);
+     
+     snd.mtype = 1;
++#ifdef _MSC_VER
++    strcpy_s(snd.mtext, sizeof(snd.mtext), "Message 1");
++#else
+     strcpy(snd.mtext, "Message 1");
++#endif
+     ASSERT_EQ(0, msgsnd(msqid, &snd, strlen(snd.mtext) + 1, 0));
+     
+     snd.mtype = 2;
++#ifdef _MSC_VER
++    strcpy_s(snd.mtext, sizeof(snd.mtext), "Message 2");
++#else
+     strcpy(snd.mtext, "Message 2");
++#endif
+     ASSERT_EQ(0, msgsnd(msqid, &snd, strlen(snd.mtext) + 1, 0));
+     
+     ASSERT_EQ(0, msgctl(msqid, IPC_STAT, &ds));

@@ -1,0 +1,134 @@
+/* posix-wait.h - Strict C89 Header */
+#ifndef POSIX_WAIT_H
+#define POSIX_WAIT_H
+
+#ifdef _WIN32
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief PID type definition for Windows.
+ */
+#ifndef _PID_T_DEFINED
+#define _PID_T_DEFINED
+typedef int pid_t;
+#endif
+
+/**
+ * @brief ID type definition for Windows.
+ */
+#ifndef _ID_T_DEFINED
+#define _ID_T_DEFINED
+typedef int id_t;
+#endif
+
+/**
+ * @brief ID type enumeration.
+ */
+typedef enum {
+    P_ALL,
+    P_PID,
+    P_PGID
+} idtype_t;
+
+/**
+ * @brief Signal info structure for waitid.
+ */
+typedef struct {
+    int si_signo;  /* Signal number */
+    int si_code;   /* Signal code */
+    int si_pid;    /* Sending process ID */
+    int si_uid;    /* Real user ID of sending process */
+    int si_status; /* Exit value or signal */
+} siginfo_t;
+
+/* Macros for waitpid */
+#define WNOHANG    1
+#define WUNTRACED  2
+#define WCONTINUED 8
+
+/* Macros for waitid */
+#define WEXITED    1
+#define WSTOPPED   2
+#define WNOWAIT    0x01000000
+
+/* POSIX wait status macros */
+#define WIFEXITED(status)   (((status) & 0x7F) == 0)
+#define WEXITSTATUS(status) (((status) & 0xFF00) >> 8)
+#define WIFSIGNALED(status) (((status) & 0x7F) != 0 && ((status) & 0x7F) != 0x7F)
+#define WTERMSIG(status)    ((status) & 0x7F)
+#define WIFSTOPPED(status)  (((status) & 0xFF) == 0x7F)
+#define WSTOPSIG(status)    (((status) & 0xFF00) >> 8)
+
+/**
+ * @brief Waits for a child process to terminate.
+ *
+ * @param stat_loc Pointer to an integer where status information is stored.
+ * @return The process ID of the terminated child, or -1 on error.
+ */
+pid_t wait(int *stat_loc);
+
+/**
+ * @brief Waits for a specific process or process group to terminate.
+ *
+ * @param pid The process ID or process group ID to wait for.
+ * @param stat_loc Pointer to an integer where status information is stored.
+ * @param options Options modifying wait behavior.
+ * @return The process ID of the terminated child, 0 if WNOHANG and child running, or -1 on error.
+ */
+pid_t waitpid(pid_t pid, int *stat_loc, int options);
+
+/**
+ * @brief Waits for a child process to change state.
+ *
+ * @param idtype The type of ID (P_ALL, P_PID, P_PGID).
+ * @param id The ID to wait for.
+ * @param infop Pointer to a siginfo_t structure where status information is stored.
+ * @param options Options modifying wait behavior.
+ * @return 0 on success, or -1 on error.
+ */
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
+
+/**
+ * @brief Non-standard Microsoft-compatible cwait.
+ *
+ * @param termstat Pointer to store exit code.
+ * @param pid Process ID to wait for.
+ * @param action Unused on Windows (usually WAIT_CHILD).
+ * @return The process ID of the terminated child.
+ */
+pid_t cwait(int *termstat, pid_t pid, int action);
+
+#ifdef __cplusplus
+}
+#endif
+
+#else /* _WIN32 */
+
+/* For non-Windows environments (like Darwin/Linux testing), include native headers */
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Non-standard Microsoft-compatible cwait.
+ *
+ * @param termstat Pointer to store exit code.
+ * @param pid Process ID to wait for.
+ * @param action Unused on Windows (usually WAIT_CHILD).
+ * @return The process ID of the terminated child.
+ */
+pid_t cwait(int *termstat, pid_t pid, int action);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _WIN32 */
+
+#endif /* POSIX_WAIT_H */

@@ -1,0 +1,657 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "pthread_atfork",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getdetachstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getguardsize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getinheritsched",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getschedpolicy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getscope",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getstack",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getstacksize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setdetachstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setguardsize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setinheritsched",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setschedpolicy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setscope",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setstack",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setstacksize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrier_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "DeleteSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrier_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrier_wait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrierattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cancel",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TerminateThread"
+      },
+      {
+        "posix": "pthread_cleanup_pop",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cleanup_push",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_broadcast",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WakeAllConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_signal",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WakeConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_timedwait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "SleepConditionVariableCS"
+      },
+      {
+        "posix": "pthread_cond_wait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "SleepConditionVariableCS"
+      },
+      {
+        "posix": "pthread_condattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_getclock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_setclock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_create",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "_beginthreadex"
+      },
+      {
+        "posix": "pthread_detach",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "pthread_equal",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_exit",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "_endthreadex"
+      },
+      {
+        "posix": "pthread_getconcurrency",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getcpuclockid",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getspecific",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsGetValue"
+      },
+      {
+        "posix": "pthread_join",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "pthread_key_create",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsAlloc"
+      },
+      {
+        "posix": "pthread_key_delete",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsFree"
+      },
+      {
+        "posix": "pthread_mutex_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "DeleteCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_lock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_timedlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutex_trylock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryEnterCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "LeaveCriticalSection"
+      },
+      {
+        "posix": "pthread_mutexattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getprioceiling",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getprotocol",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_gettype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setprioceiling",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setprotocol",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_settype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_once",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitOnceExecuteOnce"
+      },
+      {
+        "posix": "pthread_rwlock_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeSRWLock"
+      },
+      {
+        "posix": "pthread_rwlock_rdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "AcquireSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_timedrdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_timedwrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_tryrdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryAcquireSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_trywrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryAcquireSRWLockExclusive"
+      },
+      {
+        "posix": "pthread_rwlock_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReleaseSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_wrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "AcquireSRWLockExclusive"
+      },
+      {
+        "posix": "pthread_rwlockattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_self",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetCurrentThreadId"
+      },
+      {
+        "posix": "pthread_setcancelstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setcanceltype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setconcurrency",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setschedprio",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setspecific",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsSetValue"
+      },
+      {
+        "posix": "pthread_sigmask",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_spin_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_spin_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeCriticalSectionAndSpinCount"
+      },
+      {
+        "posix": "pthread_spin_lock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterCriticalSection"
+      },
+      {
+        "posix": "pthread_spin_trylock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryEnterCriticalSection"
+      },
+      {
+        "posix": "pthread_spin_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "LeaveCriticalSection"
+      },
+      {
+        "posix": "pthread_testcancel",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_get_priority_max",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_get_priority_min",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_getparam",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_getscheduler",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_rr_get_interval",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_setparam",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_setscheduler",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_yield",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true,
+        "windows_api": "SwitchToThread / Sleep(0)"
+      },
+      {
+        "posix": "sem_close",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "sem_destroy",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "sem_getvalue",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sem_init",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateSemaphore"
+      },
+      {
+        "posix": "sem_open",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateSemaphore"
+      },
+      {
+        "posix": "sem_post",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReleaseSemaphore"
+      },
+      {
+        "posix": "sem_timedwait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "sem_trywait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "sem_unlink",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sem_wait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      }
+    ],
+    "types": [
+      {
+        "posix": "pthread_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutex_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_key_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_once_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

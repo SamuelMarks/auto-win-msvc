@@ -1,0 +1,4758 @@
+{
+  "description": "100% Comprehensive mapping of POSIX.1-2017, BSD, and Linux user-space headers to MSVC/Windows equivalents.",
+  "modes": {
+    "windows_h": {
+      "description": "Uses <windows.h> with WIN32_LEAN_AND_MEAN.",
+      "base_headers": [
+        "<windows.h>",
+        "<winsock2.h>",
+        "<ws2tcpip.h>"
+      ]
+    },
+    "minimal": {
+      "description": "Avoids <windows.h>.",
+      "base_headers": []
+    }
+  },
+  "mappings": {
+    "functions": [
+      {
+        "posix": "open",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_open",
+        "shim": {
+          "type": "macro",
+          "code": "#define open _open"
+        }
+      },
+      {
+        "posix": "close",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_close",
+        "shim": {
+          "type": "macro",
+          "code": "#define close _close"
+        }
+      },
+      {
+        "posix": "read",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_read",
+        "shim": {
+          "type": "macro",
+          "code": "#define read _read"
+        }
+      },
+      {
+        "posix": "write",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_write",
+        "shim": {
+          "type": "macro",
+          "code": "#define write _write"
+        }
+      },
+      {
+        "posix": "lseek",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_lseek",
+        "shim": {
+          "type": "macro",
+          "code": "#define lseek _lseek"
+        }
+      },
+      {
+        "posix": "dup",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_dup",
+        "shim": {
+          "type": "macro",
+          "code": "#define dup _dup"
+        }
+      },
+      {
+        "posix": "dup2",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_dup2",
+        "shim": {
+          "type": "macro",
+          "code": "#define dup2 _dup2"
+        }
+      },
+      {
+        "posix": "fsync",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_commit",
+        "shim": {
+          "type": "macro",
+          "code": "#define fsync _commit"
+        }
+      },
+      {
+        "posix": "ftruncate",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_chsize",
+        "shim": {
+          "type": "macro",
+          "code": "#define ftruncate _chsize"
+        }
+      },
+      {
+        "posix": "stat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_stat64",
+        "shim": {
+          "type": "macro",
+          "code": "#define stat _stat64"
+        }
+      },
+      {
+        "posix": "fstat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_fstat64",
+        "shim": {
+          "type": "macro",
+          "code": "#define fstat _fstat64"
+        }
+      },
+      {
+        "posix": "access",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_access",
+        "shim": {
+          "type": "macro",
+          "code": "#define access _access"
+        }
+      },
+      {
+        "posix": "chmod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_chmod",
+        "shim": {
+          "type": "macro",
+          "code": "#define chmod _chmod"
+        }
+      },
+      {
+        "posix": "mkdir",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_mkdir",
+        "shim": {
+          "type": "macro",
+          "code": "#define mkdir(path, mode) _mkdir(path)"
+        }
+      },
+      {
+        "posix": "rmdir",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_rmdir",
+        "shim": {
+          "type": "macro",
+          "code": "#define rmdir _rmdir"
+        }
+      },
+      {
+        "posix": "chdir",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_chdir",
+        "shim": {
+          "type": "macro",
+          "code": "#define chdir _chdir"
+        }
+      },
+      {
+        "posix": "getcwd",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_getcwd",
+        "shim": {
+          "type": "macro",
+          "code": "#define getcwd _getcwd"
+        }
+      },
+      {
+        "posix": "unlink",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_unlink",
+        "shim": {
+          "type": "macro",
+          "code": "#define unlink _unlink"
+        }
+      },
+      {
+        "posix": "umask",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_umask",
+        "shim": {
+          "type": "macro",
+          "code": "#define umask _umask"
+        }
+      },
+      {
+        "posix": "utime",
+        "source_header": "<utime.h>",
+        "requires_polyfill": false,
+        "msvc": "_utime",
+        "shim": {
+          "type": "macro",
+          "code": "#define utime _utime"
+        }
+      },
+      {
+        "posix": "execve",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_execve",
+        "shim": {
+          "type": "macro",
+          "code": "#define execve _execve"
+        }
+      },
+      {
+        "posix": "execv",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_execv",
+        "shim": {
+          "type": "macro",
+          "code": "#define execv _execv"
+        }
+      },
+      {
+        "posix": "execvp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_execvp",
+        "shim": {
+          "type": "macro",
+          "code": "#define execvp _execvp"
+        }
+      },
+      {
+        "posix": "execl",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_execl",
+        "shim": {
+          "type": "macro",
+          "code": "#define execl _execl"
+        }
+      },
+      {
+        "posix": "execlp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_execlp",
+        "shim": {
+          "type": "macro",
+          "code": "#define execlp _execlp"
+        }
+      },
+      {
+        "posix": "getpid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_getpid",
+        "shim": {
+          "type": "macro",
+          "code": "#define getpid _getpid"
+        }
+      },
+      {
+        "posix": "sleep",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "Sleep",
+        "shim": {
+          "type": "macro",
+          "code": "#define sleep(x) Sleep(...)"
+        }
+      },
+      {
+        "posix": "usleep",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "Sleep",
+        "shim": {
+          "type": "macro",
+          "code": "#define usleep(x) Sleep(...)"
+        }
+      },
+      {
+        "posix": "isatty",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_isatty",
+        "shim": {
+          "type": "macro",
+          "code": "#define isatty _isatty"
+        }
+      },
+      {
+        "posix": "fileno",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_fileno",
+        "shim": {
+          "type": "macro",
+          "code": "#define fileno _fileno"
+        }
+      },
+      {
+        "posix": "putenv",
+        "source_header": "<stdlib.h>",
+        "requires_polyfill": false,
+        "msvc": "_putenv",
+        "shim": {
+          "type": "macro",
+          "code": "#define putenv _putenv"
+        }
+      },
+      {
+        "posix": "swab",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "_swab",
+        "shim": {
+          "type": "macro",
+          "code": "#define swab _swab"
+        }
+      },
+      {
+        "posix": "tzset",
+        "source_header": "<time.h>",
+        "requires_polyfill": false,
+        "msvc": "_tzset",
+        "shim": {
+          "type": "macro",
+          "code": "#define tzset _tzset"
+        }
+      },
+      {
+        "posix": "cwait",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": false,
+        "msvc": "_cwait",
+        "shim": {
+          "type": "macro",
+          "code": "#define cwait _cwait"
+        }
+      },
+      {
+        "posix": "eof",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_eof",
+        "shim": {
+          "type": "macro",
+          "code": "#define eof _eof"
+        }
+      },
+      {
+        "posix": "filelength",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_filelength",
+        "shim": {
+          "type": "macro",
+          "code": "#define filelength _filelength"
+        }
+      },
+      {
+        "posix": "locking",
+        "source_header": "<sys/locking.h>",
+        "requires_polyfill": false,
+        "msvc": "_locking",
+        "shim": {
+          "type": "macro",
+          "code": "#define locking _locking"
+        }
+      },
+      {
+        "posix": "setmode",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_setmode",
+        "shim": {
+          "type": "macro",
+          "code": "#define setmode _setmode"
+        }
+      },
+      {
+        "posix": "sopen",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_sopen",
+        "shim": {
+          "type": "macro",
+          "code": "#define sopen _sopen"
+        }
+      },
+      {
+        "posix": "tell",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_tell",
+        "shim": {
+          "type": "macro",
+          "code": "#define tell _tell"
+        }
+      },
+      {
+        "posix": "popen",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_popen",
+        "shim": {
+          "type": "macro",
+          "code": "#define popen _popen"
+        }
+      },
+      {
+        "posix": "pclose",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_pclose",
+        "shim": {
+          "type": "macro",
+          "code": "#define pclose _pclose"
+        }
+      },
+      {
+        "posix": "strcasecmp",
+        "source_header": "<strings.h>",
+        "requires_polyfill": false,
+        "msvc": "_stricmp",
+        "shim": {
+          "type": "macro",
+          "code": "#define strcasecmp _stricmp"
+        }
+      },
+      {
+        "posix": "strncasecmp",
+        "source_header": "<strings.h>",
+        "requires_polyfill": false,
+        "msvc": "_strnicmp",
+        "shim": {
+          "type": "macro",
+          "code": "#define strncasecmp _strnicmp"
+        }
+      },
+      {
+        "posix": "strdup",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strdup",
+        "shim": {
+          "type": "macro",
+          "code": "#define strdup _strdup"
+        }
+      },
+      {
+        "posix": "memccpy",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_memccpy",
+        "shim": {
+          "type": "macro",
+          "code": "#define memccpy _memccpy"
+        }
+      },
+      {
+        "posix": "y1",
+        "source_header": "<math.h>",
+        "requires_polyfill": false,
+        "msvc": "_y1",
+        "shim": {
+          "type": "macro",
+          "code": "#define y1 _y1"
+        }
+      },
+      {
+        "posix": "yn",
+        "source_header": "<math.h>",
+        "requires_polyfill": false,
+        "msvc": "_yn",
+        "shim": {
+          "type": "macro",
+          "code": "#define yn _yn"
+        }
+      },
+      {
+        "posix": "j0",
+        "source_header": "<math.h>",
+        "requires_polyfill": false,
+        "msvc": "_j0",
+        "shim": {
+          "type": "macro",
+          "code": "#define j0 _j0"
+        }
+      },
+      {
+        "posix": "j1",
+        "source_header": "<math.h>",
+        "requires_polyfill": false,
+        "msvc": "_j1",
+        "shim": {
+          "type": "macro",
+          "code": "#define j1 _j1"
+        }
+      },
+      {
+        "posix": "jn",
+        "source_header": "<math.h>",
+        "requires_polyfill": false,
+        "msvc": "_jn",
+        "shim": {
+          "type": "macro",
+          "code": "#define jn _jn"
+        }
+      },
+      {
+        "posix": "chsize",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_chsize",
+        "shim": {
+          "type": "macro",
+          "code": "#define chsize _chsize"
+        }
+      },
+      {
+        "posix": "creat",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_creat",
+        "shim": {
+          "type": "macro",
+          "code": "#define creat _creat"
+        }
+      },
+      {
+        "posix": "gcvt",
+        "source_header": "<stdlib.h>",
+        "requires_polyfill": false,
+        "msvc": "_gcvt",
+        "shim": {
+          "type": "macro",
+          "code": "#define gcvt _gcvt"
+        }
+      },
+      {
+        "posix": "itoa",
+        "source_header": "<stdlib.h>",
+        "requires_polyfill": false,
+        "msvc": "_itoa",
+        "shim": {
+          "type": "macro",
+          "code": "#define itoa _itoa"
+        }
+      },
+      {
+        "posix": "ltoa",
+        "source_header": "<stdlib.h>",
+        "requires_polyfill": false,
+        "msvc": "_ltoa",
+        "shim": {
+          "type": "macro",
+          "code": "#define ltoa _ltoa"
+        }
+      },
+      {
+        "posix": "mktemp",
+        "source_header": "<stdlib.h>",
+        "requires_polyfill": false,
+        "msvc": "_mktemp",
+        "shim": {
+          "type": "macro",
+          "code": "#define mktemp _mktemp"
+        }
+      },
+      {
+        "posix": "strcmpi",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strcmpi",
+        "shim": {
+          "type": "macro",
+          "code": "#define strcmpi _strcmpi"
+        }
+      },
+      {
+        "posix": "stricmp",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_stricmp",
+        "shim": {
+          "type": "macro",
+          "code": "#define stricmp _stricmp"
+        }
+      },
+      {
+        "posix": "strlwr",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strlwr",
+        "shim": {
+          "type": "macro",
+          "code": "#define strlwr _strlwr"
+        }
+      },
+      {
+        "posix": "strnicmp",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strnicmp",
+        "shim": {
+          "type": "macro",
+          "code": "#define strnicmp _strnicmp"
+        }
+      },
+      {
+        "posix": "strupr",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strupr",
+        "shim": {
+          "type": "macro",
+          "code": "#define strupr _strupr"
+        }
+      },
+      {
+        "posix": "aio_cancel",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true,
+        "windows_api": "Thread Pool / OVERLAPPED"
+      },
+      {
+        "posix": "aio_error",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "aio_fsync",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "aio_read",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "aio_return",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "aio_suspend",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "aio_write",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "lio_listio",
+        "source_header": "<aio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "opendir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile"
+      },
+      {
+        "posix": "readdir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindNextFile"
+      },
+      {
+        "posix": "closedir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindClose"
+      },
+      {
+        "posix": "rewinddir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile"
+      },
+      {
+        "posix": "seekdir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "telldir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "scandir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "alphasort",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dlopen",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "LoadLibrary"
+      },
+      {
+        "posix": "dlsym",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetProcAddress"
+      },
+      {
+        "posix": "dlclose",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "FreeLibrary"
+      },
+      {
+        "posix": "dlerror",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "FormatMessage"
+      },
+      {
+        "posix": "dladdr",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetModuleHandleEx"
+      },
+      {
+        "posix": "fcntl",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true,
+        "windows_api": "ioctlsocket / SetHandleInformation"
+      },
+      {
+        "posix": "openat",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFile (relative)"
+      },
+      {
+        "posix": "posix_fadvise",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_fallocate",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetEndOfFile"
+      },
+      {
+        "posix": "fmtmsg",
+        "source_header": "<fmtmsg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fnmatch",
+        "source_header": "<fnmatch.h>",
+        "requires_polyfill": true,
+        "windows_api": "PathMatchSpec / Custom regex"
+      },
+      {
+        "posix": "ftw",
+        "source_header": "<ftw.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile loop"
+      },
+      {
+        "posix": "nftw",
+        "source_header": "<ftw.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile loop"
+      },
+      {
+        "posix": "glob",
+        "source_header": "<glob.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile loop"
+      },
+      {
+        "posix": "globfree",
+        "source_header": "<glob.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrgid",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountSid"
+      },
+      {
+        "posix": "getgrgid_r",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrnam",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountName"
+      },
+      {
+        "posix": "getgrnam_r",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "iconv",
+        "source_header": "<iconv.h>",
+        "requires_polyfill": true,
+        "windows_api": "MultiByteToWideChar / WideCharToMultiByte"
+      },
+      {
+        "posix": "iconv_close",
+        "source_header": "<iconv.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "iconv_open",
+        "source_header": "<iconv.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "nl_langinfo",
+        "source_header": "<langinfo.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetLocaleInfo"
+      },
+      {
+        "posix": "basename",
+        "source_header": "<libgen.h>",
+        "requires_polyfill": true,
+        "windows_api": "_splitpath_s"
+      },
+      {
+        "posix": "dirname",
+        "source_header": "<libgen.h>",
+        "requires_polyfill": true,
+        "windows_api": "_splitpath_s"
+      },
+      {
+        "posix": "strfmon",
+        "source_header": "<monetary.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetCurrencyFormat"
+      },
+      {
+        "posix": "mq_close",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_getattr",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_notify",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_open",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateNamedPipe / CreateMailslot"
+      },
+      {
+        "posix": "mq_receive",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReadFile"
+      },
+      {
+        "posix": "mq_send",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true,
+        "windows_api": "WriteFile"
+      },
+      {
+        "posix": "mq_setattr",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_timedreceive",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_timedsend",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mq_unlink",
+        "source_header": "<mqueue.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_clearerr",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_close",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_delete",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_error",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_fetch",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_firstkey",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_nextkey",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_open",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "dbm_store",
+        "source_header": "<ndbm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endhostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "freeaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "freeaddrinfo"
+      },
+      {
+        "posix": "gai_strerror",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gai_strerror"
+      },
+      {
+        "posix": "getaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getaddrinfo"
+      },
+      {
+        "posix": "gethostbyaddr",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gethostbyaddr"
+      },
+      {
+        "posix": "gethostbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "gethostbyname"
+      },
+      {
+        "posix": "gethostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnameinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getnameinfo"
+      },
+      {
+        "posix": "getnetbyaddr",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnetbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getprotobyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getprotobyname"
+      },
+      {
+        "posix": "getprotobynumber",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getprotobynumber"
+      },
+      {
+        "posix": "getprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getservbyname",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getservbyname"
+      },
+      {
+        "posix": "getservbyport",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true,
+        "windows_api": "getservbyport"
+      },
+      {
+        "posix": "getservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sethostent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setnetent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setprotoent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setservent",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "catclose",
+        "source_header": "<nl_types.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "catgets",
+        "source_header": "<nl_types.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "catopen",
+        "source_header": "<nl_types.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "poll",
+        "source_header": "<poll.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSAPoll"
+      },
+      {
+        "posix": "pthread_atfork",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getdetachstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getguardsize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getinheritsched",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getschedpolicy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getscope",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getstack",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_getstacksize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setdetachstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setguardsize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setinheritsched",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setschedpolicy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setscope",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setstack",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_setstacksize",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrier_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "DeleteSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrier_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrier_wait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterSynchronizationBarrier"
+      },
+      {
+        "posix": "pthread_barrierattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_barrierattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cancel",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TerminateThread"
+      },
+      {
+        "posix": "pthread_cleanup_pop",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cleanup_push",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_broadcast",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WakeAllConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_signal",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WakeConditionVariable"
+      },
+      {
+        "posix": "pthread_cond_timedwait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "SleepConditionVariableCS"
+      },
+      {
+        "posix": "pthread_cond_wait",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "SleepConditionVariableCS"
+      },
+      {
+        "posix": "pthread_condattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_getclock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_setclock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_condattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_create",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "_beginthreadex"
+      },
+      {
+        "posix": "pthread_detach",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "pthread_equal",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_exit",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "_endthreadex"
+      },
+      {
+        "posix": "pthread_getconcurrency",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getcpuclockid",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_getspecific",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsGetValue"
+      },
+      {
+        "posix": "pthread_join",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "pthread_key_create",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsAlloc"
+      },
+      {
+        "posix": "pthread_key_delete",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsFree"
+      },
+      {
+        "posix": "pthread_mutex_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "DeleteCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_lock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_timedlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutex_trylock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryEnterCriticalSection"
+      },
+      {
+        "posix": "pthread_mutex_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "LeaveCriticalSection"
+      },
+      {
+        "posix": "pthread_mutexattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getprioceiling",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getprotocol",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_gettype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setprioceiling",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setprotocol",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutexattr_settype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_once",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitOnceExecuteOnce"
+      },
+      {
+        "posix": "pthread_rwlock_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeSRWLock"
+      },
+      {
+        "posix": "pthread_rwlock_rdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "AcquireSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_timedrdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_timedwrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_tryrdlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryAcquireSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_trywrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryAcquireSRWLockExclusive"
+      },
+      {
+        "posix": "pthread_rwlock_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReleaseSRWLockShared"
+      },
+      {
+        "posix": "pthread_rwlock_wrlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "AcquireSRWLockExclusive"
+      },
+      {
+        "posix": "pthread_rwlockattr_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_getpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlockattr_setpshared",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_self",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetCurrentThreadId"
+      },
+      {
+        "posix": "pthread_setcancelstate",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setcanceltype",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setconcurrency",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setschedparam",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setschedprio",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_setspecific",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TlsSetValue"
+      },
+      {
+        "posix": "pthread_sigmask",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_spin_destroy",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_spin_init",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "InitializeCriticalSectionAndSpinCount"
+      },
+      {
+        "posix": "pthread_spin_lock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "EnterCriticalSection"
+      },
+      {
+        "posix": "pthread_spin_trylock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "TryEnterCriticalSection"
+      },
+      {
+        "posix": "pthread_spin_unlock",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true,
+        "windows_api": "LeaveCriticalSection"
+      },
+      {
+        "posix": "pthread_testcancel",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwnam",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountName"
+      },
+      {
+        "posix": "getpwnam_r",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwuid",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountSid"
+      },
+      {
+        "posix": "getpwuid_r",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regcomp",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true,
+        "windows_api": "std::regex / PCRE"
+      },
+      {
+        "posix": "regerror",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regexec",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regfree",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_get_priority_max",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_get_priority_min",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_getparam",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_getscheduler",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_rr_get_interval",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_setparam",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_setscheduler",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sched_yield",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true,
+        "windows_api": "SwitchToThread / Sleep(0)"
+      },
+      {
+        "posix": "hcreate",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "hdestroy",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "hsearch",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "insque",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "lfind",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "lsearch",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "remque",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tdelete",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tfind",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tsearch",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "twalk",
+        "source_header": "<search.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sem_close",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "sem_destroy",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CloseHandle"
+      },
+      {
+        "posix": "sem_getvalue",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sem_init",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateSemaphore"
+      },
+      {
+        "posix": "sem_open",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateSemaphore"
+      },
+      {
+        "posix": "sem_post",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReleaseSemaphore"
+      },
+      {
+        "posix": "sem_timedwait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "sem_trywait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "sem_unlink",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sem_wait",
+        "source_header": "<semaphore.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "siglongjmp",
+        "source_header": "<setjmp.h>",
+        "requires_polyfill": true,
+        "windows_api": "longjmp"
+      },
+      {
+        "posix": "sigsetjmp",
+        "source_header": "<setjmp.h>",
+        "requires_polyfill": true,
+        "windows_api": "setjmp"
+      },
+      {
+        "posix": "kill",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true,
+        "windows_api": "TerminateProcess"
+      },
+      {
+        "posix": "killpg",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "psiginfo",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "psignal",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_kill",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_sigmask",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigaction",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetConsoleCtrlHandler"
+      },
+      {
+        "posix": "sigaddset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigaltstack",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigdelset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigemptyset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigfillset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sighold",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigignore",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "siginterrupt",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigismember",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigpause",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigpending",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigprocmask",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigqueue",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigrelse",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigsuspend",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigtimedwait",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigwait",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sigwaitinfo",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "posix_spawn_file_actions_addclose",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_adddup2",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_addopen",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_destroy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_init",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_destroy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getflags",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getpgroup",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getschedparam",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getschedpolicy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getsigdefault",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getsigmask",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_init",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setflags",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setpgroup",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setschedparam",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setschedpolicy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setsigdefault",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setsigmask",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnp",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "ftok",
+        "source_header": "<sys/ipc.h>",
+        "requires_polyfill": true,
+        "windows_api": "Hash of GetFileInformationByHandle"
+      },
+      {
+        "posix": "mlock",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualLock"
+      },
+      {
+        "posix": "mlockall",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mmap",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFileMapping / MapViewOfFile"
+      },
+      {
+        "posix": "mprotect",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualProtect"
+      },
+      {
+        "posix": "msync",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushViewOfFile"
+      },
+      {
+        "posix": "munlock",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "VirtualUnlock"
+      },
+      {
+        "posix": "munlockall",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "munmap",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "UnmapViewOfFile"
+      },
+      {
+        "posix": "shm_open",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFileMapping"
+      },
+      {
+        "posix": "shm_unlink",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgctl",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgget",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgrcv",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "msgsnd",
+        "source_header": "<sys/msg.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpriority",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getrlimit",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetProcessTimes / Memory limits"
+      },
+      {
+        "posix": "getrusage",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetProcessTimes"
+      },
+      {
+        "posix": "setpriority",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetPriorityClass"
+      },
+      {
+        "posix": "setrlimit",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetProcessWorkingSetSize"
+      },
+      {
+        "posix": "pselect",
+        "source_header": "<sys/select.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "select",
+        "source_header": "<sys/select.h>",
+        "requires_polyfill": true,
+        "windows_api": "select"
+      },
+      {
+        "posix": "semctl",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "semget",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "semop",
+        "source_header": "<sys/sem.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmat",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmctl",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmdt",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "shmget",
+        "source_header": "<sys/shm.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "accept",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "accept"
+      },
+      {
+        "posix": "bind",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "bind"
+      },
+      {
+        "posix": "connect",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "connect"
+      },
+      {
+        "posix": "getpeername",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getpeername"
+      },
+      {
+        "posix": "getsockname",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getsockname"
+      },
+      {
+        "posix": "getsockopt",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "getsockopt"
+      },
+      {
+        "posix": "listen",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "listen"
+      },
+      {
+        "posix": "recv",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "recv"
+      },
+      {
+        "posix": "recvfrom",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "recvfrom"
+      },
+      {
+        "posix": "recvmsg",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSARecvMsg"
+      },
+      {
+        "posix": "send",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "send"
+      },
+      {
+        "posix": "sendmsg",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "WSASendMsg"
+      },
+      {
+        "posix": "sendto",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "sendto"
+      },
+      {
+        "posix": "setsockopt",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "setsockopt"
+      },
+      {
+        "posix": "shutdown",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "shutdown"
+      },
+      {
+        "posix": "socket",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "socket"
+      },
+      {
+        "posix": "socketpair",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreatePipe / WSASocket loop"
+      },
+      {
+        "posix": "fchmod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileAttributes"
+      },
+      {
+        "posix": "fchmodat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fstatat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "futimens",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileTime"
+      },
+      {
+        "posix": "lstat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetFileAttributesEx"
+      },
+      {
+        "posix": "mknod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFile"
+      },
+      {
+        "posix": "mknodat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "utimensat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fstatvfs",
+        "source_header": "<sys/statvfs.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetDiskFreeSpaceEx"
+      },
+      {
+        "posix": "statvfs",
+        "source_header": "<sys/statvfs.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetDiskFreeSpaceEx"
+      },
+      {
+        "posix": "getitimer",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "gettimeofday",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetSystemTimeAsFileTime"
+      },
+      {
+        "posix": "setitimer",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "utimes",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileTime"
+      },
+      {
+        "posix": "times",
+        "source_header": "<sys/times.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetProcessTimes"
+      },
+      {
+        "posix": "preadv",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pwritev",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "readv",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReadFileScatter"
+      },
+      {
+        "posix": "writev",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true,
+        "windows_api": "WriteFileGather"
+      },
+      {
+        "posix": "uname",
+        "source_header": "<sys/utsname.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetComputerName / GetVersionEx"
+      },
+      {
+        "posix": "wait",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "_cwait"
+      },
+      {
+        "posix": "waitid",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "waitpid",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
+        "posix": "closelog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "openlog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true,
+        "windows_api": "RegisterEventSource"
+      },
+      {
+        "posix": "setlogmask",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "syslog",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReportEvent"
+      },
+      {
+        "posix": "cfgetispeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfgetospeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfsetispeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "cfsetospeed",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcdrain",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushConsoleInputBuffer"
+      },
+      {
+        "posix": "tcflow",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcflush",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcgetattr",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetConsoleMode"
+      },
+      {
+        "posix": "tcgetsid",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcsendbreak",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcsetattr",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetConsoleMode"
+      },
+      {
+        "posix": "alarm",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateWaitableTimer"
+      },
+      {
+        "posix": "chown",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetNamedSecurityInfo"
+      },
+      {
+        "posix": "confstr",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "crypt",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "encrypt",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "faccessat",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fchown",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetSecurityInfo"
+      },
+      {
+        "posix": "fchownat",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fdatasync",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushFileBuffers"
+      },
+      {
+        "posix": "fexecve",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fork",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "fpathconf",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getegid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "geteuid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgroups",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetTokenInformation"
+      },
+      {
+        "posix": "gethostid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "gethostname",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetComputerName"
+      },
+      {
+        "posix": "getlogin",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetUserName"
+      },
+      {
+        "posix": "getlogin_r",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getopt",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "Custom loop / Native wingetopt"
+      },
+      {
+        "posix": "getpgid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpgrp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getppid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "NtQueryInformationProcess"
+      },
+      {
+        "posix": "getsid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getuid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetUserName"
+      },
+      {
+        "posix": "lchown",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "link",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateHardLink"
+      },
+      {
+        "posix": "linkat",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "lockf",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "_locking"
+      },
+      {
+        "posix": "pathconf",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pause",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "Sleep(INFINITE)"
+      },
+      {
+        "posix": "pipe",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "_pipe / CreatePipe"
+      },
+      {
+        "posix": "pread",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "ReadFile with OVERLAPPED"
+      },
+      {
+        "posix": "pwrite",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "WriteFile with OVERLAPPED"
+      },
+      {
+        "posix": "readlink",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetFinalPathNameByHandle"
+      },
+      {
+        "posix": "readlinkat",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setegid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "seteuid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setgid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setpgid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setpgrp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setregid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setreuid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setsid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setuid",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "symlink",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateSymbolicLink"
+      },
+      {
+        "posix": "symlinkat",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "sync",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "FlushFileBuffers"
+      },
+      {
+        "posix": "sysconf",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetSystemInfo"
+      },
+      {
+        "posix": "tcgetpgrp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "tcsetpgrp",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "truncate",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetEndOfFile"
+      },
+      {
+        "posix": "ttyname",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ttyname_r",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ualarm",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "vfork",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "wordexp",
+        "source_header": "<wordexp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "wordfree",
+        "source_header": "<wordexp.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "pid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int pid_t;"
+        }
+      },
+      {
+        "posix": "ssize_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "SSIZE_T",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef SSIZE_T ssize_t;"
+        }
+      },
+      {
+        "posix": "mode_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned short mode_t;"
+        }
+      },
+      {
+        "posix": "off_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long off_t;"
+        }
+      },
+      {
+        "posix": "off64_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "__int64",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef __int64 off64_t;"
+        }
+      },
+      {
+        "posix": "uid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int uid_t;"
+        }
+      },
+      {
+        "posix": "gid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int gid_t;"
+        }
+      },
+      {
+        "posix": "useconds_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned int useconds_t;"
+        }
+      },
+      {
+        "posix": "suseconds_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long suseconds_t;"
+        }
+      },
+      {
+        "posix": "dev_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned int dev_t;"
+        }
+      },
+      {
+        "posix": "ino_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned short ino_t;"
+        }
+      },
+      {
+        "posix": "nlink_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "short",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef short nlink_t;"
+        }
+      },
+      {
+        "posix": "socklen_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int socklen_t;"
+        }
+      },
+      {
+        "posix": "sa_family_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "ADDRESS_FAMILY",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef ADDRESS_FAMILY sa_family_t;"
+        }
+      },
+      {
+        "posix": "sigset_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long sigset_t;"
+        }
+      },
+      {
+        "posix": "id_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int id_t;"
+        }
+      },
+      {
+        "posix": "key_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int key_t;"
+        }
+      },
+      {
+        "posix": "clock_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long clock_t;"
+        }
+      },
+      {
+        "posix": "time_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "__time64_t",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef __time64_t time_t;"
+        }
+      },
+      {
+        "posix": "timer_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "void*",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef void* timer_t;"
+        }
+      },
+      {
+        "posix": "clockid_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "int",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef int clockid_t;"
+        }
+      },
+      {
+        "posix": "fsblkcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long long fsblkcnt_t;"
+        }
+      },
+      {
+        "posix": "fsfilcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "unsigned long long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef unsigned long long fsfilcnt_t;"
+        }
+      },
+      {
+        "posix": "blksize_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long blksize_t;"
+        }
+      },
+      {
+        "posix": "blkcnt_t",
+        "source_header": "<sys/types.h>",
+        "requires_polyfill": false,
+        "msvc": "long",
+        "shim": {
+          "type": "typedef",
+          "code": "typedef long blkcnt_t;"
+        }
+      },
+      {
+        "posix": "DIR",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct dirent",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct timespec",
+        "source_header": "<time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct timeval",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct rusage",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct utsname",
+        "source_header": "<sys/utsname.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct stat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct passwd",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct group",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct iovec",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct msghdr",
+        "source_header": "<sys/socket.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_mutex_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_cond_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_rwlock_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_key_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_once_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "pthread_attr_t",
+        "source_header": "<pthread.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "siginfo_t",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct statvfs",
+        "source_header": "<sys/statvfs.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": [
+      {
+        "posix": "PATH_MAX",
+        "source_header": "<limits.h>",
+        "requires_polyfill": false,
+        "msvc": "MAX_PATH",
+        "shim": {
+          "type": "macro",
+          "code": "#define PATH_MAX MAX_PATH"
+        }
+      },
+      {
+        "posix": "NAME_MAX",
+        "source_header": "<limits.h>",
+        "requires_polyfill": false,
+        "msvc": "255",
+        "shim": {
+          "type": "macro",
+          "code": "#define NAME_MAX 255"
+        }
+      },
+      {
+        "posix": "STDIN_FILENO",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "0",
+        "shim": {
+          "type": "macro",
+          "code": "#define STDIN_FILENO 0"
+        }
+      },
+      {
+        "posix": "STDOUT_FILENO",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "1",
+        "shim": {
+          "type": "macro",
+          "code": "#define STDOUT_FILENO 1"
+        }
+      },
+      {
+        "posix": "STDERR_FILENO",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": false,
+        "msvc": "2",
+        "shim": {
+          "type": "macro",
+          "code": "#define STDERR_FILENO 2"
+        }
+      },
+      {
+        "posix": "O_RDONLY",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_RDONLY",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_RDONLY _O_RDONLY"
+        }
+      },
+      {
+        "posix": "O_WRONLY",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_WRONLY",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_WRONLY _O_WRONLY"
+        }
+      },
+      {
+        "posix": "O_RDWR",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_RDWR",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_RDWR _O_RDWR"
+        }
+      },
+      {
+        "posix": "O_APPEND",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_APPEND",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_APPEND _O_APPEND"
+        }
+      },
+      {
+        "posix": "O_CREAT",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_CREAT",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_CREAT _O_CREAT"
+        }
+      },
+      {
+        "posix": "O_TRUNC",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_TRUNC",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_TRUNC _O_TRUNC"
+        }
+      },
+      {
+        "posix": "O_EXCL",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_EXCL",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_EXCL _O_EXCL"
+        }
+      },
+      {
+        "posix": "O_TEXT",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_TEXT",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_TEXT _O_TEXT"
+        }
+      },
+      {
+        "posix": "O_BINARY",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_BINARY",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_BINARY _O_BINARY"
+        }
+      },
+      {
+        "posix": "O_CLOEXEC",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": false,
+        "msvc": "_O_NOINHERIT",
+        "shim": {
+          "type": "macro",
+          "code": "#define O_CLOEXEC _O_NOINHERIT"
+        }
+      },
+      {
+        "posix": "S_IFMT",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFMT",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFMT _S_IFMT"
+        }
+      },
+      {
+        "posix": "S_IFDIR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFDIR",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFDIR _S_IFDIR"
+        }
+      },
+      {
+        "posix": "S_IFCHR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFCHR",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFCHR _S_IFCHR"
+        }
+      },
+      {
+        "posix": "S_IFREG",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFREG",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFREG _S_IFREG"
+        }
+      },
+      {
+        "posix": "S_IFIFO",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFIFO",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFIFO _S_IFIFO"
+        }
+      },
+      {
+        "posix": "S_IRUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IREAD",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IRUSR _S_IREAD"
+        }
+      },
+      {
+        "posix": "S_IWUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IWRITE",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IWUSR _S_IWRITE"
+        }
+      },
+      {
+        "posix": "S_IXUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IEXEC",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IXUSR _S_IEXEC"
+        }
+      },
+      {
+        "posix": "O_NONBLOCK",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "O_NDELAY",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "O_SYNC",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "O_DIRECTORY",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IFLNK",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IFSOCK",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXU",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXG",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXO",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "F_OK",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "X_OK",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "W_OK",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "R_OK",
+        "source_header": "<unistd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WNOHANG",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WUNTRACED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WIFEXITED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WEXITSTATUS",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_SHARED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_PRIVATE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_FIXED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_ANONYMOUS",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "MAP_FAILED",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_READ",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_WRITE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_EXEC",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PROT_NONE",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_LAZY",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_NOW",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_GLOBAL",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "RTLD_LOCAL",
+        "source_header": "<dlfcn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGABRT",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGALRM",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGBUS",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGCHLD",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGCONT",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGFPE",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGHUP",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGILL",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGINT",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGKILL",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGPIPE",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGQUIT",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGSEGV",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGSTOP",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTERM",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTSTP",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTTIN",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTTOU",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGUSR1",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGUSR2",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGPOLL",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGPROF",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGSYS",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTRAP",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGURG",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGVTALRM",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGXCPU",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGXFSZ",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "E2BIG",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EACCES",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EADDRINUSE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EADDRNOTAVAIL",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EAFNOSUPPORT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EAGAIN",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EALREADY",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EBADF",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EBADMSG",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EBUSY",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECANCELED",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHILD",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECONNABORTED",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECONNREFUSED",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECONNRESET",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EDEADLK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EDESTADDRREQ",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EDOM",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EDQUOT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EEXIST",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EFAULT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EFBIG",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EHOSTUNREACH",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EIDRM",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EILSEQ",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EINPROGRESS",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EINTR",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EINVAL",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EIO",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EISCONN",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EISDIR",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ELOOP",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EMFILE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EMLINK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EMSGSIZE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EMULTIHOP",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENAMETOOLONG",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENETDOWN",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENETRESET",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENETUNREACH",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENFILE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOBUFS",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENODATA",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENODEV",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOENT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOEXEC",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOLCK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOLINK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOMEM",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOMSG",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOPROTOOPT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOSPC",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOSR",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOSTR",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOSYS",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTCONN",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTDIR",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTEMPTY",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTRECOVERABLE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTSOCK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTSUP",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENOTTY",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ENXIO",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EOPNOTSUPP",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EOVERFLOW",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EOWNERDEAD",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EPERM",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EPIPE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EPROTO",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EPROTONOSUPPORT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EPROTOTYPE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ERANGE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EROFS",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ESPIPE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ESRCH",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ESTALE",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ETIME",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ETIMEDOUT",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ETXTBSY",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EWOULDBLOCK",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "EXDEV",
+        "source_header": "<errno.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "BRKINT",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ICRNL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNBRK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IGNPAR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "INLCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "INPCK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ISTRIP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXANY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IXON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARMRK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OPOST",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONLCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OCRNL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONOCR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ONLRET",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "OFILL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "NLDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CRDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TABDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "BSDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VTDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "FFDLY",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B0",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B50",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B75",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B110",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B134",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B150",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B300",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B600",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B1200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B1800",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B2400",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B4800",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B9600",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B19200",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "B38400",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CSIZE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS5",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS6",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS7",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CS8",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CSTOPB",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CREAD",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARENB",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PARODD",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "HUPCL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "CLOCAL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHO",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHOE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHOK",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ECHONL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ICANON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "IEXTEN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ISIG",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "NOFLSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TOSTOP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSANOW",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSADRAIN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCSAFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIOFLUSH",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCOON",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCIOFF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TCION",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VEOF",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VEOL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VERASE",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VINTR",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VKILL",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VMIN",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VQUIT",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSTART",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSTOP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VSUSP",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "VTIME",
+        "source_header": "<termios.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_EMERG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ALERT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CRIT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ERR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_WARNING",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NOTICE",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_INFO",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_DEBUG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_KERN",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_USER",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_MAIL",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_DAEMON",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_AUTH",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_SYSLOG",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LPR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NEWS",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_UUCP",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CRON",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_AUTHPRIV",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_FTP",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL0",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL1",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL2",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL3",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL4",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL5",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL6",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_LOCAL7",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_PID",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_CONS",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_ODELAY",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NDELAY",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_NOWAIT",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "LOG_PERROR",
+        "source_header": "<syslog.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

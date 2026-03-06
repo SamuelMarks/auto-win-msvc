@@ -1,0 +1,115 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "posix_spawn",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "posix_spawn_file_actions_addclose",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_adddup2",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_addopen",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_destroy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawn_file_actions_init",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_destroy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getflags",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getpgroup",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getschedparam",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getschedpolicy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getsigdefault",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_getsigmask",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_init",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setflags",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setpgroup",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setschedparam",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setschedpolicy",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setsigdefault",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnattr_setsigmask",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "posix_spawnp",
+        "source_header": "<spawn.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateProcess"
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

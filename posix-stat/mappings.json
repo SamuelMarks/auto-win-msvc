@@ -1,0 +1,214 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "stat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_stat64",
+        "shim": {
+          "type": "macro",
+          "code": "#define stat _stat64"
+        }
+      },
+      {
+        "posix": "fstat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_fstat64",
+        "shim": {
+          "type": "macro",
+          "code": "#define fstat _fstat64"
+        }
+      },
+      {
+        "posix": "chmod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_chmod",
+        "shim": {
+          "type": "macro",
+          "code": "#define chmod _chmod"
+        }
+      },
+      {
+        "posix": "mkdir",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_mkdir",
+        "shim": {
+          "type": "macro",
+          "code": "#define mkdir(path, mode) _mkdir(path)"
+        }
+      },
+      {
+        "posix": "umask",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_umask",
+        "shim": {
+          "type": "macro",
+          "code": "#define umask _umask"
+        }
+      },
+      {
+        "posix": "fchmod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileAttributes"
+      },
+      {
+        "posix": "fchmodat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fstatat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "futimens",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileTime"
+      },
+      {
+        "posix": "lstat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetFileAttributesEx"
+      },
+      {
+        "posix": "mknod",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true,
+        "windows_api": "CreateFile"
+      },
+      {
+        "posix": "mknodat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "utimensat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct stat",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": [
+      {
+        "posix": "S_IFMT",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFMT",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFMT _S_IFMT"
+        }
+      },
+      {
+        "posix": "S_IFDIR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFDIR",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFDIR _S_IFDIR"
+        }
+      },
+      {
+        "posix": "S_IFCHR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFCHR",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFCHR _S_IFCHR"
+        }
+      },
+      {
+        "posix": "S_IFREG",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFREG",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFREG _S_IFREG"
+        }
+      },
+      {
+        "posix": "S_IFIFO",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IFIFO",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IFIFO _S_IFIFO"
+        }
+      },
+      {
+        "posix": "S_IRUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IREAD",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IRUSR _S_IREAD"
+        }
+      },
+      {
+        "posix": "S_IWUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IWRITE",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IWUSR _S_IWRITE"
+        }
+      },
+      {
+        "posix": "S_IXUSR",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": false,
+        "msvc": "_S_IEXEC",
+        "shim": {
+          "type": "macro",
+          "code": "#define S_IXUSR _S_IEXEC"
+        }
+      },
+      {
+        "posix": "S_IFLNK",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IFSOCK",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXU",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXG",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_IRWXO",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

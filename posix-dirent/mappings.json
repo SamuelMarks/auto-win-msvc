@@ -1,0 +1,63 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "opendir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile"
+      },
+      {
+        "posix": "readdir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindNextFile"
+      },
+      {
+        "posix": "closedir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindClose"
+      },
+      {
+        "posix": "rewinddir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile"
+      },
+      {
+        "posix": "seekdir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "telldir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "scandir",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "alphasort",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "DIR",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct dirent",
+        "source_header": "<dirent.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

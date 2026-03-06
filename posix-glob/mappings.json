@@ -1,0 +1,35 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "fnmatch",
+        "source_header": "<fnmatch.h>",
+        "requires_polyfill": true,
+        "windows_api": "PathMatchSpec / Custom regex"
+      },
+      {
+        "posix": "glob",
+        "source_header": "<glob.h>",
+        "requires_polyfill": true,
+        "windows_api": "FindFirstFile loop"
+      },
+      {
+        "posix": "globfree",
+        "source_header": "<glob.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "wordexp",
+        "source_header": "<wordexp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "wordfree",
+        "source_header": "<wordexp.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

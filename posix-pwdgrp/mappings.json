@@ -1,0 +1,93 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "endgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrgid",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountSid"
+      },
+      {
+        "posix": "getgrgid_r",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getgrnam",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountName"
+      },
+      {
+        "posix": "getgrnam_r",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setgrent",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "endpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwnam",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountName"
+      },
+      {
+        "posix": "getpwnam_r",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getpwuid",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true,
+        "windows_api": "LookupAccountSid"
+      },
+      {
+        "posix": "getpwuid_r",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setpwent",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct passwd",
+        "source_header": "<pwd.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct group",
+        "source_header": "<grp.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

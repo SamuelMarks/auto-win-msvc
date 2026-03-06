@@ -1,0 +1,6 @@
+{
+  "name": "posix-stat",
+  "version": "0.1.0",
+  "description": "POSIX compatibility layer for MSVC (posix-stat)",
+  "dependencies": []
+}

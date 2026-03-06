@@ -1,0 +1,61 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "utime",
+        "source_header": "<utime.h>",
+        "requires_polyfill": false,
+        "msvc": "_utime",
+        "shim": {
+          "type": "macro",
+          "code": "#define utime _utime"
+        }
+      },
+      {
+        "posix": "tzset",
+        "source_header": "<time.h>",
+        "requires_polyfill": false,
+        "msvc": "_tzset",
+        "shim": {
+          "type": "macro",
+          "code": "#define tzset _tzset"
+        }
+      },
+      {
+        "posix": "getitimer",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "gettimeofday",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true,
+        "windows_api": "GetSystemTimeAsFileTime"
+      },
+      {
+        "posix": "setitimer",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "utimes",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true,
+        "windows_api": "SetFileTime"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct timespec",
+        "source_header": "<time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct timeval",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}
