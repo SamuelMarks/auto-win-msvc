@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup MinGW (MSYS2)
         if: matrix.env == 'mingw'
@@ -66,9 +66,13 @@ jobs:
 
       - name: Setup Cygwin
         if: matrix.env == 'cygwin'
-        uses: cygwin/cygwin-install-action@v4
+        uses: cygwin/cygwin-install-action@v6
         with:
-          packages: cmake,gcc-core,gcc-g++,make
+          packages: |
+            cmake
+            gcc-core
+            gcc-g++
+            make
 
       # - name: Build MSVC 2005
       #   if: matrix.env == 'msvc-2005'
