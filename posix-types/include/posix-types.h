@@ -6,12 +6,35 @@
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
+#if defined(_WIN32) && !defined(__CYGWIN__)
+
 #include <sys/types.h>
 #include <basetsd.h>
-#include <winsock2.h>
-#include <ws2def.h>
 #include <time.h>
+
+#if defined(__MINGW32__)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+/* MinGW natively provides these types, so we prevent redefining them. */
+#define _PID_T_DEFINED
+#define _SSIZE_T_DEFINED
+#define _MODE_T_DEFINED
+#define _OFF_T_DEFINED
+#define _OFF64_T_DEFINED
+#define _USECONDS_T_DEFINED
+#define _DEV_T_DEFINED
+#define _INO_T_DEFINED
+#define _SOCKLEN_T_DEFINED
+#define _CLOCK_T_DEFINED
+#define _TIME_T_DEFINED
+#define _CLOCKID_T_DEFINED
+#endif
+
+#if defined(__GNUC__)
+#define POSIX_TYPES_EXTENSION __extension__
+#else
+#define POSIX_TYPES_EXTENSION
+#endif
 
 /**
  * @brief Process ID type.
@@ -132,11 +155,11 @@ typedef int socklen_t;
 
 /**
  * @brief Socket address family type.
- * MSVC defines this as ADDRESS_FAMILY.
+ * MSVC defines ADDRESS_FAMILY as unsigned short.
  */
 #ifndef _SA_FAMILY_T_DEFINED
 #define _SA_FAMILY_T_DEFINED
-typedef ADDRESS_FAMILY sa_family_t;
+typedef unsigned short sa_family_t;
 #endif
 
 /**
@@ -208,7 +231,7 @@ typedef int clockid_t;
  */
 #ifndef _FSBLKCNT_T_DEFINED
 #define _FSBLKCNT_T_DEFINED
-typedef unsigned long long fsblkcnt_t;
+POSIX_TYPES_EXTENSION typedef unsigned long long fsblkcnt_t;
 #endif
 
 /**
@@ -217,7 +240,7 @@ typedef unsigned long long fsblkcnt_t;
  */
 #ifndef _FSFILCNT_T_DEFINED
 #define _FSFILCNT_T_DEFINED
-typedef unsigned long long fsfilcnt_t;
+POSIX_TYPES_EXTENSION typedef unsigned long long fsfilcnt_t;
 #endif
 
 /**
@@ -241,9 +264,15 @@ typedef long blkcnt_t;
 #else /* ! _MSC_VER */
 
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef __MINGW32__
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#endif
 
 #endif /* _MSC_VER */
 

@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /WX /D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/W4 /WX /wd4127)
 else()
     add_compile_options(-Wall -Wextra -Werror -pedantic)
 endif()

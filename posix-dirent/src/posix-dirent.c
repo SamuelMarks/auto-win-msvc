@@ -2,34 +2,51 @@
 #include "posix-dirent.h"
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <io.h>
+#include <sys/types.h>
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <stdint.h>
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+/* MSVC 2005+ */
+#include <stddef.h>
+#else
+/* Older MSVC */
+#ifndef intptr_t
+typedef long intptr_t;
+#endif
+#endif
+
+/* Provide NUM_FORMAT for C89 / MSVC variations, though not strictly needed here for standard strings */
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%lld"
+#endif
 
 struct DIR {
-    HANDLE handle;
-    WIN32_FIND_DATAA find_data;
+    intptr_t handle;
+    struct _finddata_t find_data;
     struct dirent entry;
     int first_read;
     long offset;
-    char *name; /* Store the original directory name for rewinddir */
+    char *name; /* Store original search name for rewinddir */
 };
 
-/* Helper function to determine d_type from WIN32_FIND_DATAA */
-static unsigned char get_d_type(DWORD dwFileAttributes) {
-    if (dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        return DT_LNK;
+/* Helper function to determine d_type. Returns int (exit code). */
+static int get_d_type(unsigned attrib, unsigned char *out_type) {
+    if (!out_type) return -1;
+    if (attrib & _A_SUBDIR) {
+        *out_type = DT_DIR;
+    } else {
+        *out_type = DT_REG;
     }
-    if (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-        return DT_DIR;
-    }
-    return DT_REG;
+    return 0;
 }
 
-/**
- * @brief Opens a directory stream.
- */
 DIR *opendir(const char *name) {
     DIR *dirp;
     char *search_path;
@@ -74,10 +91,10 @@ DIR *opendir(const char *name) {
 #endif
     }
 
-    dirp->handle = FindFirstFileA(search_path, &dirp->find_data);
+    dirp->handle = _findfirst(search_path, &dirp->find_data);
     free(search_path);
 
-    if (dirp->handle == INVALID_HANDLE_VALUE) {
+    if (dirp->handle == -1) {
         free(dirp);
         errno = ENOENT;
         return NULL;
@@ -88,9 +105,7 @@ DIR *opendir(const char *name) {
     
     dirp->name = (char *)malloc(name_len + 1);
     if (!dirp->name) {
-        if (dirp->handle != INVALID_HANDLE_VALUE) {
-            FindClose(dirp->handle);
-        }
+        _findclose(dirp->handle);
         free(dirp);
         errno = ENOMEM;
         return NULL;
@@ -105,9 +120,6 @@ DIR *opendir(const char *name) {
     return dirp;
 }
 
-/**
- * @brief Reads a directory entry.
- */
 struct dirent *readdir(DIR *dirp) {
     if (!dirp) {
         errno = EBADF;
@@ -115,7 +127,7 @@ struct dirent *readdir(DIR *dirp) {
     }
 
     if (!dirp->first_read) {
-        if (!FindNextFileA(dirp->handle, &dirp->find_data)) {
+        if (_findnext(dirp->handle, &dirp->find_data) != 0) {
             return NULL;
         }
     } else {
@@ -125,29 +137,28 @@ struct dirent *readdir(DIR *dirp) {
     dirp->entry.d_ino = 0;
     dirp->entry.d_off = dirp->offset++;
     dirp->entry.d_reclen = 0;
-    dirp->entry.d_type = get_d_type(dirp->find_data.dwFileAttributes);
+    
+    get_d_type(dirp->find_data.attrib, &dirp->entry.d_type);
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    strncpy_s(dirp->entry.d_name, sizeof(dirp->entry.d_name), dirp->find_data.cFileName, _TRUNCATE);
+    /* Handle _TRUNCATE safely for C89 or older if needed, _TRUNCATE is available with secure CRT */
+    strncpy_s(dirp->entry.d_name, sizeof(dirp->entry.d_name), dirp->find_data.name, _TRUNCATE);
 #else
-    strncpy(dirp->entry.d_name, dirp->find_data.cFileName, sizeof(dirp->entry.d_name) - 1);
+    strncpy(dirp->entry.d_name, dirp->find_data.name, sizeof(dirp->entry.d_name) - 1);
     dirp->entry.d_name[sizeof(dirp->entry.d_name) - 1] = '\0';
 #endif
 
     return &dirp->entry;
 }
 
-/**
- * @brief Closes a directory stream.
- */
 int closedir(DIR *dirp) {
     if (!dirp) {
         errno = EBADF;
         return -1;
     }
 
-    if (dirp->handle != INVALID_HANDLE_VALUE) {
-        FindClose(dirp->handle);
+    if (dirp->handle != -1) {
+        _findclose(dirp->handle);
     }
     
     if (dirp->name) {
@@ -158,17 +169,14 @@ int closedir(DIR *dirp) {
     return 0;
 }
 
-/**
- * @brief Rewinds a directory stream.
- */
 void rewinddir(DIR *dirp) {
     char *search_path;
     size_t name_len;
 
     if (!dirp || !dirp->name) return;
 
-    if (dirp->handle != INVALID_HANDLE_VALUE) {
-        FindClose(dirp->handle);
+    if (dirp->handle != -1) {
+        _findclose(dirp->handle);
     }
 
     name_len = strlen(dirp->name);
@@ -195,24 +203,18 @@ void rewinddir(DIR *dirp) {
 #endif
     }
 
-    dirp->handle = FindFirstFileA(search_path, &dirp->find_data);
+    dirp->handle = _findfirst(search_path, &dirp->find_data);
     free(search_path);
 
     dirp->first_read = 1;
     dirp->offset = 0;
 }
 
-/**
- * @brief Returns the current location in the directory stream.
- */
 long telldir(DIR *dirp) {
     if (!dirp) return -1;
     return dirp->offset;
 }
 
-/**
- * @brief Seeks to a specific location in the directory stream.
- */
 void seekdir(DIR *dirp, long loc) {
     if (!dirp) return;
 
@@ -222,9 +224,6 @@ void seekdir(DIR *dirp, long loc) {
     }
 }
 
-/**
- * @brief Scans a directory for entries.
- */
 int scandir(const char *dirp, struct dirent ***namelist,
             int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **)) {
@@ -283,14 +282,9 @@ int scandir(const char *dirp, struct dirent ***namelist,
     return (int)count;
 }
 
-/**
- * @brief Compares two directory entries for sorting alphabetically.
- */
 int alphasort(const struct dirent **a, const struct dirent **b) {
     return strcmp((*a)->d_name, (*b)->d_name);
 }
 #else
-/* When building on a non-Windows platform where this file might be compiled, 
-   we can just leave it empty or provide dummy implementations to avoid empty translation unit warnings. */
 typedef int dummy_posix_dirent;
 #endif /* _WIN32 */

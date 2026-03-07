@@ -1,74 +1,125 @@
 /* test.c - 100% Test Coverage */
+#if defined(_MSC_VER)
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#endif
+
+#if !defined(_XOPEN_SOURCE)
+#define _XOPEN_SOURCE 700
+#endif
+#if !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> /* for memset */
 #include "posix-wait.h"
 #include "greatest.h"
 
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%d"
+#else
+#define NUM_FORMAT "%d"
+#endif
+
 #ifdef _WIN32
+
+#if defined(_M_AMD64) && !defined(_AMD64_)
+#define _AMD64_
+#elif defined(_M_IX86) && !defined(_X86_)
+#define _X86_
+#elif defined(_M_ARM64) && !defined(_ARM64_)
+#define _ARM64_
+#elif defined(_M_ARM) && !defined(_ARM_)
+#define _ARM_
+#endif
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#else
+#include <minwindef.h>
+#include <processthreadsapi.h>
+#include <synchapi.h>
+#include <handleapi.h>
+#endif
+
+#ifndef CREATE_NO_WINDOW
+#define CREATE_NO_WINDOW 0x08000000
+#endif
+
 #else
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif
 
-pid_t spawn_child(int exit_code) {
+int spawn_child(int exit_code, pid_t *out_pid) {
 #ifdef _WIN32
-    STARTUPINFO si;
+    STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     char cmd[256];
 
-    ZeroMemory(&si, sizeof(si));
+    memset(&si, 0, sizeof(si));
     si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
+    memset(&pi, 0, sizeof(pi));
 
+#if defined(_MSC_VER)
     sprintf_s(cmd, sizeof(cmd), "cmd.exe /c exit %d", exit_code);
+#else
+    sprintf(cmd, "cmd.exe /c exit %d", exit_code);
+#endif
 
-    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        return -1;
+    if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        return 1;
     }
     CloseHandle(pi.hThread);
-    return (pid_t)pi.dwProcessId;
+    *out_pid = (pid_t)pi.dwProcessId;
+    return 0;
 #else
     pid_t pid = fork();
+    if (pid < 0) return 1;
     if (pid == 0) {
         exit(exit_code);
     }
-    return pid;
+    *out_pid = pid;
+    return 0;
 #endif
 }
 
 TEST test_waitpid_basic(void) {
     int status = 0;
-    pid_t pid = spawn_child(42);
+    pid_t pid = -1;
     pid_t res;
+    ASSERT_EQ(0, spawn_child(42, &pid));
     ASSERT(pid > 0);
 
     res = waitpid(pid, &status, 0);
-    ASSERT_EQ_FMT(pid, res, "%d");
+    ASSERT_EQ_FMT(pid, res, NUM_FORMAT);
     ASSERT(WIFEXITED(status));
-    ASSERT_EQ_FMT(42, WEXITSTATUS(status), "%d");
+    ASSERT_EQ_FMT(42, WEXITSTATUS(status), NUM_FORMAT);
     PASS();
 }
 
 TEST test_waitpid_nohang(void) {
     int status = 0;
+    pid_t pid = -1, res;
 #ifdef _WIN32
-    STARTUPINFO si;
+    STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     char cmd[] = "ping 127.0.0.1 -n 2";
-    pid_t pid, res;
 
-    ZeroMemory(&si, sizeof(si));
+    memset(&si, 0, sizeof(si));
     si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
+    memset(&pi, 0, sizeof(pi));
 
-    CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+    CreateProcessA(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
     CloseHandle(pi.hThread);
     pid = (pid_t)pi.dwProcessId;
 #else
-    pid_t pid = fork();
-    pid_t res;
+    pid = fork();
     if (pid == 0) {
         sleep(1);
         exit(0);
@@ -76,18 +127,19 @@ TEST test_waitpid_nohang(void) {
 #endif
 
     res = waitpid(pid, &status, WNOHANG);
-    ASSERT_EQ_FMT(0, res, "%d");
+    ASSERT_EQ_FMT(0, res, NUM_FORMAT);
 
     res = waitpid(pid, &status, 0);
-    ASSERT_EQ_FMT(pid, res, "%d");
+    ASSERT_EQ_FMT(pid, res, NUM_FORMAT);
 
     PASS();
 }
 
 TEST test_waitid_basic(void) {
     siginfo_t info;
-    pid_t pid = spawn_child(55);
+    pid_t pid = -1;
     int res;
+    ASSERT_EQ(0, spawn_child(55, &pid));
     ASSERT(pid > 0);
 
 #ifdef _WIN32
@@ -96,25 +148,26 @@ TEST test_waitid_basic(void) {
     res = waitid(P_PID, (id_t)pid, &info, WEXITED);
 #endif
 
-    ASSERT_EQ_FMT(0, res, "%d");
-    ASSERT_EQ_FMT(pid, info.si_pid, "%d");
-    ASSERT_EQ_FMT(55, info.si_status, "%d");
+    ASSERT_EQ_FMT(0, res, NUM_FORMAT);
+    ASSERT_EQ_FMT(pid, info.si_pid, NUM_FORMAT);
+    ASSERT_EQ_FMT(55, info.si_status, NUM_FORMAT);
 #ifdef _WIN32
-    ASSERT_EQ_FMT(1, info.si_code, "%d");
+    ASSERT_EQ_FMT(1, info.si_code, NUM_FORMAT);
 #endif
     PASS();
 }
 
 TEST test_cwait_basic(void) {
     int status = 0;
-    pid_t pid = spawn_child(99);
+    pid_t pid = -1;
     pid_t res;
+    ASSERT_EQ(0, spawn_child(99, &pid));
     ASSERT(pid > 0);
 
     res = cwait(&status, pid, 0);
-    ASSERT_EQ_FMT(pid, res, "%d");
+    ASSERT_EQ_FMT(pid, res, NUM_FORMAT);
     ASSERT(WIFEXITED(status));
-    ASSERT_EQ_FMT(99, WEXITSTATUS(status), "%d");
+    ASSERT_EQ_FMT(99, WEXITSTATUS(status), NUM_FORMAT);
     PASS();
 }
 
@@ -122,18 +175,19 @@ TEST test_wait_basic(void) {
 #ifdef _WIN32
     int status = 0;
     pid_t res = wait(&status);
-    ASSERT_EQ_FMT(-1, res, "%d");
+    ASSERT_EQ_FMT(-1, res, NUM_FORMAT);
 #else
     int status = 0;
-    pid_t pid = spawn_child(33);
+    pid_t pid = -1;
     pid_t res;
+    ASSERT_EQ(0, spawn_child(33, &pid));
     ASSERT(pid > 0);
 
     res = wait(&status);
     while (res > 0 && res != pid) {
         res = wait(&status);
     }
-    ASSERT_EQ_FMT(pid, res, "%d");
+    ASSERT_EQ_FMT(pid, res, NUM_FORMAT);
     ASSERT(WIFEXITED(status));
 #endif
     PASS();
@@ -142,7 +196,7 @@ TEST test_wait_basic(void) {
 TEST test_waitpid_invalid(void) {
     int status = 0;
     pid_t res = waitpid(-9999, &status, 0);
-    ASSERT_EQ_FMT(-1, res, "%d");
+    ASSERT_EQ_FMT(-1, res, NUM_FORMAT);
     PASS();
 }
 
@@ -150,7 +204,7 @@ TEST test_waitid_invalid(void) {
 #ifdef _WIN32
     siginfo_t info;
     int res = waitid(P_PGID, 0, &info, WEXITED);
-    ASSERT_EQ_FMT(-1, res, "%d");
+    ASSERT_EQ_FMT(-1, res, NUM_FORMAT);
 #endif
     PASS();
 }
@@ -172,4 +226,3 @@ int main(int argc, char **argv) {
     RUN_SUITE(wait_suite);
     GREATEST_MAIN_END();
 }
-

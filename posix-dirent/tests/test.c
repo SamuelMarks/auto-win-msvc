@@ -1,4 +1,13 @@
 /* test.c - 100% Test Coverage */
+#if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#endif
+
 #include "greatest.h"
 #include "posix-dirent.h"
 

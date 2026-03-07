@@ -1,4 +1,4 @@
-/* posix-syslog.c - Strict C89 Implementation */
+﻿/* posix-syslog.c - Strict C89 Implementation */
 #include "posix-syslog.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,12 +6,36 @@
 #include <stdarg.h>
 
 #ifdef _WIN32
-#include <windows.h>
+/* Typedefs to avoid including windows.h */
+typedef void *WIN_HANDLE;
+typedef unsigned short WIN_WORD;
+typedef unsigned long WIN_DWORD;
+typedef const char *WIN_LPCSTR;
+typedef void *WIN_PSID;
+
+#define WIN_EVENTLOG_ERROR_TYPE       0x0001
+#define WIN_EVENTLOG_WARNING_TYPE     0x0002
+#define WIN_EVENTLOG_INFORMATION_TYPE 0x0004
+
+/* Declarations for Advapi32 functions */
+__declspec(dllimport) WIN_HANDLE __stdcall RegisterEventSourceA(WIN_LPCSTR lpUNCServerName, WIN_LPCSTR lpSourceName);
+__declspec(dllimport) int __stdcall DeregisterEventSource(WIN_HANDLE hEventLog);
+__declspec(dllimport) int __stdcall ReportEventA(
+    WIN_HANDLE hEventLog,
+    WIN_WORD wType,
+    WIN_WORD wCategory,
+    WIN_DWORD dwEventID,
+    WIN_PSID lpUserSid,
+    WIN_WORD wNumStrings,
+    WIN_DWORD dwDataSize,
+    WIN_LPCSTR *lpStrings,
+    void *lpRawData
+);
 #endif
 
 /* Global state */
 #ifdef _WIN32
-static void* g_EventSource = NULL; /* Used as HANDLE in Windows */
+static WIN_HANDLE g_EventSource = NULL;
 #endif
 static char* g_Ident = NULL;
 static int g_LogOpt = 0;
@@ -21,7 +45,7 @@ static int g_LogMask = 0xFF; /* All priorities by default */
 void closelog(void) {
 #ifdef _WIN32
     if (g_EventSource != NULL) {
-        DeregisterEventSource((HANDLE)g_EventSource);
+        DeregisterEventSource(g_EventSource);
         g_EventSource = NULL;
     }
 #endif
@@ -35,10 +59,11 @@ void openlog(const char *ident, int option, int facility) {
     closelog(); /* Clean up previous state if any */
 
     if (ident != NULL) {
-        size_t len = strlen(ident);
+        size_t len;
+        len = strlen(ident);
         g_Ident = (char*)malloc(len + 1);
         if (g_Ident != NULL) {
-#if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER >= 1400
+#if defined(_MSC_VER) && _MSC_VER >= 1400
             strncpy_s(g_Ident, len + 1, ident, _TRUNCATE);
 #else
             strncpy(g_Ident, ident, len + 1);
@@ -52,7 +77,7 @@ void openlog(const char *ident, int option, int facility) {
 
 #ifdef _WIN32
     if (g_LogOpt & LOG_NDELAY) {
-        g_EventSource = (void*)RegisterEventSourceA(NULL, g_Ident ? g_Ident : "Application");
+        g_EventSource = RegisterEventSourceA(NULL, g_Ident != NULL ? g_Ident : "Application");
     }
 #endif
 }
@@ -72,8 +97,8 @@ void syslog(int priority, const char *format, ...) {
     int written = 0;
 
 #ifdef _WIN32
-    WORD eventType;
-    const char* strings[1];
+    WIN_WORD eventType;
+    WIN_LPCSTR strings[1];
 #endif
 
     if (!(g_LogMask & LOG_MASK(prio))) {
@@ -86,7 +111,7 @@ void syslog(int priority, const char *format, ...) {
 #elif defined(_MSC_VER)
     written = _vsnprintf(buffer, sizeof(buffer), format, args);
 #else
-    /* Fallback for other platforms, though this focuses on MSVC */
+    /* Fallback for other platforms */
     written = vsprintf(buffer, format, args);
 #endif
     va_end(args);
@@ -97,7 +122,7 @@ void syslog(int priority, const char *format, ...) {
 
     /* Print to stderr if LOG_PERROR is set */
     if (g_LogOpt & LOG_PERROR) {
-        fprintf(stderr, "%s%s%s\n", g_Ident ? g_Ident : "", g_Ident ? ": " : "", buffer);
+        fprintf(stderr, "%s%s%s\n", g_Ident != NULL ? g_Ident : "", g_Ident != NULL ? ": " : "", buffer);
     }
 
 #ifdef _WIN32
@@ -108,25 +133,25 @@ void syslog(int priority, const char *format, ...) {
         case LOG_ALERT:
         case LOG_CRIT:
         case LOG_ERR:
-            eventType = EVENTLOG_ERROR_TYPE;
+            eventType = WIN_EVENTLOG_ERROR_TYPE;
             break;
         case LOG_WARNING:
-            eventType = EVENTLOG_WARNING_TYPE;
+            eventType = WIN_EVENTLOG_WARNING_TYPE;
             break;
         case LOG_NOTICE:
         case LOG_INFO:
         case LOG_DEBUG:
         default:
-            eventType = EVENTLOG_INFORMATION_TYPE;
+            eventType = WIN_EVENTLOG_INFORMATION_TYPE;
             break;
     }
 
     if (g_EventSource == NULL) {
-        g_EventSource = (void*)RegisterEventSourceA(NULL, g_Ident ? g_Ident : "Application");
+        g_EventSource = RegisterEventSourceA(NULL, g_Ident != NULL ? g_Ident : "Application");
     }
 
     if (g_EventSource != NULL) {
-        ReportEventA((HANDLE)g_EventSource, eventType, 0, 0, NULL, 1, 0, strings, NULL);
+        ReportEventA(g_EventSource, eventType, 0, 0, NULL, 1, 0, strings, NULL);
     }
 #else
     /* Non-Windows stub */

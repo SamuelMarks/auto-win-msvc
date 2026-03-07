@@ -3,6 +3,10 @@
  * @brief Test suite for posix-utsname.
  */
 
+#if defined(_MSC_VER)
+#pragma warning(disable : 4127) /* conditional expression is constant */
+#endif
+
 #include "greatest.h"
 #include "posix-utsname.h"
 #include <string.h>
@@ -36,7 +40,7 @@ TEST test_uname_valid(void) {
     memset(&name, 0, sizeof(struct utsname));
     res = uname(&name);
     
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
     ASSERT_EQ(0, res);
     
     /* Ensure strings are not empty and null terminated */

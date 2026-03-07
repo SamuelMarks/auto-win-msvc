@@ -7,9 +7,100 @@
 #include "posix-spawn.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#include <windows.h>
 #include <io.h>
 #include <fcntl.h>
+
+#ifndef O_ACCMODE
+#define O_ACCMODE (_O_RDONLY | _O_WRONLY | _O_RDWR)
+#endif
+
+/* Forward declarations to replace <windows.h> */
+#define WINAPI __stdcall
+#define TRUE 1
+#define FALSE 0
+#define INVALID_HANDLE_VALUE ((void *)(size_t)-1)
+#define STD_INPUT_HANDLE ((unsigned int)-10)
+#define STD_OUTPUT_HANDLE ((unsigned int)-11)
+#define STD_ERROR_HANDLE ((unsigned int)-12)
+
+typedef unsigned long DWORD;
+typedef int BOOL;
+typedef void *HANDLE;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef void *LPVOID;
+
+typedef struct _SECURITY_ATTRIBUTES {
+    DWORD nLength;
+    LPVOID lpSecurityDescriptor;
+    BOOL bInheritHandle;
+} SECURITY_ATTRIBUTES, *PSECURITY_ATTRIBUTES, *LPSECURITY_ATTRIBUTES;
+
+typedef struct _STARTUPINFOA {
+    DWORD   cb;
+    char *  lpReserved;
+    char *  lpDesktop;
+    char *  lpTitle;
+    DWORD   dwX;
+    DWORD   dwY;
+    DWORD   dwXSize;
+    DWORD   dwYSize;
+    DWORD   dwXCountChars;
+    DWORD   dwYCountChars;
+    DWORD   dwFillAttribute;
+    DWORD   dwFlags;
+    WORD    wShowWindow;
+    WORD    cbReserved2;
+    BYTE *  lpReserved2;
+    HANDLE  hStdInput;
+    HANDLE  hStdOutput;
+    HANDLE  hStdError;
+} STARTUPINFOA, *LPSTARTUPINFOA;
+
+typedef struct _PROCESS_INFORMATION {
+    HANDLE hProcess;
+    HANDLE hThread;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
+} PROCESS_INFORMATION, *PPROCESS_INFORMATION, *LPPROCESS_INFORMATION;
+
+#define CREATE_NEW_PROCESS_GROUP 0x00000200
+#define STARTF_USESTDHANDLES 0x00000100
+#define FILE_SHARE_READ 0x00000001
+#define FILE_SHARE_WRITE 0x00000002
+#define GENERIC_READ 0x80000000L
+#define GENERIC_WRITE 0x40000000L
+#define CREATE_NEW 1
+#define CREATE_ALWAYS 2
+#define OPEN_EXISTING 3
+#define OPEN_ALWAYS 4
+#define TRUNCATE_EXISTING 5
+#define FILE_ATTRIBUTE_NORMAL 0x00000080
+
+__declspec(dllimport) HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
+__declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
+__declspec(dllimport) HANDLE WINAPI CreateFileA(
+    const char *lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+);
+__declspec(dllimport) BOOL WINAPI CreateProcessA(
+    const char *lpApplicationName,
+    char *lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    const char *lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+);
+
 #endif
 
 /* File Action Types */
@@ -51,9 +142,9 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
     return 0;
 }
 
-static posix_spawn_action_t *add_action(posix_spawn_file_actions_t *file_actions) {
+static int add_action(posix_spawn_file_actions_t *file_actions, posix_spawn_action_t **out_action) {
     posix_spawn_action_t *new_action = (posix_spawn_action_t *)malloc(sizeof(posix_spawn_action_t));
-    if (!new_action) return NULL;
+    if (!new_action) return ENOMEM;
     new_action->next = NULL;
     new_action->path = NULL;
 
@@ -66,15 +157,17 @@ static posix_spawn_action_t *add_action(posix_spawn_file_actions_t *file_actions
         }
         curr->next = new_action;
     }
-    return new_action;
+    *out_action = new_action;
+    return 0;
 }
 
 int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, int fildes) {
     posix_spawn_action_t *action;
+    int err;
     if (fildes < 0) return EBADF;
     if (!file_actions) return EINVAL;
-    action = add_action(file_actions);
-    if (!action) return ENOMEM;
+    err = add_action(file_actions, &action);
+    if (err != 0) return err;
     action->type = POSIX_SPAWN_ACTION_CLOSE;
     action->fd = fildes;
     return 0;
@@ -82,10 +175,11 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, 
 
 int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, int fildes, int newfildes) {
     posix_spawn_action_t *action;
+    int err;
     if (fildes < 0 || newfildes < 0) return EBADF;
     if (!file_actions) return EINVAL;
-    action = add_action(file_actions);
-    if (!action) return ENOMEM;
+    err = add_action(file_actions, &action);
+    if (err != 0) return err;
     action->type = POSIX_SPAWN_ACTION_DUP2;
     action->fd = fildes;
     action->new_fd = newfildes;
@@ -94,18 +188,22 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, i
 
 int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions, int fildes, const char *path, int oflag, mode_t mode) {
     posix_spawn_action_t *action;
+    int err;
     if (fildes < 0) return EBADF;
     if (!path || !file_actions) return EINVAL;
-    action = add_action(file_actions);
-    if (!action) return ENOMEM;
+    err = add_action(file_actions, &action);
+    if (err != 0) return err;
     action->type = POSIX_SPAWN_ACTION_OPEN;
     action->fd = fildes;
     action->path = (char*)malloc(strlen(path) + 1);
     if (!action->path) {
-        /* Not removing from list to keep code simple but real impl should clean up. */
         return ENOMEM;
     }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    if (strcpy_s(action->path, strlen(path) + 1, path) != 0) return ENOMEM;
+#else
     strcpy(action->path, path);
+#endif
     action->oflag = oflag;
     action->mode = mode;
     return 0;
@@ -201,12 +299,15 @@ int posix_spawnattr_setsigmask(posix_spawnattr_t *attr, const sigset_t *sigmask)
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
-static size_t get_quoted_arg_len(const char *arg) {
+static int get_quoted_arg_len(const char *arg, size_t *out_len) {
     size_t len = 0;
     int needs_quotes = 0;
     const char *p;
 
-    if (!*arg) return 2; /* "" */
+    if (!*arg) {
+        *out_len = 2; /* "" */
+        return 0;
+    }
 
     for (p = arg; *p; ++p) {
         if (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\v' || *p == '\"') {
@@ -214,7 +315,10 @@ static size_t get_quoted_arg_len(const char *arg) {
         }
     }
 
-    if (!needs_quotes) return strlen(arg);
+    if (!needs_quotes) {
+        *out_len = strlen(arg);
+        return 0;
+    }
 
     len += 2;
     for (p = arg; *p; ++p) {
@@ -236,10 +340,11 @@ static size_t get_quoted_arg_len(const char *arg) {
             len++;
         }
     }
-    return len;
+    *out_len = len;
+    return 0;
 }
 
-static void quote_arg(char **dest, const char *arg) {
+static int quote_arg(char **dest, const char *arg) {
     int needs_quotes = 0;
     const char *p;
     char *d = *dest;
@@ -248,7 +353,7 @@ static void quote_arg(char **dest, const char *arg) {
         *d++ = '\"';
         *d++ = '\"';
         *dest = d;
-        return;
+        return 0;
     }
 
     for (p = arg; *p; ++p) {
@@ -262,7 +367,7 @@ static void quote_arg(char **dest, const char *arg) {
             *d++ = *arg++;
         }
         *dest = d;
-        return;
+        return 0;
     }
 
     *d++ = '\"';
@@ -292,21 +397,24 @@ static void quote_arg(char **dest, const char *arg) {
     }
     *d++ = '\"';
     *dest = d;
+    return 0;
 }
 
-static char *create_cmdline(char *const argv[]) {
+static int create_cmdline(char *const argv[], char **out_cmdline) {
     size_t total_len = 0;
     int i;
     char *cmdline, *p;
 
-    if (!argv || !argv[0]) return NULL;
+    if (!argv || !argv[0]) return EINVAL;
 
     for (i = 0; argv[i]; ++i) {
-        total_len += get_quoted_arg_len(argv[i]) + 1;
+        size_t len = 0;
+        get_quoted_arg_len(argv[i], &len);
+        total_len += len + 1;
     }
 
     cmdline = (char *)malloc(total_len + 1);
-    if (!cmdline) return NULL;
+    if (!cmdline) return ENOMEM;
 
     p = cmdline;
     for (i = 0; argv[i]; ++i) {
@@ -317,15 +425,16 @@ static char *create_cmdline(char *const argv[]) {
     }
     *p = '\0';
 
-    return cmdline;
+    *out_cmdline = cmdline;
+    return 0;
 }
 
-static char *create_envblock(char *const envp[]) {
+static int create_envblock(char *const envp[], char **out_envblock) {
     size_t total_len = 0;
     int i;
     char *envblock, *p;
 
-    if (!envp) return NULL;
+    if (!envp) return EINVAL;
 
     for (i = 0; envp[i]; ++i) {
         total_len += strlen(envp[i]) + 1;
@@ -333,18 +442,23 @@ static char *create_envblock(char *const envp[]) {
     total_len += 1;
 
     envblock = (char *)malloc(total_len);
-    if (!envblock) return NULL;
+    if (!envblock) return ENOMEM;
 
     p = envblock;
     for (i = 0; envp[i]; ++i) {
         size_t len = strlen(envp[i]);
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        memcpy_s(p, total_len - (size_t)(p - envblock), envp[i], len);
+#else
         memcpy(p, envp[i], len);
+#endif
         p += len;
         *p++ = '\0';
     }
     *p = '\0';
 
-    return envblock;
+    *out_envblock = envblock;
+    return 0;
 }
 
 static int internal_posix_spawn(pid_t *pid, const char *path,
@@ -379,12 +493,10 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
         }
     }
 
-    cmdline = create_cmdline(argv);
-    if (!cmdline) return ENOMEM;
+    if (create_cmdline(argv, &cmdline) != 0) return ENOMEM;
 
     if (envp) {
-        envblock = create_envblock(envp);
-        if (!envblock) {
+        if (create_envblock(envp, &envblock) != 0) {
             free(cmdline);
             return ENOMEM;
         }
@@ -404,7 +516,6 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
                 DWORD dwCreationDisposition = OPEN_EXISTING;
                 HANDLE h;
                 
-                /* Simple flag mapping */
                 if ((action->oflag & O_ACCMODE) == O_RDONLY) dwDesiredAccess = GENERIC_READ;
                 else if ((action->oflag & O_ACCMODE) == O_WRONLY) dwDesiredAccess = GENERIC_WRITE;
                 else if ((action->oflag & O_ACCMODE) == O_RDWR) dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
@@ -432,7 +543,7 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
                 if (action->fd == 0) src = si.hStdInput;
                 else if (action->fd == 1) src = si.hStdOutput;
                 else if (action->fd == 2) src = si.hStdError;
-                else src = (HANDLE)_get_osfhandle(action->fd);
+                else src = (HANDLE)(size_t)_get_osfhandle(action->fd);
 
                 if (action->new_fd == 0) si.hStdInput = src;
                 else if (action->new_fd == 1) si.hStdOutput = src;
@@ -468,12 +579,11 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
     }
 
     if (!success) {
-        /* Simplistic error handling */
         return EIO;
     }
 
     if (pid) {
-        *pid = pi.dwProcessId;
+        *pid = (pid_t)pi.dwProcessId;
     }
 
     CloseHandle(pi.hThread);

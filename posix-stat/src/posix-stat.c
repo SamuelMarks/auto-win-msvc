@@ -1,13 +1,98 @@
-/* posix-stat.c - Strict C89 Implementation */
+﻿/* posix-stat.c - Strict C89 Implementation */
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wlong-long"
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <io.h>
-#include <direct.h>
-#include <windows.h>
 #include "posix-stat.h"
 
+#ifdef _WIN32
+#include <io.h>
+#include <direct.h>
+
+#define WINAPI __stdcall
+typedef void *HANDLE;
+typedef void *HMODULE;
+typedef unsigned long DWORD;
+typedef unsigned short WORD;
+typedef int BOOL;
+typedef char *LPSTR;
+
+#define MAX_PATH 260
+#define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#define FILE_ATTRIBUTE_READONLY 1
+#define FILE_ATTRIBUTE_NORMAL 128
+#define FILE_ATTRIBUTE_REPARSE_POINT 1024
+#define FILE_FLAG_BACKUP_SEMANTICS 0x02000000
+#define GENERIC_WRITE 0x40000000
+#define FILE_WRITE_ATTRIBUTES 0x0100
+#define CREATE_NEW 1
+#define OPEN_EXISTING 3
+#define ERROR_FILE_EXISTS 80
+#define FILE_SHARE_READ 1
+#define FILE_SHARE_WRITE 2
+#define FILE_SHARE_DELETE 4
+
+typedef struct _FILETIME {
+    DWORD dwLowDateTime;
+    DWORD dwHighDateTime;
+} FILETIME;
+
+typedef struct _SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+} SYSTEMTIME;
+
+typedef enum _GET_FILEEX_INFO_LEVELS {
+    GetFileExInfoStandard,
+    GetFileExMaxInfoLevel
+} GET_FILEEX_INFO_LEVELS;
+
+typedef struct _WIN32_FILE_ATTRIBUTE_DATA {
+    DWORD dwFileAttributes;
+    FILETIME ftCreationTime;
+    FILETIME ftLastAccessTime;
+    FILETIME ftLastWriteTime;
+    DWORD nFileSizeHigh;
+    DWORD nFileSizeLow;
+} WIN32_FILE_ATTRIBUTE_DATA;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+__declspec(dllimport) HMODULE WINAPI GetModuleHandleA(const char *lpModuleName);
+__declspec(dllimport) void *WINAPI GetProcAddress(HMODULE hModule, const char *lpProcName);
+__declspec(dllimport) DWORD WINAPI GetFileAttributesA(const char *lpFileName);
+__declspec(dllimport) BOOL WINAPI SetFileAttributesA(const char *lpFileName, DWORD dwFileAttributes);
+__declspec(dllimport) BOOL WINAPI GetFileAttributesExA(const char *lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, void *lpFileInformation);
+__declspec(dllimport) void WINAPI GetSystemTime(SYSTEMTIME *lpSystemTime);
+__declspec(dllimport) BOOL WINAPI SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
+__declspec(dllimport) BOOL WINAPI SetFileTime(HANDLE hFile, const FILETIME *lpCreationTime, const FILETIME *lpLastAccessTime, const FILETIME *lpLastWriteTime);
+__declspec(dllimport) HANDLE WINAPI CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void *lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+__declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
+__declspec(dllimport) DWORD WINAPI GetLastError(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _WIN32 */
+
+#ifdef _WIN32
 int fchmod(int fd, mode_t mode) {
     HANDLE hFile;
     HMODULE hKernel32;
@@ -28,7 +113,7 @@ int fchmod(int fd, mode_t mode) {
         return -1;
     }
 
-    pGetFinalPathName = (GetFinalPathNameByHandleA_t)GetProcAddress(hKernel32, "GetFinalPathNameByHandleA");
+    pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(hKernel32, "GetFinalPathNameByHandleA");
     if (!pGetFinalPathName) {
         errno = ENOSYS;
         return -1;
@@ -231,4 +316,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
 
     CloseHandle(hFile);
     return 0;
-}
+} 
+#endif 
+
+
+

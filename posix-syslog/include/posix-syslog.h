@@ -1,4 +1,4 @@
-/* posix-syslog.h - Strict C89 Header */
+﻿/* posix-syslog.h - Strict C89 Header */
 #ifndef POSIX_SYSLOG_H
 #define POSIX_SYSLOG_H
 
@@ -6,6 +6,13 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* Format specifier macro as requested */
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%d"
+#else
+#define NUM_FORMAT "%d"
 #endif
 
 /* Priorities */

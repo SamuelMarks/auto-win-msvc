@@ -1,4 +1,7 @@
 /* test.c - 100% Test Coverage Stubs */
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -6,8 +9,22 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _WIN32
 #include <io.h>
-#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+#ifndef _WIN32
+#define _open open
+#define _close close
+#define _unlink unlink
+#define _rmdir rmdir
+#define _O_RDONLY O_RDONLY
+#define _O_WRONLY O_WRONLY
+#define _O_CREAT O_CREAT
+#define _O_TRUNC O_TRUNC
+#endif
 
 #include "greatest.h"
 #include "posix-stat.h"
@@ -25,8 +42,9 @@ TEST test_stat(void) {
 TEST test_fstat(void) {
     struct stat st;
     int fd = _open("CMakeLists.txt", _O_RDONLY);
+    int res;
     ASSERT(fd >= 0);
-    int res = fstat(fd, &st);
+    res = fstat(fd, &st);
     ASSERT_EQ(0, res);
     ASSERT(S_ISREG(st.st_mode));
     _close(fd);
@@ -36,7 +54,7 @@ TEST test_fstat(void) {
 TEST test_mkdir_chmod_umask(void) {
     struct stat st;
     int res;
-    mode_t old_mask = umask(0022);
+    mode_t old_mask = (mode_t)umask(0022);
 
     res = mkdir("test_dir", 0755);
     if (res == -1 && errno == EEXIST) {

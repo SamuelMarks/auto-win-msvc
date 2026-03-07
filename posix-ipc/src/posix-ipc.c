@@ -1,7 +1,30 @@
 #ifdef _WIN32
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#if defined(_M_AMD64) && !defined(_AMD64_)
+#define _AMD64_
+#elif defined(_M_IX86) && !defined(_X86_)
+#define _X86_
+#elif defined(_M_ARM64) && !defined(_ARM64_)
+#define _ARM64_
+#elif defined(_M_ARM) && !defined(_ARM_)
+#define _ARM_
+#endif
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4201) /* nameless struct/union */
+#pragma warning(disable: 4214) /* bit field types other than int */
+#pragma warning(disable: 4244) /* possible loss of data */
+#endif
+#include <windef.h>
+#include <winbase.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "posix-ipc.h"
 
 /* Helper to generate a consistent hash from a file */
@@ -26,6 +49,14 @@ key_t ftok(const char *path, int id) {
     CloseHandle(hFile);
     return key;
 }
+
+#ifdef _MSC_VER
+#define NUM_FORMAT "%d"
+#define LU_FORMAT "%lu"
+#else
+#define NUM_FORMAT "%d"
+#define LU_FORMAT "%lu"
+#endif
 
 /* --------------------------------------------------------------------------
  * Shared Memory
@@ -82,15 +113,15 @@ int shmget(key_t key, size_t size, int shmflg) {
     if (key == IPC_PRIVATE) {
         static int priv_count = 0;
         #ifdef _MSC_VER
-        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_PRIV_%lu_%d", (unsigned long)GetCurrentProcessId(), priv_count++);
+        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT, (unsigned long)GetCurrentProcessId(), priv_count++);
 #else
-        sprintf(name, "Local\\SYSV_SHM_PRIV_%lu_%d", (unsigned long)GetCurrentProcessId(), priv_count++);
+        sprintf(name, "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT, (unsigned long)GetCurrentProcessId(), priv_count++);
 #endif
     } else {
         #ifdef _MSC_VER
-        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_%d", (int)key);
+        sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT, (int)key);
 #else
-        sprintf(name, "Local\\SYSV_SHM_%d", (int)key);
+        sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (int)key);
 #endif
     }
     
@@ -265,7 +296,7 @@ retry:
     
     if (can_apply) {
         for (i = 0; i < nsops; i++) {
-            sem->semvals[sops[i].sem_num] += sops[i].sem_op;
+            sem->semvals[sops[i].sem_num] = (short)(sem->semvals[sops[i].sem_num] + sops[i].sem_op);
         }
         SetEvent(sem->hEvent); /* wake up waiters */
         ReleaseMutex(sem->hMutex);
@@ -480,7 +511,11 @@ int msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg) {
     }
     
     if (msgsz > 0) {
+#ifdef _MSC_VER
+        memcpy_s(node->data, msgsz, (const char *)msgp + sizeof(long), msgsz);
+#else
         memcpy(node->data, (const char *)msgp + sizeof(long), msgsz);
+#endif
     }
     node->next = NULL;
 
@@ -577,7 +612,11 @@ retry:
     
     *(long *)msgp = found->msgtyp;
     if (copy_size > 0) {
+#ifdef _MSC_VER
+        memcpy_s((char *)msgp + sizeof(long), msgsz, found->data, copy_size);
+#else
         memcpy((char *)msgp + sizeof(long), found->data, copy_size);
+#endif
     }
     
     /* Remove from queue */
@@ -637,15 +676,15 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
         if (buf) {
             WaitForSingleObject(mq->hMutex, INFINITE);
             memset(buf, 0, sizeof(struct msqid_ds));
-            buf->msg_qbytes = mq->qbytes;
-            buf->msg_cbytes = mq->cbytes;
+            buf->msg_qbytes = (unsigned long)mq->qbytes;
+            buf->msg_cbytes = (unsigned long)mq->cbytes;
             ReleaseMutex(mq->hMutex);
             return 0;
         }
     } else if (cmd == IPC_SET) {
         if (buf) {
             WaitForSingleObject(mq->hMutex, INFINITE);
-            mq->qbytes = buf->msg_qbytes;
+            mq->qbytes = (size_t)buf->msg_qbytes;
             ReleaseMutex(mq->hMutex);
             return 0;
         }

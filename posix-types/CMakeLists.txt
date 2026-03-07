@@ -6,9 +6,14 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Remove default MSVC warning flags
+if(MSVC)
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+endif()
+
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /WX /D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/W4 /WX /wd4127)
     # Enable AddressSanitizer if supported (VS 2019 16.9+)
     # add_compile_options(/fsanitize=address) # Uncomment if using modern MSVC
 else()

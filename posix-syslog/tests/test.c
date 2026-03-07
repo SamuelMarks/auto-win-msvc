@@ -1,22 +1,22 @@
-/* test.c - 100% Test Coverage Stubs */
+﻿/* test.c - 100% Test Coverage Stubs */
+#ifdef _MSC_VER
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#endif
+
 #include "greatest.h"
 #include "posix-syslog.h"
 #include <stdio.h>
 #include <string.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 /* Test cases */
 
 TEST test_openlog_closelog(void) {
     openlog("test_ident", LOG_PID | LOG_NDELAY, LOG_USER);
     closelog();
-    
+
     openlog(NULL, LOG_PID | LOG_NDELAY, LOG_USER);
     closelog();
-    
+
     PASS();
 }
 
@@ -31,7 +31,7 @@ TEST test_syslog_output(void) {
     openlog("test_syslog", LOG_PERROR, LOG_USER);
     setlogmask(LOG_UPTO(LOG_DEBUG));
 
-    syslog(LOG_INFO, "This is an info message: %d", 42);
+    syslog(LOG_INFO, "This is an info message: " NUM_FORMAT, 42);
     syslog(LOG_ERR, "This is an error message: %s", "test");
     syslog(LOG_WARNING, "This is a warning message");
     syslog(LOG_EMERG, "This is an emergency");

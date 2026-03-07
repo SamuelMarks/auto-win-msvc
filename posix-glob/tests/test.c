@@ -32,7 +32,12 @@ TEST test_fnmatch_flags(void) {
 TEST test_glob_basic(void) {
     glob_t g;
     int ret;
+#if defined(_MSC_VER)
+    FILE *f;
+    fopen_s(&f, "test_dummy.txt", "w");
+#else
     FILE *f = fopen("test_dummy.txt", "w");
+#endif
     if (f) {
         fputs("dummy", f);
         fclose(f);
@@ -70,8 +75,15 @@ TEST test_glob_nomatch(void) {
 TEST test_glob_append(void) {
     glob_t g;
     int ret;
+#if defined(_MSC_VER)
+    FILE *f1;
+    FILE *f2;
+    fopen_s(&f1, "test_dummy1.txt", "w");
+    fopen_s(&f2, "test_dummy2.txt", "w");
+#else
     FILE *f1 = fopen("test_dummy1.txt", "w");
     FILE *f2 = fopen("test_dummy2.txt", "w");
+#endif
     if (f1) { fputs("dummy", f1); fclose(f1); }
     if (f2) { fputs("dummy", f2); fclose(f2); }
 
@@ -94,7 +106,11 @@ TEST test_glob_dooffs(void) {
     int ret;
     FILE *f;
     g.gl_offs = 2;
+#if defined(_MSC_VER)
+    fopen_s(&f, "test_dummy_offs.txt", "w");
+#else
     f = fopen("test_dummy_offs.txt", "w");
+#endif
     if (f) { fputs("dummy", f); fclose(f); }
 
     ret = glob("test_dummy_offs.txt", GLOB_DOOFFS, NULL, &g);

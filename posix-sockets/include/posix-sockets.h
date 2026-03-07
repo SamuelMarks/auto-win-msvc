@@ -56,10 +56,14 @@ struct msghdr {
 #ifdef _WIN32
 #ifndef _TIMESPEC_DEFINED
 #define _TIMESPEC_DEFINED
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <time.h>
+#else
 struct timespec {
     long tv_sec;
     long tv_nsec;
 };
+#endif
 #endif
 #endif /* _WIN32 */
 
@@ -305,12 +309,24 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 #define endnetent posix_endnetent
 #define endprotoent posix_endprotoent
 #define endservent posix_endservent
+#ifdef freeaddrinfo
+#undef freeaddrinfo
+#endif
 #define freeaddrinfo posix_freeaddrinfo
+#ifdef gai_strerror
+#undef gai_strerror
+#endif
 #define gai_strerror posix_gai_strerror
+#ifdef getaddrinfo
+#undef getaddrinfo
+#endif
 #define getaddrinfo posix_getaddrinfo
 #define gethostbyaddr posix_gethostbyaddr
 #define gethostbyname posix_gethostbyname
 #define gethostent posix_gethostent
+#ifdef getnameinfo
+#undef getnameinfo
+#endif
 #define getnameinfo posix_getnameinfo
 #define getnetbyaddr posix_getnetbyaddr
 #define getnetbyname posix_getnetbyname

@@ -5,6 +5,8 @@
 
 #include "posix-utsname.h"
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifndef EFAULT
 #define EFAULT 14
@@ -14,38 +16,92 @@
 #define ENOSYS 38
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <stdio.h>
-#include <string.h>
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 
 /* Use safe CRT functions if available */
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define USE_SAFE_CRT
 #endif
 
-#ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM 5
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#ifndef PROCESSOR_ARCHITECTURE_ARM64
-#define PROCESSOR_ARCHITECTURE_ARM64 12
+#if defined(_MSC_VER)
+#define UTS_WINAPI __stdcall
+#define UTS_DECLSPEC_IMPORT __declspec(dllimport)
+#else
+#define UTS_WINAPI __attribute__((stdcall))
+#define UTS_DECLSPEC_IMPORT __attribute__((dllimport))
 #endif
 
-typedef struct _RTL_OSVERSIONINFOW {
-    ULONG dwOSVersionInfoSize;
-    ULONG dwMajorVersion;
-    ULONG dwMinorVersion;
-    ULONG dwBuildNumber;
-    ULONG dwPlatformId;
-    WCHAR szCSDVersion[128];
-} RTL_OSVERSIONINFOW;
+typedef unsigned long UTS_DWORD;
+typedef unsigned short UTS_WORD;
+typedef int UTS_BOOL;
+typedef void *UTS_HANDLE;
+typedef UTS_HANDLE UTS_HMODULE;
+typedef const char *UTS_LPCSTR;
+typedef char *UTS_LPSTR;
+typedef UTS_DWORD *UTS_LPDWORD;
+typedef long UTS_LONG;
+typedef unsigned short UTS_WCHAR;
+typedef unsigned long UTS_ULONG;
 
-typedef LONG (WINAPI *RtlGetVersion_Func)(RTL_OSVERSIONINFOW*);
+typedef struct _UTS_OSVERSIONINFOA {
+    UTS_DWORD dwOSVersionInfoSize;
+    UTS_DWORD dwMajorVersion;
+    UTS_DWORD dwMinorVersion;
+    UTS_DWORD dwBuildNumber;
+    UTS_DWORD dwPlatformId;
+    char      szCSDVersion[128];
+} UTS_OSVERSIONINFOA;
+
+typedef struct _UTS_SYSTEM_INFO {
+    union {
+        UTS_DWORD dwOemId;
+        struct {
+            UTS_WORD wProcessorArchitecture;
+            UTS_WORD wReserved;
+        } s;
+    } u;
+    UTS_DWORD dwPageSize;
+    void      *lpMinimumApplicationAddress;
+    void      *lpMaximumApplicationAddress;
+    UTS_DWORD *dwActiveProcessorMask;
+    UTS_DWORD dwNumberOfProcessors;
+    UTS_DWORD dwProcessorType;
+    UTS_DWORD dwAllocationGranularity;
+    UTS_WORD  wProcessorLevel;
+    UTS_WORD  wProcessorRevision;
+} UTS_SYSTEM_INFO;
+
+typedef struct _UTS_RTL_OSVERSIONINFOW {
+    UTS_ULONG dwOSVersionInfoSize;
+    UTS_ULONG dwMajorVersion;
+    UTS_ULONG dwMinorVersion;
+    UTS_ULONG dwBuildNumber;
+    UTS_ULONG dwPlatformId;
+    UTS_WCHAR szCSDVersion[128];
+} UTS_RTL_OSVERSIONINFOW;
+
+typedef UTS_LONG (UTS_WINAPI *RtlGetVersion_Func)(UTS_RTL_OSVERSIONINFOW*);
+typedef UTS_LONG (UTS_WINAPI *UTS_FARPROC)(void);
+
+UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI GetComputerNameA(UTS_LPSTR lpBuffer, UTS_LPDWORD nSize);
+UTS_DECLSPEC_IMPORT UTS_HMODULE UTS_WINAPI GetModuleHandleA(UTS_LPCSTR lpModuleName);
+UTS_DECLSPEC_IMPORT UTS_FARPROC UTS_WINAPI GetProcAddress(UTS_HMODULE hModule, UTS_LPCSTR lpProcName);
+UTS_DECLSPEC_IMPORT void UTS_WINAPI GetSystemInfo(UTS_SYSTEM_INFO* lpSystemInfo);
+UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI GetVersionExA(UTS_OSVERSIONINFOA* lpVersionInformation);
+
+#define UTS_PROCESSOR_ARCHITECTURE_INTEL 0
+#define UTS_PROCESSOR_ARCHITECTURE_ARM 5
+#define UTS_PROCESSOR_ARCHITECTURE_IA64 6
+#define UTS_PROCESSOR_ARCHITECTURE_AMD64 9
+#define UTS_PROCESSOR_ARCHITECTURE_ARM64 12
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @brief Get system identification.
@@ -57,12 +113,12 @@ typedef LONG (WINAPI *RtlGetVersion_Func)(RTL_OSVERSIONINFOW*);
  * @return 0 on success, or -1 on error (with errno set appropriately).
  */
 int uname(struct utsname *name) {
-    OSVERSIONINFOA osvi;
-    SYSTEM_INFO si;
-    DWORD nodename_len = _UTSNAME_LENGTH;
-    HMODULE hModNtdll;
+    UTS_OSVERSIONINFOA osvi;
+    UTS_SYSTEM_INFO si;
+    UTS_DWORD nodename_len = _UTSNAME_LENGTH;
+    UTS_HMODULE hModNtdll;
     RtlGetVersion_Func pRtlGetVersion;
-    RTL_OSVERSIONINFOW rosvi;
+    UTS_RTL_OSVERSIONINFOW rosvi;
 
     if (!name) {
         errno = EFAULT;
@@ -87,18 +143,18 @@ int uname(struct utsname *name) {
 #endif
     }
 
-    memset(&osvi, 0, sizeof(OSVERSIONINFOA));
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+    memset(&osvi, 0, sizeof(UTS_OSVERSIONINFOA));
+    osvi.dwOSVersionInfoSize = sizeof(UTS_OSVERSIONINFOA);
 
     hModNtdll = GetModuleHandleA("ntdll.dll");
     pRtlGetVersion = NULL;
     if (hModNtdll) {
-        pRtlGetVersion = (RtlGetVersion_Func)(void*)GetProcAddress(hModNtdll, "RtlGetVersion");
+        pRtlGetVersion = (RtlGetVersion_Func)(void (*)(void))GetProcAddress(hModNtdll, "RtlGetVersion");
     }
 
     if (pRtlGetVersion) {
-        memset(&rosvi, 0, sizeof(RTL_OSVERSIONINFOW));
-        rosvi.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
+        memset(&rosvi, 0, sizeof(UTS_RTL_OSVERSIONINFOW));
+        rosvi.dwOSVersionInfoSize = sizeof(UTS_RTL_OSVERSIONINFOW);
         if (pRtlGetVersion(&rosvi) == 0) { /* STATUS_SUCCESS */
             osvi.dwMajorVersion = rosvi.dwMajorVersion;
             osvi.dwMinorVersion = rosvi.dwMinorVersion;
@@ -119,23 +175,31 @@ int uname(struct utsname *name) {
 #endif
     }
 
+#ifndef UTS_NUM_FORMAT
+#if defined(_MSC_VER)
+#define UTS_NUM_FORMAT "%lu"
+#else
+#define UTS_NUM_FORMAT "%lu"
+#endif
+#endif
+
 #ifdef USE_SAFE_CRT
-    sprintf_s(name->release, _UTSNAME_LENGTH, "%lu.%lu",
+    sprintf_s(name->release, _UTSNAME_LENGTH, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
               (unsigned long)osvi.dwMajorVersion,
               (unsigned long)osvi.dwMinorVersion);
-    sprintf_s(name->version, _UTSNAME_LENGTH, "%lu",
+    sprintf_s(name->version, _UTSNAME_LENGTH, UTS_NUM_FORMAT,
               (unsigned long)osvi.dwBuildNumber);
 #else
-    sprintf(name->release, "%lu.%lu",
+    sprintf(name->release, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
             (unsigned long)osvi.dwMajorVersion,
             (unsigned long)osvi.dwMinorVersion);
-    sprintf(name->version, "%lu",
+    sprintf(name->version, UTS_NUM_FORMAT,
             (unsigned long)osvi.dwBuildNumber);
 #endif
 
     GetSystemInfo(&si);
-    switch (si.wProcessorArchitecture) {
-        case PROCESSOR_ARCHITECTURE_INTEL:
+    switch (si.u.s.wProcessorArchitecture) {
+        case UTS_PROCESSOR_ARCHITECTURE_INTEL:
 #ifdef USE_SAFE_CRT
             strncpy_s(name->machine, _UTSNAME_LENGTH, "i686", _TRUNCATE);
 #else
@@ -143,7 +207,7 @@ int uname(struct utsname *name) {
             name->machine[_UTSNAME_LENGTH - 1] = '\0';
 #endif
             break;
-        case PROCESSOR_ARCHITECTURE_AMD64:
+        case UTS_PROCESSOR_ARCHITECTURE_AMD64:
 #ifdef USE_SAFE_CRT
             strncpy_s(name->machine, _UTSNAME_LENGTH, "x86_64", _TRUNCATE);
 #else
@@ -151,7 +215,7 @@ int uname(struct utsname *name) {
             name->machine[_UTSNAME_LENGTH - 1] = '\0';
 #endif
             break;
-        case PROCESSOR_ARCHITECTURE_ARM:
+        case UTS_PROCESSOR_ARCHITECTURE_ARM:
 #ifdef USE_SAFE_CRT
             strncpy_s(name->machine, _UTSNAME_LENGTH, "arm", _TRUNCATE);
 #else
@@ -159,7 +223,7 @@ int uname(struct utsname *name) {
             name->machine[_UTSNAME_LENGTH - 1] = '\0';
 #endif
             break;
-        case PROCESSOR_ARCHITECTURE_ARM64:
+        case UTS_PROCESSOR_ARCHITECTURE_ARM64:
 #ifdef USE_SAFE_CRT
             strncpy_s(name->machine, _UTSNAME_LENGTH, "aarch64", _TRUNCATE);
 #else
@@ -167,7 +231,7 @@ int uname(struct utsname *name) {
             name->machine[_UTSNAME_LENGTH - 1] = '\0';
 #endif
             break;
-        case PROCESSOR_ARCHITECTURE_IA64:
+        case UTS_PROCESSOR_ARCHITECTURE_IA64:
 #ifdef USE_SAFE_CRT
             strncpy_s(name->machine, _UTSNAME_LENGTH, "ia64", _TRUNCATE);
 #else

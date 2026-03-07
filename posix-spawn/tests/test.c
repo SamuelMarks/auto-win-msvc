@@ -8,7 +8,17 @@
 #include "posix-spawn.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#include <windows.h>
+#define WINAPI __stdcall
+#define FALSE 0
+#define PROCESS_QUERY_INFORMATION 0x0400
+#define SYNCHRONIZE 0x00100000L
+#define INFINITE 0xFFFFFFFF
+typedef unsigned long DWORD;
+typedef int BOOL;
+typedef void *HANDLE;
+__declspec(dllimport) HANDLE WINAPI OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+__declspec(dllimport) DWORD WINAPI WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
+__declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 #else
 #include <unistd.h>
 #endif

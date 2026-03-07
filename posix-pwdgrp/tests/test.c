@@ -17,7 +17,12 @@ TEST test_getpwnam(void) {
     GetUserNameA(name, &len);
     pw = getpwnam(name);
 #else
-    pw = getpwnam("root");
+    pw = getpwuid(getuid());
+    if (pw) {
+        pw = getpwnam(pw->pw_name);
+    } else {
+        pw = getpwnam("root");
+    }
 #endif
     ASSERT(pw != NULL);
     ASSERT(pw->pw_name != NULL);
@@ -35,7 +40,12 @@ TEST test_getpwnam_r(void) {
     GetUserNameA(name, &len);
     r = getpwnam_r(name, &pwd, buffer, sizeof(buffer), &result);
 #else
-    r = getpwnam_r("root", &pwd, buffer, sizeof(buffer), &result);
+    struct passwd *pw = getpwuid(getuid());
+    if (pw) {
+        r = getpwnam_r(pw->pw_name, &pwd, buffer, sizeof(buffer), &result);
+    } else {
+        r = getpwnam_r("root", &pwd, buffer, sizeof(buffer), &result);
+    }
 #endif
     ASSERT_EQ(0, r);
     ASSERT(result != NULL);
@@ -52,7 +62,7 @@ TEST test_getpwuid(void) {
     ASSERT(pw != NULL);
     pw = getpwuid(pw->pw_uid);
 #else
-    pw = getpwuid(0);
+    pw = getpwuid(getuid());
 #endif
     ASSERT(pw != NULL);
     PASS();
@@ -72,7 +82,7 @@ TEST test_getpwuid_r(void) {
     ASSERT(pw != NULL);
     r = getpwuid_r(pw->pw_uid, &pwd, buffer, sizeof(buffer), &result);
 #else
-    r = getpwuid_r(0, &pwd, buffer, sizeof(buffer), &result);
+    r = getpwuid_r(getuid(), &pwd, buffer, sizeof(buffer), &result);
 #endif
     ASSERT_EQ(0, r);
     ASSERT(result != NULL);

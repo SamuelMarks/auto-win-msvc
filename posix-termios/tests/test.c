@@ -1,4 +1,8 @@
 /* test.c - 100% Test Coverage Stubs */
+#ifdef _MSC_VER
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#endif
+
 #include <stdio.h>
 #include "posix-termios.h"
 #include "greatest.h"

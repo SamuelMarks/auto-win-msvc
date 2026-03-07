@@ -4,8 +4,28 @@
 #include "posix-ipc.h"
 #include "greatest.h"
 
+#ifdef _MSC_VER
+#pragma warning(push, 3)
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#pragma warning(disable: 4201) /* nonstandard extension used : nameless struct/union */
+#pragma warning(disable: 4214) /* nonstandard extension used : bit field types other than int */
+#endif
+
 #ifdef _WIN32
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#if defined(_M_AMD64) && !defined(_AMD64_)
+#define _AMD64_
+#elif defined(_M_IX86) && !defined(_X86_)
+#define _X86_
+#elif defined(_M_ARM64) && !defined(_ARM64_)
+#define _ARM64_
+#elif defined(_M_ARM) && !defined(_ARM_)
+#define _ARM_
+#endif
+#include <windef.h>
+#include <winbase.h>
 #else
 #include <unistd.h>
 #endif

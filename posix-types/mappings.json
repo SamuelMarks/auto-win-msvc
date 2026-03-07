@@ -136,10 +136,10 @@
         "posix": "sa_family_t",
         "source_header": "<sys/types.h>",
         "requires_polyfill": false,
-        "msvc": "ADDRESS_FAMILY",
+        "msvc": "unsigned short",
         "shim": {
           "type": "typedef",
-          "code": "typedef ADDRESS_FAMILY sa_family_t;"
+          "code": "typedef unsigned short sa_family_t;"
         }
       },
       {

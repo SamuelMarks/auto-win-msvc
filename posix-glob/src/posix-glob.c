@@ -1,4 +1,13 @@
 /* posix-glob.c - Strict C89 Implementation */
+#if !defined(_MSC_VER)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +36,7 @@ static int glob_append(glob_t *pglob, const char *path) {
     new_str = (char *)malloc(len);
     if (!new_str) return GLOB_NOSPACE;
     
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_MSC_VER)
     strcpy_s(new_str, len, path);
 #else
     strcpy(new_str, path);
@@ -138,8 +147,12 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int e
     if (last_slash) {
         prefix_len = (size_t)(last_slash - pattern) + 1;
         if (prefix_len > sizeof(dir_prefix) - 1) prefix_len = sizeof(dir_prefix) - 1;
+#if defined(_MSC_VER)
+        strncpy_s(dir_prefix, sizeof(dir_prefix), pattern, prefix_len);
+#else
         strncpy(dir_prefix, pattern, prefix_len);
         dir_prefix[prefix_len] = '\0';
+#endif
     } else {
         dir_prefix[0] = '\0';
     }
@@ -147,13 +160,21 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int e
     handle = _findfirst(pattern, &fileinfo);
     if (handle != -1) {
         do {
-            char full_path[1024];
+            char full_path[2048];
             if (strcmp(fileinfo.name, ".") == 0 || strcmp(fileinfo.name, "..") == 0) continue;
 
             if (prefix_len > 0) {
+#if defined(_MSC_VER)
                 sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix, fileinfo.name);
+#else
+                sprintf(full_path, "%s%s", dir_prefix, fileinfo.name);
+#endif
             } else {
+#if defined(_MSC_VER)
                 strcpy_s(full_path, sizeof(full_path), fileinfo.name);
+#else
+                strcpy(full_path, fileinfo.name);
+#endif
             }
 
             ret = glob_append(pglob, full_path);
@@ -236,7 +257,7 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int e
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
 
             if (fnmatch(file_pattern, ent->d_name, 0) == 0) {
-                char full_path[1024];
+                char full_path[2048];
                 if (prefix_len > 0) {
                     sprintf(full_path, "%s%s", dir_prefix, ent->d_name);
                 } else {
@@ -285,7 +306,9 @@ void globfree(glob_t *pglob) {
 int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
     char *copy;
     char *token;
+#if defined(_MSC_VER) || !defined(_WIN32)
     char *context = NULL;
+#endif
     char **new_we_wordv;
 
     if (!words || !pwordexp) return WRDE_SYNTAX;
@@ -305,12 +328,16 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
     copy = (char *)malloc(strlen(words) + 1);
     if (!copy) return WRDE_NOSPACE;
     
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_MSC_VER)
     strcpy_s(copy, strlen(words) + 1, words);
     token = strtok_s(copy, " \t\n", &context);
 #else
     strcpy(copy, words);
+#if defined(_WIN32)
+    token = strtok(copy, " \t\n");
+#else
     token = strtok_r(copy, " \t\n", &context);
+#endif
 #endif
 
     while (token) {
@@ -320,7 +347,7 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
             free(copy);
             return WRDE_NOSPACE;
         }
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_MSC_VER)
         strcpy_s(word, len, token);
 #else
         strcpy(word, token);
@@ -337,10 +364,14 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
         pwordexp->we_wordc++;
         pwordexp->we_wordv[pwordexp->we_offs + pwordexp->we_wordc] = NULL;
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_MSC_VER)
         token = strtok_s(NULL, " \t\n", &context);
 #else
+#if defined(_WIN32)
+        token = strtok(NULL, " \t\n");
+#else
         token = strtok_r(NULL, " \t\n", &context);
+#endif
 #endif
     }
     free(copy);

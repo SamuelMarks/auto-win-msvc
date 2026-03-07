@@ -8,7 +8,10 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /WX /D_CRT_SECURE_NO_WARNINGS)
+    if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
+      string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    endif()
+    add_compile_options(/W4 /WX /wd4127 /D_CRT_SECURE_NO_WARNINGS)
     # Enable AddressSanitizer if supported (VS 2019 16.9+)
     # add_compile_options(/fsanitize=address) # Uncomment if using modern MSVC
 else()

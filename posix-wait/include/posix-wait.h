@@ -50,7 +50,7 @@ typedef struct {
 #define WCONTINUED 8
 
 /* Macros for waitid */
-#define WEXITED    1
+#define WEXITED    4
 #define WSTOPPED   2
 #define WNOWAIT    0x01000000
 
@@ -110,9 +110,44 @@ pid_t cwait(int *termstat, pid_t pid, int action);
 /* For non-Windows environments (like Darwin/Linux testing), include native headers */
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
+
+#ifdef __CYGWIN__
+#ifndef _IDTYPE_T_DEFINED
+#define _IDTYPE_T_DEFINED
+typedef enum {
+    P_ALL,
+    P_PID,
+    P_PGID
+} idtype_t;
+#endif
+
+#ifndef WEXITED
+#define WEXITED    4
+#endif
+#ifndef WSTOPPED
+#define WSTOPPED   2
+#endif
+#ifndef WNOWAIT
+#define WNOWAIT    0x01000000
+#endif
+#endif /* __CYGWIN__ */
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef __CYGWIN__
+/**
+ * @brief Waits for a child process to change state (Cygwin polyfill).
+ *
+ * @param idtype The type of ID (P_ALL, P_PID, P_PGID).
+ * @param id The ID to wait for.
+ * @param infop Pointer to a siginfo_t structure where status information is stored.
+ * @param options Options modifying wait behavior.
+ * @return 0 on success, or -1 on error.
+ */
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 #endif
 
 /**

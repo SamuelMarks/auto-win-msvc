@@ -1,4 +1,5 @@
 /* test.c - 100% Test Coverage Stubs */
+#define _LARGEFILE64_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #define _DARWIN_C_SOURCE
 #include <stdio.h>
@@ -8,14 +9,16 @@
 
 #ifdef _MSC_VER
 #include <basetsd.h>
-#include <winsock2.h>
-#include <ws2def.h>
 #include <time.h>
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__CYGWIN__)
 #define SKIP_OFF64_T
+#ifndef SKIP_TIMER_T
+#if defined(__APPLE__)
 #define SKIP_TIMER_T
+#endif
+#endif
 #endif
 
 TEST test_pid_t(void) {
@@ -141,7 +144,7 @@ TEST test_sa_family_t(void) {
     sa_family_t val = 0;
     ASSERT(sizeof(val) > 0);
 #ifdef _MSC_VER
-    ASSERT_EQ(sizeof(ADDRESS_FAMILY), sizeof(sa_family_t));
+    ASSERT_EQ(sizeof(unsigned short), sizeof(sa_family_t));
 #endif
     PASS();
 }
@@ -193,7 +196,7 @@ TEST test_time_t(void) {
 
 #ifndef SKIP_TIMER_T
 TEST test_timer_t(void) {
-    timer_t val = NULL;
+    timer_t val = (timer_t)0;
     ASSERT(sizeof(val) > 0);
 #ifdef _MSC_VER
     ASSERT_EQ(sizeof(void*), sizeof(timer_t));

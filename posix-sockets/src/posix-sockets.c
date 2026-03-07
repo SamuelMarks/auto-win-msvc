@@ -8,11 +8,18 @@
 #define ENOSYS 38
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%lld"
+#endif
+
 #ifdef _WIN32
 /* Set an internal helper for Windows Error */
-static void set_wsa_errno(void) {
+static int set_wsa_errno(void) {
     /* Mapping WSAGetLastError() to errno is complex, simplistic stub below */
     errno = WSAGetLastError();
+    return 0;
 }
 #endif
 
@@ -53,11 +60,16 @@ void posix_freeaddrinfo(struct addrinfo *ai) {
 }
 
 const char *posix_gai_strerror(int ecode) {
-    (void)ecode;
-#ifdef _WIN32
-    /* TODO: Fully map to gai_strerror */
+    static char buf[64];
+#if defined(_WIN32)
+    (void)set_wsa_errno();
 #endif
-    return "Not implemented";
+#if defined(_MSC_VER)
+    sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
+#else
+    sprintf(buf, "Unknown error %d", (int)ecode);
+#endif
+    return buf;
 }
 
 int posix_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res) {

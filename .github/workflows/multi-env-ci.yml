@@ -1,0 +1,121 @@
+name: Multi-Environment CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    name: ${{ matrix.module }} / ${{ matrix.env }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true # Prevents one failure from cancelling the matrix; allows us to see full pass/fail state.
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - posix-core
+          - posix-dirent
+          - posix-dlfcn
+          - posix-glob
+          - posix-ipc
+          - posix-libgen
+          - posix-mman
+          - posix-pthread
+          - posix-pwdgrp
+          - posix-sockets
+          - posix-spawn
+          - posix-stat
+          - posix-syslog
+          - posix-termios
+          - posix-time
+          - posix-types
+          - posix-utsname
+          - posix-wait
+        env:
+          # - msvc-2005 # Skipped/Commented out: Requires a custom runner with MSVC 2005
+          - msvc-2022
+          - msvc-2026
+          - mingw
+          - cygwin
+        include:
+          # - env: msvc-2005
+          #   os: windows-latest
+          - env: msvc-2022
+            os: windows-2022
+          - env: msvc-2026
+            os: windows-latest
+          - env: mingw
+            os: windows-latest
+          - env: cygwin
+            os: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MinGW (MSYS2)
+        if: matrix.env == 'mingw'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-make
+
+      - name: Setup Cygwin
+        if: matrix.env == 'cygwin'
+        uses: cygwin/cygwin-install-action@v4
+        with:
+          packages: cmake,gcc-core,gcc-g++,make
+
+      # - name: Build MSVC 2005
+      #   if: matrix.env == 'msvc-2005'
+      #   shell: cmd
+      #   run: |
+      #     cd ${{ matrix.module }}
+      #     echo "Note: CMake can generate NMake Makefiles (-G \"NMake Makefiles\") which can be built using nmake in an MSVC 2005 toolchain environment."
+      #     echo "Standard GitHub runners lack MSVC 2005 natively, so this job is expected to fail without custom runners."
+      #     cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -B build
+      #     cmake --build build
+      #     ctest --test-dir build -C Release --output-on-failure
+
+      - name: Build MSVC 2022
+        if: matrix.env == 'msvc-2022'
+        shell: cmd
+        run: |
+          cd ${{ matrix.module }}
+          cmake -G "Visual Studio 17 2022" -T v143 -B build
+          cmake --build build --config Release
+          ctest --test-dir build -C Release --output-on-failure
+
+      - name: Build MSVC 2026
+        if: matrix.env == 'msvc-2026'
+        shell: cmd
+        run: |
+          cd ${{ matrix.module }}
+          :: By omitting the toolset, CMake will use the latest available in the windows-latest image
+          cmake -G "Visual Studio 17 2022" -B build
+          cmake --build build --config Release
+          ctest --test-dir build -C Release --output-on-failure
+
+      - name: Build MinGW
+        if: matrix.env == 'mingw'
+        shell: msys2 {0}
+        run: |
+          cd ${{ matrix.module }}
+          cmake -G "MinGW Makefiles" -B build
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+      - name: Build Cygwin
+        if: matrix.env == 'cygwin'
+        shell: cmd
+        run: |
+          :: cygwin-install-action puts cygwin in C:\cygwin or C:\tools\cygwin typically
+          set PATH=C:\cygwin\bin;C:\tools\cygwin\bin;%PATH%
+          cd ${{ matrix.module }}
+          cmake -G "Unix Makefiles" -B build
+          cmake --build build
+          ctest --test-dir build --output-on-failure

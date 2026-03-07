@@ -4,7 +4,7 @@
 
 #include <stddef.h>
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER)
 #include <sys/types.h>
 
 #ifndef _PID_T_DEFINED
@@ -27,6 +27,16 @@ struct sched_param {
     int sched_priority;
 };
 #define _SCHED_PARAM_DEFINED
+#endif
+
+#elif defined(__MINGW32__)
+#include <sys/types.h>
+#include <sched.h>
+#include <signal.h>
+
+#ifndef _SIGSET_T_DEFINED
+typedef _sigset_t sigset_t;
+#define _SIGSET_T_DEFINED
 #endif
 
 #else /* POSIX */

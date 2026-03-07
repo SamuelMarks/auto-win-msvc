@@ -6,7 +6,27 @@
 #define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
 #endif
 
-#include <windows.h>
+#if defined(_M_IX86)
+#ifndef _X86_
+#define _X86_
+#endif
+#elif defined(_M_AMD64) || defined(_M_X64)
+#ifndef _AMD64_
+#define _AMD64_
+#endif
+#elif defined(_M_ARM64)
+#ifndef _ARM64_
+#define _ARM64_
+#endif
+#elif defined(_M_ARM)
+#ifndef _ARM_
+#define _ARM_
+#endif
+#endif
+
+#include <windef.h>
+#include <winbase.h>
+#include <winnls.h>
 #include <sddl.h>
 #include <lm.h>
 #include <stdio.h>
@@ -17,32 +37,37 @@
 #include "posix-pwdgrp.h"
 
 /* Link required Windows libraries */
+#if defined(_MSC_VER)
 #pragma comment(lib, "netapi32.lib")
 #pragma comment(lib, "advapi32.lib")
+#define PWDGRP_THREAD_LOCAL __declspec(thread)
+#else
+#define PWDGRP_THREAD_LOCAL __thread
+#endif
 
 #define PWD_BUFFER_SIZE 4096
 
-static __declspec(thread) struct passwd static_pwd;
-static __declspec(thread) char static_pwd_buffer[PWD_BUFFER_SIZE];
+static PWDGRP_THREAD_LOCAL struct passwd static_pwd;
+static PWDGRP_THREAD_LOCAL char static_pwd_buffer[PWD_BUFFER_SIZE];
 
-static __declspec(thread) struct group static_grp;
-static __declspec(thread) char static_grp_buffer[PWD_BUFFER_SIZE];
+static PWDGRP_THREAD_LOCAL struct group static_grp;
+static PWDGRP_THREAD_LOCAL char static_grp_buffer[PWD_BUFFER_SIZE];
 
-static __declspec(thread) DWORD current_resume_handle = 0;
-static __declspec(thread) PUSER_INFO_0 current_user_info = NULL;
-static __declspec(thread) DWORD current_entries_read = 0;
-static __declspec(thread) DWORD current_entry_index = 0;
+static PWDGRP_THREAD_LOCAL DWORD current_resume_handle = 0;
+static PWDGRP_THREAD_LOCAL PUSER_INFO_0 current_user_info = NULL;
+static PWDGRP_THREAD_LOCAL DWORD current_entries_read = 0;
+static PWDGRP_THREAD_LOCAL DWORD current_entry_index = 0;
 
-static __declspec(thread) DWORD current_grp_resume_handle = 0;
-static __declspec(thread) PLOCALGROUP_INFO_0 current_grp_info = NULL;
-static __declspec(thread) DWORD current_grp_entries_read = 0;
-static __declspec(thread) DWORD current_grp_entry_index = 0;
+static PWDGRP_THREAD_LOCAL DWORD_PTR current_grp_resume_handle = 0;
+static PWDGRP_THREAD_LOCAL PLOCALGROUP_INFO_0 current_grp_info = NULL;
+static PWDGRP_THREAD_LOCAL DWORD current_grp_entries_read = 0;
+static PWDGRP_THREAD_LOCAL DWORD current_grp_entry_index = 0;
 
 /** Helper: safely copy string to the supplied buffer, adhering to strict bounds */
-static char *copy_string(char **buffer, size_t *bufsize, const char *src) {
+static int copy_string(char **buffer, size_t *bufsize, const char *src, char **out_res) {
     size_t len = src ? strlen(src) : 0;
     char *res;
-    if (len + 1 > *bufsize) return NULL;
+    if (len + 1 > *bufsize) return ERANGE;
     res = *buffer;
     if (src) {
 #if defined(_MSC_VER)
@@ -56,24 +81,29 @@ static char *copy_string(char **buffer, size_t *bufsize, const char *src) {
     }
     *buffer += len + 1;
     *bufsize -= len + 1;
-    return res;
+    if (out_res) *out_res = res;
+    return 0;
 }
 
 /** Helper: Obtain the RID from a SID */
-static uid_t sid_to_rid(PSID sid) {
+static int sid_to_rid(PSID sid, uid_t *out_rid) {
     PUCHAR count;
-    if (!IsValidSid(sid)) return 0;
+    if (!IsValidSid(sid)) return EINVAL;
     count = GetSidSubAuthorityCount(sid);
-    if (!count || *count == 0) return 0;
-    return (uid_t)(*GetSidSubAuthority(sid, *count - 1));
+    if (!count || *count == 0) return EINVAL;
+    if (out_rid) *out_rid = (uid_t)(*GetSidSubAuthority(sid, *count - 1));
+    return 0;
 }
 
 /** Helper: Look up a Windows SID by name */
-static PSID get_sid_from_name(const char *name, SID_NAME_USE *peUse) {
+static int get_sid_from_name(const char *name, SID_NAME_USE *peUse, PSID *out_sid) {
     DWORD cbSid = 0;
     DWORD cbDomain = 0;
     PSID sid = NULL;
     char *domain = NULL;
+
+    if (!out_sid) return EINVAL;
+    *out_sid = NULL;
 
     LookupAccountNameA(NULL, name, NULL, &cbSid, NULL, &cbDomain, peUse);
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
@@ -82,24 +112,38 @@ static PSID get_sid_from_name(const char *name, SID_NAME_USE *peUse) {
         if (sid && domain) {
             if (!LookupAccountNameA(NULL, name, sid, &cbSid, domain, &cbDomain, peUse)) {
                 free(sid);
-                sid = NULL;
+                free(domain);
+                return ENOENT;
             }
         } else {
             if (sid) free(sid);
+            if (domain) free(domain);
+            return ENOMEM;
         }
         if (domain) free(domain);
+    } else {
+        return ENOENT;
     }
-    return sid;
+    *out_sid = sid;
+    return 0;
 }
 
 /** Helper: Convert UTF-16 to UTF-8 */
-static char *utf16_to_utf8(LPCWSTR wstr) {
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-    char *strTo = (char *)malloc(size_needed);
+static int utf16_to_utf8(LPCWSTR wstr, char **out_str) {
+    int size_needed;
+    char *strTo;
+
+    if (!out_str) return EINVAL;
+    *out_str = NULL;
+
+    size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+    strTo = (char *)malloc(size_needed);
     if (strTo) {
         WideCharToMultiByte(CP_UTF8, 0, wstr, -1, strTo, size_needed, NULL, NULL);
+        *out_str = strTo;
+        return 0;
     }
-    return strTo;
+    return ENOMEM;
 }
 
 /* --- GROUP DATABASE --- */
@@ -119,12 +163,13 @@ void setgrent(void) {
 }
 
 struct group *getgrent(void) {
+    DWORD total_entries = 0;
     if (current_grp_entry_index >= current_grp_entries_read) {
         if (current_grp_info) {
             NetApiBufferFree(current_grp_info);
             current_grp_info = NULL;
         }
-        if (NetLocalGroupEnum(NULL, 0, (LPBYTE*)&current_grp_info, MAX_PREFERRED_LENGTH, &current_grp_entries_read, NULL, &current_grp_resume_handle) != NERR_Success) {
+        if (NetLocalGroupEnum(NULL, 0, (LPBYTE*)&current_grp_info, MAX_PREFERRED_LENGTH, &current_grp_entries_read, &total_entries, &current_grp_resume_handle) != NERR_Success) {
             return NULL;
         }
         current_grp_entry_index = 0;
@@ -132,8 +177,9 @@ struct group *getgrent(void) {
     }
     
     {
-        char *utf8_name = utf16_to_utf8(current_grp_info[current_grp_entry_index].lgrpi0_name);
+        char *utf8_name = NULL;
         struct group *res = NULL;
+        utf16_to_utf8(current_grp_info[current_grp_entry_index].lgrpi0_name, &utf8_name);
         current_grp_entry_index++;
         if (utf8_name) {
             res = getgrnam(utf8_name);
@@ -151,7 +197,7 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize
     if (!name || !grp || !buffer || !result) return EINVAL;
     *result = NULL;
 
-    sid = get_sid_from_name(name, &peUse);
+    get_sid_from_name(name, &peUse, &sid);
     if (!sid) return ENOENT;
 
     if (peUse != SidTypeAlias && peUse != SidTypeGroup && peUse != SidTypeWellKnownGroup) {
@@ -159,11 +205,11 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize
         return ENOENT;
     }
 
-    grp->gr_gid = sid_to_rid(sid);
+    sid_to_rid(sid, &grp->gr_gid);
     free(sid);
 
-    grp->gr_name = copy_string(&buffer, &bufsize, name);
-    grp->gr_passwd = copy_string(&buffer, &bufsize, "*");
+    copy_string(&buffer, &bufsize, name, &grp->gr_name);
+    copy_string(&buffer, &bufsize, "*", &grp->gr_passwd);
     
     /* Align buffer for pointer arrays */
     align_offset = ((size_t)buffer) % sizeof(char*);
@@ -193,7 +239,8 @@ struct group *getgrnam(const char *name) {
 }
 
 int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result) {
-    DWORD entriesRead = 0, totalEntries = 0, resumeHandle = 0;
+    DWORD entriesRead = 0, totalEntries = 0;
+    DWORD_PTR resumeHandle = 0;
     PLOCALGROUP_INFO_0 groupInfo = NULL;
     NET_API_STATUS nStatus;
     DWORD i;
@@ -207,12 +254,16 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struc
         nStatus = NetLocalGroupEnum(NULL, 0, (LPBYTE*)&groupInfo, MAX_PREFERRED_LENGTH, &entriesRead, &totalEntries, &resumeHandle);
         if (nStatus == NERR_Success || nStatus == ERROR_MORE_DATA) {
             for (i = 0; i < entriesRead; i++) {
-                char *utf8_name = utf16_to_utf8(groupInfo[i].lgrpi0_name);
+                char *utf8_name = NULL;
+                utf16_to_utf8(groupInfo[i].lgrpi0_name, &utf8_name);
                 if (utf8_name) {
                     SID_NAME_USE peUse;
-                    PSID sid = get_sid_from_name(utf8_name, &peUse);
+                    PSID sid = NULL;
+                    get_sid_from_name(utf8_name, &peUse, &sid);
                     if (sid) {
-                        if (sid_to_rid(sid) == gid) {
+                        uid_t r_uid = 0;
+                        sid_to_rid(sid, &r_uid);
+                        if (r_uid == gid) {
                             found_name = utf8_name;
                             free(sid);
                             break;
@@ -267,12 +318,13 @@ void setpwent(void) {
 }
 
 struct passwd *getpwent(void) {
+    DWORD total_entries = 0;
     if (current_entry_index >= current_entries_read) {
         if (current_user_info) {
             NetApiBufferFree(current_user_info);
             current_user_info = NULL;
         }
-        if (NetUserEnum(NULL, 0, FILTER_NORMAL_ACCOUNT, (LPBYTE*)&current_user_info, MAX_PREFERRED_LENGTH, &current_entries_read, NULL, &current_resume_handle) != NERR_Success) {
+        if (NetUserEnum(NULL, 0, FILTER_NORMAL_ACCOUNT, (LPBYTE*)&current_user_info, MAX_PREFERRED_LENGTH, &current_entries_read, &total_entries, &current_resume_handle) != NERR_Success) {
             return NULL;
         }
         current_entry_index = 0;
@@ -280,8 +332,9 @@ struct passwd *getpwent(void) {
     }
     
     {
-        char *utf8_name = utf16_to_utf8(current_user_info[current_entry_index].usri0_name);
+        char *utf8_name = NULL;
         struct passwd *res = NULL;
+        utf16_to_utf8(current_user_info[current_entry_index].usri0_name, &utf8_name);
         current_entry_index++;
         if (utf8_name) {
             res = getpwnam(utf8_name);
@@ -297,12 +350,11 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsiz
     int wlen;
     WCHAR *wname;
     PUSER_INFO_4 userInfo = NULL;
-    NET_API_STATUS nStatus;
 
     if (!name || !pwd || !buffer || !result) return EINVAL;
     *result = NULL;
 
-    sid = get_sid_from_name(name, &peUse);
+    get_sid_from_name(name, &peUse, &sid);
     if (!sid) return ENOENT;
 
     if (peUse != SidTypeUser) {
@@ -314,25 +366,25 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsiz
     wname = (WCHAR *)malloc(wlen * sizeof(WCHAR));
     if (wname) {
         MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, wlen);
-        nStatus = NetUserGetInfo(NULL, wname, 4, (LPBYTE *)&userInfo);
+        NetUserGetInfo(NULL, wname, 4, (LPBYTE *)&userInfo);
         free(wname);
     }
 
-    pwd->pw_uid = sid_to_rid(sid);
+    sid_to_rid(sid, &pwd->pw_uid);
     free(sid);
 
     if (userInfo) {
         char *dir = NULL, *gecos = NULL;
         pwd->pw_gid = userInfo->usri4_primary_group_id;
         
-        if (userInfo->usri4_home_dir) dir = utf16_to_utf8(userInfo->usri4_home_dir);
-        if (userInfo->usri4_full_name) gecos = utf16_to_utf8(userInfo->usri4_full_name);
+        if (userInfo->usri4_home_dir) utf16_to_utf8(userInfo->usri4_home_dir, &dir);
+        if (userInfo->usri4_full_name) utf16_to_utf8(userInfo->usri4_full_name, &gecos);
 
-        pwd->pw_name = copy_string(&buffer, &bufsize, name);
-        pwd->pw_passwd = copy_string(&buffer, &bufsize, "*");
-        pwd->pw_dir = copy_string(&buffer, &bufsize, dir ? dir : "C:\\");
-        pwd->pw_gecos = copy_string(&buffer, &bufsize, gecos ? gecos : "");
-        pwd->pw_shell = copy_string(&buffer, &bufsize, "cmd.exe");
+        copy_string(&buffer, &bufsize, name, &pwd->pw_name);
+        copy_string(&buffer, &bufsize, "*", &pwd->pw_passwd);
+        copy_string(&buffer, &bufsize, dir ? dir : "C:\\", &pwd->pw_dir);
+        copy_string(&buffer, &bufsize, gecos ? gecos : "", &pwd->pw_gecos);
+        copy_string(&buffer, &bufsize, "cmd.exe", &pwd->pw_shell);
 
         if (dir) free(dir);
         if (gecos) free(gecos);
@@ -340,11 +392,11 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsiz
         NetApiBufferFree(userInfo);
     } else {
         pwd->pw_gid = 513; /* Fallback */
-        pwd->pw_name = copy_string(&buffer, &bufsize, name);
-        pwd->pw_passwd = copy_string(&buffer, &bufsize, "*");
-        pwd->pw_dir = copy_string(&buffer, &bufsize, "C:\\");
-        pwd->pw_gecos = copy_string(&buffer, &bufsize, "");
-        pwd->pw_shell = copy_string(&buffer, &bufsize, "cmd.exe");
+        copy_string(&buffer, &bufsize, name, &pwd->pw_name);
+        copy_string(&buffer, &bufsize, "*", &pwd->pw_passwd);
+        copy_string(&buffer, &bufsize, "C:\\", &pwd->pw_dir);
+        copy_string(&buffer, &bufsize, "", &pwd->pw_gecos);
+        copy_string(&buffer, &bufsize, "cmd.exe", &pwd->pw_shell);
     }
 
     if (!pwd->pw_name || !pwd->pw_passwd || !pwd->pw_dir || !pwd->pw_gecos || !pwd->pw_shell) {
@@ -378,12 +430,16 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
         nStatus = NetUserEnum(NULL, 0, FILTER_NORMAL_ACCOUNT, (LPBYTE*)&userInfo, MAX_PREFERRED_LENGTH, &entriesRead, &totalEntries, &resumeHandle);
         if (nStatus == NERR_Success || nStatus == ERROR_MORE_DATA) {
             for (i = 0; i < entriesRead; i++) {
-                char *utf8_name = utf16_to_utf8(userInfo[i].usri0_name);
+                char *utf8_name = NULL;
+                utf16_to_utf8(userInfo[i].usri0_name, &utf8_name);
                 if (utf8_name) {
                     SID_NAME_USE peUse;
-                    PSID sid = get_sid_from_name(utf8_name, &peUse);
+                    PSID sid = NULL;
+                    get_sid_from_name(utf8_name, &peUse, &sid);
                     if (sid) {
-                        if (sid_to_rid(sid) == uid) {
+                        uid_t r_uid = 0;
+                        sid_to_rid(sid, &r_uid);
+                        if (r_uid == uid) {
                             found_name = utf8_name;
                             free(sid);
                             break;

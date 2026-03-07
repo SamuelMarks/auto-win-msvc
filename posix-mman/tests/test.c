@@ -24,6 +24,9 @@
 #include "greatest.h"
 #include "posix-mman.h"
 
+/* C89 safe printf format for size_t */
+#define NUM_FORMAT "%lu"
+
 /* Helper for creating a temp file */
 static void create_temp_file(const char *path, const char *content) {
     FILE *f = fopen(path, "wb");
@@ -44,12 +47,18 @@ TEST test_mmap_anon(void) {
     ASSERT(ptr != NULL);
     
     /* Write something */
+#if defined(_MSC_VER)
+    strcpy_s((char *)ptr, 4096, "hello");
+#else
     strcpy((char *)ptr, "hello");
+#endif
     ASSERT_EQ(0, strcmp((char *)ptr, "hello"));
     
     /* mprotect to read only */
     res = mprotect(ptr, 4096, PROT_READ);
     ASSERT_EQ(0, res);
+    
+    printf("Successfully mapped and protected " NUM_FORMAT " bytes.\n", (unsigned long)4096);
     
     /* msync */
     res = msync(ptr, 4096, MS_SYNC);

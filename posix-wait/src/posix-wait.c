@@ -1,10 +1,50 @@
 /* posix-wait.c - Strict C89 Implementation */
+#if !defined(_XOPEN_SOURCE)
+#define _XOPEN_SOURCE 700
+#endif
+#if !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <stddef.h>
 #include "posix-wait.h"
 #include <errno.h>
 
 #ifdef _WIN32
+
+#if defined(_M_AMD64) && !defined(_AMD64_)
+#define _AMD64_
+#elif defined(_M_IX86) && !defined(_X86_)
+#define _X86_
+#elif defined(_M_ARM64) && !defined(_ARM64_)
+#define _ARM64_
+#elif defined(_M_ARM) && !defined(_ARM_)
+#define _ARM_
+#endif
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#else
+#include <minwindef.h>
+#include <processthreadsapi.h>
+#include <synchapi.h>
+#include <handleapi.h>
+#endif
+
+#ifndef INFINITE
+#define INFINITE 0xFFFFFFFF
+#endif
+
+#ifndef WAIT_OBJECT_0
+#define WAIT_OBJECT_0 0x00000000L
+#endif
+
+#ifndef WAIT_TIMEOUT
+#define WAIT_TIMEOUT 258L
+#endif
 
 pid_t wait(int *stat_loc) {
     return waitpid(-1, stat_loc, 0);
@@ -95,4 +135,48 @@ pid_t cwait(int *termstat, pid_t pid, int action) {
     (void)action; /* Unused */
     return waitpid(pid, termstat, 0);
 }
+
+#ifdef __CYGWIN__
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
+    pid_t res;
+    int status = 0;
+    int pid_to_wait = -1;
+    int waitpid_options = 0;
+
+    if (infop != NULL) {
+        infop->si_signo = 0;
+        infop->si_code = 0;
+        infop->si_pid = 0;
+        infop->si_status = 0;
+        infop->si_uid = 0;
+    }
+
+    if (idtype == P_PID) {
+        pid_to_wait = (int)id;
+    } else if (idtype == P_ALL) {
+        pid_to_wait = -1;
+    } else {
+        errno = ENOSYS;
+        return -1;
+    }
+
+    if (options & WNOHANG) waitpid_options |= WNOHANG;
+    if (options & WSTOPPED) waitpid_options |= WUNTRACED;
+    if (options & WCONTINUED) waitpid_options |= WCONTINUED;
+
+    res = waitpid((pid_t)pid_to_wait, &status, waitpid_options);
+    if (res > 0) {
+        if (infop != NULL) {
+            infop->si_pid = res;
+            infop->si_status = WEXITSTATUS(status);
+            infop->si_code = 1; /* CLD_EXITED */
+        }
+        return 0;
+    } else if (res == 0) {
+        return 0;
+    }
+    
+    return -1;
+}
+#endif /* __CYGWIN__ */
 

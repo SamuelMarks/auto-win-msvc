@@ -92,3 +92,24 @@ htmlcov/
 *.bak
 *.swp
 *~
+
+
+# Custom ignores for temporary local builds and scripts
+build_*/
+build-*/
+build2005/
+test_build_*/
+temp_test/
+test_dir/
+
+# Log files and test outputs
+*.log
+*out.txt
+*err.txt
+check.txt
+
+# Temp patches, rejects, original backups
+*.orig
+*.rej
+*.patch
+

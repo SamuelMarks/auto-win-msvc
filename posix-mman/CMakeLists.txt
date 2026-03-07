@@ -8,16 +8,21 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /WX /D_CRT_SECURE_NO_WARNINGS)
+    # Remove default /W3
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX /wd4127 /D_CRT_SECURE_NO_WARNINGS")
     # Enable Address Sanitizer for modern MSVC (VS 2019 16.9+)
-    if(MSVC_VERSION GREATER_EQUAL 1928)
-        add_compile_options(/fsanitize=address)
-    endif()
+    # if(MSVC_VERSION GREATER_EQUAL 1928)
+    #    add_compile_options(/fsanitize=address /Zi)
+    #    add_link_options(/DEBUG)
+    # endif()
 else()
     add_compile_options(-Wall -Wextra -Werror -pedantic)
-    # Enable ASan on Unix platforms as well for testing
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+    # Enable ASan on Unix platforms as well for testing, skip for MinGW
+    if(NOT MINGW AND NOT CYGWIN)
+        add_compile_options(-fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
 endif()
 
 add_library(posix-mman src/posix-mman.c)

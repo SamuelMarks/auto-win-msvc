@@ -7,6 +7,24 @@
 /* Fallback to system mman on POSIX platforms */
 #include <sys/mman.h>
 
+#if defined(__CYGWIN__)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifndef MCL_CURRENT
+#define MCL_CURRENT     0x01
+#endif
+#ifndef MCL_FUTURE
+#define MCL_FUTURE      0x02
+#endif
+
+int mlockall(int flags);
+int munlockall(void);
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 #else
 
 #include <stddef.h>

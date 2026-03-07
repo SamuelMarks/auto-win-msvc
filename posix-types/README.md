@@ -6,6 +6,28 @@ C89 POSIX compatibility layer for MSVC.
 
 
 
+## Tested Environments
+
+This library is rigorously tested to compile with 0 warnings/errors under strict C89 constraints (`-std=c90 -pedantic -Werror` or `/W4 /WX /wd4127`) across the following environments:
+
+| Compiler / Environment | Target OS | Status | Notes |
+|------------------------|-----------|--------|-------|
+| **MSVC 2005 (VC8)**    | Windows   | ✅ Pass | Native Windows Type Mappings |
+| **MSVC 2022**          | Windows   | ✅ Pass | Native Windows Type Mappings |
+| **MSVC 2026**          | Windows   | ✅ Pass | Native Windows Type Mappings |
+| **MinGW (GCC 13+)**    | Windows   | ✅ Pass | Supplemented native MinGW headers |
+| **Cygwin (GCC)**       | Cygwin    | ✅ Pass | Uses native POSIX headers |
+
+## Implications & Caveats
+
+While this library correctly defines POSIX types for Windows, standard Windows environmental constraints still apply to the POSIX functions interacting with them:
+
+* **Path Length Limits (`MAX_PATH`):** Win32 APIs historically limit paths to 260 characters (`MAX_PATH`). While modern Windows 10/11 supports long paths (up to 32,767 characters) via registry opt-in or the `\\?\` prefix, this type layer does not implicitly translate or bypass the 260-character limit for standard CRT functions.
+* **Unicode (UTF-8 vs UTF-16):** Standard POSIX code assumes UTF-8 strings. Native Windows APIs expect UTF-16 (`wchar_t`). This library does not perform automatic ANSI/UTF-8 to UTF-16 string conversion. Functions interacting with the filesystem via the C runtime (e.g., `_open`) rely on the active Windows locale, which may not support full Unicode unless the application is explicitly manifested for UTF-8.
+* **UNC Paths:** Uniform Naming Convention (UNC) paths (e.g., `\\server\share\file`) are technically supported by Windows APIs, but POSIX application code using forward slashes (`/`) might require normalization depending on the exact CRT function invoked.
+* **File Permissions (`mode_t`):** POSIX permissions (e.g., `rwxr-xr-x`) do not directly map to Windows Access Control Lists (ACLs). Windows typically only simulates the read-only and read-write bits. Concepts like execute bits, SUID, and SGID have no direct equivalent in the standard Windows CRT and are effectively ignored.
+* **Socket Types (`sa_family_t`, `socklen_t`):** Windows types are leveraged where possible to avoid dragging in massive headers like `<windows.h>`. For example, `sa_family_t` maps directly to `unsigned short` rather than forcing an include of `<winsock2.h>` and inflating the binary size.
+
 ## Current Status & Future Plans
 
 **Current Status:**

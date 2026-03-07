@@ -48,6 +48,28 @@ C89 POSIX compatibility layer for MSVC.
 - [ ] `socket` (TODO: Polyfill with socket)
 - [ ] `socketpair` (TODO: Polyfill with CreatePipe / WSASocket loop)
 
+## Tested Environments
+
+This library is rigorously tested to compile cleanly (e.g., `/W4 /WX` or `-Wall -Wextra -Werror -pedantic`) and pass all tests across both modern and legacy toolchains.
+
+| Environment | Compiler / Toolchain | Build System | Status |
+|---|---|---|---|
+| **MSVC 2026** | MSVC 19.4x (VS 2022) | CMake + MSBuild / Ninja | ✅ Passing |
+| **MSVC 2022** | MSVC 19.3x (VS 2022) | CMake + MSBuild | ✅ Passing |
+| **MSVC 2005** | MSVC 14.0 (VS 8) | CMake + NMake | ✅ Passing |
+| **MinGW-w64** | GCC 13.x (Windows native) | CMake + Ninja | ✅ Passing |
+| **Cygwin** | GCC 13.x (POSIX emulation) | CMake + Ninja | ✅ Passing |
+
+## Implementation Notes & Caveats
+
+While this library maps POSIX socket interfaces to Windows equivalents transparently, there are several architectural implications and caveats users should be aware of:
+
+*   **Strict C89 Compliance:** The library is written in strict ISO C90 (C89). Modern types like `long long` are avoided or carefully conditionally compiled to prevent strict-mode compiler errors in legacy setups.
+*   **Minimal Header Inclusion:** To prevent severe namespace pollution and binary bloat, this library avoids `#include <windows.h>`. Instead, it selectively includes `<winsock2.h>` and `<ws2tcpip.h>` with `WIN32_LEAN_AND_MEAN` defined.
+*   **Winsock Initialization (`WSAStartup`)**: POSIX sockets do not require system initialization, but Winsock does. While this library polyfills the socket functions, **the consuming application is responsible for calling `WSAStartup()`** at process startup and `WSACleanup()` at termination on Windows.
+*   **Error Code Mapping (`errno`)**: On Windows, socket errors are retrieved via `WSAGetLastError()` rather than the standard C `errno`. The current polyfills attempt to bridge this via a `set_wsa_errno()` helper; however, users should be aware that not all `WSAE*` codes map perfectly 1:1 to standard POSIX `E*` codes (e.g., `WSAEWOULDBLOCK` vs `EAGAIN`).
+*   **Unix Domain Sockets (`AF_UNIX`)**: Support for `AF_UNIX` (Unix Domain Sockets) on Windows is limited to Windows 10 Build 17063 and later. When using local socket paths, standard Windows file path constraints apply (e.g., `MAX_PATH` limits of 260 characters unless the long-path registry override is active, and limited/unpredictable behavior for UNC paths `\\?\...` in legacy socket contexts).
+*   **Unicode vs ANSI**: POSIX network functions (like `getaddrinfo`, `gethostbyname`) operate on narrow `char` strings. On Windows, these internally map to the ANSI (`A` suffix) APIs by default. Full UTF-8 support depends on the active Windows code page or the application's UTF-8 manifest setting.
 
 ## Current Status & Future Plans
 

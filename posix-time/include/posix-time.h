@@ -11,6 +11,9 @@ extern "C" {
 #ifdef _WIN32
 #include <sys/utime.h>
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+/* UCRT defines struct timespec in time.h */
+#else
 #ifndef _TIMESPEC_DEFINED
 #define _TIMESPEC_DEFINED
 /**
@@ -20,6 +23,7 @@ struct timespec {
     time_t tv_sec;  /**< Seconds. */
     long tv_nsec;   /**< Nanoseconds. */
 };
+#endif
 #endif
 
 #ifndef _TIMEVAL_DEFINED
@@ -62,8 +66,18 @@ struct itimerval {
 
 #define utime _utime /**< Map utime to _utime on Windows */
 #define tzset _tzset /**< Map tzset to _tzset on Windows */
+#define utimbuf _utimbuf /**< Map utimbuf to _utimbuf on Windows */
 
 /* Functions that require polyfill on Windows */
+
+/**
+ * @brief Format string for 64-bit integers, accommodating different compilers.
+ */
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%lld"
+#endif
 
 /**
  * @brief Gets the value of an interval timer.

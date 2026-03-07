@@ -5,8 +5,8 @@
 #include "greatest.h"
 #include "posix-time.h"
 
-#ifdef _WIN32
-#include <windows.h>
+#if defined(_MSC_VER)
+#pragma warning(disable: 4127) /* conditional expression is constant (for while(0) in greatest.h) */
 #endif
 
 TEST test_utime_null(void) {
@@ -21,7 +21,7 @@ TEST test_utime_null(void) {
         fputs("test", f);
         fclose(f);
     }
-    
+
     ASSERT_EQ(0, utime(test_file, NULL));
     remove(test_file);
     PASS();
@@ -40,7 +40,7 @@ TEST test_utime_values(void) {
         fputs("test", f);
         fclose(f);
     }
-    
+
     times.actime = 1000000000;
     times.modtime = 1000000000;
     ASSERT_EQ(0, utime(test_file, &times));
@@ -57,10 +57,10 @@ TEST test_gettimeofday(void) {
 #ifdef _WIN32
     struct timeval tv;
     struct timezone tz;
-    
+
     ASSERT_EQ(0, gettimeofday(&tv, &tz));
     ASSERT(tv.tv_sec > 0);
-    
+
     /* Test with NULLs */
     ASSERT_EQ(0, gettimeofday(NULL, NULL));
 #endif
@@ -81,18 +81,18 @@ TEST test_utimes(void) {
         fputs("test", f);
         fclose(f);
     }
-    
+
     times[0].tv_sec = 1000000000;
     times[0].tv_usec = 500000;
     times[1].tv_sec = 1000000000;
     times[1].tv_usec = 500000;
-    
+
     ASSERT_EQ(0, utimes(test_file, times));
     ASSERT_EQ(0, utimes(test_file, NULL));
-    
+
     ASSERT_EQ(-1, utimes("nonexistent_file_12345.txt", times));
     ASSERT_EQ(-1, utimes(NULL, times));
-    
+
     remove(test_file);
 #endif
     PASS();
@@ -101,17 +101,17 @@ TEST test_utimes(void) {
 TEST test_itimer(void) {
 #ifdef _WIN32
     struct itimerval val, oval, getval;
-    
+
     val.it_interval.tv_sec = 1;
     val.it_interval.tv_usec = 0;
     val.it_value.tv_sec = 2;
     val.it_value.tv_usec = 0;
-    
+
     ASSERT_EQ(0, setitimer(ITIMER_REAL, &val, &oval));
     ASSERT_EQ(0, getitimer(ITIMER_REAL, &getval));
     ASSERT_EQ(1, getval.it_interval.tv_sec);
     ASSERT_EQ(2, getval.it_value.tv_sec);
-    
+
     ASSERT_EQ(-1, setitimer(999, &val, NULL));
     ASSERT_EQ(-1, getitimer(999, &getval));
 #endif

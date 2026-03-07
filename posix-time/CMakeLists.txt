@@ -11,6 +11,7 @@ if(MSVC)
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Werror -pedantic)
+    add_compile_definitions(_XOPEN_SOURCE=700 _DEFAULT_SOURCE _POSIX_C_SOURCE=200809L)
 endif()
 
 include(FetchContent)

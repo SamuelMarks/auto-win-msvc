@@ -5,13 +5,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+
+#ifdef _WIN32
 #include <io.h>
 #include <direct.h>
+#else
+#include <unistd.h>
+#include <fcntl.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifdef _WIN32
 /* Standard Types (if missing) */
 #ifndef _MODE_T_DEFINED
 #define _MODE_T_DEFINED
@@ -20,48 +27,106 @@ typedef unsigned short mode_t;
 
 /* POSIX timespec */
 #if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+/* VS2015+ provides struct timespec in time.h */
+#else
 #define _TIMESPEC_DEFINED
 struct timespec {
     time_t tv_sec;
     long   tv_nsec;
 };
 #endif
+#endif
 
 /* Macros from mappings.json */
+#ifndef S_IFMT
 #define S_IFMT   _S_IFMT
+#endif
+#ifndef S_IFDIR
 #define S_IFDIR  _S_IFDIR
+#endif
+#ifndef S_IFCHR
 #define S_IFCHR  _S_IFCHR
+#endif
+#ifndef S_IFREG
 #define S_IFREG  _S_IFREG
+#endif
+#ifndef S_IFIFO
 #define S_IFIFO  _S_IFIFO
+#endif
 
+#ifndef S_IRUSR
 #define S_IRUSR  _S_IREAD
+#endif
+#ifndef S_IWUSR
 #define S_IWUSR  _S_IWRITE
+#endif
+#ifndef S_IXUSR
 #define S_IXUSR  _S_IEXEC
+#endif
 
 /* Polyfill Macros */
+#ifndef S_IFLNK
 #define S_IFLNK  0120000
+#endif
+#ifndef S_IFSOCK
 #define S_IFSOCK 0140000
+#endif
+#ifndef S_IFBLK
 #define S_IFBLK  0060000
+#endif
 
+#ifndef S_IRWXU
 #define S_IRWXU  (S_IRUSR | S_IWUSR | S_IXUSR)
+#endif
 
+#ifndef S_IRGRP
 #define S_IRGRP  (S_IRUSR >> 3)
+#endif
+#ifndef S_IWGRP
 #define S_IWGRP  (S_IWUSR >> 3)
+#endif
+#ifndef S_IXGRP
 #define S_IXGRP  (S_IXUSR >> 3)
+#endif
+#ifndef S_IRWXG
 #define S_IRWXG  (S_IRWXU >> 3)
+#endif
 
+#ifndef S_IROTH
 #define S_IROTH  (S_IRGRP >> 3)
+#endif
+#ifndef S_IWOTH
 #define S_IWOTH  (S_IWGRP >> 3)
+#endif
+#ifndef S_IXOTH
 #define S_IXOTH  (S_IXGRP >> 3)
+#endif
+#ifndef S_IRWXO
 #define S_IRWXO  (S_IRWXG >> 3)
+#endif
 
+#ifndef S_ISDIR
 #define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
+#endif
+#ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
+#endif
+#ifndef S_ISREG
 #define S_ISREG(m)  (((m) & S_IFMT) == S_IFREG)
+#endif
+#ifndef S_ISFIFO
 #define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
+#endif
+#ifndef S_ISLNK
 #define S_ISLNK(m)  (((m) & S_IFMT) == S_IFLNK)
+#endif
+#ifndef S_ISSOCK
 #define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
+#endif
+#ifndef S_ISBLK
 #define S_ISBLK(m)  (((m) & S_IFMT) == S_IFBLK)
+#endif
 
 /* Special values for utimensat / futimens */
 #define UTIME_NOW  ((1L << 30) - 1L)
@@ -87,6 +152,7 @@ int lstat(const char *pathname, struct _stat64 *statbuf);
 int mknod(const char *pathname, mode_t mode, unsigned int dev);
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
+#endif /* _WIN32 */
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 if(MSVC)
-    add_compile_options(/W4 /WX /D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/W4 /WX /wd4127 /D_CRT_NONSTDC_NO_WARNINGS)
 else()
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wno-unused-parameter)
 endif()

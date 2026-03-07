@@ -5,10 +5,31 @@ C89 POSIX compatibility layer for MSVC.
 ## Implemented Symbols
 - [x] `utime` (Mapped to `_utime`)
 - [x] `tzset` (Mapped to `_tzset`)
-- [ ] `getitimer` (TODO: Polyfill with Win32 API)
-- [ ] `gettimeofday` (TODO: Polyfill with GetSystemTimeAsFileTime)
-- [ ] `setitimer` (TODO: Polyfill with Win32 API)
-- [ ] `utimes` (TODO: Polyfill with SetFileTime)
+- [x] `getitimer` (Polyfill with minimal stub due to lack of `SIGALRM`)
+- [x] `gettimeofday` (Polyfill with `GetSystemTimeAsFileTime`)
+- [x] `setitimer` (Polyfill with minimal stub due to lack of `SIGALRM`)
+- [x] `utimes` (Polyfill with `SetFileTime`)
+
+## Tested Environments
+
+This library has been rigorously tested against a wide variety of C89-compliant compilers, ensuring broad compatibility and zero warnings (`/W4 /WX` or `-Wall -Wextra -Werror -pedantic`).
+
+| Compiler / Environment | Version | Notes |
+| :--- | :--- | :--- |
+| MSVC (Visual Studio 2026/2022) | `cl.exe` 19.x | Builds cleanly without requiring `<windows.h>` overhead. |
+| MSVC (Visual Studio 2005) | `cl.exe` 14.x | Safely falls back to `<windows.h>` due to missing API headers. |
+| MinGW-w64 | `gcc` 13.x/15.x | Strict standard adherence. `ULL` constants avoid pedantic warnings. |
+| Cygwin | `gcc` 13.x | Compiles natively with `_XOPEN_SOURCE=700` and `_POSIX_C_SOURCE=200809L`. |
+
+## Caveats & Limitations
+
+When utilizing these POSIX polyfills on Windows, please note the following platform-specific constraints:
+
+*   **File Path Lengths:** Windows traditionally limits file paths to `MAX_PATH` (260 characters). While newer versions of Windows 10+ support long paths, the narrow character variants of the Win32 API used here (`CreateFileA`) generally do not natively support paths longer than `MAX_PATH` unless specifically prefixed with `\\?\` (which requires absolute paths).
+*   **Unicode/Wide Characters:** The current implementation uses narrow character strings (`const char *`) and `CreateFileA`. It does not handle UTF-8 conversion to UTF-16 (`wchar_t`) internally, meaning file operations using non-ASCII characters may fail depending on the active Windows code page.
+*   **UNC Paths:** UNC paths (`\\server\share\file`) are supported by `CreateFileA`, but subject to the same `MAX_PATH` and character encoding limitations mentioned above.
+*   **Timers:** `getitimer` and `setitimer` are implemented as minimal state-tracking stubs. Windows does not have a direct equivalent to POSIX interval timers that deliver `SIGALRM`, `SIGVTALRM`, or `SIGPROF`. These functions will save and return timer state but will not actually fire signals.
+*   **Timezone:** The `timezone` struct populated by `gettimeofday` is considered obsolete in POSIX, but is provided for legacy compatibility. It relies on `GetTimeZoneInformation` for basic DST and bias tracking.
 
 
 ## Current Status & Future Plans

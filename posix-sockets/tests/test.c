@@ -1,4 +1,7 @@
 /* test.c - 100% Test Coverage Stubs */
+#ifdef _MSC_VER
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#endif
 #include <stdio.h>
 #include <errno.h>
 #include "greatest.h"
@@ -311,14 +314,15 @@ SUITE(posix_sockets_suite) {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
+#ifdef _WIN32
+    WSADATA wsaData;
+#endif
     (void)argc;
     (void)argv;
 #ifdef _WIN32
-    WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
     GREATEST_MAIN_BEGIN();
     RUN_SUITE(posix_sockets_suite);
     GREATEST_MAIN_END();
-    return 0;
 }

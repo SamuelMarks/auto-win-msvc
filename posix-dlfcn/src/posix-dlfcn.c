@@ -8,10 +8,37 @@
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(_WIN64) || defined(__WIN64__)
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#if defined(_M_IX86) || defined(__i386__)
+#define _X86_
+#elif defined(_M_AMD64) || defined(__x86_64__)
+#define _AMD64_
+#elif defined(_M_ARM) || defined(__arm__)
+#define _ARM_
+#elif defined(_M_ARM64) || defined(__aarch64__)
+#define _ARM64_
 #endif
-#include <windows.h>
+
+#if defined(_MSC_VER) && _MSC_VER <= 1400
+#pragma warning(push)
+#pragma warning(disable: 4201 4214)
+#include <windef.h>
+#include <winbase.h>
+#pragma warning(pop)
+#else
+#include <minwindef.h>
+#include <windef.h>
+#include <errhandlingapi.h>
+#include <libloaderapi.h>
+#include <winbase.h>
+#include <memoryapi.h>
+#endif
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#define NUM_FORMAT "%lu"
+#else
+#define NUM_FORMAT "%lu"
+#endif
+
 
 /* TLS storage for thread-local error message and module name buffer */
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
@@ -29,12 +56,12 @@ static THREAD_LOCAL char thread_dladdr_fname[MAX_PATH] = {0};
 /*
  * Helper to set the thread-local error message from a Windows error code.
  */
-static void set_dlerror(DWORD err_code) {
+static int set_dlerror(DWORD err_code) {
     size_t len;
 
     if (err_code == 0) {
         thread_dlerror_set = 0;
-        return;
+        return 0;
     }
 
     if (FormatMessageA(
@@ -47,9 +74,9 @@ static void set_dlerror(DWORD err_code) {
         NULL) == 0) {
         /* Fallback if FormatMessage fails */
         #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-        sprintf_s(thread_dlerror_msg, sizeof(thread_dlerror_msg), "Unknown error code: %lu", (unsigned long)err_code);
+        sprintf_s(thread_dlerror_msg, sizeof(thread_dlerror_msg), "Unknown error code: " NUM_FORMAT, (unsigned long)err_code);
         #else
-        sprintf(thread_dlerror_msg, "Unknown error code: %lu", (unsigned long)err_code);
+        sprintf(thread_dlerror_msg, "Unknown error code: " NUM_FORMAT, (unsigned long)err_code);
         #endif
     } else {
         /* Strip trailing newlines added by FormatMessage */
@@ -60,6 +87,7 @@ static void set_dlerror(DWORD err_code) {
         }
     }
     thread_dlerror_set = 1;
+    return 0;
 }
 
 void *dlopen(const char *file, int mode) {
@@ -135,7 +163,11 @@ void *dlsym(void *handle, const char *name) {
 
     /* Standard trick to avoid strict C89 warnings when casting function to void pointer */
     ret_ptr = NULL;
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+    memcpy_s(&ret_ptr, sizeof(ret_ptr), &proc, sizeof(proc));
+#else
     memcpy(&ret_ptr, &proc, sizeof(proc));
+#endif
     return ret_ptr;
 }
 
