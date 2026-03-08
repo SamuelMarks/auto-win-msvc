@@ -151,6 +151,7 @@ struct dirent *readdir(DIR *dirp) {
     return &dirp->entry;
 }
 
+/** \brief closedir function. */
 int closedir(DIR *dirp) {
     if (!dirp) {
         errno = EBADF;
@@ -169,6 +170,7 @@ int closedir(DIR *dirp) {
     return 0;
 }
 
+/** \brief rewinddir function. */
 void rewinddir(DIR *dirp) {
     char *search_path;
     size_t name_len;
@@ -210,11 +212,13 @@ void rewinddir(DIR *dirp) {
     dirp->offset = 0;
 }
 
+/** \brief telldir function. */
 long telldir(DIR *dirp) {
     if (!dirp) return -1;
     return dirp->offset;
 }
 
+/** \brief seekdir function. */
 void seekdir(DIR *dirp, long loc) {
     if (!dirp) return;
 
@@ -224,6 +228,7 @@ void seekdir(DIR *dirp, long loc) {
     }
 }
 
+/** \brief scandir function. */
 int scandir(const char *dirp, struct dirent ***namelist,
             int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **)) {
@@ -282,6 +287,7 @@ int scandir(const char *dirp, struct dirent ***namelist,
     return (int)count;
 }
 
+/** \brief alphasort function. */
 int alphasort(const struct dirent **a, const struct dirent **b) {
     return strcmp((*a)->d_name, (*b)->d_name);
 }

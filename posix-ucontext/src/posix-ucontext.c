@@ -2,6 +2,7 @@
 
 #if defined(_MSC_VER)
 
+/** \brief getcontext function. */
 int getcontext(ucontext_t *ucp) {
     if (!ucp) return -1;
     /* Does nothing, just an empty stub to satisfy compilation */

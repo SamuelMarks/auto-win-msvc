@@ -1,0 +1,18 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "alloca",
+        "source_header": "<alloca.h>",
+        "requires_polyfill": false,
+        "msvc": "_alloca",
+        "shim": {
+          "type": "macro",
+          "code": "#define alloca _alloca"
+        }
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

@@ -20,9 +20,13 @@ extern "C" {
 #define EPOLLWRBAND 0x200
 #define EPOLLMSG 0x400
 #define EPOLLRDHUP 0x2000
+/** \brief EPOLLEXCLUSIVE macro. */
 #define EPOLLEXCLUSIVE (1U << 28)
+/** \brief EPOLLWAKEUP macro. */
 #define EPOLLWAKEUP (1U << 29)
+/** \brief EPOLLONESHOT macro. */
 #define EPOLLONESHOT (1U << 30)
+/** \brief EPOLLET macro. */
 #define EPOLLET (1U << 31)
 
 #define EPOLL_CTL_ADD 1
@@ -45,9 +49,13 @@ struct epoll_event {
     epoll_data_t data;
 };
 
+/** \brief epoll_create function. */
 int epoll_create(int size);
+/** \brief epoll_create1 function. */
 int epoll_create1(int flags);
+/** \brief epoll_ctl function. */
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+/** \brief epoll_wait function. */
 int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
 
 #ifdef __cplusplus

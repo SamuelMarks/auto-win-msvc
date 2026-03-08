@@ -52,10 +52,12 @@
 #define WAIT_TIMEOUT 258L
 #endif
 
+/** \brief wait function. */
 pid_t wait(int *stat_loc) {
     return waitpid(-1, stat_loc, 0);
 }
 
+/** \brief waitpid function. */
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     HANDLE hProcess;
     DWORD wait_res;
@@ -97,6 +99,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     return (pid_t)-1;
 }
 
+/** \brief waitid function. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
     pid_t res;
     int status = 0;

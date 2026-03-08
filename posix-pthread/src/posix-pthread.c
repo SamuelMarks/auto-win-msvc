@@ -65,6 +65,7 @@ __declspec(dllimport) int WINAPI InitializeCriticalSectionAndSpinCount(void*, un
 __declspec(dllimport) void* WINAPI OpenThread(unsigned long, int, unsigned long);
 
 typedef long (WINAPI * PFN_SetThreadDescription)(void*, const wchar_t*);
+/** \brief dyn_SetThreadDescription function. */
 static int WINAPI dyn_SetThreadDescription(void* a0, const wchar_t* a1) {
     static PFN_SetThreadDescription pfn = 0;
     static int init = 0;
@@ -81,6 +82,7 @@ static int WINAPI dyn_SetThreadDescription(void* a0, const wchar_t* a1) {
 }
 
 typedef void (WINAPI * PFN_InitializeSRWLock)(void**);
+/** \brief dyn_InitializeSRWLock function. */
 static void WINAPI dyn_InitializeSRWLock(void** a0) {
     static PFN_InitializeSRWLock pfn = 0;
     static int init = 0;
@@ -94,6 +96,7 @@ static void WINAPI dyn_InitializeSRWLock(void** a0) {
 
 
 typedef void (WINAPI * PFN_AcquireSRWLockExclusive)(void**);
+/** \brief dyn_AcquireSRWLockExclusive function. */
 static void WINAPI dyn_AcquireSRWLockExclusive(void** a0) {
     static PFN_AcquireSRWLockExclusive pfn = 0;
     static int init = 0;
@@ -107,6 +110,7 @@ static void WINAPI dyn_AcquireSRWLockExclusive(void** a0) {
 
 
 typedef void (WINAPI * PFN_ReleaseSRWLockExclusive)(void**);
+/** \brief dyn_ReleaseSRWLockExclusive function. */
 static void WINAPI dyn_ReleaseSRWLockExclusive(void** a0) {
     static PFN_ReleaseSRWLockExclusive pfn = 0;
     static int init = 0;
@@ -120,6 +124,7 @@ static void WINAPI dyn_ReleaseSRWLockExclusive(void** a0) {
 
 
 typedef void (WINAPI * PFN_AcquireSRWLockShared)(void**);
+/** \brief dyn_AcquireSRWLockShared function. */
 static void WINAPI dyn_AcquireSRWLockShared(void** a0) {
     static PFN_AcquireSRWLockShared pfn = 0;
     static int init = 0;
@@ -134,6 +139,7 @@ static void WINAPI dyn_AcquireSRWLockShared(void** a0) {
 
 #if 0
 typedef void (WINAPI * PFN_ReleaseSRWLockShared)(void**);
+/** \brief dyn_ReleaseSRWLockShared function. */
 static void WINAPI dyn_ReleaseSRWLockShared(void** a0) {
     static PFN_ReleaseSRWLockShared pfn = 0;
     static int init = 0;
@@ -147,6 +153,7 @@ static void WINAPI dyn_ReleaseSRWLockShared(void** a0) {
 #endif
 
 typedef unsigned char (WINAPI * PFN_TryAcquireSRWLockExclusive)(void**);
+/** \brief dyn_TryAcquireSRWLockExclusive function. */
 static unsigned char WINAPI dyn_TryAcquireSRWLockExclusive(void** a0) {
     static PFN_TryAcquireSRWLockExclusive pfn = 0;
     static int init = 0;
@@ -161,6 +168,7 @@ static unsigned char WINAPI dyn_TryAcquireSRWLockExclusive(void** a0) {
 
 
 typedef unsigned char (WINAPI * PFN_TryAcquireSRWLockShared)(void**);
+/** \brief dyn_TryAcquireSRWLockShared function. */
 static unsigned char WINAPI dyn_TryAcquireSRWLockShared(void** a0) {
     static PFN_TryAcquireSRWLockShared pfn = 0;
     static int init = 0;
@@ -175,6 +183,7 @@ static unsigned char WINAPI dyn_TryAcquireSRWLockShared(void** a0) {
 
 
 typedef void (WINAPI * PFN_InitializeConditionVariable)(void**);
+/** \brief dyn_InitializeConditionVariable function. */
 static void WINAPI dyn_InitializeConditionVariable(void** a0) {
     static PFN_InitializeConditionVariable pfn = 0;
     static int init = 0;
@@ -188,6 +197,7 @@ static void WINAPI dyn_InitializeConditionVariable(void** a0) {
 
 
 typedef int (WINAPI * PFN_SleepConditionVariableSRW)(void**, void**, unsigned long, unsigned long);
+/** \brief dyn_SleepConditionVariableSRW function. */
 static int WINAPI dyn_SleepConditionVariableSRW(void** a0, void** a1, unsigned long a2, unsigned long a3) {
     static PFN_SleepConditionVariableSRW pfn = 0;
     static int init = 0;
@@ -202,6 +212,7 @@ static int WINAPI dyn_SleepConditionVariableSRW(void** a0, void** a1, unsigned l
 
 
 typedef void (WINAPI * PFN_WakeConditionVariable)(void**);
+/** \brief dyn_WakeConditionVariable function. */
 static void WINAPI dyn_WakeConditionVariable(void** a0) {
     static PFN_WakeConditionVariable pfn = 0;
     static int init = 0;
@@ -215,6 +226,7 @@ static void WINAPI dyn_WakeConditionVariable(void** a0) {
 
 
 typedef void (WINAPI * PFN_WakeAllConditionVariable)(void**);
+/** \brief dyn_WakeAllConditionVariable function. */
 static void WINAPI dyn_WakeAllConditionVariable(void** a0) {
     static PFN_WakeAllConditionVariable pfn = 0;
     static int init = 0;
@@ -229,6 +241,7 @@ static void WINAPI dyn_WakeAllConditionVariable(void** a0) {
 
 #if 0
 typedef int (WINAPI * PFN_InitOnceBeginInitialize)(void**, unsigned long, int*, void**);
+/** \brief dyn_InitOnceBeginInitialize function. */
 static int WINAPI dyn_InitOnceBeginInitialize(void** a0, unsigned long a1, int* a2, void** a3) {
     static PFN_InitOnceBeginInitialize pfn = 0;
     static int init = 0;
@@ -243,6 +256,7 @@ static int WINAPI dyn_InitOnceBeginInitialize(void** a0, unsigned long a1, int* 
 
 
 typedef int (WINAPI * PFN_InitOnceComplete)(void**, unsigned long, void*);
+/** \brief dyn_InitOnceComplete function. */
 static int WINAPI dyn_InitOnceComplete(void** a0, unsigned long a1, void* a2) {
     static PFN_InitOnceComplete pfn = 0;
     static int init = 0;
@@ -260,6 +274,7 @@ typedef struct {
     void *arg;
 } thread_params_t;
 
+/** \brief thread_start_wrapper function. */
 static int WINAPI thread_start_wrapper(void *arg) {
     thread_params_t *params = (thread_params_t *)arg;
     void *(*routine)(void*) = params->start_routine;
@@ -1089,6 +1104,7 @@ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
     return ENOSYS;
 }
 
+/** \brief pthread_setspecific function. */
 int pthread_setspecific(pthread_key_t key, const void *value) {
 #if defined(_WIN32)
     return TlsSetValue(key, (void*)(size_t)value) ? 0 : EINVAL;

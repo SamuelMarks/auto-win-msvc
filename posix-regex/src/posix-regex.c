@@ -2,6 +2,7 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 
+/** \brief regcomp function. */
 int regcomp(regex_t *preg, const char *pattern, int cflags) {
     (void)preg;
     (void)pattern;
@@ -9,6 +10,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
     return REG_NOSYS;
 }
 
+/** \brief regexec function. */
 int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], int eflags) {
     (void)preg;
     (void)string;
@@ -18,6 +20,7 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t p
     return REG_NOSYS;
 }
 
+/** \brief regerror function. */
 size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size) {
     (void)errcode;
     (void)preg;
@@ -25,6 +28,7 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_si
     return errbuf_size;
 }
 
+/** \brief regfree function. */
 void regfree(regex_t *preg) {
     (void)preg;
 }

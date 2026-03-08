@@ -1,7 +1,9 @@
 #include "bsd-sys-event.h"
 #include <errno.h>
 #if defined(_MSC_VER) && !defined(__clang__)
+/** \brief kqueue function. */
 int kqueue(void) { errno = ENOSYS; return -1; }
+/** \brief kevent function. */
 int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents, const struct timespec *timeout) {
     (void)kq; (void)changelist; (void)nchanges; (void)eventlist; (void)nevents; (void)timeout;
     errno = ENOSYS; return -1;

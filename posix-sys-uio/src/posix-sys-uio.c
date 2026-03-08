@@ -15,6 +15,7 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
+/** \brief posix_writev function. */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     DWORD bytesSent = 0;
     int ret;
@@ -64,6 +65,7 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     return bytesSent;
 }
 
+/** \brief posix_readv function. */
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
     DWORD bytesRecv = 0;
     DWORD flags = 0;

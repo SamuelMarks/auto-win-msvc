@@ -77,54 +77,70 @@ struct timespec {
 #endif
 
 #ifndef S_IRWXU
+/** \brief S_IRWXU macro. */
 #define S_IRWXU  (S_IRUSR | S_IWUSR | S_IXUSR)
 #endif
 
 #ifndef S_IRGRP
+/** \brief S_IRGRP macro. */
 #define S_IRGRP  (S_IRUSR >> 3)
 #endif
 #ifndef S_IWGRP
+/** \brief S_IWGRP macro. */
 #define S_IWGRP  (S_IWUSR >> 3)
 #endif
 #ifndef S_IXGRP
+/** \brief S_IXGRP macro. */
 #define S_IXGRP  (S_IXUSR >> 3)
 #endif
 #ifndef S_IRWXG
+/** \brief S_IRWXG macro. */
 #define S_IRWXG  (S_IRWXU >> 3)
 #endif
 
 #ifndef S_IROTH
+/** \brief S_IROTH macro. */
 #define S_IROTH  (S_IRGRP >> 3)
 #endif
 #ifndef S_IWOTH
+/** \brief S_IWOTH macro. */
 #define S_IWOTH  (S_IWGRP >> 3)
 #endif
 #ifndef S_IXOTH
+/** \brief S_IXOTH macro. */
 #define S_IXOTH  (S_IXGRP >> 3)
 #endif
 #ifndef S_IRWXO
+/** \brief S_IRWXO macro. */
 #define S_IRWXO  (S_IRWXG >> 3)
 #endif
 
 #ifndef S_ISDIR
+/** \brief S_ISDIR macro. */
 #define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
 #endif
 #ifndef S_ISCHR
+/** \brief S_ISCHR macro. */
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
 #endif
 #ifndef S_ISREG
+/** \brief S_ISREG macro. */
 #define S_ISREG(m)  (((m) & S_IFMT) == S_IFREG)
 #endif
 #ifndef S_ISFIFO
+/** \brief S_ISFIFO macro. */
 #define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
 #endif
 #ifndef S_ISLNK
+/** \brief S_ISLNK macro. */
 #define S_ISLNK(m)  (((m) & S_IFMT) == S_IFLNK)
 #endif
 #ifndef S_ISSOCK
+/** \brief S_ISSOCK macro. */
 #define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
 #endif
 #ifndef S_ISBLK
+/** \brief S_ISBLK macro. */
 #define S_ISBLK(m)  (((m) & S_IFMT) == S_IFBLK)
 #endif
 
@@ -149,8 +165,11 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf, int flags);
 int futimens(int fd, const struct timespec times[2]);
 int lstat(const char *pathname, struct _stat64 *statbuf);
+/** \brief mknod function. */
 int mknod(const char *pathname, mode_t mode, unsigned int dev);
+/** \brief mknodat function. */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
+/** \brief utimensat function. */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
 #endif /* _WIN32 */
 

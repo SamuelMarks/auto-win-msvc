@@ -18,7 +18,9 @@ extern "C" {
 #define MCL_FUTURE      0x02
 #endif
 
+/** \brief mlockall function. */
 int mlockall(int flags);
+/** \brief munlockall function. */
 int munlockall(void);
 #ifdef __cplusplus
 }
@@ -65,6 +67,7 @@ extern "C" {
 #define MAP_ANON        MAP_ANONYMOUS
 #endif
 #ifndef MAP_FAILED
+/** \brief MAP_FAILED macro. */
 #define MAP_FAILED      ((void *)-1)
 #endif
 

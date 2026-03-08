@@ -29,9 +29,12 @@ extern "C" {
 
 #if defined(_MSC_VER)
 #define UTS_WINAPI __stdcall
+/** \brief UTS_DECLSPEC_IMPORT macro. */
 #define UTS_DECLSPEC_IMPORT __declspec(dllimport)
 #else
+/** \brief UTS_WINAPI macro. */
 #define UTS_WINAPI __attribute__((stdcall))
+/** \brief UTS_DECLSPEC_IMPORT macro. */
 #define UTS_DECLSPEC_IMPORT __attribute__((dllimport))
 #endif
 
@@ -87,10 +90,15 @@ typedef struct _UTS_RTL_OSVERSIONINFOW {
 typedef UTS_LONG (UTS_WINAPI *RtlGetVersion_Func)(UTS_RTL_OSVERSIONINFOW*);
 typedef UTS_LONG (UTS_WINAPI *UTS_FARPROC)(void);
 
+/** \brief GetComputerNameA function. */
 UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI GetComputerNameA(UTS_LPSTR lpBuffer, UTS_LPDWORD nSize);
+/** \brief GetModuleHandleA function. */
 UTS_DECLSPEC_IMPORT UTS_HMODULE UTS_WINAPI GetModuleHandleA(UTS_LPCSTR lpModuleName);
+/** \brief GetProcAddress function. */
 UTS_DECLSPEC_IMPORT UTS_FARPROC UTS_WINAPI GetProcAddress(UTS_HMODULE hModule, UTS_LPCSTR lpProcName);
+/** \brief GetSystemInfo function. */
 UTS_DECLSPEC_IMPORT void UTS_WINAPI GetSystemInfo(UTS_SYSTEM_INFO* lpSystemInfo);
+/** \brief GetVersionExA function. */
 UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI GetVersionExA(UTS_OSVERSIONINFOA* lpVersionInformation);
 
 #define UTS_PROCESSOR_ARCHITECTURE_INTEL 0

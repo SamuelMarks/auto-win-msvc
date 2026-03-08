@@ -21,9 +21,13 @@ typedef void *HANDLE;
 typedef unsigned long DWORD;
 typedef int BOOL;
 
+/** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+/** \brief STD_INPUT_HANDLE macro. */
 #define STD_INPUT_HANDLE ((DWORD)-10)
+/** \brief STD_OUTPUT_HANDLE macro. */
 #define STD_OUTPUT_HANDLE ((DWORD)-11)
+/** \brief STD_ERROR_HANDLE macro. */
 #define STD_ERROR_HANDLE ((DWORD)-12)
 
 #define ENABLE_PROCESSED_INPUT 0x0001
@@ -77,6 +81,7 @@ static int format_error_msg(char *buffer, size_t size, int errcode) {
 #ifdef _WIN32
 
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+/** \brief null_invalid_parameter_handler function. */
 static void __cdecl null_invalid_parameter_handler(
     const wchar_t* expression,
     const wchar_t* function,
@@ -129,28 +134,33 @@ static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
 }
 #endif
 
+/** \brief cfgetispeed function. */
 speed_t cfgetispeed(const struct termios *termios_p) {
     if (!termios_p) return 0;
     return termios_p->c_ispeed;
 }
 
+/** \brief cfgetospeed function. */
 speed_t cfgetospeed(const struct termios *termios_p) {
     if (!termios_p) return 0;
     return termios_p->c_ospeed;
 }
 
+/** \brief cfsetispeed function. */
 int cfsetispeed(struct termios *termios_p, speed_t speed) {
     if (!termios_p) return -1;
     termios_p->c_ispeed = speed;
     return 0;
 }
 
+/** \brief cfsetospeed function. */
 int cfsetospeed(struct termios *termios_p, speed_t speed) {
     if (!termios_p) return -1;
     termios_p->c_ospeed = speed;
     return 0;
 }
 
+/** \brief tcdrain function. */
 int tcdrain(int fd) {
 #ifdef _WIN32
     HANDLE h;
@@ -168,12 +178,14 @@ int tcdrain(int fd) {
 #endif
 }
 
+/** \brief tcflow function. */
 int tcflow(int fd, int action) {
     (void)fd;
     (void)action;
     return 0;
 }
 
+/** \brief tcflush function. */
 int tcflush(int fd, int queue_selector) {
 #ifdef _WIN32
     HANDLE h;
@@ -191,6 +203,7 @@ int tcflush(int fd, int queue_selector) {
 #endif
 }
 
+/** \brief tcgetattr function. */
 int tcgetattr(int fd, struct termios *termios_p) {
 #ifdef _WIN32
     HANDLE h;
@@ -235,17 +248,20 @@ int tcgetattr(int fd, struct termios *termios_p) {
 #endif
 }
 
+/** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
     (void)fd;
     return -1;
 }
 
+/** \brief tcsendbreak function. */
 int tcsendbreak(int fd, int duration) {
     (void)fd;
     (void)duration;
     return 0;
 }
 
+/** \brief tcsetattr function. */
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 #ifdef _WIN32
     HANDLE h;

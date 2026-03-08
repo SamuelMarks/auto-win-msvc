@@ -4,6 +4,7 @@
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+/** \brief posix_ioctl function. */
 int posix_ioctl(int fd, unsigned long request, ...) {
     int ret;
     va_list args;

@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #if defined(_MSC_VER) && !defined(__clang__)
 __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
+/** \brief syscall function. */
 long syscall(long number, ...) {
     if (number == SYS_gettid) return (long)GetCurrentThreadId();
     return -1;

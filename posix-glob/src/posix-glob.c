@@ -49,6 +49,7 @@ static int glob_append(glob_t *pglob, const char *path) {
     return 0;
 }
 
+/** \brief glob_compare function. */
 static int glob_compare(const void *a, const void *b) {
     const char *sa = *(const char * const *)a;
     const char *sb = *(const char * const *)b;
@@ -58,6 +59,7 @@ static int glob_compare(const void *a, const void *b) {
     return strcmp(sa, sb);
 }
 
+/** \brief fnmatch function. */
 int fnmatch(const char *pattern, const char *string, int flags) {
     const char *p = pattern;
     const char *s = string;
@@ -110,6 +112,7 @@ int fnmatch(const char *pattern, const char *string, int flags) {
 }
 
 #if defined(_WIN32) || defined(_MSC_VER)
+/** \brief glob function. */
 int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int eerrno), glob_t *pglob) {
     struct _finddata_t fileinfo;
     intptr_t handle;
@@ -201,6 +204,7 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int e
     return 0;
 }
 #else
+/** \brief glob function. */
 int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int eerrno), glob_t *pglob) {
     DIR *dir;
     struct dirent *ent;
@@ -290,6 +294,7 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *epath, int e
 }
 #endif
 
+/** \brief globfree function. */
 void globfree(glob_t *pglob) {
     size_t i;
     if (!pglob || !pglob->gl_pathv) return;
@@ -303,6 +308,7 @@ void globfree(glob_t *pglob) {
     pglob->gl_pathc = 0;
 }
 
+/** \brief wordexp function. */
 int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
     char *copy;
     char *token;
@@ -379,6 +385,7 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
     return 0;
 }
 
+/** \brief wordfree function. */
 void wordfree(wordexp_t *pwordexp) {
     size_t i;
     if (!pwordexp || !pwordexp->we_wordv) return;

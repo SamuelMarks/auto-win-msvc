@@ -61,6 +61,7 @@ struct rlimit {
     rlim_t rlim_max;
 };
 
+/** \brief RLIM_INFINITY macro. */
 #define RLIM_INFINITY (~0UL)
 
 #ifdef __cplusplus

@@ -33,6 +33,7 @@ static __inline struct backtrace_state *backtrace_create_state(const char *filen
     return 0;
 }
 
+/** \brief backtrace_pcinfo function. */
 static __inline int backtrace_pcinfo(struct backtrace_state *state, uintptr_t pc, backtrace_full_callback callback, backtrace_error_callback error_callback, void *data) {
     (void)state;
     (void)pc;

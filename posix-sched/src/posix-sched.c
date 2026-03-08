@@ -8,11 +8,13 @@
 #include <winsock2.h>
 #include <errno.h>
 
+/** \brief posix_sched_yield function. */
 int posix_sched_yield(void) {
     Sleep(0);
     return 0;
 }
 
+/** \brief posix_sched_setaffinity function. */
 int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
     HANDLE hProcess;
     BOOL res;
@@ -45,6 +47,7 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
     return 0;
 }
 
+/** \brief posix_sched_getaffinity function. */
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
     HANDLE hProcess;
     BOOL res;

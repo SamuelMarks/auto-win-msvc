@@ -23,7 +23,9 @@ struct option {
 #define required_argument 1
 #define optional_argument 2
 
+/** \brief getopt function. */
 int getopt(int argc, char *const argv[], const char *optstring);
+/** \brief getopt_long function. */
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex);
 
 #ifdef __cplusplus

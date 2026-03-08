@@ -55,6 +55,7 @@ void closelog(void) {
     }
 }
 
+/** \brief openlog function. */
 void openlog(const char *ident, int option, int facility) {
     closelog(); /* Clean up previous state if any */
 
@@ -82,6 +83,7 @@ void openlog(const char *ident, int option, int facility) {
 #endif
 }
 
+/** \brief setlogmask function. */
 int setlogmask(int mask) {
     int old_mask = g_LogMask;
     if (mask != 0) {
@@ -90,6 +92,7 @@ int setlogmask(int mask) {
     return old_mask;
 }
 
+/** \brief syslog function. */
 void syslog(int priority, const char *format, ...) {
     va_list args;
     char buffer[4096];

@@ -20,6 +20,7 @@ __declspec(dllimport) BOOL __stdcall GetDiskFreeSpaceExA(
     ULARGE_INTEGER *lpTotalNumberOfFreeBytes
 );
 
+/** \brief statfs function. */
 int statfs(const char *path, struct statfs *buf) {
     ULARGE_INTEGER freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes;
     
@@ -40,6 +41,7 @@ int statfs(const char *path, struct statfs *buf) {
     return -1;
 }
 
+/** \brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf) {
     (void)fd; /* Cannot easily get path from standard fd on Windows without handle info */
     (void)buf;

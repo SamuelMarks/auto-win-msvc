@@ -13,6 +13,7 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
+/** \brief posix_flock function. */
 int posix_flock(int fd, int operation) {
     HANDLE hFile;
     OVERLAPPED overlapped;

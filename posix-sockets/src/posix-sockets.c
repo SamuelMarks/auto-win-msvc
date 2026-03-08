@@ -23,6 +23,7 @@ static int set_wsa_errno(void) {
 }
 #endif
 
+/** \brief posix_endhostent function. */
 void posix_endhostent(void) {
 #ifdef _WIN32
     /* TODO: Requires polyfill */
@@ -72,6 +73,7 @@ const char *posix_gai_strerror(int ecode) {
     return buf;
 }
 
+/** \brief posix_getaddrinfo function. */
 int posix_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res) {
     (void)nodename;
     (void)servname;
@@ -112,6 +114,7 @@ struct hostent *posix_gethostent(void) {
     return NULL;
 }
 
+/** \brief posix_getnameinfo function. */
 int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen, char *node, posix_socklen_t nodelen, char *service, posix_socklen_t servicelen, int flags) {
     (void)sa;
     (void)salen;
@@ -208,6 +211,7 @@ struct servent *posix_getservent(void) {
     return NULL;
 }
 
+/** \brief posix_sethostent function. */
 void posix_sethostent(int stayopen) {
     (void)stayopen;
 #ifdef _WIN32
@@ -251,6 +255,7 @@ int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout) {
     return -1;
 }
 
+/** \brief posix_pselect function. */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, const struct timespec *timeout, const void *sigmask) {
     (void)nfds;
     (void)readfds;
@@ -265,6 +270,7 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     return -1;
 }
 
+/** \brief posix_select function. */
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout) {
     (void)nfds;
     (void)readfds;
@@ -278,6 +284,7 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, 
     return -1;
 }
 
+/** \brief posix_accept function. */
 int posix_accept(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
     (void)socket;
     (void)address;
@@ -289,6 +296,7 @@ int posix_accept(int socket, struct sockaddr *address, posix_socklen_t *address_
     return -1;
 }
 
+/** \brief posix_bind function. */
 int posix_bind(int socket, const struct sockaddr *address, posix_socklen_t address_len) {
     (void)socket;
     (void)address;
@@ -300,6 +308,7 @@ int posix_bind(int socket, const struct sockaddr *address, posix_socklen_t addre
     return -1;
 }
 
+/** \brief posix_connect function. */
 int posix_connect(int socket, const struct sockaddr *address, posix_socklen_t address_len) {
     (void)socket;
     (void)address;
@@ -311,6 +320,7 @@ int posix_connect(int socket, const struct sockaddr *address, posix_socklen_t ad
     return -1;
 }
 
+/** \brief posix_getpeername function. */
 int posix_getpeername(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
     (void)socket;
     (void)address;
@@ -322,6 +332,7 @@ int posix_getpeername(int socket, struct sockaddr *address, posix_socklen_t *add
     return -1;
 }
 
+/** \brief posix_getsockname function. */
 int posix_getsockname(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
     (void)socket;
     (void)address;
@@ -333,6 +344,7 @@ int posix_getsockname(int socket, struct sockaddr *address, posix_socklen_t *add
     return -1;
 }
 
+/** \brief posix_getsockopt function. */
 int posix_getsockopt(int socket, int level, int option_name, void *option_value, posix_socklen_t *option_len) {
     (void)socket;
     (void)level;
@@ -346,6 +358,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
     return -1;
 }
 
+/** \brief posix_listen function. */
 int posix_listen(int socket, int backlog) {
     (void)socket;
     (void)backlog;
@@ -356,6 +369,7 @@ int posix_listen(int socket, int backlog) {
     return -1;
 }
 
+/** \brief posix_recv function. */
 posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
     (void)socket;
     (void)buffer;
@@ -368,6 +382,7 @@ posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
     return -1;
 }
 
+/** \brief posix_recvfrom function. */
 posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags, struct sockaddr *address, posix_socklen_t *address_len) {
     (void)socket;
     (void)buffer;
@@ -382,6 +397,7 @@ posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
     return -1;
 }
 
+/** \brief posix_recvmsg function. */
 posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags) {
     (void)socket;
     (void)message;
@@ -393,6 +409,7 @@ posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags) {
     return -1;
 }
 
+/** \brief posix_send function. */
 posix_ssize_t posix_send(int socket, const void *message, size_t length, int flags) {
     (void)socket;
     (void)message;
@@ -405,6 +422,7 @@ posix_ssize_t posix_send(int socket, const void *message, size_t length, int fla
     return -1;
 }
 
+/** \brief posix_sendmsg function. */
 posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message, int flags) {
     (void)socket;
     (void)message;
@@ -416,6 +434,7 @@ posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message, int flags)
     return -1;
 }
 
+/** \brief posix_sendto function. */
 posix_ssize_t posix_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, posix_socklen_t dest_len) {
     (void)socket;
     (void)message;
@@ -430,6 +449,7 @@ posix_ssize_t posix_sendto(int socket, const void *message, size_t length, int f
     return -1;
 }
 
+/** \brief posix_setsockopt function. */
 int posix_setsockopt(int socket, int level, int option_name, const void *option_value, posix_socklen_t option_len) {
     (void)socket;
     (void)level;
@@ -443,6 +463,7 @@ int posix_setsockopt(int socket, int level, int option_name, const void *option_
     return -1;
 }
 
+/** \brief posix_shutdown function. */
 int posix_shutdown(int socket, int how) {
     (void)socket;
     (void)how;
@@ -453,6 +474,7 @@ int posix_shutdown(int socket, int how) {
     return -1;
 }
 
+/** \brief posix_socket function. */
 int posix_socket(int domain, int type, int protocol) {
     (void)domain;
     (void)type;
@@ -464,6 +486,7 @@ int posix_socket(int domain, int type, int protocol) {
     return -1;
 }
 
+/** \brief posix_socketpair function. */
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
     (void)domain;
     (void)type;

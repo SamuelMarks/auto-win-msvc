@@ -25,6 +25,7 @@ typedef WIN_HANDLE WIN_LPVOID;
 typedef const void* WIN_LPCVOID;
 typedef unsigned int WIN_UINT;
 
+/** \brief WIN_INVALID_HANDLE_VALUE macro. */
 #define WIN_INVALID_HANDLE_VALUE ((WIN_HANDLE)(ptrdiff_t)-1)
 #define WIN_PAGE_NOACCESS 0x01
 #define WIN_PAGE_READONLY 0x02
@@ -57,14 +58,23 @@ __declspec(dllimport) int WIN_STDCALL VirtualUnlock(WIN_LPVOID lpAddress, size_t
 __declspec(dllimport) int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flNewProtect, WIN_DWORD* lpflOldProtect);
 __declspec(dllimport) int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
 #else
+/** \brief GetTempPathA function. */
 WIN_DWORD WIN_STDCALL GetTempPathA(WIN_DWORD nBufferLength, char* lpBuffer);
+/** \brief CreateFileMappingA function. */
 WIN_HANDLE WIN_STDCALL CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes, WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh, WIN_DWORD dwMaximumSizeLow, const char* lpName);
+/** \brief MapViewOfFileEx function. */
 WIN_LPVOID WIN_STDCALL MapViewOfFileEx(WIN_HANDLE hFileMappingObject, WIN_DWORD dwDesiredAccess, WIN_DWORD dwFileOffsetHigh, WIN_DWORD dwFileOffsetLow, size_t dwNumberOfBytesToMap, WIN_LPVOID lpBaseAddress);
+/** \brief UnmapViewOfFile function. */
 int WIN_STDCALL UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
+/** \brief FlushViewOfFile function. */
 int WIN_STDCALL FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
+/** \brief VirtualLock function. */
 int WIN_STDCALL VirtualLock(WIN_LPVOID lpAddress, size_t dwSize);
+/** \brief VirtualUnlock function. */
 int WIN_STDCALL VirtualUnlock(WIN_LPVOID lpAddress, size_t dwSize);
+/** \brief VirtualProtect function. */
 int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flNewProtect, WIN_DWORD* lpflOldProtect);
+/** \brief CloseHandle function. */
 int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
 #endif
 
@@ -358,11 +368,13 @@ int shm_unlink(const char *name) {
 #endif
 
 #if defined(__CYGWIN__)
+/** \brief mlockall function. */
 int mlockall(int flags) {
     (void)flags;
     return 0;
 }
 
+/** \brief munlockall function. */
 int munlockall(void) {
     return 0;
 }

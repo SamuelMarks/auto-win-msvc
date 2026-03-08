@@ -1,4 +1,4 @@
-# Prerequisites
+﻿# Prerequisites
 *.d
 
 # Compiled Object files
@@ -156,3 +156,22 @@ scripts/results_*.txt
 /generate_*.py
 /rewrite_*.py
 /test_*_all.bat
+docs/
+
+html/
+
+latex/
+
+patch*.py
+
+refactor_*.py
+
+scaffold.py
+
+test_2026.bat
+
+all_mapped_symbols.txt
+
+valkey_includes.txt
+
+

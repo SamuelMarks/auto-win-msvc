@@ -28,7 +28,9 @@ typedef struct posix_ucontext {
     posix_mcontext_t uc_mcontext;
 } ucontext_t;
 
+/** \brief getcontext function. */
 int getcontext(ucontext_t *ucp);
+/** \brief setcontext function. */
 int setcontext(const ucontext_t *ucp);
 
 #ifdef __cplusplus

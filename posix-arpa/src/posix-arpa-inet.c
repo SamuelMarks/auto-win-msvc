@@ -2,6 +2,7 @@
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+/** \brief posix_inet_aton function. */
 int posix_inet_aton(const char *cp, struct in_addr *inp) {
     unsigned long val = 0;
     int base = 10;

@@ -136,6 +136,7 @@ typedef unsigned short mode_t;
 #include <stdlib.h>
 
 #ifndef __builtin_expect
+/** \brief __builtin_expect macro. */
 #define __builtin_expect(exp, c) (exp)
 #endif
 
@@ -155,6 +156,7 @@ typedef unsigned short mode_t;
 #if defined(_M_X64) || defined(_M_AMD64)
 #define __builtin_popcountll __popcnt64
 #else
+/** \brief posix_builtin_popcountll function. */
 static __inline int posix_builtin_popcountll(unsigned __int64 val) {
     return __popcnt((unsigned int)(val & 0xFFFFFFFF)) + 
            __popcnt((unsigned int)(val >> 32));
@@ -164,6 +166,7 @@ static __inline int posix_builtin_popcountll(unsigned __int64 val) {
 #endif
 
 #ifndef __builtin_ctzll
+/** \brief posix_builtin_ctzll function. */
 static __inline int posix_builtin_ctzll(unsigned __int64 val) {
     unsigned long index;
 #if defined(_M_X64) || defined(_M_AMD64)

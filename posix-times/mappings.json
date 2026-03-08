@@ -1,0 +1,18 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "times",
+        "source_header": "<sys/times.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_times",
+        "shim": {
+          "type": "macro",
+          "code": "#define times posix_times"
+        }
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

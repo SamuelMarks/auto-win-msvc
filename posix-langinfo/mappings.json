@@ -1,0 +1,18 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "nl_langinfo",
+        "source_header": "<langinfo.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_langinfo",
+        "shim": {
+          "type": "macro",
+          "code": "#define nl_langinfo posix_langinfo"
+        }
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

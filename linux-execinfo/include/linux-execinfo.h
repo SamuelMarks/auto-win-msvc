@@ -8,8 +8,10 @@
 extern "C" {
 #endif
 
+/** \brief backtrace function. */
 int backtrace(void **buffer, int size);
 char **backtrace_symbols(void *const *buffer, int size);
+/** \brief backtrace_symbols_fd function. */
 void backtrace_symbols_fd(void *const *buffer, int size, int fd);
 
 #ifdef __cplusplus

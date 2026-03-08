@@ -51,6 +51,7 @@
 #endif
 
 #ifndef INVALID_HANDLE_VALUE
+/** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
 #endif
 
@@ -172,6 +173,7 @@ int getitimer(int which, struct itimerval *value) {
     return 0;
 }
 
+/** \brief setitimer function. */
 int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue) {
     if (which < ITIMER_REAL || which > ITIMER_PROF || !value) {
         errno = EINVAL;
@@ -185,6 +187,7 @@ int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue
 }
 
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
+/** \brief clock_gettime function. */
 int clock_gettime(int clk_id, struct timespec *tp) {
     if (!tp) {
         errno = EINVAL;

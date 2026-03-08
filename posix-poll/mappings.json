@@ -1,0 +1,18 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "poll",
+        "source_header": "<poll.h>",
+        "requires_polyfill": false,
+        "msvc": "WSAPoll",
+        "shim": {
+          "type": "macro",
+          "code": "#define poll WSAPoll"
+        }
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

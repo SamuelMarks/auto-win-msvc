@@ -10,6 +10,7 @@
 #pragma intrinsic(_BitScanForward64)
 #endif
 
+/** \brief ffs function. */
 int ffs(int i) {
     unsigned long index;
     if (i == 0) return 0;
@@ -19,6 +20,7 @@ int ffs(int i) {
     return 0;
 }
 
+/** \brief ffsl function. */
 int ffsl(long i) {
     unsigned long index;
     if (i == 0) return 0;
@@ -28,6 +30,7 @@ int ffsl(long i) {
     return 0;
 }
 
+/** \brief ffsll function. */
 int ffsll(long long i) {
     unsigned long index;
     if (i == 0) return 0;

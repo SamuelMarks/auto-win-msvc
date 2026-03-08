@@ -112,6 +112,7 @@ void *dlopen(const char *file, int mode) {
     return (void *)handle;
 }
 
+/** \brief dlclose function. */
 int dlclose(void *handle) {
     if (handle == NULL) {
         return 0;
@@ -179,6 +180,7 @@ char *dlerror(void) {
     return NULL;
 }
 
+/** \brief dladdr function. */
 int dladdr(const void *addr, Dl_info *info) {
     MEMORY_BASIC_INFORMATION mbi;
     HMODULE handle;
@@ -239,6 +241,7 @@ void *dlsym(void *handle, const char *name) {
     return NULL;
 }
 
+/** \brief dlclose function. */
 int dlclose(void *handle) {
     if (handle == NULL) {
         return -1;
@@ -255,6 +258,7 @@ char *dlerror(void) {
     return NULL;
 }
 
+/** \brief dladdr function. */
 int dladdr(const void *addr, Dl_info *info) {
     (void)addr;
     (void)info;

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 
+/** \brief posix_getrusage function. */
 int posix_getrusage(int who, struct rusage *usage) {
     FILETIME creation_time, exit_time, kernel_time, user_time;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -48,6 +49,7 @@ int posix_getrusage(int who, struct rusage *usage) {
     return 0;
 }
 
+/** \brief posix_getrlimit function. */
 int posix_getrlimit(int resource, struct rlimit *rlp) {
     if (!rlp) {
         errno = EFAULT;
@@ -65,6 +67,7 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
     return 0;
 }
 
+/** \brief posix_setrlimit function. */
 int posix_setrlimit(int resource, const struct rlimit *rlp) {
     if (!rlp) {
         errno = EFAULT;

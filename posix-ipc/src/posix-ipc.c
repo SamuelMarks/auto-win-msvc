@@ -70,15 +70,18 @@ static struct {
 
 static LONG g_shm_lock = 0;
 
+/** \brief lock_shm function. */
 static void lock_shm(void) {
     while (InterlockedCompareExchange(&g_shm_lock, 1, 0) != 0) {
         Sleep(0);
     }
 }
+/** \brief unlock_shm function. */
 static void unlock_shm(void) {
     InterlockedExchange(&g_shm_lock, 0);
 }
 
+/** \brief shmget function. */
 int shmget(key_t key, size_t size, int shmflg) {
     char name[256];
     HANDLE hMap;
@@ -169,6 +172,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg) {
     return addr;
 }
 
+/** \brief shmdt function. */
 int shmdt(const void *shmaddr) {
     if (UnmapViewOfFile(shmaddr)) {
         return 0;
@@ -176,6 +180,7 @@ int shmdt(const void *shmaddr) {
     return -1;
 }
 
+/** \brief shmctl function. */
 int shmctl(int shmid, int cmd, struct shmid_ds *buf) {
     if (shmid < 0 || shmid >= MAX_SHM) return -1;
     
@@ -215,15 +220,18 @@ struct sysv_sem {
 static struct sysv_sem g_sems[MAX_SEM];
 static LONG g_sem_lock = 0;
 
+/** \brief lock_sem function. */
 static void lock_sem(void) {
     while (InterlockedCompareExchange(&g_sem_lock, 1, 0) != 0) {
         Sleep(0);
     }
 }
+/** \brief unlock_sem function. */
 static void unlock_sem(void) {
     InterlockedExchange(&g_sem_lock, 0);
 }
 
+/** \brief semget function. */
 int semget(key_t key, int nsems, int semflg) {
     int i, empty_idx = -1;
     
@@ -263,6 +271,7 @@ int semget(key_t key, int nsems, int semflg) {
     return empty_idx;
 }
 
+/** \brief semop function. */
 int semop(int semid, struct sembuf *sops, size_t nsops) {
     struct sysv_sem *sem;
     size_t i;
@@ -323,6 +332,7 @@ retry:
     }
 }
 
+/** \brief semctl function. */
 int semctl(int semid, int semnum, int cmd, ...) {
     struct sysv_sem *sem;
     va_list ap;
@@ -436,15 +446,18 @@ struct sysv_msg {
 static struct sysv_msg g_msgs[MAX_MSG];
 static LONG g_msg_lock = 0;
 
+/** \brief lock_msg function. */
 static void lock_msg(void) {
     while (InterlockedCompareExchange(&g_msg_lock, 1, 0) != 0) {
         Sleep(0);
     }
 }
+/** \brief unlock_msg function. */
 static void unlock_msg(void) {
     InterlockedExchange(&g_msg_lock, 0);
 }
 
+/** \brief msgget function. */
 int msgget(key_t key, int msgflg) {
     int i, empty_idx = -1;
     
@@ -486,6 +499,7 @@ int msgget(key_t key, int msgflg) {
     return empty_idx;
 }
 
+/** \brief msgsnd function. */
 int msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg) {
     struct sysv_msg *mq;
     struct msg_node *node;
@@ -550,6 +564,7 @@ retry:
     return 0;
 }
 
+/** \brief msgrcv function. */
 ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg) {
     struct sysv_msg *mq;
     struct msg_node *prev, *curr, *found_prev, *found;
@@ -640,6 +655,7 @@ retry:
     return (ssize_t)copy_size;
 }
 
+/** \brief msgctl function. */
 int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
     struct sysv_msg *mq;
     

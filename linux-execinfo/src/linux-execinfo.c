@@ -20,6 +20,7 @@ typedef unsigned long DWORD;
 #define TRUE 1
 
 #ifndef STD_ERR_HANDLE
+/** \brief STD_ERR_HANDLE macro. */
 #define STD_ERR_HANDLE ((DWORD)-12)
 #endif
 
@@ -75,6 +76,7 @@ __declspec(dllimport) BOOL __stdcall SymFromAddr(HANDLE hProcess, DWORD64 Addres
 
 #define NUM_FORMAT "%p"
 
+/** \brief backtrace function. */
 int backtrace(void **buffer, int size) {
     if (size <= 0 || !buffer) return 0;
     return (int)CaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
@@ -126,6 +128,7 @@ char **backtrace_symbols(void *const *buffer, int size) {
     return strings;
 }
 
+/** \brief backtrace_symbols_fd function. */
 void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
     int i;
     char **strings;

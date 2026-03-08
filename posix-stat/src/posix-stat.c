@@ -26,7 +26,9 @@ typedef int BOOL;
 typedef char *LPSTR;
 
 #define MAX_PATH 260
+/** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+/** \brief INVALID_FILE_ATTRIBUTES macro. */
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #define FILE_ATTRIBUTE_READONLY 1
 #define FILE_ATTRIBUTE_NORMAL 128
@@ -144,6 +146,7 @@ int fchmod(int fd, mode_t mode) {
     return 0;
 }
 
+/** \brief fchmodat function. */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     if (dirfd != AT_FDCWD && dirfd != -1) {
         errno = ENOSYS;
@@ -167,6 +170,7 @@ int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf, int flags)
     return _stat64(pathname, statbuf);
 }
 
+/** \brief fill_filetime function. */
 static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
     if (ts == NULL) {
         SYSTEMTIME st; GetSystemTime(&st); SystemTimeToFileTime(&st, ft);
@@ -184,6 +188,7 @@ static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
     }
 }
 
+/** \brief futimens function. */
 int futimens(int fd, const struct timespec times[2]) {
     HANDLE hFile = (HANDLE)_get_osfhandle(fd);
     FILETIME atime, mtime;
@@ -212,6 +217,7 @@ int futimens(int fd, const struct timespec times[2]) {
     return 0;
 }
 
+/** \brief lstat function. */
 int lstat(const char *pathname, struct _stat64 *statbuf) {
     WIN32_FILE_ATTRIBUTE_DATA info;
     unsigned long long t;
@@ -243,6 +249,7 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
     return _stat64(pathname, statbuf);
 }
 
+/** \brief mknod function. */
 int mknod(const char *pathname, mode_t mode, unsigned int dev) {
     HANDLE hFile;
     (void)dev;
@@ -266,6 +273,7 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
     return 0;
 }
 
+/** \brief mknodat function. */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
     if (dirfd != AT_FDCWD && dirfd != -1) {
         errno = ENOSYS;
@@ -274,6 +282,7 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
     return mknod(pathname, mode, dev);
 }
 
+/** \brief utimensat function. */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
     HANDLE hFile;
     DWORD attrs = FILE_FLAG_BACKUP_SEMANTICS;

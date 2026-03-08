@@ -1,5 +1,6 @@
 #include "linux-sys-prctl.h"
 #if defined(_MSC_VER) && !defined(__clang__)
+/** \brief prctl function. */
 int prctl(int option, ...) { (void)option; return 0; }
 #endif
 

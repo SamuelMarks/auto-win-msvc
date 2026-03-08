@@ -58,9 +58,13 @@ typedef struct {
 #define REG_ILLSEQ    17
 #define REG_NOSYS     18
 
+/** \brief regcomp function. */
 int regcomp(regex_t *preg, const char *pattern, int cflags);
+/** \brief regexec function. */
 int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], int eflags);
+/** \brief regerror function. */
 size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size);
+/** \brief regfree function. */
 void regfree(regex_t *preg);
 
 #ifdef __cplusplus

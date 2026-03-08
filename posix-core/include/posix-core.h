@@ -413,6 +413,7 @@ static __inline unsigned int posix_core_sleep(unsigned int seconds) {
 }
 #define sleep posix_core_sleep
 
+/** \brief posix_core_usleep function. */
 static __inline int posix_core_usleep(unsigned int usec) {
     Sleep(usec / 1000);
     return 0;
@@ -492,6 +493,7 @@ int posix_fallocate(int fd, off_t offset, off_t len);
 #ifndef SYNC_FILE_RANGE_WAIT_AFTER
 #define SYNC_FILE_RANGE_WAIT_AFTER  4
 #endif
+/** \brief sync_file_range function. */
 int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags);
 #else
 /* sync_file_range */
@@ -843,6 +845,51 @@ useconds_t ualarm(useconds_t value, useconds_t interval);
 pid_t vfork(void);
 #else
 /* vfork */
+#endif
+
+/** @brief fileno */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef fileno
+#define fileno _fileno
+#endif
+#else
+/* fileno */
+#endif
+
+/** @brief pclose */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef pclose
+#define pclose _pclose
+#endif
+#else
+/* pclose */
+#endif
+
+/** @brief popen */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef popen
+#define popen _popen
+#endif
+#else
+/* popen */
+#endif
+
+/** @brief tell */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef tell
+#define tell _tell
+#endif
+#else
+/* tell */
+#endif
+
+/** @brief strdup */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef strdup
+#define strdup _strdup
+#endif
+#else
+/* strdup */
 #endif
 
 #ifdef __cplusplus

@@ -1,0 +1,29 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "getaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": false,
+        "msvc": "getaddrinfo",
+        "windows_api": "getaddrinfo"
+      },
+      {
+        "posix": "freeaddrinfo",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": false,
+        "msvc": "freeaddrinfo",
+        "windows_api": "freeaddrinfo"
+      },
+      {
+        "posix": "gai_strerror",
+        "source_header": "<netdb.h>",
+        "requires_polyfill": false,
+        "msvc": "gai_strerror",
+        "windows_api": "gai_strerrorA"
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

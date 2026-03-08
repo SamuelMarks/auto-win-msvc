@@ -1,0 +1,58 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "kill",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_kill",
+        "shim": {
+          "type": "macro",
+          "code": "#define kill posix_signal_kill"
+        }
+      },
+      {
+        "posix": "sigaction",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_sigaction",
+        "shim": {
+          "type": "macro",
+          "code": "#define sigaction posix_signal_sigaction"
+        }
+      },
+      {
+        "posix": "sigaddset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_sigaddset",
+        "shim": {
+          "type": "macro",
+          "code": "#define sigaddset posix_signal_sigaddset"
+        }
+      },
+      {
+        "posix": "sigemptyset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_sigemptyset",
+        "shim": {
+          "type": "macro",
+          "code": "#define sigemptyset posix_signal_sigemptyset"
+        }
+      },
+      {
+        "posix": "sigfillset",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_sigfillset",
+        "shim": {
+          "type": "macro",
+          "code": "#define sigfillset posix_signal_sigfillset"
+        }
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

@@ -60,6 +60,7 @@ typedef struct {
 #define WIFSIGNALED(status) (((status) & 0x7F) != 0 && ((status) & 0x7F) != 0x7F)
 #define WTERMSIG(status)    ((status) & 0x7F)
 #define WIFSTOPPED(status)  (((status) & 0xFF) == 0x7F)
+/** \brief WSTOPSIG macro. */
 #define WSTOPSIG(status)    (((status) & 0xFF00) >> 8)
 
 /**

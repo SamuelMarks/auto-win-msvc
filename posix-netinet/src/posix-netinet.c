@@ -3,6 +3,7 @@
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+/** \brief posix_netinet_dummy_link function. */
 int posix_netinet_dummy_link(void) {
     return 0;
 }

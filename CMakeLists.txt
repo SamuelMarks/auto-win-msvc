@@ -124,6 +124,7 @@ add_subdirectory(posix-wait)
 add_subdirectory(solaris-port)
 add_subdirectory(solaris-sys-byteorder)
 add_subdirectory(solaris-sys-feature-tests)
+add_subdirectory(posix-alloca)
 
 
 # --- Advanced Tooling & Strictest Compile Options ---
@@ -370,6 +371,37 @@ list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/solaris-sys-byteorder/inc
 file(GLOB solaris_sys_feature_tests_src "${CMAKE_CURRENT_SOURCE_DIR}/solaris-sys-feature-tests/src/*.c")
 list(APPEND MEGA_SOURCES ${solaris_sys_feature_tests_src})
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/solaris-sys-feature-tests/include")
+
+
+file(GLOB posix_alloca_src "${CMAKE_CURRENT_SOURCE_DIR}/posix-alloca/src/*.c")
+list(APPEND MEGA_SOURCES ${posix_alloca_src})
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-alloca/include")
+
+# --- Code Coverage Configuration ---
+option(AUTO_WIN_MSVC_COVERAGE "Enable code coverage reporting" OFF)
+if(AUTO_WIN_MSVC_COVERAGE)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(--coverage -O0 -g)
+        add_link_options(--coverage)
+    endif()
+endif()
+
+if(AUTO_WIN_MSVC_COVERAGE)
+    if(MSVC)
+        add_custom_target(coverage
+            COMMAND OpenCppCoverage --export_type html:coverage_html --modules $<TARGET_FILE:auto-win-msvc> -- ctest -C Debug --output-on-failure
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running OpenCppCoverage..."
+        )
+    elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        add_custom_target(coverage
+            COMMAND lcov --capture --directory . --output-file coverage.info
+            COMMAND genhtml coverage.info --output-directory coverage_html
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running lcov..."
+        )
+    endif()
+endif()
 
 add_library(auto-win-msvc ${MEGA_SOURCES})
 target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)

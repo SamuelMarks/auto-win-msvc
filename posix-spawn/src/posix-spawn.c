@@ -11,6 +11,7 @@
 #include <fcntl.h>
 
 #ifndef O_ACCMODE
+/** \brief O_ACCMODE macro. */
 #define O_ACCMODE (_O_RDONLY | _O_WRONLY | _O_RDWR)
 #endif
 
@@ -20,7 +21,9 @@
 #define FALSE 0
 #define INVALID_HANDLE_VALUE ((void *)(size_t)-1)
 #define STD_INPUT_HANDLE ((unsigned int)-10)
+/** \brief STD_OUTPUT_HANDLE macro. */
 #define STD_OUTPUT_HANDLE ((unsigned int)-11)
+/** \brief STD_ERROR_HANDLE macro. */
 #define STD_ERROR_HANDLE ((unsigned int)-12)
 
 typedef unsigned long DWORD;
@@ -120,12 +123,14 @@ typedef struct posix_spawn_action {
     struct posix_spawn_action *next;
 } posix_spawn_action_t;
 
+/** \brief posix_spawn_file_actions_init function. */
 int posix_spawn_file_actions_init(posix_spawn_file_actions_t *file_actions) {
     if (!file_actions) return EINVAL;
     file_actions->actions = NULL;
     return 0;
 }
 
+/** \brief posix_spawn_file_actions_destroy function. */
 int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
     posix_spawn_action_t *action;
     if (!file_actions) return EINVAL;
@@ -142,6 +147,7 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
     return 0;
 }
 
+/** \brief add_action function. */
 static int add_action(posix_spawn_file_actions_t *file_actions, posix_spawn_action_t **out_action) {
     posix_spawn_action_t *new_action = (posix_spawn_action_t *)malloc(sizeof(posix_spawn_action_t));
     if (!new_action) return ENOMEM;
@@ -161,6 +167,7 @@ static int add_action(posix_spawn_file_actions_t *file_actions, posix_spawn_acti
     return 0;
 }
 
+/** \brief posix_spawn_file_actions_addclose function. */
 int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, int fildes) {
     posix_spawn_action_t *action;
     int err;
@@ -173,6 +180,7 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, 
     return 0;
 }
 
+/** \brief posix_spawn_file_actions_adddup2 function. */
 int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, int fildes, int newfildes) {
     posix_spawn_action_t *action;
     int err;
@@ -186,6 +194,7 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, i
     return 0;
 }
 
+/** \brief posix_spawn_file_actions_addopen function. */
 int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions, int fildes, const char *path, int oflag, mode_t mode) {
     posix_spawn_action_t *action;
     int err;
@@ -209,6 +218,7 @@ int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions, i
     return 0;
 }
 
+/** \brief posix_spawnattr_init function. */
 int posix_spawnattr_init(posix_spawnattr_t *attr) {
     if (!attr) return EINVAL;
     attr->flags = 0;
@@ -220,77 +230,90 @@ int posix_spawnattr_init(posix_spawnattr_t *attr) {
     return 0;
 }
 
+/** \brief posix_spawnattr_destroy function. */
 int posix_spawnattr_destroy(posix_spawnattr_t *attr) {
     if (!attr) return EINVAL;
     return 0;
 }
 
+/** \brief posix_spawnattr_getflags function. */
 int posix_spawnattr_getflags(const posix_spawnattr_t *attr, short *flags) {
     if (!attr || !flags) return EINVAL;
     *flags = attr->flags;
     return 0;
 }
 
+/** \brief posix_spawnattr_setflags function. */
 int posix_spawnattr_setflags(posix_spawnattr_t *attr, short flags) {
     if (!attr) return EINVAL;
     attr->flags = flags;
     return 0;
 }
 
+/** \brief posix_spawnattr_getpgroup function. */
 int posix_spawnattr_getpgroup(const posix_spawnattr_t *attr, pid_t *pgroup) {
     if (!attr || !pgroup) return EINVAL;
     *pgroup = attr->pgroup;
     return 0;
 }
 
+/** \brief posix_spawnattr_setpgroup function. */
 int posix_spawnattr_setpgroup(posix_spawnattr_t *attr, pid_t pgroup) {
     if (!attr) return EINVAL;
     attr->pgroup = pgroup;
     return 0;
 }
 
+/** \brief posix_spawnattr_getschedparam function. */
 int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr, struct sched_param *schedparam) {
     if (!attr || !schedparam) return EINVAL;
     *schedparam = attr->schedparam;
     return 0;
 }
 
+/** \brief posix_spawnattr_setschedparam function. */
 int posix_spawnattr_setschedparam(posix_spawnattr_t *attr, const struct sched_param *schedparam) {
     if (!attr || !schedparam) return EINVAL;
     attr->schedparam = *schedparam;
     return 0;
 }
 
+/** \brief posix_spawnattr_getschedpolicy function. */
 int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr, int *schedpolicy) {
     if (!attr || !schedpolicy) return EINVAL;
     *schedpolicy = attr->schedpolicy;
     return 0;
 }
 
+/** \brief posix_spawnattr_setschedpolicy function. */
 int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr, int schedpolicy) {
     if (!attr) return EINVAL;
     attr->schedpolicy = schedpolicy;
     return 0;
 }
 
+/** \brief posix_spawnattr_getsigdefault function. */
 int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr, sigset_t *sigdefault) {
     if (!attr || !sigdefault) return EINVAL;
     *sigdefault = attr->sigdefault;
     return 0;
 }
 
+/** \brief posix_spawnattr_setsigdefault function. */
 int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr, const sigset_t *sigdefault) {
     if (!attr || !sigdefault) return EINVAL;
     attr->sigdefault = *sigdefault;
     return 0;
 }
 
+/** \brief posix_spawnattr_getsigmask function. */
 int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr, sigset_t *sigmask) {
     if (!attr || !sigmask) return EINVAL;
     *sigmask = attr->sigmask;
     return 0;
 }
 
+/** \brief posix_spawnattr_setsigmask function. */
 int posix_spawnattr_setsigmask(posix_spawnattr_t *attr, const sigset_t *sigmask) {
     if (!attr || !sigmask) return EINVAL;
     attr->sigmask = *sigmask;
@@ -299,6 +322,7 @@ int posix_spawnattr_setsigmask(posix_spawnattr_t *attr, const sigset_t *sigmask)
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
+/** \brief get_quoted_arg_len function. */
 static int get_quoted_arg_len(const char *arg, size_t *out_len) {
     size_t len = 0;
     int needs_quotes = 0;
@@ -344,6 +368,7 @@ static int get_quoted_arg_len(const char *arg, size_t *out_len) {
     return 0;
 }
 
+/** \brief quote_arg function. */
 static int quote_arg(char **dest, const char *arg) {
     int needs_quotes = 0;
     const char *p;
@@ -400,6 +425,7 @@ static int quote_arg(char **dest, const char *arg) {
     return 0;
 }
 
+/** \brief create_cmdline function. */
 static int create_cmdline(char *const argv[], char **out_cmdline) {
     size_t total_len = 0;
     int i;
@@ -429,6 +455,7 @@ static int create_cmdline(char *const argv[], char **out_cmdline) {
     return 0;
 }
 
+/** \brief create_envblock function. */
 static int create_envblock(char *const envp[], char **out_envblock) {
     size_t total_len = 0;
     int i;
@@ -461,6 +488,7 @@ static int create_envblock(char *const envp[], char **out_envblock) {
     return 0;
 }
 
+/** \brief internal_posix_spawn function. */
 static int internal_posix_spawn(pid_t *pid, const char *path,
                                 const posix_spawn_file_actions_t *file_actions,
                                 const posix_spawnattr_t *attrp,
@@ -592,6 +620,7 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
     return 0;
 }
 
+/** \brief posix_spawn function. */
 int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp,
@@ -599,6 +628,7 @@ int posix_spawn(pid_t *pid, const char *path,
     return internal_posix_spawn(pid, path, file_actions, attrp, argv, envp, 0);
 }
 
+/** \brief posix_spawnp function. */
 int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp,
@@ -608,6 +638,7 @@ int posix_spawnp(pid_t *pid, const char *file,
 
 #else
 
+/** \brief posix_spawn function. */
 int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp,
@@ -616,6 +647,7 @@ int posix_spawn(pid_t *pid, const char *path,
     return ENOSYS;
 }
 
+/** \brief posix_spawnp function. */
 int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp,

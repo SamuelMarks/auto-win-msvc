@@ -581,6 +581,56 @@
         "source_header": "<unistd.h>",
         "requires_polyfill": true,
         "windows_api": "CreateProcess"
+      },
+      {
+        "posix": "fileno",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_fileno",
+        "shim": {
+          "type": "macro",
+          "code": "#define fileno _fileno"
+        }
+      },
+      {
+        "posix": "pclose",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_pclose",
+        "shim": {
+          "type": "macro",
+          "code": "#define pclose _pclose"
+        }
+      },
+      {
+        "posix": "popen",
+        "source_header": "<stdio.h>",
+        "requires_polyfill": false,
+        "msvc": "_popen",
+        "shim": {
+          "type": "macro",
+          "code": "#define popen _popen"
+        }
+      },
+      {
+        "posix": "tell",
+        "source_header": "<io.h>",
+        "requires_polyfill": false,
+        "msvc": "_tell",
+        "shim": {
+          "type": "macro",
+          "code": "#define tell _tell"
+        }
+      },
+      {
+        "posix": "strdup",
+        "source_header": "<string.h>",
+        "requires_polyfill": false,
+        "msvc": "_strdup",
+        "shim": {
+          "type": "macro",
+          "code": "#define strdup _strdup"
+        }
       }
     ],
     "types": [],

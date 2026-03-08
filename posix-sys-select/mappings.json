@@ -1,0 +1,15 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "select",
+        "source_header": "<sys/select.h>",
+        "requires_polyfill": false,
+        "msvc": "select",
+        "windows_api": "select"
+      }
+    ],
+    "macros": [],
+    "types": []
+  }
+}

@@ -11,6 +11,7 @@ int optopt = 0;
 
 static char *nextchar = NULL;
 
+/** \brief getopt function. */
 int getopt(int argc, char *const argv[], const char *optstring) {
     char c;
     char *cp;
@@ -70,6 +71,7 @@ int getopt(int argc, char *const argv[], const char *optstring) {
     return c;
 }
 
+/** \brief getopt_long function. */
 int getopt_long(int argc, char *const argv[], const char *optstring, const struct option *longopts, int *longindex) {
     if (optind >= argc || argv[optind] == NULL || argv[optind][0] != '-') {
         return -1;

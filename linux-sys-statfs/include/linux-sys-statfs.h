@@ -22,7 +22,9 @@ struct statfs {
     long f_spare[4];
 };
 
+/** \brief statfs function. */
 int statfs(const char *path, struct statfs *buf);
+/** \brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf);
 
 #ifdef __cplusplus

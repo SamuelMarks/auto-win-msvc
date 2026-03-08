@@ -2,6 +2,7 @@
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+/** \brief bsd_sys_param_dummy_link function. */
 int bsd_sys_param_dummy_link(void) {
     return MAXPATHLEN;
 }

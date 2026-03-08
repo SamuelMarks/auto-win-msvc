@@ -150,6 +150,7 @@ void endgrent(void) {
     setgrent();
 }
 
+/** \brief setgrent function. */
 void setgrent(void) {
     if (current_grp_info) {
         NetApiBufferFree(current_grp_info);
@@ -187,6 +188,7 @@ struct group *getgrent(void) {
     }
 }
 
+/** \brief getgrnam_r function. */
 int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize, struct group **result) {
     SID_NAME_USE peUse;
     PSID sid;
@@ -236,6 +238,7 @@ struct group *getgrnam(const char *name) {
     return NULL;
 }
 
+/** \brief getgrgid_r function. */
 int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result) {
     DWORD entriesRead = 0, totalEntries = 0;
     DWORD_PTR resumeHandle = 0;
@@ -305,6 +308,7 @@ void endpwent(void) {
     setpwent();
 }
 
+/** \brief setpwent function. */
 void setpwent(void) {
     if (current_user_info) {
         NetApiBufferFree(current_user_info);
@@ -342,6 +346,7 @@ struct passwd *getpwent(void) {
     }
 }
 
+/** \brief getpwnam_r function. */
 int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result) {
     SID_NAME_USE peUse;
     PSID sid;
@@ -413,6 +418,7 @@ struct passwd *getpwnam(const char *name) {
     return NULL;
 }
 
+/** \brief getpwuid_r function. */
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result) {
     DWORD entriesRead = 0, totalEntries = 0, resumeHandle = 0;
     PUSER_INFO_0 userInfo = NULL;
