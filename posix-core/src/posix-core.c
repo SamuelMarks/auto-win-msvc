@@ -164,7 +164,7 @@ int getlogin_r(char *buf, size_t bufsize) {
     return -1;
 }
 #endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 int getopt(int argc, char * const argv[], const char *optstring) {
     errno = ENOSYS;
     return -1;

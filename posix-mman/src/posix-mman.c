@@ -323,10 +323,16 @@ int shm_open(const char *name, int oflag, mode_t mode) {
         return -1;
     }
     
+#if defined(_MSC_VER)
+    if (_sopen_s(&fd, file_path, oflag | _O_BINARY, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0) {
+        return -1;
+    }
+#else
     fd = _open(file_path, oflag | _O_BINARY, _S_IREAD | _S_IWRITE);
     if (fd == -1) {
         return -1;
     }
+#endif
     return fd;
 }
 

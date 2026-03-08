@@ -85,11 +85,19 @@ endif()
 add_library(bsd-pthread-np src/bsd-pthread-np.c)
 target_include_directories(bsd-pthread-np PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+    target_include_directories(bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+endif()
+
 enable_testing()
 add_executable(test_bsd-pthread-np tests/test.c)
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_bsd-pthread-np PRIVATE ${greatest_source_dir})
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+    target_include_directories(test_bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+endif()
 
 target_link_libraries(test_bsd-pthread-np PRIVATE bsd-pthread-np)
 add_test(NAME test_bsd-pthread-np COMMAND test_bsd-pthread-np)

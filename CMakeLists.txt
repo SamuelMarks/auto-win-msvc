@@ -366,6 +366,7 @@ list(APPEND MEGA_SOURCES ${solaris_sys_feature_tests_src})
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/solaris-sys-feature-tests/include")
 
 add_library(auto-win-msvc ${MEGA_SOURCES})
+target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
 target_include_directories(auto-win-msvc PUBLIC ${MEGA_INCLUDES})
 
 if(WIN32 OR CYGWIN OR MSYS OR MINGW)

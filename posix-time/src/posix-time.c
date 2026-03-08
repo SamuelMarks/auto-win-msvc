@@ -8,12 +8,7 @@
 #endif
 #include <winsock2.h>
 
-#if defined(_MSC_VER)
-__declspec(dllimport) void* __stdcall CreateWaitableTimerA(void*, int, const char*);
-__declspec(dllimport) int __stdcall SetWaitableTimer(void*, const LARGE_INTEGER*, long, void*, void*, int);
-__declspec(dllimport) unsigned long __stdcall WaitForSingleObject(void*, unsigned long);
-__declspec(dllimport) int __stdcall CloseHandle(void*);
-#endif
+
 #endif
 #include "posix-time.h"
 
