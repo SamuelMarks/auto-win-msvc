@@ -56,6 +56,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup MSVC Environment
+        if: startsWith(matrix.env, 'msvc')
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Setup MinGW (MSYS2)
         if: matrix.env == 'mingw'
         uses: msys2/setup-msys2@v2
