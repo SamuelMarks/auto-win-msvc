@@ -56,12 +56,12 @@ TEST test_ftok(void) {
 }
 
 TEST test_shm(void) {
-#ifdef __CYGWIN__
-    SKIP();
-#endif
     int shmid;
     void *addr;
     struct shmid_ds ds;
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     
     shmid = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0666);
     ASSERT(shmid >= 0);
@@ -86,12 +86,12 @@ TEST test_shm(void) {
 }
 
 TEST test_sem(void) {
-#ifdef __CYGWIN__
-    SKIP();
-#endif
     int semid;
     struct sembuf sb;
     unsigned short vals[2];
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     
     semid = semget(IPC_PRIVATE, 2, IPC_CREAT | 0666);
     ASSERT(semid >= 0);
@@ -128,13 +128,13 @@ struct msgbuf {
 };
 
 TEST test_msg(void) {
-#ifdef __CYGWIN__
-    SKIP();
-#endif
     int msqid;
     struct msgbuf snd, rcv;
     struct msqid_ds ds;
     ssize_t rcv_sz;
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     
     msqid = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
     ASSERT(msqid >= 0);
