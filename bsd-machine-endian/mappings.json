@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_BSD_MACHINE_ENDIAN",
+        "source_header": "<machine/endian.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

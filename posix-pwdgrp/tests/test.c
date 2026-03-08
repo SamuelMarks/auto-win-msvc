@@ -6,7 +6,13 @@
 #ifndef _WIN32
 #include <unistd.h>
 #else
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
 #endif
 
 TEST test_getpwnam(void) {

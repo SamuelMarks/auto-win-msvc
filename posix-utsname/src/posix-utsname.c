@@ -127,7 +127,7 @@ int uname(struct utsname *name) {
 
     memset(name, 0, sizeof(struct utsname));
 
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
     strncpy_s(name->sysname, _UTSNAME_LENGTH, "Windows_NT", _TRUNCATE);
 #else
     strncpy(name->sysname, "Windows_NT", _UTSNAME_LENGTH - 1);
@@ -135,7 +135,7 @@ int uname(struct utsname *name) {
 #endif
 
     if (!GetComputerNameA(name->nodename, &nodename_len)) {
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
         strncpy_s(name->nodename, _UTSNAME_LENGTH, "unknown", _TRUNCATE);
 #else
         strncpy(name->nodename, "unknown", _UTSNAME_LENGTH - 1);
@@ -183,7 +183,7 @@ int uname(struct utsname *name) {
 #endif
 #endif
 
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
     sprintf_s(name->release, _UTSNAME_LENGTH, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
               (unsigned long)osvi.dwMajorVersion,
               (unsigned long)osvi.dwMinorVersion);
@@ -200,7 +200,7 @@ int uname(struct utsname *name) {
     GetSystemInfo(&si);
     switch (si.u.s.wProcessorArchitecture) {
         case UTS_PROCESSOR_ARCHITECTURE_INTEL:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "i686", _TRUNCATE);
 #else
             strncpy(name->machine, "i686", _UTSNAME_LENGTH - 1);
@@ -208,7 +208,7 @@ int uname(struct utsname *name) {
 #endif
             break;
         case UTS_PROCESSOR_ARCHITECTURE_AMD64:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "x86_64", _TRUNCATE);
 #else
             strncpy(name->machine, "x86_64", _UTSNAME_LENGTH - 1);
@@ -216,7 +216,7 @@ int uname(struct utsname *name) {
 #endif
             break;
         case UTS_PROCESSOR_ARCHITECTURE_ARM:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "arm", _TRUNCATE);
 #else
             strncpy(name->machine, "arm", _UTSNAME_LENGTH - 1);
@@ -224,7 +224,7 @@ int uname(struct utsname *name) {
 #endif
             break;
         case UTS_PROCESSOR_ARCHITECTURE_ARM64:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "aarch64", _TRUNCATE);
 #else
             strncpy(name->machine, "aarch64", _UTSNAME_LENGTH - 1);
@@ -232,7 +232,7 @@ int uname(struct utsname *name) {
 #endif
             break;
         case UTS_PROCESSOR_ARCHITECTURE_IA64:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "ia64", _TRUNCATE);
 #else
             strncpy(name->machine, "ia64", _UTSNAME_LENGTH - 1);
@@ -240,7 +240,7 @@ int uname(struct utsname *name) {
 #endif
             break;
         default:
-#ifdef USE_SAFE_CRT
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
             strncpy_s(name->machine, _UTSNAME_LENGTH, "unknown", _TRUNCATE);
 #else
             strncpy(name->machine, "unknown", _UTSNAME_LENGTH - 1);
@@ -270,3 +270,12 @@ int uname(struct utsname *name) {
 }
 
 #endif
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_utsname(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_utsname;
+

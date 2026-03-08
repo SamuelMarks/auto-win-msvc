@@ -1,0 +1,29 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "epoll_create",
+        "source_header": "<sys/epoll.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "epoll_ctl",
+        "source_header": "<sys/epoll.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "epoll_wait",
+        "source_header": "<sys/epoll.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct epoll_event",
+        "source_header": "<sys/epoll.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

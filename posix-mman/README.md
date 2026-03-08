@@ -1,54 +1,48 @@
 # posix-mman
 
-C89 POSIX compatibility layer for MSVC.
+A modular, strict C89-compliant POSIX/Linux/BSD compatibility layer for Windows.
 
-## Implemented Symbols
-- [ ] `mlock` (TODO: Polyfill with VirtualLock)
-- [ ] `mlockall` (TODO: Polyfill with Win32 API)
-- [ ] `mmap` (TODO: Polyfill with CreateFileMapping / MapViewOfFile)
-- [ ] `mprotect` (TODO: Polyfill with VirtualProtect)
-- [ ] `msync` (TODO: Polyfill with FlushViewOfFile)
-- [ ] `munlock` (TODO: Polyfill with VirtualUnlock)
-- [ ] `munlockall` (TODO: Polyfill with Win32 API)
-- [ ] `munmap` (TODO: Polyfill with UnmapViewOfFile)
-- [ ] `shm_open` (TODO: Polyfill with CreateFileMapping)
-- [ ] `shm_unlink` (TODO: Polyfill with Win32 API)
+## Features & Implementation Caveats
 
+- **Broad Toolchain Support:** Validated against MSVC (2005, 2022, 2026), MinGW-w64, and Cygwin.
+- **Strict C89 Compliance:** Written in pure C89 for maximum legacy compiler support. No `//` comments, variables declared at the top of scopes.
+- **Zero Namespace Pollution:** Completely avoids `#include <windows.h>` in headers. Internal `.c` implementations utilize minimal declarations.
+- **Flexible Linkage:** Fully supports both Static (`/MT`, `/MTd`) and Shared (`/MD`, `/MDd`) CRT, as well as Static or Shared (`.dll`) library output via `BUILD_SHARED_LIBS`.
+- **Advanced Compilation Settings:** Supports CMake configuration toggles for `UNICODE`/ANSI, Link-Time Optimization (LTO), Single/Multi-threading, and MSVC Runtime Checks (`/RTC1`, `/RTCs`, `/RTCu`).
+- **Safe CRT:** Automatically utilizes MSVC secure string extensions (e.g., `strcpy_s`, `sprintf_s`, `_TRUNCATE`) where available, falling back to standard C89 string manipulation on older toolchains or MinGW.
+- **POSIX API Preservation:** Retains strict standard function signatures and structs. Error codes map natively to standard `errno`. Non-void helper functions return strict `int` exit codes.
+- **Empty Translation Units:** Guarded against strict ISO C warnings via dummy typedefs and functions.
 
-## Current Status & Future Plans
+*(Note for Sockets/Network modules: Winsock initialization via `WSAStartup()` and `WSACleanup()` remains the responsibility of the consuming application.)*
 
-**Current Status:**
-- The `auto-win-msvc` monorepo has been successfully scaffolded into 18 distinct, modular CMake projects.
-- All standard POSIX headers and types are generated and strictly C89 compliant.
-- Simple functions with direct MSVC equivalents (e.g., `open` -> `_open`) are fully mapped via macros.
-- Complex POSIX APIs requiring polyfills (e.g., `mmap`, `pthreads`, `dirent`) are currently scaffolded as `ENOSYS` stubs, with their target Win32 APIs documented in `mappings.json` files.
-- Test files and build systems (CMake and vcpkg) are in place.
+## Usage
 
-**Future Plans:**
-- **AI-Driven Iteration:** Iteratively implement all stubbed polyfills using native Win32 APIs across the 18 modules, maintaining 0 compiler warnings (`/W4 /WX`) and strict C89 compliance.
-- **cdd-c Integration:** Expand `cdd-c` into a Concrete Syntax Tree (CST) weaver (as outlined in `cdd-c-expansion.md`). This will allow automated, byte-for-byte precise injection of `auto-win-msvc` polyfills and standard `#ifdef _MSC_VER` guards directly into legacy C codebases.
+### Option 1: Native CMake FetchContent
 
-## Installation
+You can consume this module individually using CMake's `FetchContent`.
 
-### Vcpkg
-Add to your `vcpkg.json`:
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    posix-mman
+    GIT_REPOSITORY https://github.com/SamuelMarks/auto-win-msvc.git
+    GIT_TAG        master
+    SOURCE_SUBDIR  posix-mman
+)
+FetchContent_MakeAvailable(posix-mman)
+
+# Link against the individual module
+target_link_libraries(your_target PRIVATE posix-mman)
+```
+
+### Option 2: vcpkg
+
+Add this specific module to your `vcpkg.json`:
+
 ```json
 {
   "dependencies": [
     "posix-mman"
   ]
 }
-```
-
-### FetchContent (CMake)
-```cmake
-include(FetchContent)
-FetchContent_Declare(
-  posix-mman
-  GIT_REPOSITORY https://github.com/SamuelMarks/auto-win-msvc.git
-  GIT_TAG master
-  SOURCE_SUBDIR posix-mman
-)
-FetchContent_MakeAvailable(posix-mman)
-target_link_libraries(your_target PRIVATE posix-mman)
 ```

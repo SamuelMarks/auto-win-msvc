@@ -291,6 +291,10 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 #endif
 /** @brief fsync */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef tell
+#define tell _tell
+#endif
+
 #ifndef fsync
 #define fsync _commit
 #endif
@@ -477,6 +481,21 @@ int posix_fadvise(int fd, off_t offset, off_t len, int advice);
 int posix_fallocate(int fd, off_t offset, off_t len);
 #else
 /* posix_fallocate */
+#endif
+/** @brief sync_file_range */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef SYNC_FILE_RANGE_WAIT_BEFORE
+#define SYNC_FILE_RANGE_WAIT_BEFORE 1
+#endif
+#ifndef SYNC_FILE_RANGE_WRITE
+#define SYNC_FILE_RANGE_WRITE       2
+#endif
+#ifndef SYNC_FILE_RANGE_WAIT_AFTER
+#define SYNC_FILE_RANGE_WAIT_AFTER  4
+#endif
+int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags);
+#else
+/* sync_file_range */
 #endif
 /** @brief alarm */
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -675,6 +694,12 @@ int pause(void);
 int pipe(int pipefd[2]);
 #else
 /* pipe */
+#endif
+/** @brief pipe2 */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+int pipe2(int pipefd[2], int flags);
+#else
+/* pipe2 */
 #endif
 /** @brief pread */
 #if defined(_WIN32) && !defined(__CYGWIN__)

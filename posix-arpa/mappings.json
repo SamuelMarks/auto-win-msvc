@@ -1,0 +1,44 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "inet_aton",
+        "source_header": "<arpa/inet.h>",
+        "requires_polyfill": true,
+        "windows_api": "inet_pton / posix_inet_aton"
+      },
+      {
+        "posix": "inet_pton",
+        "source_header": "<arpa/inet.h>",
+        "requires_polyfill": false,
+        "windows_api": "inet_pton"
+      },
+      {
+        "posix": "inet_ntop",
+        "source_header": "<arpa/inet.h>",
+        "requires_polyfill": false,
+        "windows_api": "inet_ntop"
+      },
+      {
+        "posix": "inet_addr",
+        "source_header": "<arpa/inet.h>",
+        "requires_polyfill": false,
+        "windows_api": "inet_addr"
+      },
+      {
+        "posix": "inet_ntoa",
+        "source_header": "<arpa/inet.h>",
+        "requires_polyfill": false,
+        "windows_api": "inet_ntoa"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct in_addr",
+        "source_header": "<netinet/in.h>"
+      }
+    ],
+    "macros": []
+  }
+}
+

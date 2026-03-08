@@ -1,0 +1,6 @@
+﻿{
+  "name": "posix-sys-ioctl",
+  "version": "0.1.0",
+  "description": "POSIX <sys/ioctl.h> for MSVC",
+  "dependencies": []
+}

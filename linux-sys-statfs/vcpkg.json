@@ -1,0 +1,5 @@
+{
+  "name": "linux-sys-statfs",
+  "version": "0.1.0",
+  "description": "POSIX port for sys/statfs.h on MSVC"
+}

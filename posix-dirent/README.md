@@ -1,69 +1,48 @@
 # posix-dirent
 
-C89 POSIX compatibility layer for MSVC.
+A modular, strict C89-compliant POSIX/Linux/BSD compatibility layer for Windows.
 
-## Implemented Symbols
-- [x] `opendir` (via CRT `_findfirst`)
-- [x] `readdir` (via CRT `_findnext`)
-- [x] `closedir` (via CRT `_findclose`)
-- [x] `rewinddir` (via stream reset)
-- [x] `seekdir` (via rewind and advance)
-- [x] `telldir` (via internal offset tracking)
-- [x] `scandir` (custom dynamic array implementation)
-- [x] `alphasort` (via `strcmp`)
+## Features & Implementation Caveats
 
-## Tested Environments
+- **Broad Toolchain Support:** Validated against MSVC (2005, 2022, 2026), MinGW-w64, and Cygwin.
+- **Strict C89 Compliance:** Written in pure C89 for maximum legacy compiler support. No `//` comments, variables declared at the top of scopes.
+- **Zero Namespace Pollution:** Completely avoids `#include <windows.h>` in headers. Internal `.c` implementations utilize minimal declarations.
+- **Flexible Linkage:** Fully supports both Static (`/MT`, `/MTd`) and Shared (`/MD`, `/MDd`) CRT, as well as Static or Shared (`.dll`) library output via `BUILD_SHARED_LIBS`.
+- **Advanced Compilation Settings:** Supports CMake configuration toggles for `UNICODE`/ANSI, Link-Time Optimization (LTO), Single/Multi-threading, and MSVC Runtime Checks (`/RTC1`, `/RTCs`, `/RTCu`).
+- **Safe CRT:** Automatically utilizes MSVC secure string extensions (e.g., `strcpy_s`, `sprintf_s`, `_TRUNCATE`) where available, falling back to standard C89 string manipulation on older toolchains or MinGW.
+- **POSIX API Preservation:** Retains strict standard function signatures and structs. Error codes map natively to standard `errno`. Non-void helper functions return strict `int` exit codes.
+- **Empty Translation Units:** Guarded against strict ISO C warnings via dummy typedefs and functions.
 
-This library is exhaustively tested with 100% test coverage and compiles cleanly with zero warnings (e.g., `/W4 /WX /Za` on MSVC, `-Wall -Wextra -Werror -pedantic` on GCC) across a wide range of C89 compilers:
+*(Note for Sockets/Network modules: Winsock initialization via `WSAStartup()` and `WSACleanup()` remains the responsibility of the consuming application.)*
 
-| Compiler / Environment | Architecture | Status |
-| ---------------------- | ------------ | ------ |
-| **MSVC 2026**          | x64          | ✅ Pass |
-| **MSVC 2022**          | x64          | ✅ Pass |
-| **MSVC 2005 (VC8)**    | x86          | ✅ Pass |
-| **MinGW (GCC 13.2.0)** | x64          | ✅ Pass |
-| **Cygwin (GCC 13.4.0)**| x64          | ✅ Pass |
+## Usage
 
-## Implementation Notes & Caveats
+### Option 1: Native CMake FetchContent
 
-- **Zero `<windows.h>` Inclusion:** The implementation relies purely on the secure MS C Runtime (`<io.h>`, `_findfirst`, `_findnext`), intentionally avoiding `<windows.h>` and `WIN32_FIND_DATA`. This heavily reduces binary bloat and namespace pollution, allowing it to be safely included anywhere.
-- **Path Length Constraints:** Fixed to the traditional Windows `MAX_PATH` (260 characters). Very long file paths (e.g., those using the `\\?\` prefix) may exceed the buffer bounds of standard `dirent` structures unless specifically handled by the calling application.
-- **Character Encoding (ASCII/ANSI vs Unicode):** This library implements the standard narrow-character POSIX interface (`char*`). It maps to `_findfirst`, meaning it interprets strings based on the active system ANSI code page. There is currently no direct wide-character (`wchar_t` / `_wfindfirst`) UTF-16 polyfill mapped here.
-- **UNC Paths:** Supported natively as long as the underlying CRT `_findfirst` resolves them and they fit within the 260-character limit.
-- **Thread Safety:** As is standard for many POSIX `dirent` implementations, the `struct dirent` returned by `readdir()` is stored *inside* the `DIR` handle. It is safe to iterate different directory streams on different threads, but iterating the *same* `DIR*` stream concurrently across multiple threads is not thread-safe.
+You can consume this module individually using CMake's `FetchContent`.
 
-## Current Status & Future Plans
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    posix-dirent
+    GIT_REPOSITORY https://github.com/SamuelMarks/auto-win-msvc.git
+    GIT_TAG        master
+    SOURCE_SUBDIR  posix-dirent
+)
+FetchContent_MakeAvailable(posix-dirent)
 
-**Current Status:**
-- The `auto-win-msvc` monorepo has been successfully scaffolded into 18 distinct, modular CMake projects.
-- All standard POSIX headers and types are generated and strictly C89 compliant.
-- `posix-dirent` is fully implemented, verified, and strictly mapping to the POSIX/Linux standard interfaces.
+# Link against the individual module
+target_link_libraries(your_target PRIVATE posix-dirent)
+```
 
-**Future Plans:**
-- **AI-Driven Iteration:** Iteratively implement all remaining stubbed polyfills across the other 17 modules, maintaining 0 compiler warnings (`/W4 /WX`) and strict C89 compliance.
-- **cdd-c Integration:** Expand `cdd-c` into a Concrete Syntax Tree (CST) weaver (as outlined in `cdd-c-expansion.md`). This will allow automated, byte-for-byte precise injection of `auto-win-msvc` polyfills and standard `#ifdef _MSC_VER` guards directly into legacy C codebases.
+### Option 2: vcpkg
 
-## Installation
+Add this specific module to your `vcpkg.json`:
 
-### Vcpkg
-Add to your `vcpkg.json`:
 ```json
 {
   "dependencies": [
     "posix-dirent"
   ]
 }
-```
-
-### FetchContent (CMake)
-```cmake
-include(FetchContent)
-FetchContent_Declare(
-  posix-dirent
-  GIT_REPOSITORY https://github.com/SamuelMarks/auto-win-msvc.git
-  GIT_TAG master
-  SOURCE_SUBDIR posix-dirent
-)
-FetchContent_MakeAvailable(posix-dirent)
-target_link_libraries(your_target PRIVATE posix-dirent)
 ```

@@ -93,8 +93,8 @@ htmlcov/
 *.swp
 *~
 
-
 # Custom ignores for temporary local builds and scripts
+build*/
 build_*/
 build-*/
 build2005/
@@ -113,3 +113,46 @@ check.txt
 *.rej
 *.patch
 
+# Temporary scripts and manual tests
+fix_*.py
+fix_*.sh
+patch_*.py
+update_*.py
+remove_*.py
+rename.py
+replace_*.py
+restore_*.py
+dummy*.c
+done.bat
+/build_*.ps1
+create_*.py
+inject_*.py
+check_*.py
+VALKEY_PLAN*.md
+test_inaddr.c
+test_msvc2005*.bat
+test_new_*.bat
+test_py.bat
+test_strict.cmake
+temp_*.c
+
+test_toolchains.py
+test_mingw_func.py
+test_msvc2005.bat
+clean_builds.py
+disable_tidy.py
+disable_wx.py
+test_cast.c
+all_funcs.txt
+provided_functions.txt
+valkey_functions.txt
+local_tests_results.md
+valkey_src/
+scripts/results_*.txt
+*/test.bat
+/add_*.py
+/analyze.py
+/diff_*.py
+/generate_*.py
+/rewrite_*.py
+/test_*_all.bat

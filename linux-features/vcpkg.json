@@ -1,0 +1,5 @@
+{
+  "name": "linux-features",
+  "version": "0.1.0",
+  "description": "Polyfill for <features.h>"
+}

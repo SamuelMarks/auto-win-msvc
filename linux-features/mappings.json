@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_FEATURES",
+        "source_header": "<features.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

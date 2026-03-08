@@ -1,0 +1,5 @@
+{
+  "name": "solaris-sys-byteorder",
+  "version": "0.1.0",
+  "description": "Polyfill for <sys/byteorder.h>"
+}

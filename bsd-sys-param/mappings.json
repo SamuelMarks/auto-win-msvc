@@ -1,0 +1,23 @@
+﻿{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "MAXPATHLEN",
+        "source_header": "<sys/param.h>",
+        "windows_api": "_MAX_PATH"
+      },
+      {
+        "posix": "MIN",
+        "source_header": "<sys/param.h>",
+        "windows_api": "MIN"
+      },
+      {
+        "posix": "MAX",
+        "source_header": "<sys/param.h>",
+        "windows_api": "MAX"
+      }
+    ]
+  }
+}

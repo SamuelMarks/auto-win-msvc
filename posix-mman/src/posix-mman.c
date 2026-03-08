@@ -79,10 +79,22 @@ typedef unsigned long long posix_mman_uint64_t;
 #endif
 
 /*
+ * madvise - give advice about use of memory
+ */
+int madvise(void *addr, size_t length, int advice) {
+    (void)addr;
+    (void)length;
+    (void)advice;
+    /* Windows doesn't have a direct equivalent for most MADV_* flags that works on mapped views.
+       It's safe to just return 0 (success) as it's only an advice. */
+    return 0;
+}
+
+/*
  * mlock - lock a range of process address space
  */
 int mlock(const void *addr, size_t len) {
-    if (VirtualLock((WIN_LPVOID)addr, len) != 0) {
+    if (VirtualLock((WIN_LPVOID)(size_t)addr, len) != 0) {
         return 0;
     }
     errno = ENOMEM;
@@ -212,7 +224,7 @@ int mprotect(void *addr, size_t len, int prot) {
         }
     }
 
-    if (VirtualProtect((WIN_LPVOID)addr, len, flProtect, &oldProtect)) {
+    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, flProtect, &oldProtect)) {
         return 0;
     }
 
@@ -238,7 +250,7 @@ int msync(void *addr, size_t length, int flags) {
  * munlock - unlock a range of process address space
  */
 int munlock(const void *addr, size_t len) {
-    if (VirtualUnlock((WIN_LPVOID)addr, len) != 0) {
+    if (VirtualUnlock((WIN_LPVOID)(size_t)addr, len) != 0) {
         return 0;
     }
     errno = ENOMEM;
@@ -349,3 +361,9 @@ int munlockall(void) {
 
 /* Ensure strict C compliance requires at least one declaration in translation unit */
 typedef int dummy_posix_mman;
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+typedef int make_iso_compilers_happy_tu_posix_mman;
+

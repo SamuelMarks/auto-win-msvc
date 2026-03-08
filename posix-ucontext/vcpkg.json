@@ -1,0 +1,5 @@
+{
+  "name": "posix-ucontext",
+  "version": "0.1.0",
+  "description": "POSIX port for ucontext.h on MSVC"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "linux-epoll",
+  "version": "0.1.0",
+  "description": "POSIX port for sys/epoll.h on MSVC using wepoll",
+  "dependencies": [
+    "wepoll"
+  ]
+}

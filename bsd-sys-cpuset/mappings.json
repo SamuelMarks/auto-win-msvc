@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_BSD_SYS_CPUSET",
+        "source_header": "<sys/cpuset.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

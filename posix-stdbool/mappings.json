@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_POSIX_STDBOOL",
+        "source_header": "<stdbool.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

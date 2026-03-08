@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_SYS_USER",
+        "source_header": "<sys/user.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

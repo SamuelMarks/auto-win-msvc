@@ -146,7 +146,10 @@ typedef int gid_t;
 #include <process.h>
 #include <direct.h>
 #include <sys/stat.h>
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
 
 #else
 /* Non-MSVC platforms */

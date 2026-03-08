@@ -1,0 +1,7 @@
+﻿{
+  "name": "posix-arpa",
+  "version": "0.1.0",
+  "description": "POSIX <arpa/inet.h> implementation for MSVC",
+  "dependencies": []
+}
+

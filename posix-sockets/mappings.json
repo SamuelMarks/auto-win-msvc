@@ -256,6 +256,12 @@
         "posix": "struct msghdr",
         "source_header": "<sys/socket.h>",
         "requires_polyfill": true
+      },
+      {
+        "posix": "struct sockaddr_un",
+        "source_header": "<sys/un.h>",
+        "requires_polyfill": false,
+        "windows_api": "struct sockaddr_un (afunix.h)"
       }
     ],
     "macros": []

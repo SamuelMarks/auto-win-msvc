@@ -159,3 +159,12 @@ void syslog(int priority, const char *format, ...) {
     (void)format;
 #endif
 }
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_syslog(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_syslog;
+

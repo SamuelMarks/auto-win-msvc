@@ -1,0 +1,8 @@
+{
+  "name": "posix-regex",
+  "version": "0.1.0",
+  "description": "POSIX port for regex.h on MSVC using PCRE2",
+  "dependencies": [
+    "pcre2"
+  ]
+}

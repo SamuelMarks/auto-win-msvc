@@ -1,0 +1,5 @@
+{
+  "name": "linux-sys-procfs",
+  "version": "0.1.0",
+  "description": "Polyfill for <sys/procfs.h>"
+}

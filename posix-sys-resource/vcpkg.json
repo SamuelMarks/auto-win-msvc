@@ -1,0 +1,6 @@
+﻿{
+  "name": "posix-sys-resource",
+  "version": "0.1.0",
+  "description": "POSIX <sys/resource.h> for MSVC",
+  "dependencies": []
+}

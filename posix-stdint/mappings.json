@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_POSIX_STDINT",
+        "source_header": "<stdint.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

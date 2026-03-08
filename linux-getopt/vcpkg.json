@@ -1,0 +1,5 @@
+{
+  "name": "linux-getopt",
+  "version": "0.1.0",
+  "description": "POSIX port for getopt.h on MSVC"
+}

@@ -28,9 +28,10 @@
 #define WAIT_TIMEOUT 258UL
 #define TLS_OUT_OF_INDEXES 0xFFFFFFFFUL
 
+typedef void (WINAPI *FARPROC_T)(void);
 __declspec(dllimport) unsigned long WINAPI GetCurrentThreadId(void);
 __declspec(dllimport) void* WINAPI GetModuleHandleA(const char*);
-__declspec(dllimport) void* WINAPI GetProcAddress(void*, const char*);
+__declspec(dllimport) FARPROC_T WINAPI GetProcAddress(void*, const char*);
 __declspec(dllimport) void* WINAPI CreateThread(void*, size_t, unsigned long (WINAPI *)(void*), void*, unsigned long, unsigned long*);
 __declspec(dllimport) unsigned long WINAPI WaitForSingleObject(void*, unsigned long);
 __declspec(dllimport) int WINAPI CloseHandle(void*);
@@ -61,7 +62,23 @@ __declspec(dllimport) void WINAPI EnterCriticalSection(void*);
 __declspec(dllimport) void WINAPI LeaveCriticalSection(void*);
 __declspec(dllimport) unsigned char WINAPI TryEnterCriticalSection(void*);
 __declspec(dllimport) int WINAPI InitializeCriticalSectionAndSpinCount(void*, unsigned long);
+__declspec(dllimport) void* WINAPI OpenThread(unsigned long, int, unsigned long);
 
+typedef long (WINAPI * PFN_SetThreadDescription)(void*, const wchar_t*);
+static int WINAPI dyn_SetThreadDescription(void* a0, const wchar_t* a1) {
+    static PFN_SetThreadDescription pfn = 0;
+    static int init = 0;
+    if (!init) {
+        void* mod = GetModuleHandleA("kernel32.dll");
+        if (mod) pfn = (PFN_SetThreadDescription)GetProcAddress(mod, "SetThreadDescription");
+        init = 1;
+    }
+    if (pfn) {
+        pfn(a0, a1);
+        return 0;
+    }
+    return ENOSYS;
+}
 
 typedef void (WINAPI * PFN_InitializeSRWLock)(void**);
 static void WINAPI dyn_InitializeSRWLock(void** a0) {
@@ -115,6 +132,7 @@ static void WINAPI dyn_AcquireSRWLockShared(void** a0) {
 }
 
 
+#if 0
 typedef void (WINAPI * PFN_ReleaseSRWLockShared)(void**);
 static void WINAPI dyn_ReleaseSRWLockShared(void** a0) {
     static PFN_ReleaseSRWLockShared pfn = 0;
@@ -126,7 +144,7 @@ static void WINAPI dyn_ReleaseSRWLockShared(void** a0) {
     }
     if (pfn) pfn(a0);
 }
-
+#endif
 
 typedef unsigned char (WINAPI * PFN_TryAcquireSRWLockExclusive)(void**);
 static unsigned char WINAPI dyn_TryAcquireSRWLockExclusive(void** a0) {
@@ -209,6 +227,7 @@ static void WINAPI dyn_WakeAllConditionVariable(void** a0) {
 }
 
 
+#if 0
 typedef int (WINAPI * PFN_InitOnceBeginInitialize)(void**, unsigned long, int*, void**);
 static int WINAPI dyn_InitOnceBeginInitialize(void** a0, unsigned long a1, int* a2, void** a3) {
     static PFN_InitOnceBeginInitialize pfn = 0;
@@ -249,6 +268,7 @@ static int WINAPI thread_start_wrapper(void *arg) {
     routine(routine_arg);
     return 0;
 }
+#endif
 #endif
 
 /* TODO: Implement pthread_atfork */
@@ -1028,23 +1048,54 @@ int pthread_setschedprio(pthread_t thread, int prio) {
     return ENOSYS;
 }
 
-/* TODO: Implement pthread_setspecific */
-int pthread_setspecific(pthread_key_t key, const void *value) {
+/* TODO: Implement pthread_setname_np */
+int pthread_setname_np(pthread_t thread, const char *name) {
 #if defined(_WIN32)
-    return TlsSetValue(key, (void*)value) ? 0 : EINVAL;
+    wchar_t wname[256];
+#if defined(_MSC_VER)
+    size_t out_len = 0;
+#endif
+    void *hThread;
+    unsigned long threadId;
+    if (!thread.p || !name) return EINVAL;
+
+#if defined(_MSC_VER)
+    mbstowcs_s(&out_len, wname, 256, name, 255);
 #else
-    (void)key; (void)value;
+    mbstowcs(wname, name, 255);
+#endif
+    wname[255] = L'\0';
+
+    /* If thread.p is actually a thread ID (as returned by our pthread_self), open it */
+    threadId = (unsigned long)(size_t)thread.p;
+    hThread = OpenThread(0x0400 /* THREAD_SET_LIMITED_INFORMATION */, 0, threadId);
+    if (hThread) {
+        int res = dyn_SetThreadDescription(hThread, wname);
+        CloseHandle(hThread);
+        return res;
+    }
+    
+    /* Otherwise try setting directly assuming it's a handle (from pthread_create) */
+    return dyn_SetThreadDescription(thread.p, wname);
+#else
+    (void)thread; (void)name;
     return ENOSYS;
 #endif
 }
 
 /* TODO: Implement pthread_sigmask */
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-    (void)how;
-    (void)set;
-    (void)oset;
-
+    (void)how; (void)set; (void)oset;
     return ENOSYS;
+}
+
+int pthread_setspecific(pthread_key_t key, const void *value) {
+#if defined(_WIN32)
+    return TlsSetValue(key, (void*)(size_t)value) ? 0 : EINVAL;
+#else
+    (void)key; (void)value;
+    return ENOSYS;
+#endif
 }
 
 /* TODO: Implement pthread_spin_destroy */
@@ -1278,3 +1329,12 @@ int sem_wait(sem_t *sem) {
 }
 
 #endif /* Win32 polyfill */
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_pthread(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_pthread;
+

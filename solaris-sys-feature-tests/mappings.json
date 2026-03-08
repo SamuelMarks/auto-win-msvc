@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_SOLARIS_SYS_FEATURE_TESTS",
+        "source_header": "<sys/feature_tests.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

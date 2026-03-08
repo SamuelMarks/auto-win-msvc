@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_SYS_BITOPS",
+        "source_header": "<sys/bitops.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

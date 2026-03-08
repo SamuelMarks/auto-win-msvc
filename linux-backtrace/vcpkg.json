@@ -1,0 +1,5 @@
+{
+  "name": "linux-backtrace",
+  "version": "0.1.0",
+  "description": "Polyfill for <backtrace.h>"
+}

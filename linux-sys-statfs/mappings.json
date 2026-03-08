@@ -1,0 +1,24 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "statfs",
+        "source_header": "<sys/statfs.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "fstatfs",
+        "source_header": "<sys/statfs.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct statfs",
+        "source_header": "<sys/statfs.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

@@ -5,7 +5,7 @@
 #include "posix-core.h"
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <crtdbg.h>
-#if _MSC_VER >= 1600
+#if defined(_MSC_VER) && _MSC_VER >= 1600
 #include <stdint.h>
 #else
 #include <stddef.h>

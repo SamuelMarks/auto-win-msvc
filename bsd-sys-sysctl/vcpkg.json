@@ -1,0 +1,5 @@
+{
+  "name": "bsd-sys-sysctl",
+  "version": "0.1.0",
+  "description": "Polyfill for <sys/sysctl.h>"
+}

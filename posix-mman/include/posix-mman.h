@@ -79,6 +79,29 @@ extern "C" {
 #define MS_INVALIDATE   0x04
 #endif
 
+/* madvise advice flags */
+#ifndef MADV_NORMAL
+#define MADV_NORMAL     0
+#endif
+#ifndef MADV_RANDOM
+#define MADV_RANDOM     1
+#endif
+#ifndef MADV_SEQUENTIAL
+#define MADV_SEQUENTIAL 2
+#endif
+#ifndef MADV_WILLNEED
+#define MADV_WILLNEED   3
+#endif
+#ifndef MADV_DONTNEED
+#define MADV_DONTNEED   4
+#endif
+#ifndef MADV_FREE
+#define MADV_FREE       8
+#endif
+#ifndef MADV_DONTDUMP
+#define MADV_DONTDUMP   16
+#endif
+
 /* mlockall flags */
 #ifndef MCL_CURRENT
 #define MCL_CURRENT     0x01
@@ -92,6 +115,15 @@ extern "C" {
 #define _MODE_T_
 typedef unsigned short mode_t;
 #endif
+
+/*
+ * madvise - give advice about use of memory
+ * @addr: starting address
+ * @length: length of the memory region
+ * @advice: advice to give
+ * Returns 0 on success, -1 on failure.
+ */
+int madvise(void *addr, size_t length, int advice);
 
 /*
  * mlock - lock a range of process address space

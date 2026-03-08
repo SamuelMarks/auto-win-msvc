@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_BACKTRACE",
+        "source_header": "<backtrace.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

@@ -288,3 +288,9 @@ int alphasort(const struct dirent **a, const struct dirent **b) {
 #else
 typedef int dummy_posix_dirent;
 #endif /* _WIN32 */
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+typedef int make_iso_compilers_happy_tu_posix_dirent;
+

@@ -1,0 +1,37 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "getrusage",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_getrusage"
+      },
+      {
+        "posix": "getrlimit",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_getrlimit"
+      },
+      {
+        "posix": "setrlimit",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_setrlimit"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct rusage",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "struct rlimit",
+        "source_header": "<sys/resource.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

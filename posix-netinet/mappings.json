@@ -1,0 +1,24 @@
+﻿{
+  "mappings": {
+    "functions": [],
+    "types": [
+      {
+        "posix": "struct sockaddr_in",
+        "source_header": "<netinet/in.h>",
+        "windows_api": "struct sockaddr_in"
+      }
+    ],
+    "macros": [
+      {
+        "posix": "IPPROTO_TCP",
+        "source_header": "<netinet/in.h>",
+        "windows_api": "IPPROTO_TCP"
+      },
+      {
+        "posix": "TCP_NODELAY",
+        "source_header": "<netinet/tcp.h>",
+        "windows_api": "TCP_NODELAY"
+      }
+    ]
+  }
+}

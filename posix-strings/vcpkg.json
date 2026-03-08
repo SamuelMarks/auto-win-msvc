@@ -1,0 +1,5 @@
+{
+  "name": "posix-strings",
+  "version": "0.1.0",
+  "description": "POSIX port for strings.h on MSVC"
+}

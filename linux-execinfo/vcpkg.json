@@ -1,0 +1,5 @@
+{
+  "name": "linux-execinfo",
+  "version": "0.1.0",
+  "description": "POSIX port for execinfo.h on MSVC"
+}

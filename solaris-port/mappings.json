@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_SOLARIS_PORT",
+        "source_header": "<port.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

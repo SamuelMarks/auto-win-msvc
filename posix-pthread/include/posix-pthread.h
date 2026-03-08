@@ -187,6 +187,7 @@ int pthread_setconcurrency(int new_level);
 int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param *param);
 int pthread_setschedprio(pthread_t thread, int prio);
 int pthread_setspecific(pthread_key_t key, const void *value);
+int pthread_setname_np(pthread_t thread, const char *name);
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
 int pthread_spin_destroy(pthread_spinlock_t *lock);
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared);

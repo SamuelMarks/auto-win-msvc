@@ -1,0 +1,26 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "readv",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_readv"
+      },
+      {
+        "posix": "writev",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_writev"
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct iovec",
+        "source_header": "<sys/uio.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

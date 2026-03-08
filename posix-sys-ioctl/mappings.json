@@ -1,0 +1,14 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "ioctl",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_ioctl"
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

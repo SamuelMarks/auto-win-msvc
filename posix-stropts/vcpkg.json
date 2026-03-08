@@ -1,0 +1,5 @@
+{
+  "name": "posix-stropts",
+  "version": "0.1.0",
+  "description": "POSIX port for stropts.h on MSVC"
+}

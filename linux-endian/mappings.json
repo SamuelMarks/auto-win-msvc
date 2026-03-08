@@ -1,0 +1,68 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "htobe16",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "htole16",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "be16toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "le16toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "htobe32",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "htole32",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "be32toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "le32toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "htobe64",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "htole64",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "be64toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "le64toh",
+        "source_header": "<endian.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

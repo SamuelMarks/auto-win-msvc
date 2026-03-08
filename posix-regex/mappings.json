@@ -1,0 +1,39 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "regcomp",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regexec",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regerror",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regfree",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "regex_t",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "regmatch_t",
+        "source_header": "<regex.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

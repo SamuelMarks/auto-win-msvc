@@ -1,0 +1,5 @@
+{
+  "name": "bsd-machine-endian",
+  "version": "0.1.0",
+  "description": "Polyfill for <machine/endian.h>"
+}

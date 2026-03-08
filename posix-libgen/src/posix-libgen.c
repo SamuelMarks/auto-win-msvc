@@ -214,3 +214,12 @@ char *dirname(char *path) {
 #endif
     return result;
 }
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_libgen(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_libgen;
+

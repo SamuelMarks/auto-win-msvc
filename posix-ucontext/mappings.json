@@ -1,0 +1,24 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "getcontext",
+        "source_header": "<ucontext.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "setcontext",
+        "source_header": "<ucontext.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "ucontext_t",
+        "source_header": "<ucontext.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

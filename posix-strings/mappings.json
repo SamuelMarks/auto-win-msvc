@@ -1,0 +1,51 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "ffs",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ffsl",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "ffsll",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "strcasecmp",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true,
+        "windows_api": "_stricmp"
+      },
+      {
+        "posix": "strncasecmp",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true,
+        "windows_api": "_strnicmp"
+      },
+      {
+        "posix": "bzero",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "bcopy",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "bcmp",
+        "source_header": "<strings.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

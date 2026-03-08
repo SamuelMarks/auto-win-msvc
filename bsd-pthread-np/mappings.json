@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_BSD_PTHREAD_NP",
+        "source_header": "<pthread_np.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

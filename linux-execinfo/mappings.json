@@ -1,0 +1,23 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "backtrace",
+        "source_header": "<execinfo.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "backtrace_symbols",
+        "source_header": "<execinfo.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "backtrace_symbols_fd",
+        "source_header": "<execinfo.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [],
+    "macros": []
+  }
+}

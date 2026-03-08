@@ -34,6 +34,17 @@ int posix_fallocate(int fd, off_t offset, off_t len) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
+int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags) {
+    (void)offset;
+    (void)nbytes;
+    (void)flags;
+    if (_commit(fd) == 0) {
+        return 0;
+    }
+    return -1;
+}
+#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 unsigned int alarm(unsigned int seconds) {
     errno = ENOSYS;
     return (unsigned int)-1;
@@ -227,8 +238,22 @@ int pause(void) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 int pipe(int pipefd[2]) {
-    errno = ENOSYS;
-    return -1;
+    if (_pipe(pipefd, 4096, _O_BINARY) == -1) {
+        return -1;
+    }
+    return 0;
+}
+#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
+int pipe2(int pipefd[2], int flags) {
+    int textmode = _O_BINARY;
+    if (flags & O_CLOEXEC) {
+        textmode |= _O_NOINHERIT;
+    }
+    if (_pipe(pipefd, 4096, textmode) == -1) {
+        return -1;
+    }
+    return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -375,3 +400,9 @@ pid_t vfork(void) {
     return -1;
 }
 #endif
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+typedef int make_iso_compilers_happy_tu_posix_core;
+

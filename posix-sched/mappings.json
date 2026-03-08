@@ -1,0 +1,32 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "sched_yield",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_sched_yield"
+      },
+      {
+        "posix": "sched_setaffinity",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_sched_setaffinity"
+      },
+      {
+        "posix": "sched_getaffinity",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_sched_getaffinity"
+      }
+    ],
+    "types": [
+      {
+        "posix": "cpu_set_t",
+        "source_header": "<sched.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": []
+  }
+}

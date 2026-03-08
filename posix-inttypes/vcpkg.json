@@ -1,0 +1,5 @@
+{
+  "name": "posix-inttypes",
+  "version": "0.1.0",
+  "description": "Polyfill for <inttypes.h>"
+}

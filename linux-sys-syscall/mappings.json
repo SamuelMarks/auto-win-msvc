@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_SYS_SYSCALL",
+        "source_header": "<sys/syscall.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

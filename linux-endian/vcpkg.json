@@ -1,0 +1,5 @@
+{
+  "name": "linux-endian",
+  "version": "0.1.0",
+  "description": "POSIX port for endian.h, sys/endian.h, machine/endian.h on MSVC"
+}

@@ -391,3 +391,12 @@ void wordfree(wordexp_t *pwordexp) {
     pwordexp->we_wordv = NULL;
     pwordexp->we_wordc = 0;
 }
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_glob(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_glob;
+

@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_BSD_SYS_EVENT",
+        "source_header": "<sys/event.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_BSD_MALLOC_NP",
+        "source_header": "<malloc_np.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

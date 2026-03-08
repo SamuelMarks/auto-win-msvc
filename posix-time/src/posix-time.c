@@ -2,7 +2,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+
+#if defined(_MSC_VER)
+__declspec(dllimport) void* __stdcall CreateWaitableTimerA(void*, int, const char*);
+__declspec(dllimport) int __stdcall SetWaitableTimer(void*, const LARGE_INTEGER*, long, void*, void*, int);
+__declspec(dllimport) unsigned long __stdcall WaitForSingleObject(void*, unsigned long);
+__declspec(dllimport) int __stdcall CloseHandle(void*);
+#endif
+#endif
 #include "posix-time.h"
+
+
 
 #ifdef _WIN32
 #if defined(_M_IX86)
@@ -27,7 +42,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+
 #else
 #include <minwindef.h>
 #include <sysinfoapi.h>
@@ -45,17 +60,17 @@
 #endif
 
 #if defined(_MSC_VER)
-#define POSIX_TIME_EPOCH 116444736000000000ui64
-#define POSIX_TIME_10M   10000000ui64
-#define POSIX_TIME_10    10ui64
+#define POSIX_TIME_EPOCH 116444736000000000i64
+#define POSIX_TIME_10M   10000000i64
+#define POSIX_TIME_10    10i64
 #elif defined(__GNUC__)
-#define POSIX_TIME_EPOCH __extension__ 116444736000000000ULL
-#define POSIX_TIME_10M   __extension__ 10000000ULL
-#define POSIX_TIME_10    __extension__ 10ULL
+#define POSIX_TIME_EPOCH __extension__ 116444736000000000LL
+#define POSIX_TIME_10M   __extension__ 10000000LL
+#define POSIX_TIME_10    __extension__ 10LL
 #else
-#define POSIX_TIME_EPOCH 116444736000000000ULL
-#define POSIX_TIME_10M   10000000ULL
-#define POSIX_TIME_10    10ULL
+#define POSIX_TIME_EPOCH 116444736000000000LL
+#define POSIX_TIME_10M   10000000LL
+#define POSIX_TIME_10    10LL
 #endif
 
 /* Polyfill for gettimeofday using GetSystemTimeAsFileTime */
@@ -153,4 +168,89 @@ int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue
     return 0;
 }
 
+int clock_gettime(int clk_id, struct timespec *tp) {
+    if (!tp) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (clk_id == CLOCK_REALTIME) {
+        FILETIME ft;
+        ULARGE_INTEGER uli;
+        GetSystemTimeAsFileTime(&ft);
+        uli.LowPart = ft.dwLowDateTime;
+        uli.HighPart = ft.dwHighDateTime;
+        uli.QuadPart -= POSIX_TIME_EPOCH;
+        tp->tv_sec = (time_t)(uli.QuadPart / POSIX_TIME_10M);
+        tp->tv_nsec = (long)((uli.QuadPart % POSIX_TIME_10M) * 100);
+        return 0;
+    } else if (clk_id == CLOCK_MONOTONIC) {
+        LARGE_INTEGER count, freq;
+        if (QueryPerformanceFrequency(&freq) && QueryPerformanceCounter(&count)) {
+            tp->tv_sec = (time_t)(count.QuadPart / freq.QuadPart);
+            tp->tv_nsec = (long)(((count.QuadPart % freq.QuadPart) * 1000000000) / freq.QuadPart);
+            return 0;
+        }
+    }
+    /* Fallback or unsupported clock ID */
+    errno = EINVAL;
+    return -1;
+}
+
+int nanosleep(const struct timespec *req, struct timespec *rem) {
+    HANDLE timer;
+    LARGE_INTEGER li;
+    
+    if (!req) {
+        errno = EFAULT;
+        return -1;
+    }
+    
+    timer = CreateWaitableTimerA(NULL, TRUE, NULL);
+    if (!timer) {
+        errno = EINVAL;
+        return -1;
+    }
+    
+    /* Negative value for relative time in 100-nanosecond intervals */
+    li.QuadPart = -((LONGLONG)req->tv_sec * POSIX_TIME_10M + req->tv_nsec / 100);
+    if (!SetWaitableTimer(timer, &li, 0, NULL, NULL, 0)) {
+        CloseHandle(timer);
+        errno = EINVAL;
+        return -1;
+    }
+    
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+    
+    if (rem) {
+        rem->tv_sec = 0;
+        rem->tv_nsec = 0;
+    }
+    
+    return 0;
+}
+
+struct tm *localtime_r(const time_t *timep, struct tm *result) {
+    if (!timep || !result) return NULL;
+#if defined(_MSC_VER)
+    if (localtime_s(result, timep) == 0) return result;
+    return NULL;
+#else
+    {
+        struct tm *res = localtime(timep);
+        if (!res) return NULL;
+        *result = *res;
+        return result;
+    }
+#endif
+}
+
 #endif /* _WIN32 */
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_time(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_time;
+

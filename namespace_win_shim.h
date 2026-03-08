@@ -48,11 +48,23 @@
 
 #else
 
-    /* Mode: #include <windows.h> */
+    /* Mode: #ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h> */
     #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
     #endif
-    #include <windows.h>
+    #ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
     #include <io.h>
     #include <direct.h>
     #include <process.h>
@@ -117,6 +129,61 @@ typedef unsigned short mode_t;
 /* Approximate mapping for usleep */
 #define usleep(x) Sleep(((x) + 999) / 1000)
 #endif
+
+/* GCC/Clang Compiler Intrinsics Polyfills for MSVC */
+#if defined(_MSC_VER)
+#include <intrin.h>
+#include <stdlib.h>
+
+#ifndef __builtin_expect
+#define __builtin_expect(exp, c) (exp)
+#endif
+
+#ifndef __builtin_bswap32
+#define __builtin_bswap32 _byteswap_ulong
+#endif
+
+#ifndef __builtin_bswap64
+#define __builtin_bswap64 _byteswap_uint64
+#endif
+
+#ifndef __builtin_popcount
+#define __builtin_popcount __popcnt
+#endif
+
+#ifndef __builtin_popcountll
+#if defined(_M_X64) || defined(_M_AMD64)
+#define __builtin_popcountll __popcnt64
+#else
+static __inline int posix_builtin_popcountll(unsigned __int64 val) {
+    return __popcnt((unsigned int)(val & 0xFFFFFFFF)) + 
+           __popcnt((unsigned int)(val >> 32));
+}
+#define __builtin_popcountll posix_builtin_popcountll
+#endif
+#endif
+
+#ifndef __builtin_ctzll
+static __inline int posix_builtin_ctzll(unsigned __int64 val) {
+    unsigned long index;
+#if defined(_M_X64) || defined(_M_AMD64)
+    if (_BitScanForward64(&index, val)) {
+        return (int)index;
+    }
+#else
+    if (_BitScanForward(&index, (unsigned long)val)) {
+        return (int)index;
+    }
+    if (_BitScanForward(&index, (unsigned long)(val >> 32))) {
+        return (int)(index + 32);
+    }
+#endif
+    return 64; /* Undefined for 0, returning 64 is a common fallback */
+}
+#define __builtin_ctzll posix_builtin_ctzll
+#endif
+
+#endif /* _MSC_VER */
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

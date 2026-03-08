@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_SOLARIS_SYS_BYTEORDER",
+        "source_header": "<sys/byteorder.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

@@ -53,7 +53,7 @@ __declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle, DWORD
 #endif
 #endif
 
-#if defined(USE_SAFE_CRT)
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
 #define NUM_FORMAT "%d"
 #else
 #define NUM_FORMAT "%d"
@@ -65,7 +65,7 @@ __declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle, DWORD
  */
 static int format_error_msg(char *buffer, size_t size, int errcode) {
     if (!buffer || size == 0) return 1;
-#if defined(USE_SAFE_CRT)
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
     sprintf_s(buffer, size, "Error code: " NUM_FORMAT, errcode);
 #else
     sprintf(buffer, "Error code: " NUM_FORMAT, errcode);
@@ -76,7 +76,7 @@ static int format_error_msg(char *buffer, size_t size, int errcode) {
 
 #ifdef _WIN32
 
-#if defined(USE_SAFE_CRT)
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
 static void __cdecl null_invalid_parameter_handler(
     const wchar_t* expression,
     const wchar_t* function,
@@ -97,9 +97,9 @@ static void __cdecl null_invalid_parameter_handler(
  */
 static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
     HANDLE h = INVALID_HANDLE_VALUE;
-#if defined(USE_SAFE_CRT)
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
     _invalid_parameter_handler old_handler;
-#if _MSC_VER >= 1900
+#if defined(_MSC_VER) && _MSC_VER >= 1900
     old_handler = _set_thread_local_invalid_parameter_handler((_invalid_parameter_handler)null_invalid_parameter_handler);
 #else
     old_handler = _set_invalid_parameter_handler((_invalid_parameter_handler)null_invalid_parameter_handler);
@@ -110,8 +110,8 @@ static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
         h = (HANDLE)_get_osfhandle(fd);
     }
 
-#if defined(USE_SAFE_CRT)
-#if _MSC_VER >= 1900
+#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
     _set_thread_local_invalid_parameter_handler(old_handler);
 #else
     _set_invalid_parameter_handler(old_handler);
@@ -283,3 +283,12 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
     return -1;
 #endif
 }
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_termios(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_termios;
+

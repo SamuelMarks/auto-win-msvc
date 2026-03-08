@@ -20,7 +20,10 @@ extern "C" {
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
 typedef DWORD pthread_key_t;
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;

@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_SYS_PRCTL",
+        "source_header": "<sys/prctl.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

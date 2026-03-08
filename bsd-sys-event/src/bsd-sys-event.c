@@ -1,0 +1,15 @@
+#include "bsd-sys-event.h"
+#include <errno.h>
+#if defined(_MSC_VER) && !defined(__clang__)
+int kqueue(void) { errno = ENOSYS; return -1; }
+int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents, const struct timespec *timeout) {
+    (void)kq; (void)changelist; (void)nchanges; (void)eventlist; (void)nevents; (void)timeout;
+    errno = ENOSYS; return -1;
+}
+#endif
+
+/* Dummy function to prevent empty translation unit */
+int dummy_bsd_sys_event(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_bsd_sys_event;
+

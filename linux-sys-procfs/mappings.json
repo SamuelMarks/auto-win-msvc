@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_LINUX_SYS_PROCFS",
+        "source_header": "<sys/procfs.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

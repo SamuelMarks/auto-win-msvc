@@ -38,8 +38,6 @@
 
 /* Link required Windows libraries */
 #if defined(_MSC_VER)
-#pragma comment(lib, "netapi32.lib")
-#pragma comment(lib, "advapi32.lib")
 #define PWDGRP_THREAD_LOCAL __declspec(thread)
 #else
 #define PWDGRP_THREAD_LOCAL __thread
@@ -483,4 +481,10 @@ struct passwd *getpwuid(uid_t uid) {
 typedef int dummy_posix_pwdgrp_c_typedef;
 
 #endif /* _WIN32 */
+
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+typedef int make_iso_compilers_happy_tu_posix_pwdgrp;
 

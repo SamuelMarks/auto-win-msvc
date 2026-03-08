@@ -476,3 +476,12 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
     return -1;
 }
 
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_sockets(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_sockets;
+

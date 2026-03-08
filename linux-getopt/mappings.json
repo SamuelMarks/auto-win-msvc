@@ -1,0 +1,40 @@
+{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "getopt",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "getopt_long",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "types": [
+      {
+        "posix": "struct option",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      }
+    ],
+    "macros": [
+      {
+        "posix": "no_argument",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "required_argument",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "optional_argument",
+        "source_header": "<getopt.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

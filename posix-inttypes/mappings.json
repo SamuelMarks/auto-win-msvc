@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "functions": [],
+    "types": [],
+    "macros": [
+      {
+        "posix": "HAS_POSIX_INTTYPES",
+        "source_header": "<inttypes.h>",
+        "requires_polyfill": true
+      }
+    ]
+  }
+}

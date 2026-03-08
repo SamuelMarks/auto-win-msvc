@@ -87,12 +87,20 @@ TEST test_rewinddir_telldir_seekdir(void) {
     loc0 = telldir(dir);
     ent = readdir(dir);
     ASSERT(ent != NULL);
+    #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+    strcpy_s(first_file, sizeof(first_file), ent->d_name);
+#else
     strcpy(first_file, ent->d_name);
+#endif
     loc1 = telldir(dir);
 
     ent = readdir(dir);
     ASSERT(ent != NULL);
+    #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+    strcpy_s(second_file, sizeof(second_file), ent->d_name);
+#else
     strcpy(second_file, ent->d_name);
+#endif
     loc2 = telldir(dir);
     (void)loc2;
 

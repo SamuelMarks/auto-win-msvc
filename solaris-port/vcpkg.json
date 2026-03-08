@@ -1,0 +1,5 @@
+{
+  "name": "solaris-port",
+  "version": "0.1.0",
+  "description": "Polyfill for <port.h>"
+}

@@ -1,0 +1,35 @@
+﻿{
+  "mappings": {
+    "functions": [
+      {
+        "posix": "flock",
+        "source_header": "<sys/file.h>",
+        "requires_polyfill": true,
+        "windows_api": "posix_flock"
+      }
+    ],
+    "types": [],
+    "macros": [
+      {
+        "posix": "LOCK_SH",
+        "source_header": "<sys/file.h>",
+        "windows_api": "LOCK_SH"
+      },
+      {
+        "posix": "LOCK_EX",
+        "source_header": "<sys/file.h>",
+        "windows_api": "LOCK_EX"
+      },
+      {
+        "posix": "LOCK_NB",
+        "source_header": "<sys/file.h>",
+        "windows_api": "LOCK_NB"
+      },
+      {
+        "posix": "LOCK_UN",
+        "source_header": "<sys/file.h>",
+        "windows_api": "LOCK_UN"
+      }
+    ]
+  }
+}

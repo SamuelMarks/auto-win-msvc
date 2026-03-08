@@ -65,6 +65,7 @@ jobs:
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-make
 
       - name: Setup Cygwin
+        id: setup-cygwin
         if: matrix.env == 'cygwin'
         uses: cygwin/cygwin-install-action@v6
         with:
@@ -116,10 +117,8 @@ jobs:
       - name: Build Cygwin
         if: matrix.env == 'cygwin'
         shell: cmd
+        env:
+          CHERE_INVOKING: 1
+          CYGWIN_NOWINPATH: 1
         run: |
-          :: cygwin-install-action puts cygwin in C:\cygwin or C:\tools\cygwin typically
-          set PATH=C:\cygwin\bin;C:\tools\cygwin\bin;%PATH%
-          cd ${{ matrix.module }}
-          cmake -G "Unix Makefiles" -B build
-          cmake --build build
-          ctest --test-dir build --output-on-failure
+          bash.exe --login -o igncr -c "cd ${{ matrix.module }} && cmake -G 'Unix Makefiles' -B build && cmake --build build && ctest --test-dir build --output-on-failure"

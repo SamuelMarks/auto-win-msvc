@@ -26,7 +26,13 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
 #else
 #include <minwindef.h>
 #include <processthreadsapi.h>
@@ -179,4 +185,13 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
     return -1;
 }
 #endif /* __CYGWIN__ */
+
+
+/* Prevent empty translation unit */
+typedef int make_iso_compilers_happy_tu;
+
+/* Dummy function to prevent empty translation unit */
+int dummy_posix_wait(void) { return 0; }
+
+typedef int make_iso_compilers_happy_tu_posix_wait;
 
