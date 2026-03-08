@@ -54,6 +54,27 @@
 #define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(_MSC_VER) && !defined(_WIN64)
+#define POSIX_TIME_STDCALL __stdcall
+#else
+#define POSIX_TIME_STDCALL
+#endif
+
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
+__declspec(dllimport) HANDLE POSIX_TIME_STDCALL CreateWaitableTimerA(void* lpTimerAttributes, int bManualReset, const char* lpTimerName);
+__declspec(dllimport) int POSIX_TIME_STDCALL SetWaitableTimer(HANDLE hTimer, const LARGE_INTEGER* pDueTime, long lPeriod, void* pfnCompletionRoutine, void* lpArgToCompletionRoutine, int fResume);
+__declspec(dllimport) int POSIX_TIME_STDCALL CloseHandle(HANDLE hObject);
+__declspec(dllimport) unsigned long POSIX_TIME_STDCALL WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #if defined(_MSC_VER)
 #define POSIX_TIME_EPOCH 116444736000000000i64
 #define POSIX_TIME_10M   10000000i64
@@ -163,6 +184,7 @@ int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue
     return 0;
 }
 
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
 int clock_gettime(int clk_id, struct timespec *tp) {
     if (!tp) {
         errno = EINVAL;
@@ -224,6 +246,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     
     return 0;
 }
+#endif /* !__MINGW32__ */
 
 struct tm *localtime_r(const time_t *timep, struct tm *result) {
     if (!timep || !result) return NULL;

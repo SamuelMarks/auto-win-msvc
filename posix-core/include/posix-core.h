@@ -66,7 +66,6 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <share.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #endif

@@ -29,7 +29,12 @@
 
 /* Helper for creating a temp file */
 static void create_temp_file(const char *path, const char *content) {
-    FILE *f = fopen(path, "wb");
+    FILE *f = NULL;
+#if defined(_MSC_VER)
+    fopen_s(&f, path, "wb");
+#else
+    f = fopen(path, "wb");
+#endif
     if (f) {
         if (content) {
             fputs(content, f);

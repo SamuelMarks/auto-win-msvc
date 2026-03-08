@@ -29,7 +29,12 @@
 GREATEST_MAIN_DEFS();
 
 static void create_dummy_file(const char *path) {
-    FILE *f = fopen(path, "w");
+    FILE *f = NULL;
+#if defined(_MSC_VER)
+    fopen_s(&f, path, "w");
+#else
+    f = fopen(path, "w");
+#endif
     if (f) {
         fputs("test", f);
         fclose(f);

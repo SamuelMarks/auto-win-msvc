@@ -32,7 +32,12 @@
 
 TEST test_ftok(void) {
     key_t k1, k2;
-    FILE *f = fopen("test_ftok.txt", "w");
+    FILE *f = NULL;
+#ifdef _MSC_VER
+    fopen_s(&f, "test_ftok.txt", "w");
+#else
+    f = fopen("test_ftok.txt", "w");
+#endif
     if (f) {
         fputs("test", f);
         fclose(f);
@@ -51,6 +56,9 @@ TEST test_ftok(void) {
 }
 
 TEST test_shm(void) {
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     int shmid;
     void *addr;
     struct shmid_ds ds;
@@ -78,6 +86,9 @@ TEST test_shm(void) {
 }
 
 TEST test_sem(void) {
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     int semid;
     struct sembuf sb;
     unsigned short vals[2];
@@ -117,6 +128,9 @@ struct msgbuf {
 };
 
 TEST test_msg(void) {
+#ifdef __CYGWIN__
+    SKIP();
+#endif
     int msqid;
     struct msgbuf snd, rcv;
     struct msqid_ds ds;

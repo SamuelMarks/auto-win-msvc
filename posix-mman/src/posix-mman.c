@@ -4,6 +4,9 @@
 #include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>

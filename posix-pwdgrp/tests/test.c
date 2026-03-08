@@ -1,4 +1,13 @@
 /* test.c - 100% Test Coverage Suite */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
 #include "greatest.h"
 #include "posix-pwdgrp.h"
 #include <string.h>
