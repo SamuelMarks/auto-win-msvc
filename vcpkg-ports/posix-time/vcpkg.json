@@ -1,6 +1,0 @@
-{
-  "name": "posix-time",
-  "version": "0.1.0",
-  "description": "POSIX compatibility layer for MSVC (posix-time)",
-  "dependencies": []
-}

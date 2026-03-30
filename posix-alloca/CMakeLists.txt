@@ -20,7 +20,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(greatest)
 
 add_executable(test_posix-alloca tests/test.c)
-target_include_directories(test_posix-alloca PRIVATE $<TARGET_PROPERTY:greatest,INCLUDE_DIRECTORIES>)
+target_include_directories(test_posix-alloca PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-alloca PRIVATE posix-alloca)
 if(TARGET greatest)
     target_link_libraries(test_posix-alloca PRIVATE greatest)

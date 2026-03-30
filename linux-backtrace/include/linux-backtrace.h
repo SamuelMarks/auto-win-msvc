@@ -17,32 +17,50 @@ typedef unsigned int uintptr_t;
 #endif
 #else
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif
 
 /* Dummy state structure */
 struct backtrace_state;
 
-typedef void (*backtrace_error_callback)(void *data, const char *msg, int errnum);
-typedef int (*backtrace_full_callback)(void *data, uintptr_t pc, const char *filename, int lineno, const char *function);
+typedef void (*backtrace_error_callback)(void *data, const char *msg,
+                                         int errnum);
+typedef int (*backtrace_full_callback)(void *data, uintptr_t pc,
+                                       const char *filename, int lineno,
+                                       const char *function);
 
-static __inline struct backtrace_state *backtrace_create_state(const char *filename, int threaded, backtrace_error_callback error_callback, void *data) {
-    (void)filename;
-    (void)threaded;
-    (void)error_callback;
-    (void)data;
-    return 0;
+static __inline struct backtrace_state *
+backtrace_create_state(const char *filename, int threaded,
+                       backtrace_error_callback error_callback, void *data) {
+  (void)filename;
+  (void)threaded;
+  (void)error_callback;
+  (void)data;
+  return 0;
 }
 
 /** \brief backtrace_pcinfo function. */
-static __inline int backtrace_pcinfo(struct backtrace_state *state, uintptr_t pc, backtrace_full_callback callback, backtrace_error_callback error_callback, void *data) {
-    (void)state;
-    (void)pc;
-    (void)callback;
-    (void)error_callback;
-    (void)data;
-    return 0;
+static __inline int backtrace_pcinfo(struct backtrace_state *state,
+                                     uintptr_t pc,
+                                     backtrace_full_callback callback,
+                                     backtrace_error_callback error_callback,
+                                     void *data) {
+  (void)state;
+  (void)pc;
+  (void)callback;
+  (void)error_callback;
+  (void)data;
+  return 0;
 }
 
 #endif /* _MSC_VER */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LINUX_BACKTRACE_H */

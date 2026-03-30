@@ -1,9 +1,11 @@
 #ifndef LINUX_EPOLL_H
 #define LINUX_EPOLL_H
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
+    defined(__CYGWIN__) || defined(__WATCOMC__)
 
-#if (defined(_MSC_VER) && _MSC_VER < 1600) || defined(__MINGW32__) || defined(__MINGW64__)
+#if (defined(_MSC_VER) && _MSC_VER < 1600) || defined(__MINGW32__) ||          \
+    defined(__MINGW64__) || defined(__CYGWIN__) || defined(__WATCOMC__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,19 +36,19 @@ extern "C" {
 #define EPOLL_CTL_MOD 3
 
 typedef union epoll_data {
-    void *ptr;
-    int fd;
-    unsigned int u32;
-#if defined(_MSC_VER)
-    unsigned __int64 u64;
+  void *ptr;
+  int fd;
+  unsigned int u32;
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+  unsigned __int64 u64;
 #else
-    __extension__ unsigned long long u64;
+  __extension__ unsigned long long u64;
 #endif
 } epoll_data_t;
 
 struct epoll_event {
-    unsigned int events;
-    epoll_data_t data;
+  unsigned int events;
+  epoll_data_t data;
 };
 
 /** \brief epoll_create function. */
@@ -56,7 +58,8 @@ int epoll_create1(int flags);
 /** \brief epoll_ctl function. */
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 /** \brief epoll_wait function. */
-int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents,
+               int timeout);
 
 #ifdef __cplusplus
 }

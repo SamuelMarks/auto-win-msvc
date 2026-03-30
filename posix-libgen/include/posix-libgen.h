@@ -20,7 +20,7 @@ extern "C" {
  * The basename() function takes the pathname pointed to by path and returns a
  * pointer to the final component of the pathname, deleting any trailing
  * '/' or '\\' characters.
- * 
+ *
  * If the string consists entirely of the '/' or '\\' character, basename()
  * returns a pointer to the string "/" or "\\".
  * If path is a null pointer or points to an empty string, basename() returns

@@ -1,4 +1,4 @@
-﻿/* posix-sys-ioctl.h - Strict C89 Header */
+/* posix-sys-ioctl.h - Strict C89 Header */
 #ifndef POSIX_SYS_IOCTL_H
 #define POSIX_SYS_IOCTL_H
 
@@ -10,12 +10,18 @@
  * mapping to Winsock's ioctlsocket API.
  */
 
+/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#else
+#include <sys/ioctl.h>
+#endif
+/* clang-format on */
+
+#if defined(_MSC_VER) || defined(_WIN32)
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,13 +37,13 @@ extern "C" {
  */
 int posix_ioctl(int fd, unsigned long request, ...);
 
+#ifndef ioctl
+#define ioctl posix_ioctl
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#else /* Not MSVC/Windows */
-
-#include <sys/ioctl.h>
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

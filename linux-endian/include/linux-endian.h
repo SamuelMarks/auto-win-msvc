@@ -4,9 +4,13 @@
 #if defined(_MSC_VER)
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN    4321
-#define __PDP_ENDIAN    3412
+#define __BIG_ENDIAN 4321
+#define __PDP_ENDIAN 3412
 
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #define LITTLE_ENDIAN __LITTLE_ENDIAN
@@ -33,5 +37,9 @@
 #define le64toh(x) (x)
 
 #endif /* _MSC_VER */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LINUX_ENDIAN_H */

@@ -87,7 +87,7 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(greatest)
 if(NOT greatest_POPULATED)
-  FetchContent_Populate(greatest)
+  FetchContent_MakeAvailable(greatest)
 endif()
 
 add_executable(test_posix-utsname tests/test.c)

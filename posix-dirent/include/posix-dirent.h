@@ -9,34 +9,34 @@ extern "C" {
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
-#include <sys/types.h>
 #include <dirent.h>
+#include <sys/types.h>
 
 #else /* _WIN32 */
 
 #include <stddef.h>
 
 /* File types for d_type */
-#define DT_UNKNOWN  0
-#define DT_FIFO     1
-#define DT_CHR      2
-#define DT_DIR      4
-#define DT_BLK      6
-#define DT_REG      8
-#define DT_LNK      10
-#define DT_SOCK     12
-#define DT_WHT      14
+#define DT_UNKNOWN 0
+#define DT_FIFO 1
+#define DT_CHR 2
+#define DT_DIR 4
+#define DT_BLK 6
+#define DT_REG 8
+#define DT_LNK 10
+#define DT_SOCK 12
+#define DT_WHT 14
 
 /**
  * @struct dirent
  * @brief Represents a directory entry.
  */
 struct dirent {
-    long d_ino;                  /**< Inode number (always 0 on Windows) */
-    long d_off;                  /**< Offset to the next dirent */
-    unsigned short d_reclen;     /**< Length of this record */
-    unsigned char d_type;        /**< Type of file */
-    char d_name[260];            /**< File name (Windows MAX_PATH is 260) */
+  long d_ino;              /**< Inode number (always 0 on Windows) */
+  long d_off;              /**< Offset to the next dirent */
+  unsigned short d_reclen; /**< Length of this record */
+  unsigned char d_type;    /**< Type of file */
+  char d_name[260];        /**< File name (Windows MAX_PATH is 260) */
 };
 
 /**
@@ -55,7 +55,8 @@ DIR *opendir(const char *name);
 /**
  * @brief Reads a directory entry from the given directory stream.
  * @param dirp The directory stream.
- * @return A pointer to the next directory entry, or NULL if the end of the directory stream is reached or an error occurred.
+ * @return A pointer to the next directory entry, or NULL if the end of the
+ * directory stream is reached or an error occurred.
  */
 struct dirent *readdir(DIR *dirp);
 
@@ -67,7 +68,8 @@ struct dirent *readdir(DIR *dirp);
 int closedir(DIR *dirp);
 
 /**
- * @brief Resets the position of the directory stream to the beginning of the directory.
+ * @brief Resets the position of the directory stream to the beginning of the
+ * directory.
  * @param dirp The directory stream.
  */
 void rewinddir(DIR *dirp);
@@ -102,7 +104,8 @@ int scandir(const char *dirp, struct dirent ***namelist,
  * @brief Compares two directory entries for sorting alphabetically.
  * @param a Pointer to the first directory entry pointer.
  * @param b Pointer to the second directory entry pointer.
- * @return An integer less than, equal to, or greater than zero if the first string is less than, equal to, or greater than the second string.
+ * @return An integer less than, equal to, or greater than zero if the first
+ * string is less than, equal to, or greater than the second string.
  */
 int alphasort(const struct dirent **a, const struct dirent **b);
 

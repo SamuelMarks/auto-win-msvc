@@ -1,0 +1,49 @@
+cmake_minimum_required(VERSION 3.14)
+project(macos-mach VERSION 0.1.0 LANGUAGES C)
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
+set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+include(CheckCCompilerFlag)
+
+if(MSVC)
+    if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
+        string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    endif()
+    add_compile_options(/WX /wd4127 /wd4204 /wd4221 /wd4706 /wd4055 /wd4201 /wd4214 /wd4116 /wd4100 /wd4090 /wd4098 /wd4701 /wd4267 /wd4244 /wd4054 /wd4152)
+else()
+    add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
+endif()
+
+include(FetchContent)
+
+if(NOT TARGET greatest)
+FetchContent_Declare(
+    greatest
+    URL "https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h"
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+FetchContent_MakeAvailable(greatest)
+
+add_library(greatest INTERFACE)
+target_include_directories(greatest INTERFACE ${greatest_SOURCE_DIR})
+endif()
+
+
+
+
+add_library(macos-mach src/macos-mach.c)
+target_include_directories(macos-mach PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(macos-mach PUBLIC posix-stdint posix-stdbool)
+
+enable_testing()
+add_executable(test_macos-mach tests/test.c)
+target_link_libraries(test_macos-mach PRIVATE macos-mach greatest)
+add_test(NAME test_macos-mach COMMAND test_macos-mach)

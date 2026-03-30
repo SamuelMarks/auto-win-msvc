@@ -1,11 +1,9 @@
-﻿#include "bsd-sys-param.h"
+#include "bsd-sys-param.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
 /** \brief bsd_sys_param_dummy_link function. */
-int bsd_sys_param_dummy_link(void) {
-    return MAXPATHLEN;
-}
+int bsd_sys_param_dummy_link(void) { return MAXPATHLEN; }
 
 #endif
 
@@ -16,4 +14,3 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_bsd_sys_param(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_param;
-

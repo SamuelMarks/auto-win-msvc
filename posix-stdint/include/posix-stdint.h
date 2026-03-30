@@ -51,6 +51,15 @@ typedef uint64_t uintmax_t;
 
 #else /* !_MSC_VER */
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* POSIX_STDINT_H */

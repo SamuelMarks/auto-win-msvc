@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "posix-sys-uio",
   "version": "0.1.0",
   "description": "POSIX <sys/uio.h> for MSVC",

@@ -91,10 +91,19 @@
 
 #else /* !_MSC_VER */
 #include <inttypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif
 
 #ifndef NUM_FORMAT
 #define NUM_FORMAT "%" PRId64
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* POSIX_INTTYPES_H */

@@ -1,4 +1,4 @@
-﻿/* posix-sched.h - Strict C89 Header */
+/* posix-sched.h - Strict C89 Header */
 #ifndef POSIX_SCHED_H
 #define POSIX_SCHED_H
 
@@ -10,9 +10,15 @@
  * using Windows process APIs.
  */
 
+/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
-
 #include <stddef.h> /* size_t */
+#else
+#include <sched.h>
+#endif
+/* clang-format on */
+
+#if defined(_MSC_VER) || defined(_WIN32)
 
 #define CPU_SETSIZE 64
 
@@ -28,34 +34,46 @@ typedef unsigned long long mask_bit_type;
 #endif
 
 typedef struct cpu_set {
-    #if defined(__GNUC__)
-    __extension__ unsigned long long bits;
+#if defined(__GNUC__)
+  __extension__ unsigned long long bits;
 #elif defined(_MSC_VER)
-    unsigned __int64 bits;
+  unsigned __int64 bits;
 #else
-    unsigned long long bits;
+  unsigned long long bits;
 #endif
 } cpu_set_t;
 
 /**
  * @brief Clears set, so that it contains no CPUs.
  */
-#define CPU_ZERO(set) do { (set)->bits = 0; } while(0)
+#define CPU_ZERO(set)                                                          \
+  do {                                                                         \
+    (set)->bits = 0;                                                           \
+  } while (0)
 
 /**
  * @brief Add CPU cpu to set.
  */
-#define CPU_SET(cpu, set) do { if ((cpu) < 64) (set)->bits |= (((mask_bit_type)1) << (cpu)); } while(0)
+#define CPU_SET(cpu, set)                                                      \
+  do {                                                                         \
+    if ((cpu) < 64)                                                            \
+      (set)->bits |= (((mask_bit_type)1) << (cpu));                            \
+  } while (0)
 
 /**
  * @brief Remove CPU cpu from set.
  */
-#define CPU_CLR(cpu, set) do { if ((cpu) < 64) (set)->bits &= ~(((mask_bit_type)1) << (cpu)); } while(0)
+#define CPU_CLR(cpu, set)                                                      \
+  do {                                                                         \
+    if ((cpu) < 64)                                                            \
+      (set)->bits &= ~(((mask_bit_type)1) << (cpu));                           \
+  } while (0)
 
 /**
  * @brief Test to see if CPU cpu is a member of set.
  */
-#define CPU_ISSET(cpu, set) (((cpu) < 64) ? (((set)->bits & (((mask_bit_type)1) << (cpu))) != 0) : 0)
+#define CPU_ISSET(cpu, set)                                                    \
+  (((cpu) < 64) ? (((set)->bits & (((mask_bit_type)1) << (cpu))) != 0) : 0)
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,13 +108,19 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask);
  */
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
 
+#ifndef sched_yield
+#define sched_yield posix_sched_yield
+#endif
+#ifndef sched_setaffinity
+#define sched_setaffinity posix_sched_setaffinity
+#endif
+#ifndef sched_getaffinity
+#define sched_getaffinity posix_sched_getaffinity
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#else /* Not MSVC/Windows */
-
-#include <sched.h>
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

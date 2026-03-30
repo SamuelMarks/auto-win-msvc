@@ -2,6 +2,6 @@
 #include <stdio.h>
 
 int main(void) {
-    printf("Test for haiku-os passed.\n");
-    return 0;
+  printf("Test for haiku-os passed.\n");
+  return 0;
 }

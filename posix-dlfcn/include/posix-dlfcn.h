@@ -15,25 +15,30 @@ extern "C" {
  */
 
 /** @brief Resolve symbol when the first reference is made to it. */
-#define RTLD_LAZY   1
+#define RTLD_LAZY 1
 
-/** @brief Resolve all undefined symbols in the library before dlopen() returns. */
-#define RTLD_NOW    2
+/** @brief Resolve all undefined symbols in the library before dlopen() returns.
+ */
+#define RTLD_NOW 2
 
-/** @brief Symbols defined by this library will be made available for symbol resolution of subsequently loaded libraries. */
+/** @brief Symbols defined by this library will be made available for symbol
+ * resolution of subsequently loaded libraries. */
 #define RTLD_GLOBAL 4
 
-/** @brief Symbols defined in this library are not made available to resolve references in subsequently loaded libraries. */
-#define RTLD_LOCAL  8
+/** @brief Symbols defined in this library are not made available to resolve
+ * references in subsequently loaded libraries. */
+#define RTLD_LOCAL 8
 
 #ifndef RTLD_DEFAULT
-/** @brief Special handle to find the first occurrence of the desired symbol using the default library search order. */
+/** @brief Special handle to find the first occurrence of the desired symbol
+ * using the default library search order. */
 #define RTLD_DEFAULT ((void *)0)
 #endif
 
 #ifndef RTLD_NEXT
-/** @brief Special handle to find the next occurrence of a symbol in the search order after the current library. */
-#define RTLD_NEXT    ((void *)-1l)
+/** @brief Special handle to find the next occurrence of a symbol in the search
+ * order after the current library. */
+#define RTLD_NEXT ((void *)-1l)
 #endif
 
 /**
@@ -41,10 +46,10 @@ extern "C" {
  * @brief Information about a dynamically loaded object's symbol.
  */
 typedef struct {
-    const char *dli_fname;  /**< File name of defining object. */
-    void       *dli_fbase;  /**< Load address of that object. */
-    const char *dli_sname;  /**< Name of nearest symbol. */
-    void       *dli_saddr;  /**< Exact value of nearest symbol. */
+  const char *dli_fname; /**< File name of defining object. */
+  void *dli_fbase;       /**< Load address of that object. */
+  const char *dli_sname; /**< Name of nearest symbol. */
+  void *dli_saddr;       /**< Exact value of nearest symbol. */
 } Dl_info;
 
 /**
@@ -54,7 +59,8 @@ typedef struct {
  * to the main executable via GetModuleHandleA(NULL).
  *
  * @param file The path to the dynamic library, or NULL for the main executable.
- * @param mode A bitwise OR of RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL. (Ignored on Windows).
+ * @param mode A bitwise OR of RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL.
+ * (Ignored on Windows).
  * @return A handle to the loaded library, or NULL on error.
  */
 void *dlopen(const char *file, int mode);
@@ -65,7 +71,8 @@ void *dlopen(const char *file, int mode);
  * Maps to GetProcAddress on Windows. Supports RTLD_DEFAULT by searching
  * the main executable. RTLD_NEXT is not supported on Windows.
  *
- * @param handle The library handle returned by dlopen, or a special handle (e.g., RTLD_DEFAULT).
+ * @param handle The library handle returned by dlopen, or a special handle
+ * (e.g., RTLD_DEFAULT).
  * @param name The name of the symbol to find.
  * @return The address of the symbol, or NULL on error.
  */

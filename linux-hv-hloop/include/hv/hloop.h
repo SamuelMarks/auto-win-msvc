@@ -6,7 +6,8 @@
 extern "C" {
 #endif
 
-/* Stub for libhv event loop. Valkey uses ae.c or adapters. This is just a stub for missing headers. */
+/* Stub for libhv event loop. Valkey uses ae.c or adapters. This is just a stub
+ * for missing headers. */
 
 #ifdef __cplusplus
 }

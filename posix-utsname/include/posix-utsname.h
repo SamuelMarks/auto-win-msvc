@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @def _UTSNAME_LENGTH
  * @brief Length of the strings in struct utsname.
- * 
+ *
  * Defines the maximum length of the character arrays in struct utsname,
  * including the terminating null byte.
  */
@@ -28,11 +28,14 @@ extern "C" {
  * about the current operating system and hardware.
  */
 struct utsname {
-    char sysname[_UTSNAME_LENGTH];  /**< Name of the operating system implementation. */
-    char nodename[_UTSNAME_LENGTH]; /**< Network name of this machine. */
-    char release[_UTSNAME_LENGTH];  /**< Current release level of the operating system. */
-    char version[_UTSNAME_LENGTH];  /**< Current version level of the operating system. */
-    char machine[_UTSNAME_LENGTH];  /**< Hardware type/architecture. */
+  char sysname[_UTSNAME_LENGTH];  /**< Name of the operating system
+                                     implementation. */
+  char nodename[_UTSNAME_LENGTH]; /**< Network name of this machine. */
+  char release[_UTSNAME_LENGTH];  /**< Current release level of the operating
+                                     system. */
+  char version[_UTSNAME_LENGTH];  /**< Current version level of the operating
+                                     system. */
+  char machine[_UTSNAME_LENGTH];  /**< Hardware type/architecture. */
 };
 
 /**

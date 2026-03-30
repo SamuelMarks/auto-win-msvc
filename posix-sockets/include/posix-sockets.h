@@ -37,19 +37,16 @@ typedef int posix_socklen_t;
 typedef unsigned int posix_nfds_t;
 
 #ifdef _WIN32
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
+#include <posix-sys-uio.h>
 
 struct msghdr {
-    void *msg_name;
-    posix_socklen_t msg_namelen;
-    struct iovec *msg_iov;
-    int msg_iovlen;
-    void *msg_control;
-    posix_socklen_t msg_controllen;
-    int msg_flags;
+  void *msg_name;
+  posix_socklen_t msg_namelen;
+  struct iovec *msg_iov;
+  int msg_iovlen;
+  void *msg_control;
+  posix_socklen_t msg_controllen;
+  int msg_flags;
 };
 #endif /* _WIN32 */
 
@@ -60,8 +57,8 @@ struct msghdr {
 #include <time.h>
 #else
 struct timespec {
-    long tv_sec;
-    long tv_nsec;
+  long tv_sec;
+  long tv_nsec;
 };
 #endif
 #endif
@@ -115,12 +112,14 @@ const char *posix_gai_strerror(int ecode);
  * @brief POSIX getaddrinfo stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res);
+int posix_getaddrinfo(const char *nodename, const char *servname,
+                      const struct addrinfo *hints, struct addrinfo **res);
 /**
  * @brief POSIX gethostbyaddr stub
  * @return mapped value or -1 with errno ENOSYS
  */
-struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len, int type);
+struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
+                                    int type);
 /**
  * @brief POSIX gethostbyname stub
  * @return mapped value or -1 with errno ENOSYS
@@ -135,7 +134,9 @@ struct hostent *posix_gethostent(void);
  * @brief POSIX getnameinfo stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen, char *node, posix_socklen_t nodelen, char *service, posix_socklen_t servicelen, int flags);
+int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
+                      char *node, posix_socklen_t nodelen, char *service,
+                      posix_socklen_t servicelen, int flags);
 /**
  * @brief POSIX getnetbyaddr stub
  * @return mapped value or -1 with errno ENOSYS
@@ -210,42 +211,50 @@ int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout);
  * @brief POSIX pselect stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, const struct timespec *timeout, const void *sigmask);
+int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+                  const struct timespec *timeout, const void *sigmask);
 /**
  * @brief POSIX select stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+                 struct timeval *timeout);
 /**
  * @brief POSIX accept stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_accept(int socket, struct sockaddr *address, posix_socklen_t *address_len);
+int posix_accept(int socket, struct sockaddr *address,
+                 posix_socklen_t *address_len);
 /**
  * @brief POSIX bind stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_bind(int socket, const struct sockaddr *address, posix_socklen_t address_len);
+int posix_bind(int socket, const struct sockaddr *address,
+               posix_socklen_t address_len);
 /**
  * @brief POSIX connect stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_connect(int socket, const struct sockaddr *address, posix_socklen_t address_len);
+int posix_connect(int socket, const struct sockaddr *address,
+                  posix_socklen_t address_len);
 /**
  * @brief POSIX getpeername stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_getpeername(int socket, struct sockaddr *address, posix_socklen_t *address_len);
+int posix_getpeername(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockname stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_getsockname(int socket, struct sockaddr *address, posix_socklen_t *address_len);
+int posix_getsockname(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockopt stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_getsockopt(int socket, int level, int option_name, void *option_value, posix_socklen_t *option_len);
+int posix_getsockopt(int socket, int level, int option_name, void *option_value,
+                     posix_socklen_t *option_len);
 /**
  * @brief POSIX listen stub
  * @return mapped value or -1 with errno ENOSYS
@@ -260,7 +269,9 @@ posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags);
  * @brief POSIX recvfrom stub
  * @return mapped value or -1 with errno ENOSYS
  */
-posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags, struct sockaddr *address, posix_socklen_t *address_len);
+posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
+                             struct sockaddr *address,
+                             posix_socklen_t *address_len);
 /**
  * @brief POSIX recvmsg stub
  * @return mapped value or -1 with errno ENOSYS
@@ -270,22 +281,27 @@ posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags);
  * @brief POSIX send stub
  * @return mapped value or -1 with errno ENOSYS
  */
-posix_ssize_t posix_send(int socket, const void *message, size_t length, int flags);
+posix_ssize_t posix_send(int socket, const void *message, size_t length,
+                         int flags);
 /**
  * @brief POSIX sendmsg stub
  * @return mapped value or -1 with errno ENOSYS
  */
-posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message, int flags);
+posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
+                            int flags);
 /**
  * @brief POSIX sendto stub
  * @return mapped value or -1 with errno ENOSYS
  */
-posix_ssize_t posix_sendto(int socket, const void *message, size_t length, int flags, const struct sockaddr *dest_addr, posix_socklen_t dest_len);
+posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
+                           int flags, const struct sockaddr *dest_addr,
+                           posix_socklen_t dest_len);
 /**
  * @brief POSIX setsockopt stub
  * @return mapped value or -1 with errno ENOSYS
  */
-int posix_setsockopt(int socket, int level, int option_name, const void *option_value, posix_socklen_t option_len);
+int posix_setsockopt(int socket, int level, int option_name,
+                     const void *option_value, posix_socklen_t option_len);
 /**
  * @brief POSIX shutdown stub
  * @return mapped value or -1 with errno ENOSYS
@@ -301,7 +317,6 @@ int posix_socket(int domain, int type, int protocol);
  * @return mapped value or -1 with errno ENOSYS
  */
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
-
 
 #ifdef _WIN32
 /* Map POSIX names to our posix_ prefixes */
@@ -369,3 +384,4 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 #endif
 
 #endif /* POSIX_SOCKETS_H */
+

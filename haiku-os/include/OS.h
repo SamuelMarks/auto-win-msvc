@@ -6,7 +6,8 @@
 extern "C" {
 #endif
 
-/* Stub for Haiku OS.h. Valkey includes it but relies on POSIX mostly on other systems. */
+/* Stub for Haiku OS.h. Valkey includes it but relies on POSIX mostly on other
+ * systems. */
 
 #ifdef __cplusplus
 }

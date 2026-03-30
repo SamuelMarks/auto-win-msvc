@@ -1,4 +1,4 @@
-﻿/* posix-netinet-tcp.h - Strict C89 Header */
+/* posix-netinet-tcp.h - Strict C89 Header */
 #ifndef POSIX_NETINET_TCP_H
 #define POSIX_NETINET_TCP_H
 
@@ -14,6 +14,14 @@
 
 #include <netinet/tcp.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* POSIX_NETINET_TCP_H */

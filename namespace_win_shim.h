@@ -2,9 +2,11 @@
 #define NAMESPACE_WIN_SHIM_H
 
 /* Architecture detection for Windows headers */
-#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) ||           \
+    defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
 #define _AMD64_
-#elif defined(i386) || defined(__i386) || defined(__i386__) || defined(__i386__) || defined(_M_IX86)
+#elif defined(i386) || defined(__i386) || defined(__i386__) ||                 \
+    defined(__i386__) || defined(_M_IX86)
 #define _X86_
 #elif defined(__arm__) || defined(_M_ARM) || defined(_M_ARMT)
 #define _ARM_
@@ -26,54 +28,56 @@
 #define PRIx64 "I64x"
 #endif
 #ifndef PRIz
-/* PRIz is not standard, but useful for size_t cross-platform if %zu isn't supported */
+/* PRIz is not standard, but useful for size_t cross-platform if %zu isn't
+ * supported */
 #define PRIz "I"
 #endif
 
 /* -------------------------------------------------------------------------- */
-/* Mode: Only-include-what-we-need (Comment out below #define to use full windows.h mode) */
+/* Mode: Only-include-what-we-need (Comment out below #define to use full
+ * windows.h mode) */
 #define NAMESPACE_MINIMAL_WINDOWS_INCLUDES 1
 /* -------------------------------------------------------------------------- */
 
 #if defined(NAMESPACE_MINIMAL_WINDOWS_INCLUDES)
 
-    /* Standard MSVC CRT Headers */
-    #include <io.h>
-    #include <direct.h>
-    #include <process.h>
-    #include <BaseTsd.h>
-    
-    /* Minimal Synchapi for Sleep (if needed without Windows.h) */
-    /* #include <synchapi.h> */ 
+/* Standard MSVC CRT Headers */
+#include <BaseTsd.h>
+#include <direct.h>
+#include <io.h>
+#include <process.h>
+
+/* Minimal Synchapi for Sleep (if needed without Windows.h) */
+/* #include <synchapi.h> */
 
 #else
 
-    /* Mode: #ifndef WIN32_LEAN_AND_MEAN
+/* Mode: #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h> */
-    #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-    #endif
-    #ifndef WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <direct.h>
+#include <io.h>
+#include <process.h>
 #include <winsock2.h>
-    #include <io.h>
-    #include <direct.h>
-    #include <process.h>
 
 #endif /* NAMESPACE_MINIMAL_WINDOWS_INCLUDES */
 
 /* POSIX Type Shims */
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 typedef SSIZE_T ssize_t;
 typedef int pid_t;
 typedef unsigned short mode_t;
@@ -135,6 +139,10 @@ typedef unsigned short mode_t;
 #include <intrin.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef __builtin_expect
 /** \brief __builtin_expect macro. */
 #define __builtin_expect(exp, c) (exp)
@@ -158,8 +166,8 @@ typedef unsigned short mode_t;
 #else
 /** \brief posix_builtin_popcountll function. */
 static __inline int posix_builtin_popcountll(unsigned __int64 val) {
-    return __popcnt((unsigned int)(val & 0xFFFFFFFF)) + 
-           __popcnt((unsigned int)(val >> 32));
+  return __popcnt((unsigned int)(val & 0xFFFFFFFF)) +
+         __popcnt((unsigned int)(val >> 32));
 }
 #define __builtin_popcountll posix_builtin_popcountll
 #endif
@@ -168,20 +176,20 @@ static __inline int posix_builtin_popcountll(unsigned __int64 val) {
 #ifndef __builtin_ctzll
 /** \brief posix_builtin_ctzll function. */
 static __inline int posix_builtin_ctzll(unsigned __int64 val) {
-    unsigned long index;
+  unsigned long index;
 #if defined(_M_X64) || defined(_M_AMD64)
-    if (_BitScanForward64(&index, val)) {
-        return (int)index;
-    }
+  if (_BitScanForward64(&index, val)) {
+    return (int)index;
+  }
 #else
-    if (_BitScanForward(&index, (unsigned long)val)) {
-        return (int)index;
-    }
-    if (_BitScanForward(&index, (unsigned long)(val >> 32))) {
-        return (int)(index + 32);
-    }
+  if (_BitScanForward(&index, (unsigned long)val)) {
+    return (int)index;
+  }
+  if (_BitScanForward(&index, (unsigned long)(val >> 32))) {
+    return (int)(index + 32);
+  }
 #endif
-    return 64; /* Undefined for 0, returning 64 is a common fallback */
+  return 64; /* Undefined for 0, returning 64 is a common fallback */
 }
 #define __builtin_ctzll posix_builtin_ctzll
 #endif
@@ -190,4 +198,9 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* NAMESPACE_WIN_SHIM_H */
+#undef LoadString

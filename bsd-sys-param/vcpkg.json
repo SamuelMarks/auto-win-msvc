@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "bsd-sys-param",
   "version": "0.1.0",
   "description": "POSIX <sys/param.h> for MSVC",

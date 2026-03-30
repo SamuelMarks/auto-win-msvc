@@ -5,4 +5,4 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
-int main(){return 0;}
+int main() { return 0; }

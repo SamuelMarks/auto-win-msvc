@@ -1,3 +1,4 @@
+#include <winsock2.h>
 /* posix-time.h - Strict C89 Header */
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
@@ -20,8 +21,8 @@ extern "C" {
  * @brief Structure for representing time with nanosecond precision.
  */
 struct timespec {
-    time_t tv_sec;  /**< Seconds. */
-    long tv_nsec;   /**< Nanoseconds. */
+  time_t tv_sec; /**< Seconds. */
+  long tv_nsec;  /**< Nanoseconds. */
 };
 #endif
 #endif
@@ -33,8 +34,8 @@ struct timespec {
  * @brief Structure for representing time with microsecond precision.
  */
 struct timeval {
-    long tv_sec;    /**< Seconds. */
-    long tv_usec;   /**< Microseconds. */
+  long tv_sec;  /**< Seconds. */
+  long tv_usec; /**< Microseconds. */
 };
 #endif
 #endif
@@ -45,8 +46,8 @@ struct timeval {
  * @brief Structure for representing timezone information (obsolete).
  */
 struct timezone {
-    int tz_minuteswest; /**< Minutes west of Greenwich. */
-    int tz_dsttime;     /**< Type of DST correction. */
+  int tz_minuteswest; /**< Minutes west of Greenwich. */
+  int tz_dsttime;     /**< Type of DST correction. */
 };
 #endif
 
@@ -56,19 +57,24 @@ struct timezone {
  * @brief Structure for configuring an interval timer.
  */
 struct itimerval {
-    struct timeval it_interval; /**< Timer interval. */
-    struct timeval it_value;    /**< Current value. */
+  struct timeval it_interval; /**< Timer interval. */
+  struct timeval it_value;    /**< Current value. */
 };
 #endif
 
 /* Interval timer definitions */
-#define ITIMER_REAL    0 /**< Decrements in real time, and delivers SIGALRM upon expiration. */
-#define ITIMER_VIRTUAL 1 /**< Decrements only when the process is executing, and delivers SIGVTALRM upon expiration. */
-#define ITIMER_PROF    2 /**< Decrements both when the process executes and when the system is executing on behalf of the process. */
+#define ITIMER_REAL                                                            \
+  0 /**< Decrements in real time, and delivers SIGALRM upon expiration. */
+#define ITIMER_VIRTUAL                                                         \
+  1 /**< Decrements only when the process is executing, and delivers SIGVTALRM \
+       upon expiration. */
+#define ITIMER_PROF                                                            \
+  2 /**< Decrements both when the process executes and when the system is      \
+       executing on behalf of the process. */
 
 /* Clock Types */
 #ifndef CLOCK_REALTIME
-#define CLOCK_REALTIME  0
+#define CLOCK_REALTIME 0
 #endif
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
@@ -80,8 +86,8 @@ struct itimerval {
 #define CLOCK_THREAD_CPUTIME_ID 3
 #endif
 
-#define utime _utime /**< Map utime to _utime on Windows */
-#define tzset _tzset /**< Map tzset to _tzset on Windows */
+#define utime _utime     /**< Map utime to _utime on Windows */
+#define tzset _tzset     /**< Map tzset to _tzset on Windows */
 #define utimbuf _utimbuf /**< Map utimbuf to _utimbuf on Windows */
 
 /* Functions that require polyfill on Windows */
@@ -106,7 +112,8 @@ int getitimer(int which, struct itimerval *value);
 /**
  * @brief Gets the current time of day.
  * @param tv A pointer to a timeval structure to store the time.
- * @param tz A pointer to a timezone structure to store the timezone (obsolete, usually NULL).
+ * @param tz A pointer to a timezone structure to store the timezone (obsolete,
+ * usually NULL).
  * @return 0 on success, -1 on error.
  */
 int gettimeofday(struct timeval *tv, struct timezone *tz);
@@ -115,15 +122,19 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
  * @brief Sets the value of an interval timer.
  * @param which The timer to set (e.g., ITIMER_REAL).
  * @param value A pointer to an itimerval structure containing the new value.
- * @param ovalue A pointer to an itimerval structure to store the old value (optional).
+ * @param ovalue A pointer to an itimerval structure to store the old value
+ * (optional).
  * @return 0 on success, -1 on error.
  */
-int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue);
+int setitimer(int which, const struct itimerval *value,
+              struct itimerval *ovalue);
 
 /**
- * @brief Sets the access and modification times of a file with microsecond precision.
+ * @brief Sets the access and modification times of a file with microsecond
+ * precision.
  * @param filename The name of the file.
- * @param times An array of two timeval structures (access time, modification time). If NULL, times are set to current time.
+ * @param times An array of two timeval structures (access time, modification
+ * time). If NULL, times are set to current time.
  * @return 0 on success, -1 on error.
  */
 int utimes(const char *filename, const struct timeval times[2]);

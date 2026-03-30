@@ -24,15 +24,15 @@ typedef unsigned int sigset_t;
 
 #ifndef _SCHED_PARAM_DEFINED
 struct sched_param {
-    int sched_priority;
+  int sched_priority;
 };
 #define _SCHED_PARAM_DEFINED
 #endif
 
 #elif defined(__MINGW32__)
-#include <sys/types.h>
 #include <sched.h>
 #include <signal.h>
+#include <sys/types.h>
 
 #ifndef _SIGSET_T_DEFINED
 typedef _sigset_t sigset_t;
@@ -41,9 +41,9 @@ typedef _sigset_t sigset_t;
 
 #else /* POSIX */
 
-#include <sys/types.h>
 #include <sched.h>
 #include <signal.h>
+#include <sys/types.h>
 
 #endif
 
@@ -52,28 +52,28 @@ extern "C" {
 #endif
 
 /* Flags */
-#define POSIX_SPAWN_RESETIDS      0x01
-#define POSIX_SPAWN_SETPGROUP     0x02
-#define POSIX_SPAWN_SETSIGDEF     0x04
-#define POSIX_SPAWN_SETSIGMASK    0x08
+#define POSIX_SPAWN_RESETIDS 0x01
+#define POSIX_SPAWN_SETPGROUP 0x02
+#define POSIX_SPAWN_SETSIGDEF 0x04
+#define POSIX_SPAWN_SETSIGMASK 0x08
 #define POSIX_SPAWN_SETSCHEDPARAM 0x10
-#define POSIX_SPAWN_SETSCHEDULER  0x20
+#define POSIX_SPAWN_SETSCHEDULER 0x20
 
 /* Types */
 
 /* Opaque struct for file actions */
 typedef struct {
-    void *actions;
+  void *actions;
 } posix_spawn_file_actions_t;
 
 /* Opaque struct for spawn attributes */
 typedef struct {
-    short flags;
-    pid_t pgroup;
-    struct sched_param schedparam;
-    int schedpolicy;
-    sigset_t sigmask;
-    sigset_t sigdefault;
+  short flags;
+  pid_t pgroup;
+  struct sched_param schedparam;
+  int schedpolicy;
+  sigset_t sigmask;
+  sigset_t sigdefault;
 } posix_spawnattr_t;
 
 /* Functions */
@@ -90,8 +90,8 @@ typedef struct {
  */
 int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
-                const posix_spawnattr_t *attrp,
-                char *const argv[], char *const envp[]);
+                const posix_spawnattr_t *attrp, char *const argv[],
+                char *const envp[]);
 
 /**
  * @brief Spawn a new process using the PATH environment variable
@@ -105,8 +105,8 @@ int posix_spawn(pid_t *pid, const char *path,
  */
 int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
-                 const posix_spawnattr_t *attrp,
-                 char *const argv[], char *const envp[]);
+                 const posix_spawnattr_t *attrp, char *const argv[],
+                 char *const envp[]);
 
 /* File Actions */
 
@@ -130,7 +130,8 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions);
  * @param fildes File descriptor to close
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, int fildes);
+int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
+                                      int fildes);
 
 /**
  * @brief Add a dup2 action to the file actions object
@@ -139,7 +140,8 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions, 
  * @param newfildes Target file descriptor
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, int fildes, int newfildes);
+int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
+                                     int fildes, int newfildes);
 
 /**
  * @brief Add an open action to the file actions object
@@ -150,7 +152,9 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, i
  * @param mode File mode
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions, int fildes, const char *path, int oflag, mode_t mode);
+int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
+                                     int fildes, const char *path, int oflag,
+                                     mode_t mode);
 
 /* Attributes */
 
@@ -206,7 +210,8 @@ int posix_spawnattr_setpgroup(posix_spawnattr_t *attr, pid_t pgroup);
  * @param schedparam Pointer to store the scheduling parameters
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr, struct sched_param *schedparam);
+int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr,
+                                  struct sched_param *schedparam);
 
 /**
  * @brief Set the scheduling parameters in a spawn attributes object
@@ -214,7 +219,8 @@ int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr, struct sched_pa
  * @param schedparam Pointer to the scheduling parameters to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setschedparam(posix_spawnattr_t *attr, const struct sched_param *schedparam);
+int posix_spawnattr_setschedparam(posix_spawnattr_t *attr,
+                                  const struct sched_param *schedparam);
 
 /**
  * @brief Get the scheduling policy from a spawn attributes object
@@ -222,7 +228,8 @@ int posix_spawnattr_setschedparam(posix_spawnattr_t *attr, const struct sched_pa
  * @param schedpolicy Pointer to store the scheduling policy
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr, int *schedpolicy);
+int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr,
+                                   int *schedpolicy);
 
 /**
  * @brief Set the scheduling policy in a spawn attributes object
@@ -238,7 +245,8 @@ int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr, int schedpolicy);
  * @param sigdefault Pointer to store the default signal mask
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr, sigset_t *sigdefault);
+int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr,
+                                  sigset_t *sigdefault);
 
 /**
  * @brief Set the default signal mask in a spawn attributes object
@@ -246,7 +254,8 @@ int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr, sigset_t *sigde
  * @param sigdefault Pointer to the default signal mask to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr, const sigset_t *sigdefault);
+int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr,
+                                  const sigset_t *sigdefault);
 
 /**
  * @brief Get the signal mask from a spawn attributes object
@@ -254,7 +263,8 @@ int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr, const sigset_t *sigde
  * @param sigmask Pointer to store the signal mask
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr, sigset_t *sigmask);
+int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr,
+                               sigset_t *sigmask);
 
 /**
  * @brief Set the signal mask in a spawn attributes object
@@ -262,7 +272,8 @@ int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr, sigset_t *sigmask)
  * @param sigmask Pointer to the signal mask to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setsigmask(posix_spawnattr_t *attr, const sigset_t *sigmask);
+int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
+                               const sigset_t *sigmask);
 
 #ifdef __cplusplus
 }

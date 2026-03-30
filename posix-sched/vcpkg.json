@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "posix-sched",
   "version": "0.1.0",
   "description": "POSIX <sched.h> for MSVC",

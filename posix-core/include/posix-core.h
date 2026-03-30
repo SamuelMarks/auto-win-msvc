@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #if defined(_MSC_VER)
@@ -55,19 +55,19 @@ typedef int gid_t;
 #endif
 #endif
 
-#include <io.h>
-#include <fcntl.h>
-#include <share.h>
-#include <process.h>
 #include <direct.h>
+#include <fcntl.h>
+#include <io.h>
+#include <process.h>
+#include <share.h>
 #include <sys/stat.h>
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #else
-#include <sys/types.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -188,7 +188,6 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
 #endif
 
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef F_OK
 #define F_OK 0
@@ -218,21 +217,22 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
-    int fd = -1;
-    int pmode = 0;
-    if (oflag & _O_CREAT) {
-        va_list ap;
-        va_start(ap, oflag);
-        pmode = va_arg(ap, int);
-        va_end(ap);
-    }
-#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) || _MSC_VER >= 1400
-    if (_sopen_s(&fd, filename, oflag, _SH_DENYNO, pmode) != 0) {
-        return -1;
-    }
-    return fd;
+  int fd = -1;
+  int pmode = 0;
+  if (oflag & _O_CREAT) {
+    va_list ap;
+    va_start(ap, oflag);
+    pmode = va_arg(ap, int);
+    va_end(ap);
+  }
+#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
+    _MSC_VER >= 1400
+  if (_sopen_s(&fd, filename, oflag, _SH_DENYNO, pmode) != 0) {
+    return -1;
+  }
+  return fd;
 #else
-    return _open(filename, oflag, pmode);
+  return _open(filename, oflag, pmode);
 #endif
 }
 #define open posix_core_open
@@ -408,15 +408,15 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 #ifndef usleep
 
 static __inline unsigned int posix_core_sleep(unsigned int seconds) {
-    Sleep(seconds * 1000);
-    return 0;
+  Sleep(seconds * 1000);
+  return 0;
 }
 #define sleep posix_core_sleep
 
 /** \brief posix_core_usleep function. */
 static __inline int posix_core_usleep(unsigned int usec) {
-    Sleep(usec / 1000);
-    return 0;
+  Sleep(usec / 1000);
+  return 0;
 }
 #define usleep posix_core_usleep
 #endif
@@ -443,14 +443,16 @@ static __inline int posix_core_usleep(unsigned int usec) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef creat
 static __inline int posix_core_creat(const char *filename, int pmode) {
-    int fd = -1;
-#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) || _MSC_VER >= 1400
-    if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO, pmode) != 0) {
-        return -1;
-    }
-    return fd;
+  int fd = -1;
+#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
+    _MSC_VER >= 1400
+  if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO,
+               pmode) != 0) {
+    return -1;
+  }
+  return fd;
 #else
-    return _creat(filename, pmode);
+  return _creat(filename, pmode);
 #endif
 }
 #define creat posix_core_creat
@@ -488,10 +490,10 @@ int posix_fallocate(int fd, off_t offset, off_t len);
 #define SYNC_FILE_RANGE_WAIT_BEFORE 1
 #endif
 #ifndef SYNC_FILE_RANGE_WRITE
-#define SYNC_FILE_RANGE_WRITE       2
+#define SYNC_FILE_RANGE_WRITE 2
 #endif
 #ifndef SYNC_FILE_RANGE_WAIT_AFTER
-#define SYNC_FILE_RANGE_WAIT_AFTER  4
+#define SYNC_FILE_RANGE_WAIT_AFTER 4
 #endif
 /** \brief sync_file_range function. */
 int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags);
@@ -542,7 +544,8 @@ int fchown(int fd, uid_t owner, gid_t group);
 #endif
 /** @brief fchownat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group, int flags);
+int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
+             int flags);
 #else
 /* fchownat */
 #endif
@@ -620,7 +623,7 @@ int getlogin_r(char *buf, size_t bufsize);
 #endif
 /** @brief getopt */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int getopt(int argc, char * const argv[], const char *optstring);
+int getopt(int argc, char *const argv[], const char *optstring);
 #else
 /* getopt */
 #endif
@@ -668,7 +671,8 @@ int link(const char *oldpath, const char *newpath);
 #endif
 /** @brief linkat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
+int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
+           int flags);
 #else
 /* linkat */
 #endif

@@ -4,6 +4,10 @@
 
 #include "posix-signal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(POSIX_SIGNAL_MSVC)
 
 #ifndef SA_NOCLDSTOP
@@ -54,5 +58,9 @@
 #endif
 
 #endif /* POSIX_SIGNAL_MSVC */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* POSIX_SIGNAL_EXT_H */

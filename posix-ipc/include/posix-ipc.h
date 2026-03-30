@@ -1,9 +1,10 @@
 /**
  * @file posix-ipc.h
  * @brief Strict C89 Header for POSIX IPC (Inter-Process Communication) on MSVC.
- * 
- * Provides a POSIX-compliant interface for System V message queues, semaphore sets,
- * and shared memory segments, specifically tailored for native Windows (MSVC) compatibility.
+ *
+ * Provides a POSIX-compliant interface for System V message queues, semaphore
+ * sets, and shared memory segments, specifically tailored for native Windows
+ * (MSVC) compatibility.
  */
 #ifndef POSIX_IPC_H
 #define POSIX_IPC_H
@@ -49,11 +50,11 @@ typedef int key_t;
 #endif
 
 #else /* !_WIN32 */
-#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/types.h>
 #endif /* !_WIN32 */
 
 #ifdef __cplusplus
@@ -63,26 +64,30 @@ extern "C" {
 #ifdef _WIN32
 
 /* IPC Flags */
-#define IPC_CREAT  0001000 /**< @brief Create if key is nonexistent */
-#define IPC_EXCL   0002000 /**< @brief Fail if key exists */
+#define IPC_CREAT 0001000  /**< @brief Create if key is nonexistent */
+#define IPC_EXCL 0002000   /**< @brief Fail if key exists */
 #define IPC_NOWAIT 0004000 /**< @brief Return error on wait */
 
-#define IPC_PRIVATE ((key_t) 0) /**< @brief Private key for unique IPC object */
-#define IPC_RMID   0 /**< @brief Remove IPC resource */
-#define IPC_SET    1 /**< @brief Set ipc_perm options */
-#define IPC_STAT   2 /**< @brief Get ipc_perm options */
+#define IPC_PRIVATE                                                            \
+  ((key_t)0)       /**< @brief Private key for unique IPC object               \
+                    */
+#define IPC_RMID 0 /**< @brief Remove IPC resource */
+#define IPC_SET 1  /**< @brief Set ipc_perm options */
+#define IPC_STAT 2 /**< @brief Get ipc_perm options */
 
 /* Semaphore operation flags */
-#define SEM_UNDO  0x1000 /**< @brief Undo semaphore operation on exit */
+#define SEM_UNDO 0x1000 /**< @brief Undo semaphore operation on exit */
 
 /* Semaphore control commands */
-#define GETPID  11 /**< @brief Get PID of last operation */
-#define GETVAL  12 /**< @brief Get semaphore value */
-#define GETALL  13 /**< @brief Get all semaphore values */
-#define GETNCNT 14 /**< @brief Get number of waiting processes for increment */
+#define GETPID 11 /**< @brief Get PID of last operation */
+#define GETVAL 12 /**< @brief Get semaphore value */
+#define GETALL 13 /**< @brief Get all semaphore values */
+#define GETNCNT                                                                \
+  14               /**< @brief Get number of waiting processes for increment   \
+                    */
 #define GETZCNT 15 /**< @brief Get number of waiting processes for zero */
-#define SETVAL  16 /**< @brief Set semaphore value */
-#define SETALL  17 /**< @brief Set all semaphore values */
+#define SETVAL 16  /**< @brief Set semaphore value */
+#define SETALL 17  /**< @brief Set all semaphore values */
 
 /* Message flags */
 #define MSG_NOERROR 010000 /**< @brief Truncate message if too large */
@@ -95,12 +100,12 @@ extern "C" {
  * @brief IPC permissions structure.
  */
 struct ipc_perm {
-    uid_t uid;              /**< @brief Owner's user ID */
-    gid_t gid;              /**< @brief Owner's group ID */
-    uid_t cuid;             /**< @brief Creator's user ID */
-    gid_t cgid;             /**< @brief Creator's group ID */
-    unsigned short mode;    /**< @brief Read/write permission */
-    unsigned short __seq;   /**< @brief Sequence number */
+  uid_t uid;            /**< @brief Owner's user ID */
+  gid_t gid;            /**< @brief Owner's group ID */
+  uid_t cuid;           /**< @brief Creator's user ID */
+  gid_t cgid;           /**< @brief Creator's group ID */
+  unsigned short mode;  /**< @brief Read/write permission */
+  unsigned short __seq; /**< @brief Sequence number */
 };
 
 /**
@@ -108,15 +113,16 @@ struct ipc_perm {
  * @brief Message queue data structure.
  */
 struct msqid_ds {
-    struct ipc_perm msg_perm;   /**< @brief Operation permission struct */
-    time_t msg_stime;           /**< @brief Time of last msgsnd */
-    time_t msg_rtime;           /**< @brief Time of last msgrcv */
-    time_t msg_ctime;           /**< @brief Time of last change */
-    unsigned long msg_cbytes;   /**< @brief Current number of bytes on queue */
-    unsigned long msg_qnum;     /**< @brief Current number of messages on queue */
-    unsigned long msg_qbytes;   /**< @brief Maximum number of bytes allowed on queue */
-    pid_t msg_lspid;            /**< @brief PID of last msgsnd */
-    pid_t msg_lrpid;            /**< @brief PID of last msgrcv */
+  struct ipc_perm msg_perm; /**< @brief Operation permission struct */
+  time_t msg_stime;         /**< @brief Time of last msgsnd */
+  time_t msg_rtime;         /**< @brief Time of last msgrcv */
+  time_t msg_ctime;         /**< @brief Time of last change */
+  unsigned long msg_cbytes; /**< @brief Current number of bytes on queue */
+  unsigned long msg_qnum;   /**< @brief Current number of messages on queue */
+  unsigned long
+      msg_qbytes;  /**< @brief Maximum number of bytes allowed on queue */
+  pid_t msg_lspid; /**< @brief PID of last msgsnd */
+  pid_t msg_lrpid; /**< @brief PID of last msgrcv */
 };
 
 /**
@@ -124,10 +130,10 @@ struct msqid_ds {
  * @brief Semaphore set data structure.
  */
 struct semid_ds {
-    struct ipc_perm sem_perm;   /**< @brief Operation permission struct */
-    time_t sem_otime;           /**< @brief Time of last semop */
-    time_t sem_ctime;           /**< @brief Time of last change */
-    unsigned long sem_nsems;    /**< @brief Number of semaphores in set */
+  struct ipc_perm sem_perm; /**< @brief Operation permission struct */
+  time_t sem_otime;         /**< @brief Time of last semop */
+  time_t sem_ctime;         /**< @brief Time of last change */
+  unsigned long sem_nsems;  /**< @brief Number of semaphores in set */
 };
 
 /**
@@ -135,14 +141,14 @@ struct semid_ds {
  * @brief Shared memory data structure.
  */
 struct shmid_ds {
-    struct ipc_perm shm_perm;   /**< @brief Operation permission struct */
-    size_t shm_segsz;           /**< @brief Size of segment in bytes */
-    time_t shm_atime;           /**< @brief Time of last shmat */
-    time_t shm_dtime;           /**< @brief Time of last shmdt */
-    time_t shm_ctime;           /**< @brief Time of last change */
-    pid_t shm_cpid;             /**< @brief PID of creator */
-    pid_t shm_lpid;             /**< @brief PID of last shmat/shmdt */
-    unsigned long shm_nattch;   /**< @brief Number of current attaches */
+  struct ipc_perm shm_perm; /**< @brief Operation permission struct */
+  size_t shm_segsz;         /**< @brief Size of segment in bytes */
+  time_t shm_atime;         /**< @brief Time of last shmat */
+  time_t shm_dtime;         /**< @brief Time of last shmdt */
+  time_t shm_ctime;         /**< @brief Time of last change */
+  pid_t shm_cpid;           /**< @brief PID of creator */
+  pid_t shm_lpid;           /**< @brief PID of last shmat/shmdt */
+  unsigned long shm_nattch; /**< @brief Number of current attaches */
 };
 
 /**
@@ -150,9 +156,9 @@ struct shmid_ds {
  * @brief Semaphore operation structure.
  */
 struct sembuf {
-    unsigned short sem_num; /**< @brief Semaphore number */
-    short sem_op;           /**< @brief Semaphore operation */
-    short sem_flg;          /**< @brief Operation flags */
+  unsigned short sem_num; /**< @brief Semaphore number */
+  short sem_op;           /**< @brief Semaphore operation */
+  short sem_flg;          /**< @brief Operation flags */
 };
 
 /**
@@ -234,7 +240,8 @@ int semop(int semid, struct sembuf *sops, size_t nsops);
  * @param shmid The shared memory segment identifier.
  * @param shmaddr The requested attach address (usually NULL).
  * @param shmflg Attach flags (e.g., SHM_RDONLY).
- * @return A pointer to the attached segment on success, or (void*)-1 on failure.
+ * @return A pointer to the attached segment on success, or (void*)-1 on
+ * failure.
  */
 void *shmat(int shmid, const void *shmaddr, int shmflg);
 

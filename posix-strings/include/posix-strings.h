@@ -13,9 +13,9 @@ extern "C" {
 #define strncasecmp _strnicmp
 
 /** \brief bzero macro. */
-#define bzero(b, len) (memset((b), '\0', (len)), (void) 0)
+#define bzero(b, len) (memset((b), '\0', (len)), (void)0)
 /** \brief bcopy macro. */
-#define bcopy(src, dest, len) (memmove((dest), (src), (len)), (void) 0)
+#define bcopy(src, dest, len) (memmove((dest), (src), (len)), (void)0)
 /** \brief bcmp macro. */
 #define bcmp(b1, b2, len) memcmp((b1), (b2), (len))
 

@@ -9,8 +9,8 @@ extern "C" {
 #if !defined(_WIN32) || defined(__CYGWIN__)
 /* Transparently use native POSIX threads */
 #include <pthread.h>
-#include <semaphore.h>
 #include <sched.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <time.h>
@@ -33,26 +33,50 @@ typedef int pthread_spinlock_t;
 #include <time.h>
 
 typedef unsigned long pthread_key_t;
-typedef struct { void *p; } pthread_t;
-typedef struct { void *p; } pthread_mutex_t;
-typedef struct { void *p; } pthread_cond_t;
-typedef struct { void *p; } pthread_rwlock_t;
-typedef struct { void *p; } pthread_once_t;
-typedef struct { void *p; } sem_t;
-typedef struct { void *ptr; } pthread_attr_t;
-typedef struct { void *ptr; } pthread_mutexattr_t;
-typedef struct { void *ptr; } pthread_condattr_t;
-typedef struct { void *ptr; } pthread_rwlockattr_t;
-typedef struct { void *ptr; } pthread_barrier_t;
-typedef struct { void *ptr; } pthread_barrierattr_t;
-typedef struct { void *ptr; } pthread_spinlock_t;
+typedef void *pthread_t;
+typedef struct {
+  void *p;
+} pthread_mutex_t;
+typedef struct {
+  void *p;
+} pthread_cond_t;
+typedef struct {
+  void *p;
+} pthread_rwlock_t;
+typedef struct {
+  void *p;
+} pthread_once_t;
+typedef struct {
+  void *p;
+} sem_t;
+typedef struct {
+  void *ptr;
+} pthread_attr_t;
+typedef struct {
+  void *ptr;
+} pthread_mutexattr_t;
+typedef struct {
+  void *ptr;
+} pthread_condattr_t;
+typedef struct {
+  void *ptr;
+} pthread_rwlockattr_t;
+typedef struct {
+  void *ptr;
+} pthread_barrier_t;
+typedef struct {
+  void *ptr;
+} pthread_barrierattr_t;
+typedef struct {
+  void *ptr;
+} pthread_spinlock_t;
 
 #if !defined(_TIMESPEC_DEFINED)
 #define _TIMESPEC_DEFINED
 #if !defined(_MSC_VER) || _MSC_VER < 1900
 struct timespec {
-    time_t tv_sec;
-    long tv_nsec;
+  time_t tv_sec;
+  long tv_nsec;
 };
 #endif
 #endif
@@ -73,7 +97,7 @@ typedef int clockid_t;
 #endif
 
 struct sched_param {
-    int sched_priority;
+  int sched_priority;
 };
 
 #define PTHREAD_MUTEX_INITIALIZER {0}
@@ -100,7 +124,8 @@ struct sched_param {
 #define PTHREAD_CANCELED ((void *)-1)
 
 /** \brief pthread_atfork function. */
-int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
+int pthread_atfork(void (*prepare)(void), void (*parent)(void),
+                   void (*child)(void));
 /** \brief pthread_attr_destroy function. */
 int pthread_attr_destroy(pthread_attr_t *attr);
 /** \brief pthread_attr_getdetachstate function. */
@@ -110,13 +135,15 @@ int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize);
 /** \brief pthread_attr_getinheritsched function. */
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
 /** \brief pthread_attr_getschedparam function. */
-int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
+int pthread_attr_getschedparam(const pthread_attr_t *attr,
+                               struct sched_param *param);
 /** \brief pthread_attr_getschedpolicy function. */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
 /** \brief pthread_attr_getscope function. */
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 /** \brief pthread_attr_getstack function. */
-int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr, size_t *stacksize);
+int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
+                          size_t *stacksize);
 /** \brief pthread_attr_getstacksize function. */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 /** \brief pthread_attr_init function. */
@@ -128,25 +155,29 @@ int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
 /** \brief pthread_attr_setinheritsched function. */
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 /** \brief pthread_attr_setschedparam function. */
-int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param);
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+                               const struct sched_param *param);
 /** \brief pthread_attr_setschedpolicy function. */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
 /** \brief pthread_attr_setscope function. */
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 /** \brief pthread_attr_setstack function. */
-int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize);
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+                          size_t stacksize);
 /** \brief pthread_attr_setstacksize function. */
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 /** \brief pthread_barrier_destroy function. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier);
 /** \brief pthread_barrier_init function. */
-int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned count);
+int pthread_barrier_init(pthread_barrier_t *barrier,
+                         const pthread_barrierattr_t *attr, unsigned count);
 /** \brief pthread_barrier_wait function. */
 int pthread_barrier_wait(pthread_barrier_t *barrier);
 /** \brief pthread_barrierattr_destroy function. */
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr);
 /** \brief pthread_barrierattr_getpshared function. */
-int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr, int *pshared);
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
+                                   int *pshared);
 /** \brief pthread_barrierattr_init function. */
 int pthread_barrierattr_init(pthread_barrierattr_t *attr);
 /** \brief pthread_barrierattr_setpshared function. */
@@ -166,13 +197,15 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 /** \brief pthread_cond_signal function. */
 int pthread_cond_signal(pthread_cond_t *cond);
 /** \brief pthread_cond_timedwait function. */
-int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime);
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+                           const struct timespec *abstime);
 /** \brief pthread_cond_wait function. */
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
 /** \brief pthread_condattr_destroy function. */
 int pthread_condattr_destroy(pthread_condattr_t *attr);
 /** \brief pthread_condattr_getclock function. */
-int pthread_condattr_getclock(const pthread_condattr_t *attr, clockid_t *clock_id);
+int pthread_condattr_getclock(const pthread_condattr_t *attr,
+                              clockid_t *clock_id);
 /** \brief pthread_condattr_getpshared function. */
 int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared);
 /** \brief pthread_condattr_init function. */
@@ -182,7 +215,8 @@ int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id);
 /** \brief pthread_condattr_setpshared function. */
 int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared);
 /** \brief pthread_create function. */
-int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine)(void *), void *arg);
 /** \brief pthread_detach function. */
 int pthread_detach(pthread_t thread);
 /** \brief pthread_equal function. */
@@ -194,7 +228,8 @@ int pthread_getconcurrency(void);
 /** \brief pthread_getcpuclockid function. */
 int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id);
 /** \brief pthread_getschedparam function. */
-int pthread_getschedparam(pthread_t thread, int *policy, struct sched_param *param);
+int pthread_getschedparam(pthread_t thread, int *policy,
+                          struct sched_param *param);
 void *pthread_getspecific(pthread_key_t key);
 /** \brief pthread_join function. */
 int pthread_join(pthread_t thread, void **value_ptr);
@@ -209,7 +244,8 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
 /** \brief pthread_mutex_lock function. */
 int pthread_mutex_lock(pthread_mutex_t *mutex);
 /** \brief pthread_mutex_timedlock function. */
-int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abstime);
+int pthread_mutex_timedlock(pthread_mutex_t *mutex,
+                            const struct timespec *abstime);
 /** \brief pthread_mutex_trylock function. */
 int pthread_mutex_trylock(pthread_mutex_t *mutex);
 /** \brief pthread_mutex_unlock function. */
@@ -217,9 +253,11 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 /** \brief pthread_mutexattr_destroy function. */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 /** \brief pthread_mutexattr_getprioceiling function. */
-int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr, int *prioceiling);
+int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
+                                     int *prioceiling);
 /** \brief pthread_mutexattr_getprotocol function. */
-int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr, int *protocol);
+int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
+                                  int *protocol);
 /** \brief pthread_mutexattr_getpshared function. */
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr, int *pshared);
 /** \brief pthread_mutexattr_gettype function. */
@@ -227,7 +265,8 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
 /** \brief pthread_mutexattr_init function. */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr);
 /** \brief pthread_mutexattr_setprioceiling function. */
-int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling);
+int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
+                                     int prioceiling);
 /** \brief pthread_mutexattr_setprotocol function. */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol);
 /** \brief pthread_mutexattr_setpshared function. */
@@ -239,13 +278,16 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 /** \brief pthread_rwlock_destroy function. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
 /** \brief pthread_rwlock_init function. */
-int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+                        const pthread_rwlockattr_t *attr);
 /** \brief pthread_rwlock_rdlock function. */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
 /** \brief pthread_rwlock_timedrdlock function. */
-int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock, const struct timespec *abstime);
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+                               const struct timespec *abstime);
 /** \brief pthread_rwlock_timedwrlock function. */
-int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock, const struct timespec *abstime);
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+                               const struct timespec *abstime);
 /** \brief pthread_rwlock_tryrdlock function. */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
 /** \brief pthread_rwlock_trywrlock function. */
@@ -257,13 +299,14 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
 /** \brief pthread_rwlockattr_destroy function. */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
 /** \brief pthread_rwlockattr_getpshared function. */
-int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr, int *pshared);
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
+                                  int *pshared);
 /** \brief pthread_rwlockattr_init function. */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
 /** \brief pthread_rwlockattr_setpshared function. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
 /** \brief pthread_self function. */
-pthread_t pthread_self(void);
+pthread_t win_pthread_self(void);
 /** \brief pthread_setcancelstate function. */
 int pthread_setcancelstate(int state, int *oldstate);
 /** \brief pthread_setcanceltype function. */
@@ -271,7 +314,8 @@ int pthread_setcanceltype(int type, int *oldtype);
 /** \brief pthread_setconcurrency function. */
 int pthread_setconcurrency(int new_level);
 /** \brief pthread_setschedparam function. */
-int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param *param);
+int pthread_setschedparam(pthread_t thread, int policy,
+                          const struct sched_param *param);
 /** \brief pthread_setschedprio function. */
 int pthread_setschedprio(pthread_t thread, int prio);
 /** \brief pthread_setspecific function. */
@@ -335,3 +379,8 @@ int sem_wait(sem_t *sem);
 #endif
 
 #endif /* POSIX_PTHREAD_H */
+
+
+
+
+

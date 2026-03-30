@@ -2,6 +2,6 @@
 #include <stdio.h>
 
 int main(void) {
-    printf("Test for posix-libunwind passed.\n");
-    return 0;
+  printf("Test for posix-libunwind passed.\n");
+  return 0;
 }

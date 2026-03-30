@@ -1,4 +1,4 @@
-﻿/* bsd-sys-param.h - Strict C89 Header */
+/* bsd-sys-param.h - Strict C89 Header */
 #ifndef BSD_SYS_PARAM_H
 #define BSD_SYS_PARAM_H
 
@@ -10,7 +10,8 @@
  * mapped to their MSVC/Windows equivalents.
  */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
+    defined(__DOS__)
 
 #include <stdlib.h> /* _MAX_PATH */
 
@@ -29,41 +30,50 @@
  * @brief Evaluates to the smaller of two elements.
  */
 #ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
 /**
  * @brief Evaluates to the larger of two elements.
  */
 #ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
 /**
  * @brief Returns the number of units y in x (ceiling division).
  */
 #ifndef howmany
-#define howmany(x, y)   (((x) + ((y) - 1)) / (y))
+#define howmany(x, y) (((x) + ((y) - 1)) / (y))
 #endif
 
 /**
  * @brief Rounds x up to the nearest multiple of y.
  */
 #ifndef roundup
-#define roundup(x, y)   ((((x) + ((y) - 1)) / (y)) * (y))
+#define roundup(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 #endif
 
 /**
  * @brief True if x is a power of 2, false otherwise.
  */
 #ifndef powerof2
-#define powerof2(x)     ((((x) - 1) & (x)) == 0)
+#define powerof2(x) ((((x) - 1) & (x)) == 0)
 #endif
 
 #else /* Not MSVC/Windows */
 
 #include <sys/param.h>
 
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#endif /* defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||      \
+          defined(__DOS__) */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BSD_SYS_PARAM_H */

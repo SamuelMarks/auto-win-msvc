@@ -1,4 +1,4 @@
-﻿/* posix-arpa-inet.h - Strict C89 Header */
+/* posix-arpa-inet.h - Strict C89 Header */
 #ifndef POSIX_ARPA_INET_H
 #define POSIX_ARPA_INET_H
 
@@ -10,20 +10,27 @@
  * implemented using safe Microsoft CRT extensions.
  */
 
+/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#endif
+/* clang-format on */
+
+#if defined(_MSC_VER) || defined(_WIN32)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Converts the Internet host address cp from the IPv4 numbers-and-dots notation into binary form.
+ * @brief Converts the Internet host address cp from the IPv4 numbers-and-dots
+ * notation into binary form.
  *
  * @param cp The input IP address string.
  * @param inp Pointer to a struct in_addr where the result will be stored.
@@ -31,13 +38,13 @@ extern "C" {
  */
 int posix_inet_aton(const char *cp, struct in_addr *inp);
 
+#ifndef inet_aton
+#define inet_aton posix_inet_aton
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#else /* Not MSVC/Windows */
-
-#include <arpa/inet.h>
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

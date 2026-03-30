@@ -2,6 +2,6 @@
 #include <stdio.h>
 
 int main(void) {
-    printf("Test for posix-netdb passed.\n");
-    return 0;
+  printf("Test for posix-netdb passed.\n");
+  return 0;
 }

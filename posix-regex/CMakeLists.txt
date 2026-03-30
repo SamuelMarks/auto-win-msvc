@@ -90,7 +90,7 @@ FetchContent_Declare(
 )
 FetchContent_GetProperties(greatest)
 if(NOT greatest_POPULATED)
-    FetchContent_Populate(greatest)
+    FetchContent_MakeAvailable(greatest)
 endif()
 add_library(greatest INTERFACE)
 target_include_directories(greatest INTERFACE ${greatest_SOURCE_DIR})

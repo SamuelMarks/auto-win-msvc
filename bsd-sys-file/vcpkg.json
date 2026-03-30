@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "bsd-sys-file",
   "version": "0.1.0",
   "description": "POSIX <sys/file.h> for MSVC",

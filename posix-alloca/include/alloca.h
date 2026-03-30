@@ -3,12 +3,21 @@
 #define POSIX_ALLOCA_H
 
 #if defined(_MSC_VER)
-# include <malloc.h>
-# ifndef alloca
-#  define alloca _alloca
-# endif
+#include <malloc.h>
+#ifndef alloca
+#define alloca _alloca
+#endif
 #else
-# include <stdlib.h>
+#include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* POSIX_ALLOCA_H */

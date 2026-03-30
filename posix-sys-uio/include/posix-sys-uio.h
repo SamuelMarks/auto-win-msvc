@@ -1,4 +1,4 @@
-﻿/* posix-sys-uio.h - Strict C89 Header */
+/* posix-sys-uio.h - Strict C89 Header */
 #ifndef POSIX_SYS_UIO_H
 #define POSIX_SYS_UIO_H
 
@@ -10,16 +10,22 @@
  * mapped to WSASend and _write system calls.
  */
 
+/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
-
 #include <stddef.h> /* size_t */
+#else
+#include <sys/uio.h>
+#endif
+/* clang-format on */
+
+#if defined(_MSC_VER) || defined(_WIN32)
 
 /**
  * @brief Vector structure for scatter/gather I/O operations.
  */
 struct iovec {
-    void *iov_base; /* Base address */
-    size_t iov_len; /* Length */
+  void *iov_base; /* Base address */
+  size_t iov_len; /* Length */
 };
 
 #ifdef __cplusplus
@@ -32,7 +38,8 @@ extern "C" {
  * @param fd The file descriptor/socket to read from.
  * @param iov A pointer to an array of iovec structures.
  * @param iovcnt The number of elements in the iov array.
- * @return On success, the total bytes read. On error, -1 with errno set appropriately.
+ * @return On success, the total bytes read. On error, -1 with errno set
+ * appropriately.
  */
 long posix_readv(int fd, const struct iovec *iov, int iovcnt);
 
@@ -42,17 +49,21 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt);
  * @param fd The file descriptor/socket to write to.
  * @param iov A pointer to an array of iovec structures.
  * @param iovcnt The number of elements in the iov array.
- * @return On success, the total bytes written. On error, -1 with errno set appropriately.
+ * @return On success, the total bytes written. On error, -1 with errno set
+ * appropriately.
  */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt);
+
+#ifndef readv
+#define readv posix_readv
+#endif
+#ifndef writev
+#define writev posix_writev
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-
-#else /* Not MSVC/Windows */
-
-#include <sys/uio.h>
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

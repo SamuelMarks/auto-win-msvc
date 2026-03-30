@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "posix-netinet",
   "version": "0.1.0",
   "description": "POSIX <netinet/in.h> and <netinet/tcp.h> implementation for MSVC",

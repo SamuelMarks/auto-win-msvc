@@ -1,0 +1,26 @@
+# Handle line endings automatically for files detected as text
+* text=auto
+
+# Enforce LF for source code and documentation
+*.c text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Enforce CRLF for Windows-specific scripts and Visual Studio files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+
+# Specify linguist attributes if needed
+*.h linguist-language=C

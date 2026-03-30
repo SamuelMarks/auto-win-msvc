@@ -1,4 +1,4 @@
-﻿/* posix-netinet-in.h - Strict C89 Header */
+/* posix-netinet-in.h - Strict C89 Header */
 #ifndef POSIX_NETINET_IN_H
 #define POSIX_NETINET_IN_H
 
@@ -11,9 +11,17 @@
 #include <ws2tcpip.h>
 
 #else
-
 #include <netinet/in.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #endif /* POSIX_NETINET_IN_H */
+
+
+
+

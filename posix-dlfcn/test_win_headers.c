@@ -1,6 +1,5 @@
 
-#include <minwindef.h>
-#include <libloaderapi.h>
 #include <errhandlingapi.h>
+#include <libloaderapi.h>
 #include <memoryapi.h>
-
+#include <minwindef.h>

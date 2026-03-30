@@ -8,8 +8,8 @@ extern "C" {
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-#include <sys/types.h>
 #include <basetsd.h>
+#include <sys/types.h>
 #include <time.h>
 
 #if defined(__MINGW32__)
@@ -69,7 +69,7 @@ typedef unsigned short mode_t;
  */
 #ifndef _OFF_T_DEFINED
 #define _OFF_T_DEFINED
-typedef long off_t;
+typedef long long off_t;
 #endif
 
 /**
@@ -213,7 +213,7 @@ typedef __time64_t time_t;
  */
 #ifndef _TIMER_T_DEFINED
 #define _TIMER_T_DEFINED
-typedef void* timer_t;
+typedef void *timer_t;
 #endif
 
 /**
@@ -281,3 +281,4 @@ typedef long blkcnt_t;
 #endif
 
 #endif /* POSIX_TYPES_H */
+

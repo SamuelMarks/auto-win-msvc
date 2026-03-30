@@ -28,23 +28,26 @@ typedef int uid_t;
 typedef int gid_t;
 #endif
 
+#ifndef _SIGINFO_T_DEFINED
+#define _SIGINFO_T_DEFINED
 typedef struct {
-    int si_signo;
-    int si_code;
-    int si_errno;
-    pid_t si_pid;
-    uid_t si_uid;
-    void *si_addr;
-    int si_status;
-    long si_band;
+  int si_signo;
+  int si_code;
+  int si_errno;
+  pid_t si_pid;
+  uid_t si_uid;
+  void *si_addr;
+  int si_status;
+  long si_band;
 } siginfo_t;
+#endif
 
 struct sigaction {
-    void (*sa_handler)(int);
-    void (*sa_sigaction)(int, siginfo_t *, void *);
-    sigset_t sa_mask;
-    int sa_flags;
-    void (*sa_restorer)(void);
+  void (*sa_handler)(int);
+  void (*sa_sigaction)(int, siginfo_t *, void *);
+  sigset_t sa_mask;
+  int sa_flags;
+  void (*sa_restorer)(void);
 };
 
 /** \brief posix_signal_sigemptyset function. */
@@ -54,7 +57,8 @@ int posix_signal_sigfillset(sigset_t *set);
 /** \brief posix_signal_sigaddset function. */
 int posix_signal_sigaddset(sigset_t *set, int signum);
 /** \brief posix_signal_sigaction function. */
-int posix_signal_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+int posix_signal_sigaction(int signum, const struct sigaction *act,
+                           struct sigaction *oldact);
 /** \brief posix_signal_kill function. */
 int posix_signal_kill(pid_t pid, int sig);
 

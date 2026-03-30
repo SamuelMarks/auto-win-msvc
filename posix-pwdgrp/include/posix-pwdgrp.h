@@ -35,13 +35,14 @@ extern "C" {
  * @brief Structure containing user account information.
  */
 struct passwd {
-    char   *pw_name;   /**< User's login name. */
-    char   *pw_passwd; /**< Unencrypted password (always empty or dummy on Windows). */
-    uid_t   pw_uid;    /**< Numerical user ID (maps to Windows SID RID). */
-    gid_t   pw_gid;    /**< Numerical group ID. */
-    char   *pw_gecos;  /**< User name or comment. */
-    char   *pw_dir;    /**< Initial working directory (user profile path). */
-    char   *pw_shell;  /**< Program to use as shell. */
+  char *pw_name;   /**< User's login name. */
+  char *pw_passwd; /**< Unencrypted password (always empty or dummy on Windows).
+                    */
+  uid_t pw_uid;    /**< Numerical user ID (maps to Windows SID RID). */
+  gid_t pw_gid;    /**< Numerical group ID. */
+  char *pw_gecos;  /**< User name or comment. */
+  char *pw_dir;    /**< Initial working directory (user profile path). */
+  char *pw_shell;  /**< Program to use as shell. */
 };
 
 /**
@@ -49,10 +50,10 @@ struct passwd {
  * @brief Structure containing group account information.
  */
 struct group {
-    char   *gr_name;   /**< The name of the group. */
-    char   *gr_passwd; /**< The password of the group (always empty or dummy). */
-    gid_t   gr_gid;    /**< Numerical group ID (maps to Windows SID RID). */
-    char  **gr_mem;    /**< Pointer to a null-terminated array of member names. */
+  char *gr_name;   /**< The name of the group. */
+  char *gr_passwd; /**< The password of the group (always empty or dummy). */
+  gid_t gr_gid;    /**< Numerical group ID (maps to Windows SID RID). */
+  char **gr_mem;   /**< Pointer to a null-terminated array of member names. */
 };
 
 /**
@@ -62,7 +63,8 @@ void endgrent(void);
 
 /**
  * @brief Reads the next entry from the group database.
- * @return Pointer to a statically allocated group structure, or NULL on error or EOF.
+ * @return Pointer to a statically allocated group structure, or NULL on error
+ * or EOF.
  */
 struct group *getgrent(void);
 
@@ -82,7 +84,8 @@ struct group *getgrgid(gid_t gid);
  * @param result Pointer to the returned group pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result);
+int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
+               struct group **result);
 
 /**
  * @brief Searches the group database for a group with the given name.
@@ -100,7 +103,8 @@ struct group *getgrnam(const char *name);
  * @param result Pointer to the returned group pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize, struct group **result);
+int getgrnam_r(const char *name, struct group *grp, char *buffer,
+               size_t bufsize, struct group **result);
 
 /**
  * @brief Rewinds the group database to the beginning.
@@ -114,7 +118,8 @@ void endpwent(void);
 
 /**
  * @brief Reads the next entry from the user database.
- * @return Pointer to a statically allocated passwd structure, or NULL on error or EOF.
+ * @return Pointer to a statically allocated passwd structure, or NULL on error
+ * or EOF.
  */
 struct passwd *getpwent(void);
 
@@ -134,7 +139,8 @@ struct passwd *getpwnam(const char *name);
  * @param result Pointer to the returned passwd pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-int getpwnam_r(const char *name, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
+int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
+               size_t bufsize, struct passwd **result);
 
 /**
  * @brief Searches the user database for a user with the given ID.
@@ -152,7 +158,8 @@ struct passwd *getpwuid(uid_t uid);
  * @param result Pointer to the returned passwd pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
+int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
+               struct passwd **result);
 
 /**
  * @brief Rewinds the user database to the beginning.
@@ -165,9 +172,9 @@ void setpwent(void);
 
 #else /* _WIN32 */
 
-#include <sys/types.h>
-#include <pwd.h>
 #include <grp.h>
+#include <pwd.h>
+#include <sys/types.h>
 
 #endif /* _WIN32 */
 

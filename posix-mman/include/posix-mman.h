@@ -12,10 +12,10 @@
 extern "C" {
 #endif
 #ifndef MCL_CURRENT
-#define MCL_CURRENT     0x01
+#define MCL_CURRENT 0x01
 #endif
 #ifndef MCL_FUTURE
-#define MCL_FUTURE      0x02
+#define MCL_FUTURE 0x02
 #endif
 
 /** \brief mlockall function. */
@@ -38,79 +38,79 @@ extern "C" {
 
 /* Protection flags */
 #ifndef PROT_NONE
-#define PROT_NONE       0x00
+#define PROT_NONE 0x00
 #endif
 #ifndef PROT_READ
-#define PROT_READ       0x01
+#define PROT_READ 0x01
 #endif
 #ifndef PROT_WRITE
-#define PROT_WRITE      0x02
+#define PROT_WRITE 0x02
 #endif
 #ifndef PROT_EXEC
-#define PROT_EXEC       0x04
+#define PROT_EXEC 0x04
 #endif
 
 /* Mapping flags */
 #ifndef MAP_SHARED
-#define MAP_SHARED      0x01
+#define MAP_SHARED 0x01
 #endif
 #ifndef MAP_PRIVATE
-#define MAP_PRIVATE     0x02
+#define MAP_PRIVATE 0x02
 #endif
 #ifndef MAP_FIXED
-#define MAP_FIXED       0x10
+#define MAP_FIXED 0x10
 #endif
 #ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS   0x20
+#define MAP_ANONYMOUS 0x20
 #endif
 #ifndef MAP_ANON
-#define MAP_ANON        MAP_ANONYMOUS
+#define MAP_ANON MAP_ANONYMOUS
 #endif
 #ifndef MAP_FAILED
 /** \brief MAP_FAILED macro. */
-#define MAP_FAILED      ((void *)-1)
+#define MAP_FAILED ((void *)-1)
 #endif
 
 /* msync flags */
 #ifndef MS_ASYNC
-#define MS_ASYNC        0x01
+#define MS_ASYNC 0x01
 #endif
 #ifndef MS_SYNC
-#define MS_SYNC         0x02
+#define MS_SYNC 0x02
 #endif
 #ifndef MS_INVALIDATE
-#define MS_INVALIDATE   0x04
+#define MS_INVALIDATE 0x04
 #endif
 
 /* madvise advice flags */
 #ifndef MADV_NORMAL
-#define MADV_NORMAL     0
+#define MADV_NORMAL 0
 #endif
 #ifndef MADV_RANDOM
-#define MADV_RANDOM     1
+#define MADV_RANDOM 1
 #endif
 #ifndef MADV_SEQUENTIAL
 #define MADV_SEQUENTIAL 2
 #endif
 #ifndef MADV_WILLNEED
-#define MADV_WILLNEED   3
+#define MADV_WILLNEED 3
 #endif
 #ifndef MADV_DONTNEED
-#define MADV_DONTNEED   4
+#define MADV_DONTNEED 4
 #endif
 #ifndef MADV_FREE
-#define MADV_FREE       8
+#define MADV_FREE 8
 #endif
 #ifndef MADV_DONTDUMP
-#define MADV_DONTDUMP   16
+#define MADV_DONTDUMP 16
 #endif
 
 /* mlockall flags */
 #ifndef MCL_CURRENT
-#define MCL_CURRENT     0x01
+#define MCL_CURRENT 0x01
 #endif
 #ifndef MCL_FUTURE
-#define MCL_FUTURE      0x02
+#define MCL_FUTURE 0x02
 #endif
 
 /* Windows mode_t polyfill if needed */
@@ -153,7 +153,8 @@ int mlockall(int flags);
  * @offset: offset within the file
  * Returns mapped address on success, MAP_FAILED on failure.
  */
-void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+void *mmap(void *addr, size_t length, int prot, int flags, int fd,
+           off_t offset);
 
 /*
  * mprotect - set protection on a region of memory
