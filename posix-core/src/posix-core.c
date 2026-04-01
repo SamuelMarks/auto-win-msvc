@@ -12,10 +12,39 @@
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fcntl function. */
+
+#include <windows.h>
+typedef UINT_PTR SOCKET;
+int __stdcall ioctlsocket(SOCKET s, long cmd, u_long *argp);
+#define FIONBIO 0x8004667E
+
+#include <fcntl.h>
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x4000
+#endif
+#ifndef F_GETFD
+#define F_GETFD 1
+#define F_SETFD 2
+#define F_GETFL 3
+#define F_SETFL 4
+#endif
+
 int fcntl(int fd, int cmd, ...) {
-  errno = EINVAL;
-  return -1;
+    if (cmd == F_GETFD || cmd == F_SETFD) return 0;
+    if (cmd == F_GETFL) return 0; // return 0, assuming blocking
+    if (cmd == F_SETFL) {
+        va_list ap;
+        va_start(ap, cmd);
+        int flags = va_arg(ap, int);
+        va_end(ap);
+        u_long mode = (flags & O_NONBLOCK) ? 1 : 0;
+        SOCKET s = (SOCKET)(unsigned int)fd;
+        ioctlsocket(s, FIONBIO, &mode);
+        return 0;
+    }
+    return 0;
 }
+
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief openat function. */
@@ -259,7 +288,6 @@ int pipe(int pipefd[2]) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pipe2 function. */
-
 
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 int pipe2(int pipefd[2], int flags) {

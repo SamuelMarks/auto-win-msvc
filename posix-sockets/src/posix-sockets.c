@@ -308,7 +308,7 @@ int posix_accept(int socket, struct sockaddr *address,
                  posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef accept
-  SOCKET ret = accept((SOCKET)socket, address, address_len);
+  SOCKET ret = accept((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == INVALID_SOCKET) {
     errno = WSAGetLastError();
     return -1;
@@ -327,7 +327,7 @@ int posix_bind(int socket, const struct sockaddr *address,
                posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef bind
-  int ret = bind((SOCKET)socket, address, address_len);
+  int ret = bind((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -346,7 +346,7 @@ int posix_connect(int socket, const struct sockaddr *address,
                   posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef connect
-  int ret = connect((SOCKET)socket, address, address_len);
+  int ret = connect((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -365,7 +365,7 @@ int posix_getpeername(int socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getpeername
-  int ret = getpeername((SOCKET)socket, address, address_len);
+  int ret = getpeername((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -384,7 +384,7 @@ int posix_getsockname(int socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getsockname
-  int ret = getsockname((SOCKET)socket, address, address_len);
+  int ret = getsockname((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -403,7 +403,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
                      posix_socklen_t *option_len) {
 #ifdef _WIN32
 #undef getsockopt
-  int ret = getsockopt((SOCKET)socket, level, option_name, (char *)option_value,
+  int ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)option_value,
                        option_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
@@ -424,7 +424,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
 int posix_listen(int socket, int backlog) {
 #ifdef _WIN32
 #undef listen
-  int ret = listen((SOCKET)socket, backlog);
+  int ret = listen((SOCKET)(unsigned int)socket, backlog);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -441,7 +441,7 @@ int posix_listen(int socket, int backlog) {
 posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
 #ifdef _WIN32
 #undef recv
-  int ret = recv((SOCKET)socket, (char *)buffer, (int)length, flags);
+  int ret = recv((SOCKET)(unsigned int)socket, (char *)buffer, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -490,7 +490,7 @@ posix_ssize_t posix_send(int socket, const void *message, size_t length,
                          int flags) {
 #ifdef _WIN32
 #undef send
-  int ret = send((SOCKET)socket, (const char *)message, (int)length, flags);
+  int ret = send((SOCKET)(unsigned int)socket, (const char *)message, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;
@@ -540,7 +540,7 @@ int posix_setsockopt(int socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
 #undef setsockopt
-  int ret = setsockopt((SOCKET)socket, level, option_name,
+  int ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name,
                        (const char *)option_value, option_len);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
@@ -561,7 +561,7 @@ int posix_setsockopt(int socket, int level, int option_name,
 int posix_shutdown(int socket, int how) {
 #ifdef _WIN32
 #undef shutdown
-  int ret = shutdown((SOCKET)socket, how);
+  int ret = shutdown((SOCKET)(unsigned int)socket, how);
   if (ret == SOCKET_ERROR) {
     errno = WSAGetLastError();
     return -1;

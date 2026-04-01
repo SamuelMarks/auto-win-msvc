@@ -245,7 +245,8 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /** @brief close */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef close
-#define close _close
+int posix_close(int fd);
+#define close posix_close
 #endif
 #else
 /* close */

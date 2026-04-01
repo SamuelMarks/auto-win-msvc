@@ -381,9 +381,8 @@ int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
 
 /** \brief pthread_attr_getstacksize function. */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
-  attr = attr;
-  stacksize = stacksize;
-
+  (void)attr;
+  if (stacksize) *stacksize = 1048576;
   return 0;
 }
 
@@ -1446,5 +1445,3 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;
-
-
