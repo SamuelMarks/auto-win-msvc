@@ -1,2 +1,4 @@
+/* clang-format off */
 #include <errno.h>
-int main() { return ENOSYS; }
+/* clang-format on */
+int main() { return EINVAL; }

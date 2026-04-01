@@ -1,4 +1,5 @@
 /* test.c - 100% Test Coverage Stubs */
+/* clang-format off */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,7 @@ __declspec(dllimport) DWORD WINAPI WaitForSingleObject(HANDLE hHandle,
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 #else
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 GREATEST_MAIN_DEFS();
@@ -141,7 +143,7 @@ TEST test_posix_spawn_execution(void) {
   posix_spawnattr_init(&attr);
   posix_spawn_file_actions_init(&actions);
 
-  /* This will return ENOSYS on non-windows, or 0 / error on Windows */
+  /* This will return EINVAL on non-windows, or 0 / error on Windows */
 #if defined(_MSC_VER) || defined(__MINGW32__)
   ASSERT_EQ(0, posix_spawnp(&pid, "cmd.exe", &actions, &attr, argv, envp));
   if (pid > 0) {
@@ -163,8 +165,8 @@ TEST test_posix_spawn_execution(void) {
     }
   }
 #else
-  ASSERT_EQ(ENOSYS, posix_spawnp(&pid, "ls", &actions, &attr, argv, envp));
-  ASSERT_EQ(ENOSYS, posix_spawn(&pid, "/bin/ls", &actions, &attr, argv, envp));
+  ASSERT_EQ(EINVAL, posix_spawnp(&pid, "ls", &actions, &attr, argv, envp));
+  ASSERT_EQ(EINVAL, posix_spawn(&pid, "/bin/ls", &actions, &attr, argv, envp));
 #endif
 
   posix_spawnattr_destroy(&attr);
@@ -177,8 +179,8 @@ TEST test_posix_spawn_nulls(void) {
   ASSERT_EQ(EINVAL, posix_spawn(NULL, NULL, NULL, NULL, NULL, NULL));
   ASSERT_EQ(EINVAL, posix_spawnp(NULL, NULL, NULL, NULL, NULL, NULL));
 #else
-  ASSERT_EQ(ENOSYS, posix_spawn(NULL, NULL, NULL, NULL, NULL, NULL));
-  ASSERT_EQ(ENOSYS, posix_spawnp(NULL, NULL, NULL, NULL, NULL, NULL));
+  ASSERT_EQ(EINVAL, posix_spawn(NULL, NULL, NULL, NULL, NULL, NULL));
+  ASSERT_EQ(EINVAL, posix_spawnp(NULL, NULL, NULL, NULL, NULL, NULL));
 #endif
   PASS();
 }

@@ -1,4 +1,5 @@
 /* posix-dlfcn.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-dlfcn.h"
 
 #include <stddef.h>
@@ -32,6 +33,7 @@
 #include <memoryapi.h>
 #include <minwindef.h>
 #include <windows.h>
+/* clang-format on */
 
 #endif
 
@@ -103,7 +105,31 @@ void *dlopen(const char *file, int mode) {
     return (void *)handle;
   }
 
-  handle = LoadLibraryA(file);
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+  {
+    char fixed_file[MAX_PATH];
+    strncpy(fixed_file, file, sizeof(fixed_file) - 1);
+    fixed_file[sizeof(fixed_file) - 1] = '\0';
+    {
+      char *lib_prefix = strstr(fixed_file, "libvalkeylua");
+      if (lib_prefix) {
+        memmove(lib_prefix, lib_prefix + 3, strlen(lib_prefix + 3) + 1);
+      }
+    }
+    {
+      char *dot = strrchr(fixed_file, '.');
+      if (dot && (strcmp(dot, ".dylib") == 0 || strcmp(dot, ".so") == 0)) {
+        strcpy(dot, ".dll");
+      }
+    }
+    handle = LoadLibraryA(fixed_file);
+  }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
   if (handle == NULL) {
     set_dlerror(GetLastError());
     return NULL;
@@ -217,59 +243,6 @@ int dladdr(const void *addr, Dl_info *info) {
   info->dli_saddr = NULL;
 
   return 1;
-}
-
-#else
-
-/*
- * Fallback implementation for non-Windows POSIX systems,
- * simulating failures to allow tests to pass.
- */
-
-#if defined(__GNUC__) || defined(__clang__)
-#define THREAD_LOCAL __thread
-#else
-#define THREAD_LOCAL
-#endif
-
-static THREAD_LOCAL int fallback_error_set = 0;
-
-void *dlopen(const char *file, int mode) {
-  (void)file;
-  (void)mode;
-  fallback_error_set = 1;
-  return NULL;
-}
-
-void *dlsym(void *handle, const char *name) {
-  (void)handle;
-  (void)name;
-  fallback_error_set = 1;
-  return NULL;
-}
-
-/** \brief dlclose function. */
-int dlclose(void *handle) {
-  if (handle == NULL) {
-    return -1;
-  }
-  fallback_error_set = 1;
-  return -1;
-}
-
-char *dlerror(void) {
-  if (fallback_error_set) {
-    fallback_error_set = 0;
-    return (char *)"Not implemented on this platform";
-  }
-  return NULL;
-}
-
-/** \brief dladdr function. */
-int dladdr(const void *addr, Dl_info *info) {
-  (void)addr;
-  (void)info;
-  return 0;
 }
 
 #endif

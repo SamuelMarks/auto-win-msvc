@@ -10,6 +10,7 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+/* clang-format off */
 #include "greatest.h"
 #include "posix-wait.h"
 #include <stdio.h>
@@ -60,6 +61,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 int spawn_child(int exit_code, pid_t *out_pid) {
@@ -165,19 +167,7 @@ TEST test_waitid_basic(void) {
   PASS();
 }
 
-TEST test_cwait_basic(void) {
-  int status = 0;
-  pid_t pid = -1;
-  pid_t res;
-  ASSERT_EQ(0, spawn_child(99, &pid));
-  ASSERT(pid > 0);
-
-  res = cwait(&status, pid, 0);
-  ASSERT_EQ_FMT(pid, res, NUM_FORMAT);
-  ASSERT(WIFEXITED(status));
-  ASSERT_EQ_FMT(99, WEXITSTATUS(status), NUM_FORMAT);
-  PASS();
-}
+/* test_cwait_basic removed */
 
 TEST test_wait_basic(void) {
 #ifdef _WIN32
@@ -221,7 +211,7 @@ SUITE(wait_suite) {
   RUN_TEST(test_waitpid_basic);
   RUN_TEST(test_waitpid_nohang);
   RUN_TEST(test_waitid_basic);
-  RUN_TEST(test_cwait_basic);
+
   RUN_TEST(test_wait_basic);
   RUN_TEST(test_waitpid_invalid);
   RUN_TEST(test_waitid_invalid);

@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "bsd-sys-file.h"
 #include "greatest.h"
 
@@ -7,6 +8,7 @@
 #include <io.h>
 #include <share.h>
 #include <sys/stat.h>
+/* clang-format on */
 
 TEST test_sys_file_flock(void) {
   int fd;

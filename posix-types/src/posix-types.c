@@ -1,7 +1,9 @@
 /* posix-types.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-types.h"
 #include <stdio.h>
 #include <stdlib.h>
+/* clang-format on */
 
 /**
  * @brief Dummy variable to prevent empty translation unit warning.

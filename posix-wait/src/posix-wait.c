@@ -6,6 +6,7 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+/* clang-format off */
 #include "posix-wait.h"
 #include <errno.h>
 #include <stddef.h>
@@ -38,6 +39,7 @@
 #include <minwindef.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
+/* clang-format on */
 #endif
 
 #ifndef INFINITE
@@ -117,7 +119,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   } else if (idtype == P_ALL) {
     pid_to_wait = -1;
   } else {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
 
@@ -164,7 +166,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   } else if (idtype == P_ALL) {
     pid_to_wait = -1;
   } else {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
 

@@ -1,9 +1,11 @@
+/* clang-format off */
 #include "bsd-sys-event.h"
 #include <errno.h>
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 /** \brief kqueue function. */
 int kqueue(void) {
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 /** \brief kevent function. */
@@ -16,7 +18,7 @@ int kevent(int kq, const struct kevent *changelist, int nchanges,
   (void)eventlist;
   (void)nevents;
   (void)timeout;
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 #endif

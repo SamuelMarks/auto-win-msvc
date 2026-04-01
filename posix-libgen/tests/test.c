@@ -1,9 +1,11 @@
 /* test.c - 100% Test Coverage Stubs */
 #undef _GNU_SOURCE
+/* clang-format off */
 #include "greatest.h"
 #include "posix-libgen.h"
 #include <stdio.h>
 #include <string.h>
+/* clang-format on */
 
 TEST test_basename_null_empty(void) {
   char empty[] = "";

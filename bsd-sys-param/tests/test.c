@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "bsd-sys-param.h"
 #include "greatest.h"
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

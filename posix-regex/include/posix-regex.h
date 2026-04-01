@@ -3,6 +3,7 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 
+/* clang-format off */
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -75,6 +76,7 @@ void regfree(regex_t *preg);
 
 #else
 #include <regex.h>
+/* clang-format on */
 #endif /* _MSC_VER */
 
 #endif /* POSIX_REGEX_H */

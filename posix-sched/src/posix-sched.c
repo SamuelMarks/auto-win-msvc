@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "posix-sched.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -7,6 +8,7 @@
 #endif
 #include <errno.h>
 #include <winsock2.h>
+/* clang-format on */
 
 /** \brief posix_sched_yield function. */
 int posix_sched_yield(void) {

@@ -1,6 +1,8 @@
+/* clang-format off */
 #include <linux-getopt.h>
 #include <stdio.h>
 #include <string.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 

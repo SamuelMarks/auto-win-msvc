@@ -8,6 +8,7 @@
 #endif
 #endif
 
+/* clang-format off */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,7 @@
 #else
 #include <dirent.h>
 #include <sys/stat.h>
+/* clang-format on */
 #endif
 
 /* helper to append to glob_t */

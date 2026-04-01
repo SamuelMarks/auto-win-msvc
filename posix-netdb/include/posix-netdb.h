@@ -6,10 +6,17 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
+/* clang-format on */
 
-int posix_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int posix_getaddrinfo(const char *nodename, const char *servname,
+                      const struct addrinfo *hints, struct addrinfo **res);
 void posix_freeaddrinfo(struct addrinfo *ai);
 const char *posix_gai_strerror(int ecode);
 
@@ -21,6 +28,10 @@ const char *posix_gai_strerror(int ecode);
 #define freeaddrinfo posix_freeaddrinfo
 #define gai_strerror posix_gai_strerror
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

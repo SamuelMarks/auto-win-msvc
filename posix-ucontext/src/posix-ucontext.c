@@ -1,4 +1,6 @@
+/* clang-format off */
 #include <posix-ucontext.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 

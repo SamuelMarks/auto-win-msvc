@@ -1,4 +1,5 @@
 /* posix-dirent.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-dirent.h"
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
@@ -13,6 +14,7 @@
 #elif defined(_MSC_VER) && _MSC_VER >= 1400
 /* MSVC 2005+ */
 #include <stddef.h>
+/* clang-format on */
 #else
 /* Older MSVC */
 #ifndef intptr_t

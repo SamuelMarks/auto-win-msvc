@@ -6,7 +6,9 @@
 #if defined(_MSC_VER)
 /* We defer to the standard endian.h polyfill which provides the necessary
  * macros */
+/* clang-format off */
 #include <linux-endian.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

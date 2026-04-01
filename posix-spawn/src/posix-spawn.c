@@ -1,4 +1,5 @@
 /* posix-spawn.c - Strict C89 Implementation */
+/* clang-format off */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <fcntl.h>
 #include <io.h>
+/* clang-format on */
 
 #ifndef O_ACCMODE
 /** \brief O_ACCMODE macro. */
@@ -690,36 +692,6 @@ int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawnattr_t *attrp, char *const argv[],
                  char *const envp[]) {
   return internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
-}
-
-#else
-
-/** \brief posix_spawn function. */
-int posix_spawn(pid_t *pid, const char *path,
-                const posix_spawn_file_actions_t *file_actions,
-                const posix_spawnattr_t *attrp, char *const argv[],
-                char *const envp[]) {
-  (void)pid;
-  (void)path;
-  (void)file_actions;
-  (void)attrp;
-  (void)argv;
-  (void)envp;
-  return ENOSYS;
-}
-
-/** \brief posix_spawnp function. */
-int posix_spawnp(pid_t *pid, const char *file,
-                 const posix_spawn_file_actions_t *file_actions,
-                 const posix_spawnattr_t *attrp, char *const argv[],
-                 char *const envp[]) {
-  (void)pid;
-  (void)file;
-  (void)file_actions;
-  (void)attrp;
-  (void)argv;
-  (void)envp;
-  return ENOSYS;
 }
 
 #endif

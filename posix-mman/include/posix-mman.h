@@ -5,6 +5,7 @@
 #if !defined(_WIN32) && !defined(_WIN64)
 
 /* Fallback to system mman on POSIX platforms */
+/* clang-format off */
 #include <sys/mman.h>
 
 #if defined(__CYGWIN__)
@@ -31,6 +32,7 @@ int munlockall(void);
 
 #include <stddef.h>
 #include <sys/types.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

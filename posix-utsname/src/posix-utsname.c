@@ -3,17 +3,19 @@
  * @brief Implementation of POSIX uname() for MSVC.
  */
 
+/* clang-format off */
 #include "posix-utsname.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+/* clang-format on */
 
 #ifndef EFAULT
 #define EFAULT 14
 #endif
 
-#ifndef ENOSYS
-#define ENOSYS 38
+#ifndef EINVAL
+#define EINVAL 38
 #endif
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
@@ -272,14 +274,14 @@ int uname(struct utsname *name) {
  * @brief Get system identification (stub for non-Windows).
  *
  * @param name Pointer to a utsname structure to be filled.
- * @return -1 and sets errno to ENOSYS.
+ * @return -1 and sets errno to EINVAL.
  */
 int uname(struct utsname *name) {
   if (!name) {
     errno = EFAULT;
     return -1;
   }
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 

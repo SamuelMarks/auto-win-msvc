@@ -1,4 +1,6 @@
+/* clang-format off */
 #include "bsd-malloc-np.h"
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 /** \brief je_malloc_stats_print function. */
 void je_malloc_stats_print(void (*write_cb)(void *, const char *),

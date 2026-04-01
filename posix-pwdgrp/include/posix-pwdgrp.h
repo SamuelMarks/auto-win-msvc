@@ -10,6 +10,7 @@
  * information on Windows systems, mimicking POSIX systems.
  */
 
+/* clang-format off */
 #include <stddef.h>
 
 #ifdef _WIN32
@@ -175,6 +176,7 @@ void setpwent(void);
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>
+/* clang-format on */
 
 #endif /* _WIN32 */
 

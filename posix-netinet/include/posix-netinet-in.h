@@ -7,11 +7,13 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #else
 #include <netinet/in.h>
+/* clang-format on */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,7 +23,3 @@ extern "C" {
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #endif /* POSIX_NETINET_IN_H */
-
-
-
-

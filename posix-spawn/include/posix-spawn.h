@@ -2,6 +2,7 @@
 #ifndef POSIX_SPAWN_H
 #define POSIX_SPAWN_H
 
+/* clang-format off */
 #include <stddef.h>
 
 #if defined(_MSC_VER)
@@ -44,6 +45,7 @@ typedef _sigset_t sigset_t;
 #include <sched.h>
 #include <signal.h>
 #include <sys/types.h>
+/* clang-format on */
 
 #endif
 

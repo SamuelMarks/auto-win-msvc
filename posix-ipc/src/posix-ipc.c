@@ -17,6 +17,7 @@
 #pragma warning(disable : 4214) /* bit field types other than int */
 #pragma warning(disable : 4244) /* possible loss of data */
 #endif
+/* clang-format off */
 #include <windows.h>
 
 #ifdef _MSC_VER
@@ -26,6 +27,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+/* clang-format on */
 
 /* Helper to generate a consistent hash from a file */
 key_t ftok(const char *path, int id) {

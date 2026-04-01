@@ -1,4 +1,3 @@
-#include <winsock2.h>
 /* posix-time.h - Strict C89 Header */
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
@@ -7,10 +6,12 @@
 extern "C" {
 #endif
 
+/* clang-format off */
 #include <time.h>
 
 #ifdef _WIN32
 #include <sys/utime.h>
+#include <winsock2.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* UCRT defines struct timespec in time.h */
@@ -167,6 +168,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
 
 #include <sys/time.h>
 #include <utime.h>
+/* clang-format on */
 
 #endif /* _WIN32 */
 

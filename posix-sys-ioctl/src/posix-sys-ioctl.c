@@ -1,6 +1,8 @@
+/* clang-format off */
 #include "posix-sys-ioctl.h"
 #include <errno.h>
 #include <stdarg.h>
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

@@ -1,5 +1,7 @@
 /* posix-langinfo.c - Strict C89 Implementation */
+/* clang-format off */
 #include "langinfo.h"
+/* clang-format on */
 
 #if defined(POSIX_LANGINFO_MSVC) || defined(_WIN32)
 

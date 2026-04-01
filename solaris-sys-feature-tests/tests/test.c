@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include "solaris-sys-feature-tests.h"
+/* clang-format on */
 
 TEST test_dummy(void) { PASS(); }
 

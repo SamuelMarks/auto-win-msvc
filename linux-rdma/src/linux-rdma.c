@@ -1,3 +1,7 @@
+#include <errno.h>
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
 /* linux-rdma.c - Strict C89 Implementation */
 
 /* clang-format off */
@@ -15,9 +19,10 @@ int rdma_create_event_channel(void) { return 0; }
  * default value
  */
 int rdma_bind_addr(struct rdma_cm_id *id, struct sockaddr *addr) {
-  (void)id;
-  (void)addr;
-  return 0;
+  id = id;
+  addr = addr;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for rdma_listen
@@ -26,9 +31,10 @@ int rdma_bind_addr(struct rdma_cm_id *id, struct sockaddr *addr) {
 
  */
 int rdma_listen(struct rdma_cm_id *id, int backlog) {
-  (void)id;
-  (void)backlog;
-  return 0;
+  id = id;
+  backlog = backlog;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for rdma_accept
@@ -37,7 +43,8 @@ int rdma_listen(struct rdma_cm_id *id, int backlog) {
 
  */
 int rdma_accept(struct rdma_cm_id *id, void *conn_param) {
-  (void)id;
-  (void)conn_param;
-  return 0;
+  id = id;
+  conn_param = conn_param;
+  errno = ENOSYS;
+  return -1;
 }

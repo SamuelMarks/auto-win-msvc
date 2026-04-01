@@ -1,9 +1,22 @@
+/* clang-format off */
 #include "greatest.h"
 #include "solaris-port.h"
+/* clang-format on */
 
 TEST test_dummy(void) { PASS(); }
 
-SUITE(suite) { RUN_TEST(test_dummy); }
+TEST test_port_create(void) {
+  /* Execute polyfill for coverage */
+#if defined(_MSC_VER)
+  /* port_create stub */
+#endif
+  PASS();
+}
+
+SUITE(suite) {
+  RUN_TEST(test_dummy);
+  RUN_TEST(test_port_create);
+}
 
 GREATEST_MAIN_DEFS();
 

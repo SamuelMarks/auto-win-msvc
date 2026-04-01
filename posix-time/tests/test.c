@@ -1,9 +1,11 @@
 /* test.c - 100% Test Coverage Stubs */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-time.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4127) /* conditional expression is constant (for     \

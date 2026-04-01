@@ -1,4 +1,6 @@
+/* clang-format off */
 #include "greatest.h"
+/* clang-format on */
 
 TEST dummy_test(void) { PASS(); }
 

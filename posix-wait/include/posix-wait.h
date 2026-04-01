@@ -102,7 +102,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
  * @param action Unused on Windows (usually WAIT_CHILD).
  * @return The process ID of the terminated child.
  */
-// cwait removed
+/* cwait removed */
 
 #ifdef __cplusplus
 }
@@ -112,9 +112,11 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 
 /* For non-Windows environments (like Darwin/Linux testing), include native
  * headers */
+/* clang-format off */
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+/* clang-format on */
 
 #ifdef __CYGWIN__
 #ifndef _IDTYPE_T_DEFINED
@@ -159,7 +161,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
  * @param action Unused on Windows (usually WAIT_CHILD).
  * @return The process ID of the terminated child.
  */
-// cwait removed
+/* cwait removed */
 
 #ifdef __cplusplus
 }
@@ -168,4 +170,3 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 #endif /* _WIN32 */
 
 #endif /* POSIX_WAIT_H */
-

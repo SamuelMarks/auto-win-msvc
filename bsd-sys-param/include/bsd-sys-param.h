@@ -13,6 +13,7 @@
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
     defined(__DOS__)
 
+/* clang-format off */
 #include <stdlib.h> /* _MAX_PATH */
 
 /**
@@ -64,6 +65,7 @@
 #else /* Not MSVC/Windows */
 
 #include <sys/param.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

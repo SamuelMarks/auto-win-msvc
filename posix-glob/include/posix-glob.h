@@ -2,7 +2,9 @@
 #ifndef POSIX_GLOB_H
 #define POSIX_GLOB_H
 
+/* clang-format off */
 #include <stddef.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

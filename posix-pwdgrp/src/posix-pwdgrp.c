@@ -24,6 +24,7 @@
 #endif
 #endif
 
+/* clang-format off */
 #include <errno.h>
 
 
@@ -37,6 +38,7 @@
 #include <winnls.h>
 
 #include "posix-pwdgrp.h"
+/* clang-format on */
 
 /* Link required Windows libraries */
 #if defined(_MSC_VER)

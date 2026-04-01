@@ -2,7 +2,9 @@
 #ifndef POSIX_SYSLOG_H
 #define POSIX_SYSLOG_H
 
+/* clang-format off */
 #include <stdarg.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

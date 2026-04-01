@@ -1,5 +1,7 @@
 /* posix-stdint implementation */
+/* clang-format off */
 #include "posix-stdint.h"
+/* clang-format on */
 
 /* Dummy function to ensure library compiles */
 int posix_stdint_dummy(void) { return 0; }

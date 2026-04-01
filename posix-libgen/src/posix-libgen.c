@@ -1,5 +1,6 @@
 /* posix-libgen.c - Strict C89 Implementation */
 #undef _GNU_SOURCE
+/* clang-format off */
 #include "posix-libgen.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 #if !defined(_MSC_VER)
 #include <sys/param.h>
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 /* For printf formatting things you can #define NUM_FORMAT and use the right one

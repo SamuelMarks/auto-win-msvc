@@ -5,7 +5,9 @@
 
 #if defined(_MSC_VER) && !defined(__clang__)
 
+/* clang-format off */
 #include <intrin.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,4 +84,3 @@ typedef volatile unsigned long atomic_ulong;
 #endif
 
 #endif /* POSIX_STDATOMIC_H */
-

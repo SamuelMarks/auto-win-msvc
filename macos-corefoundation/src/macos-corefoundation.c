@@ -8,8 +8,9 @@
  * \return 0 or appropriate default value
  */
 void *(*retain)(void *info) {
-  (void)info;
-  return 0;
+  info = info;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for void
@@ -18,8 +19,9 @@ void *(*retain)(void *info) {
 
  */
 void (*release)(void *info) {
-  (void)info;
-  return 0;
+  info = info;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for
@@ -28,8 +30,9 @@ void (*release)(void *info) {
 
  */
 const char *(*copyDescription)(void *info) {
-  (void)info;
-  return 0;
+  info = info;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for CFRunLoopRun
@@ -47,12 +50,13 @@ CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
                                      CFOptionFlags callBackTypes,
                                      CFSocketCallBack callout,
                                      const CFSocketContext *context) {
-  (void)allocator;
-  (void)sock;
-  (void)callBackTypes;
-  (void)callout;
-  (void)context;
-  return 0;
+  allocator = allocator;
+  sock = sock;
+  callBackTypes = callBackTypes;
+  callout = callout;
+  context = context;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for CFRunLoopAddSource
@@ -61,9 +65,9 @@ CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
  */
 void CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
                         void *mode) {
-  (void)rl;
-  (void)source;
-  (void)mode;
+  rl = rl;
+  source = source;
+  mode = mode;
 }
 
 /** \brief Polyfill for CFRunLoopGetCurrent
@@ -76,7 +80,7 @@ CFRunLoopRef CFRunLoopGetCurrent(void) { return 0; }
  * \return 0 or appropriate
  * default value
  */
-void CFRunLoopStop(CFRunLoopRef rl) { (void)rl; }
+void CFRunLoopStop(CFRunLoopRef rl) { rl = rl; }
 
 /** \brief Polyfill for CFSocketCreateRunLoopSource
  * \return 0 or
@@ -84,10 +88,11 @@ void CFRunLoopStop(CFRunLoopRef rl) { (void)rl; }
  */
 CFRunLoopSourceRef CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
                                                CFSocketRef s, long order) {
-  (void)allocator;
-  (void)s;
-  (void)order;
-  return 0;
+  allocator = allocator;
+  s = s;
+  order = order;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for CFSocketEnableCallBacks
@@ -95,8 +100,8 @@ CFRunLoopSourceRef CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
  * appropriate default value
  */
 void CFSocketEnableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
-  (void)s;
-  (void)callBackTypes;
+  s = s;
+  callBackTypes = callBackTypes;
 }
 
 /** \brief Polyfill for CFSocketDisableCallBacks
@@ -104,19 +109,19 @@ void CFSocketEnableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
  * appropriate default value
  */
 void CFSocketDisableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
-  (void)s;
-  (void)callBackTypes;
+  s = s;
+  callBackTypes = callBackTypes;
 }
 
 /** \brief Polyfill for CFSocketInvalidate
  * \return 0 or appropriate
  * default value
  */
-void CFSocketInvalidate(CFSocketRef s) { (void)s; }
+void CFSocketInvalidate(CFSocketRef s) { s = s; }
 
 /** \brief Polyfill for CFRelease
  * \return 0 or appropriate default
  * value
 
  */
-void CFRelease(void *cf) { (void)cf; }
+void CFRelease(void *cf) { cf = cf; }

@@ -46,11 +46,13 @@ typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;
 
 #else /* _MSC_VER >= 1600 */
+/* clang-format off */
 #include <stdint.h>
 #endif
 
 #else /* !_MSC_VER */
 #include <stdint.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

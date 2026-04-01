@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
+/* clang-format off */
 #include <stddef.h>
+/* clang-format on */
 
 typedef void *CFRunLoopRef;
 typedef void *CFSocketRef;

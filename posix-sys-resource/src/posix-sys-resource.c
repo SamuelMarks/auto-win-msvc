@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "posix-sys-resource.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -9,6 +10,7 @@
 #include <psapi.h>
 #include <stdio.h>
 #include <winsock2.h>
+/* clang-format on */
 
 /** \brief posix_getrusage function. */
 int posix_getrusage(int who, struct rusage *usage) {

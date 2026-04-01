@@ -18,11 +18,12 @@ uint64_t mach_absolute_time(void) { return 0; }
 kern_return_t task_info(task_t target_task, task_flavor_t flavor,
                         task_info_t task_info_out,
                         mach_msg_type_number_t *task_info_outCnt) {
-  (void)target_task;
-  (void)flavor;
-  (void)task_info_out;
-  (void)task_info_outCnt;
-  return 0;
+  target_task = target_task;
+  flavor = flavor;
+  task_info_out = task_info_out;
+  task_info_outCnt = task_info_outCnt;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for mach_task_self
@@ -36,8 +37,9 @@ task_t mach_task_self(void) { return 0; }
  * default value
  */
 kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
-  (void)target_tport;
-  (void)pid;
-  (void)t;
-  return 0;
+  target_tport = target_tport;
+  pid = pid;
+  t = t;
+  errno = ENOSYS;
+  return -1;
 }

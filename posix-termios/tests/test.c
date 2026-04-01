@@ -3,9 +3,11 @@
 #pragma warning(disable : 4127) /* conditional expression is constant */
 #endif
 
+/* clang-format off */
 #include "greatest.h"
 #include "posix-termios.h"
 #include <stdio.h>
+/* clang-format on */
 
 SUITE(posix_termios_suite);
 
@@ -48,7 +50,8 @@ TEST test_tcdrain(void) {
 }
 
 TEST test_tcflow(void) {
-  ASSERT_EQ(0, tcflow(1, TCOOFF));
+  ASSERT_EQ(-1, tcflow(1, TCOOFF));
+  ASSERT_EQ(ENOSYS, errno);
   PASS();
 }
 
@@ -74,7 +77,8 @@ TEST test_tcgetsid(void) {
 }
 
 TEST test_tcsendbreak(void) {
-  ASSERT_EQ(0, tcsendbreak(1, 0));
+  ASSERT_EQ(-1, tcsendbreak(1, 0));
+  ASSERT_EQ(ENOSYS, errno);
   PASS();
 }
 

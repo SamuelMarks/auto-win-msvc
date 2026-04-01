@@ -6,7 +6,9 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

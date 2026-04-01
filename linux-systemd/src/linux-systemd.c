@@ -1,3 +1,7 @@
+#include <errno.h>
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
 /* linux-systemd.c - Strict C89 Implementation */
 
 /* clang-format off */
@@ -10,9 +14,10 @@
 
  */
 int sd_notify(int unset_environment, const char *state) {
-  (void)unset_environment;
-  (void)state;
-  return 0;
+  unset_environment = unset_environment;
+  state = state;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for sd_event_default
@@ -20,8 +25,9 @@ int sd_notify(int unset_environment, const char *state) {
  * default value
  */
 int sd_event_default(sd_event **e) {
-  (void)e;
-  return 0;
+  e = e;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for sd_event_add_io
@@ -30,13 +36,14 @@ int sd_event_default(sd_event **e) {
  */
 int sd_event_add_io(sd_event *e, sd_event_source **s, int fd, uint32_t events,
                     sd_event_io_handler_t callback, void *userdata) {
-  (void)e;
-  (void)s;
-  (void)fd;
-  (void)events;
-  (void)callback;
-  (void)userdata;
-  return 0;
+  e = e;
+  s = s;
+  fd = fd;
+  events = events;
+  callback = callback;
+  userdata = userdata;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for sd_event_loop
@@ -44,8 +51,9 @@ int sd_event_add_io(sd_event *e, sd_event_source **s, int fd, uint32_t events,
  * value
  */
 int sd_event_loop(sd_event *e) {
-  (void)e;
-  return 0;
+  e = e;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief Polyfill for sd_event_unref
@@ -53,6 +61,7 @@ int sd_event_loop(sd_event *e) {
  * default value
  */
 sd_event *sd_event_unref(sd_event *e) {
-  (void)e;
-  return 0;
+  e = e;
+  errno = ENOSYS;
+  return NULL;
 }

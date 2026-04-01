@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "posix-netinet-in.h"
 #include "posix-netinet-tcp.h"
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

@@ -2,7 +2,9 @@
 #ifndef POSIX_TIMES_H
 #define POSIX_TIMES_H
 
+/* clang-format off */
 #include <time.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

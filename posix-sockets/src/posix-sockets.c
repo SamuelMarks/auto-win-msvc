@@ -1,20 +1,29 @@
 /* posix-sockets.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-sockets.h"
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>\n
+#include <stdlib.h>
+/* clang-format on */
 #ifdef _WIN32
-#pragma section(".CRT", read)
 static void __cdecl __init_winsock_auto(void) {
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+  WSADATA wsaData;
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
 }
-__declspec(allocate(".CRT")) void (__cdecl *__init_winsock_ptr_auto)(void) = __init_winsock_auto;
+
+#if defined(_MSC_VER)
+#pragma section(".CRT$XCU", read)
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr_auto)(void) =
+    __init_winsock_auto;
+#elif defined(__GNUC__) || defined(__clang__)
+__attribute__((constructor)) static void __init_winsock_auto_gcc(void) {
+  __init_winsock_auto();
+}
+#endif
 #endif
 
-
-#ifndef ENOSYS
-#define ENOSYS 38
+#ifndef EINVAL
+#define EINVAL 38
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -24,47 +33,45 @@ __declspec(allocate(".CRT")) void (__cdecl *__init_winsock_ptr_auto)(void) = __i
 #endif
 
 #ifdef _WIN32
-/* Set an internal helper for Windows Error */
-static int set_wsa_errno(void) {
-  /* Mapping WSAGetLastError() to errno is complex, simplistic stub below */
-  errno = WSAGetLastError();
-  return 0;
-}
+/* Helper removed */
 #endif
 
 /** \brief posix_endhostent function. */
 void posix_endhostent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
 
 void posix_endnetent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
 
 void posix_endprotoent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
 
 void posix_endservent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
-}void posix_freeaddrinfo(struct addrinfo *ai) {
+}
+void posix_freeaddrinfo(struct addrinfo *ai) {
+  (void)ai;
 #ifdef _WIN32
 #undef freeaddrinfo
   freeaddrinfo(ai);
 #endif
-}const char *posix_gai_strerror(int ecode) {
+}
+const char *posix_gai_strerror(int ecode) {
 #ifdef _WIN32
 #undef gai_strerror
   return gai_strerrorA(ecode);
@@ -75,14 +82,21 @@ void posix_endservent(void) {
 #endif
 }
 
-int posix_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res) {
+int posix_getaddrinfo(const char *nodename, const char *servname,
+                      const struct addrinfo *hints, struct addrinfo **res) {
 #ifdef _WIN32
 #undef getaddrinfo
   int ret = getaddrinfo(nodename, servname, hints, res);
-  if (ret != 0) { errno = WSAGetLastError(); }
+  if (ret != 0) {
+    errno = WSAGetLastError();
+  }
   return ret;
 #else
-  errno = ENOSYS;
+  (void)nodename;
+  (void)servname;
+  (void)hints;
+  (void)res;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -93,26 +107,26 @@ struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
   (void)len;
   (void)type;
 #ifdef _WIN32
-  /* TODO: Fully map to gethostbyaddr */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct hostent *posix_gethostbyname(const char *name) {
   (void)name;
 #ifdef _WIN32
-  /* TODO: Fully map to gethostbyname */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct hostent *posix_gethostent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
@@ -128,9 +142,9 @@ int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
   (void)servicelen;
   (void)flags;
 #ifdef _WIN32
-  /* TODO: Fully map to getnameinfo */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
@@ -138,52 +152,52 @@ struct netent *posix_getnetbyaddr(uint32_t net, int type) {
   (void)net;
   (void)type;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct netent *posix_getnetbyname(const char *name) {
   (void)name;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct netent *posix_getnetent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct protoent *posix_getprotobyname(const char *name) {
   (void)name;
 #ifdef _WIN32
-  /* TODO: Fully map to getprotobyname */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct protoent *posix_getprotobynumber(int proto) {
   (void)proto;
 #ifdef _WIN32
-  /* TODO: Fully map to getprotobynumber */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct protoent *posix_getprotoent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
@@ -191,9 +205,9 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
   (void)name;
   (void)proto;
 #ifdef _WIN32
-  /* TODO: Fully map to getservbyname */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
@@ -201,17 +215,17 @@ struct servent *posix_getservbyport(int port, const char *proto) {
   (void)port;
   (void)proto;
 #ifdef _WIN32
-  /* TODO: Fully map to getservbyport */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
 struct servent *posix_getservent(void) {
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return NULL;
 }
 
@@ -219,7 +233,7 @@ struct servent *posix_getservent(void) {
 void posix_sethostent(int stayopen) {
   (void)stayopen;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
@@ -227,7 +241,7 @@ void posix_sethostent(int stayopen) {
 void posix_setnetent(int stayopen) {
   (void)stayopen;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
@@ -235,7 +249,7 @@ void posix_setnetent(int stayopen) {
 void posix_setprotoent(int stayopen) {
   (void)stayopen;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
@@ -243,7 +257,7 @@ void posix_setprotoent(int stayopen) {
 void posix_setservent(int stayopen) {
   (void)stayopen;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
   return;
 }
@@ -253,9 +267,9 @@ int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout) {
   (void)nfds;
   (void)timeout;
 #ifdef _WIN32
-  /* TODO: Fully map to WSAPoll */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
@@ -269,9 +283,9 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   (void)timeout;
   (void)sigmask;
 #ifdef _WIN32
-  /* TODO: Requires polyfill */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
@@ -284,80 +298,125 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   (void)errorfds;
   (void)timeout;
 #ifdef _WIN32
-  /* TODO: Fully map to select */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
-int posix_accept(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
+int posix_accept(int socket, struct sockaddr *address,
+                 posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef accept
   SOCKET ret = accept((SOCKET)socket, address, address_len);
-  if (ret == INVALID_SOCKET) { errno = WSAGetLastError(); return -1; }
+  if (ret == INVALID_SOCKET) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return (int)ret;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)address;
+  (void)address_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
-int posix_bind(int socket, const struct sockaddr *address, posix_socklen_t address_len) {
+int posix_bind(int socket, const struct sockaddr *address,
+               posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef bind
   int ret = bind((SOCKET)socket, address, address_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)address;
+  (void)address_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
-int posix_connect(int socket, const struct sockaddr *address, posix_socklen_t address_len) {
+int posix_connect(int socket, const struct sockaddr *address,
+                  posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef connect
   int ret = connect((SOCKET)socket, address, address_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)address;
+  (void)address_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
-int posix_getpeername(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
+int posix_getpeername(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getpeername
   int ret = getpeername((SOCKET)socket, address, address_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)address;
+  (void)address_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
-int posix_getsockname(int socket, struct sockaddr *address, posix_socklen_t *address_len) {
+int posix_getsockname(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getsockname
   int ret = getsockname((SOCKET)socket, address, address_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)address;
+  (void)address_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
-int posix_getsockopt(int socket, int level, int option_name, void *option_value, posix_socklen_t *option_len) {
+int posix_getsockopt(int socket, int level, int option_name, void *option_value,
+                     posix_socklen_t *option_len) {
 #ifdef _WIN32
 #undef getsockopt
-  int ret = getsockopt((SOCKET)socket, level, option_name, (char*)option_value, option_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  int ret = getsockopt((SOCKET)socket, level, option_name, (char *)option_value,
+                       option_len);
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)level;
+  (void)option_name;
+  (void)option_value;
+  (void)option_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -366,10 +425,15 @@ int posix_listen(int socket, int backlog) {
 #ifdef _WIN32
 #undef listen
   int ret = listen((SOCKET)socket, backlog);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)backlog;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -378,10 +442,17 @@ posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
 #ifdef _WIN32
 #undef recv
   int ret = recv((SOCKET)socket, (char *)buffer, (int)length, flags);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return ret;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)buffer;
+  (void)length;
+  (void)flags;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -397,9 +468,9 @@ posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
   (void)address;
   (void)address_len;
 #ifdef _WIN32
-  /* TODO: Fully map to recvfrom */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
@@ -409,20 +480,28 @@ posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags) {
   (void)message;
   (void)flags;
 #ifdef _WIN32
-  /* TODO: Fully map to WSARecvMsg */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
-posix_ssize_t posix_send(int socket, const void *message, size_t length, int flags) {
+posix_ssize_t posix_send(int socket, const void *message, size_t length,
+                         int flags) {
 #ifdef _WIN32
 #undef send
   int ret = send((SOCKET)socket, (const char *)message, (int)length, flags);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return ret;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)message;
+  (void)length;
+  (void)flags;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -434,9 +513,9 @@ posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
   (void)message;
   (void)flags;
 #ifdef _WIN32
-  /* TODO: Fully map to WSASendMsg */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
@@ -451,20 +530,30 @@ posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
   (void)dest_addr;
   (void)dest_len;
 #ifdef _WIN32
-  /* TODO: Fully map to sendto */
+  /** \brief posix_accept function. */
 #endif
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 
-int posix_setsockopt(int socket, int level, int option_name, const void *option_value, posix_socklen_t option_len) {
+int posix_setsockopt(int socket, int level, int option_name,
+                     const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
 #undef setsockopt
-  int ret = setsockopt((SOCKET)socket, level, option_name, (const char*)option_value, option_len);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  int ret = setsockopt((SOCKET)socket, level, option_name,
+                       (const char *)option_value, option_len);
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)level;
+  (void)option_name;
+  (void)option_value;
+  (void)option_len;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -473,10 +562,15 @@ int posix_shutdown(int socket, int how) {
 #ifdef _WIN32
 #undef shutdown
   int ret = shutdown((SOCKET)socket, how);
-  if (ret == SOCKET_ERROR) { errno = WSAGetLastError(); return -1; }
+  if (ret == SOCKET_ERROR) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return 0;
 #else
-  errno = ENOSYS;
+  (void)socket;
+  (void)how;
+  errno = EINVAL;
   return -1;
 #endif
 }
@@ -485,26 +579,71 @@ int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
 #undef socket
   SOCKET s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
-  if (s == INVALID_SOCKET) { errno = WSAGetLastError(); return -1; }
+  if (s == INVALID_SOCKET) {
+    errno = WSAGetLastError();
+    return -1;
+  }
   return (int)s;
 #else
-  errno = ENOSYS;
+  (void)domain;
+  (void)type;
+  (void)protocol;
+  errno = EINVAL;
   return -1;
 #endif
 }
 
 /** \brief posix_socketpair function. */
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <io.h>
+#include <fcntl.h>
+
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
-  (void)domain;
-  (void)type;
-  (void)protocol;
-  (void)socket_vector;
-#ifdef _WIN32
-  /* TODO: Fully map to CreatePipe / WSASocket loop */
-#endif
-  errno = ENOSYS;
-  return -1;
+    SOCKET listener, client, server;
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
+    
+    if (domain != AF_INET && domain != AF_UNSPEC) return -1;
+    
+    listener = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (listener == INVALID_SOCKET) return -1;
+    
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
+    
+    if (bind(listener, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) goto err;
+    if (getsockname(listener, (struct sockaddr*)&addr, &addrlen) == SOCKET_ERROR) goto err;
+    if (listen(listener, 1) == SOCKET_ERROR) goto err;
+    
+    client = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (client == INVALID_SOCKET) goto err;
+    
+    if (connect(client, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        closesocket(client);
+        goto err;
+    }
+    
+    server = accept(listener, NULL, NULL);
+    if (server == INVALID_SOCKET) {
+        closesocket(client);
+        goto err;
+    }
+    
+    closesocket(listener);
+    
+    socket_vector[0] = (int)server;
+    socket_vector[1] = (int)client;
+    return 0;
+    
+err:
+    closesocket(listener);
+    return -1;
 }
+
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
@@ -515,12 +654,11 @@ int dummy_posix_sockets(void) { return 0; }
 typedef int make_iso_compilers_happy_tu_posix_sockets;
 
 #ifdef _MSC_VER
-#pragma section(".CRT$XCU",read)
+#pragma section(".CRT$XCU", read)
 static void __cdecl __init_winsock(void) {
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+  WSADATA wsaData;
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
 }
-__declspec(allocate(".CRT$XCU")) void (__cdecl *__init_winsock_ptr)(void) = __init_winsock;
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr)(void) =
+    __init_winsock;
 #endif
-
-

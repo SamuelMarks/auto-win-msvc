@@ -3,7 +3,9 @@
 
 #if defined(_MSC_VER)
 
+/* clang-format off */
 #include <string.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "bsd-sys-file.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -8,6 +9,7 @@
 #include <errno.h>
 #include <io.h>
 #include <winsock2.h>
+/* clang-format on */
 
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN

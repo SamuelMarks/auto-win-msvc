@@ -6,6 +6,6 @@ FetchContent_Declare(
 )
 FetchContent_GetProperties(greatest)
 if(NOT greatest_POPULATED)
-    FetchContent_Populate(greatest)
+    FetchContent_MakeAvailable(greatest)
 endif()
 message(STATUS "greatest_SOURCE_DIR: ${greatest_SOURCE_DIR}")

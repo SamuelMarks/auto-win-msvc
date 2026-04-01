@@ -5,12 +5,14 @@
 #pragma GCC system_header
 #include_next <pthread.h>
 #else
+/* clang-format off */
 #include <pthread.h>
 #endif
 #else
 #ifndef PTHREAD_H_SHIM
 #define PTHREAD_H_SHIM
 #include "posix-pthread.h"
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

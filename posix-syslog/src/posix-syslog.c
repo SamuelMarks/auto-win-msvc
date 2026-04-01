@@ -1,9 +1,11 @@
 /* posix-syslog.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-syslog.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #ifdef _WIN32
 /* Typedefs to avoid including windows.h */

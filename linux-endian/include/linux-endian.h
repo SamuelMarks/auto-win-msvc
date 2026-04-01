@@ -2,7 +2,9 @@
 #define LINUX_ENDIAN_H
 
 #if defined(_MSC_VER)
+/* clang-format off */
 #include <stdlib.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

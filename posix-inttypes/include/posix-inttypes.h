@@ -86,11 +86,13 @@
 #endif
 
 #else /* _MSC_VER >= 1800 */
+/* clang-format off */
 #include <inttypes.h>
 #endif /* _MSC_VER < 1800 */
 
 #else /* !_MSC_VER */
 #include <inttypes.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

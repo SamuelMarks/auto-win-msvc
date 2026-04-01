@@ -6,6 +6,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
@@ -55,6 +56,7 @@ struct msghdr {
 #define _TIMESPEC_DEFINED
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <time.h>
+/* clang-format on */
 #else
 struct timespec {
   long tv_sec;
@@ -80,241 +82,241 @@ struct timespec;
 
 /**
  * @brief POSIX endhostent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_endhostent(void);
 /**
  * @brief POSIX endnetent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_endnetent(void);
 /**
  * @brief POSIX endprotoent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_endprotoent(void);
 /**
  * @brief POSIX endservent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_endservent(void);
 /**
  * @brief POSIX freeaddrinfo stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_freeaddrinfo(struct addrinfo *ai);
 /**
  * @brief POSIX gai_strerror stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 const char *posix_gai_strerror(int ecode);
 /**
  * @brief POSIX getaddrinfo stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res);
 /**
  * @brief POSIX gethostbyaddr stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
                                     int type);
 /**
  * @brief POSIX gethostbyname stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct hostent *posix_gethostbyname(const char *name);
 /**
  * @brief POSIX gethostent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct hostent *posix_gethostent(void);
 /**
  * @brief POSIX getnameinfo stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
                       char *node, posix_socklen_t nodelen, char *service,
                       posix_socklen_t servicelen, int flags);
 /**
  * @brief POSIX getnetbyaddr stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct netent *posix_getnetbyaddr(uint32_t net, int type);
 /**
  * @brief POSIX getnetbyname stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct netent *posix_getnetbyname(const char *name);
 /**
  * @brief POSIX getnetent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct netent *posix_getnetent(void);
 /**
  * @brief POSIX getprotobyname stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct protoent *posix_getprotobyname(const char *name);
 /**
  * @brief POSIX getprotobynumber stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct protoent *posix_getprotobynumber(int proto);
 /**
  * @brief POSIX getprotoent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct protoent *posix_getprotoent(void);
 /**
  * @brief POSIX getservbyname stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct servent *posix_getservbyname(const char *name, const char *proto);
 /**
  * @brief POSIX getservbyport stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct servent *posix_getservbyport(int port, const char *proto);
 /**
  * @brief POSIX getservent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 struct servent *posix_getservent(void);
 /**
  * @brief POSIX sethostent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_sethostent(int stayopen);
 /**
  * @brief POSIX setnetent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_setnetent(int stayopen);
 /**
  * @brief POSIX setprotoent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_setprotoent(int stayopen);
 /**
  * @brief POSIX setservent stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 void posix_setservent(int stayopen);
 /**
  * @brief POSIX poll stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout);
 /**
  * @brief POSIX pselect stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                   const struct timespec *timeout, const void *sigmask);
 /**
  * @brief POSIX select stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout);
 /**
  * @brief POSIX accept stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_accept(int socket, struct sockaddr *address,
                  posix_socklen_t *address_len);
 /**
  * @brief POSIX bind stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_bind(int socket, const struct sockaddr *address,
                posix_socklen_t address_len);
 /**
  * @brief POSIX connect stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_connect(int socket, const struct sockaddr *address,
                   posix_socklen_t address_len);
 /**
  * @brief POSIX getpeername stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_getpeername(int socket, struct sockaddr *address,
                       posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockname stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_getsockname(int socket, struct sockaddr *address,
                       posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockopt stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_getsockopt(int socket, int level, int option_name, void *option_value,
                      posix_socklen_t *option_len);
 /**
  * @brief POSIX listen stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_listen(int socket, int backlog);
 /**
  * @brief POSIX recv stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags);
 /**
  * @brief POSIX recvfrom stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
                              struct sockaddr *address,
                              posix_socklen_t *address_len);
 /**
  * @brief POSIX recvmsg stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags);
 /**
  * @brief POSIX send stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_send(int socket, const void *message, size_t length,
                          int flags);
 /**
  * @brief POSIX sendmsg stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
                             int flags);
 /**
  * @brief POSIX sendto stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
                            int flags, const struct sockaddr *dest_addr,
                            posix_socklen_t dest_len);
 /**
  * @brief POSIX setsockopt stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_setsockopt(int socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len);
 /**
  * @brief POSIX shutdown stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_shutdown(int socket, int how);
 /**
  * @brief POSIX socket stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_socket(int domain, int type, int protocol);
 /**
  * @brief POSIX socketpair stub
- * @return mapped value or -1 with errno ENOSYS
+ * @return mapped value or -1 with errno EINVAL
  */
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 
@@ -384,4 +386,3 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 #endif
 
 #endif /* POSIX_SOCKETS_H */
-

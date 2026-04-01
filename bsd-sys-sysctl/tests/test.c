@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "bsd-sys-sysctl.h"
 #include "greatest.h"
+/* clang-format on */
 
 TEST test_dummy(void) { PASS(); }
 

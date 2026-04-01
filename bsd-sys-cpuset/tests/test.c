@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "bsd-sys-cpuset.h"
 #include "greatest.h"
+/* clang-format on */
 
 TEST test_dummy(void) { PASS(); }
 

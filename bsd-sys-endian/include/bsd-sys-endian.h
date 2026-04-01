@@ -4,7 +4,9 @@
 /* Polyfill for <sys/endian.h> */
 
 #if defined(_MSC_VER)
+/* clang-format off */
 #include <linux-endian.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

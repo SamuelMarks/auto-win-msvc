@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include "posix-sys-resource.h"
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

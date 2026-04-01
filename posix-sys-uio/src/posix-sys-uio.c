@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "posix-sys-uio.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -9,6 +10,7 @@
 #include <io.h>
 #include <stdlib.h>
 #include <winsock2.h>
+/* clang-format on */
 
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN

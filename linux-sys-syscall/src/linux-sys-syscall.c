@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "linux-sys-syscall.h"
 #include <stdarg.h>
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
 /** \brief syscall function. */

@@ -1,8 +1,10 @@
+/* clang-format off */
 #include <linux-execinfo.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 /* We try to avoid <windows.h> by forward declaring the necessary parts from
@@ -29,10 +31,9 @@ typedef unsigned long DWORD;
 extern "C" {
 #endif
 
-__declspec(dllimport)
-USHORT __stdcall CaptureStackBackTrace(ULONG FramesToSkip,
-                                       ULONG FramesToCapture, PVOID *BackTrace,
-                                       PULONG BackTraceHash);
+__declspec(dllimport) USHORT __stdcall RtlCaptureStackBackTrace(
+    ULONG FramesToSkip, ULONG FramesToCapture, PVOID *BackTrace,
+    PULONG BackTraceHash);
 __declspec(dllimport) HANDLE __stdcall GetCurrentProcess(void);
 __declspec(dllimport) BOOL __stdcall SymInitialize(HANDLE hProcess,
                                                    const char *UserSearchPath,
@@ -87,7 +88,7 @@ __declspec(dllimport) BOOL __stdcall SymFromAddr(HANDLE hProcess,
 int backtrace(void **buffer, int size) {
   if (size <= 0 || !buffer)
     return 0;
-  return (int)CaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
+  return (int)RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
 }
 
 static int init_sym_done = 0;

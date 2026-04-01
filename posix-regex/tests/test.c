@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include <posix-regex.h>
+/* clang-format on */
 
 TEST simple_test(void) { PASS(); }
 

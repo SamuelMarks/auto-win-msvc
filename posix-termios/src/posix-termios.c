@@ -3,6 +3,7 @@
  * @file posix-termios.c
  * @brief Implementation of POSIX termios API for native MSVC.
  */
+/* clang-format off */
 #include "posix-termios.h"
 
 #include <stdio.h>
@@ -11,6 +12,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <stdlib.h>
+/* clang-format on */
 
 /* Helper definitions to avoid <windows.h> */
 #ifndef WIN32_LEAN_AND_MEAN
@@ -91,11 +93,11 @@ static void __cdecl null_invalid_parameter_handler(
     unsigned int line,
     size_t pReserved /* Changed from uintptr_t to size_t to avoid stdint.h */
 ) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  expression = expression;
+  function = function;
+  file = file;
+  line = line;
+  pReserved = pReserved;
 }
 #endif
 
@@ -193,9 +195,10 @@ int tcdrain(int fd) {
 
 /** \brief tcflow function. */
 int tcflow(int fd, int action) {
-  (void)fd;
-  (void)action;
-  return 0;
+  fd = fd;
+  action = action;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief tcflush function. */
@@ -268,15 +271,16 @@ int tcgetattr(int fd, struct termios *termios_p) {
 
 /** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
-  (void)fd;
+  fd = fd;
   return -1;
 }
 
 /** \brief tcsendbreak function. */
 int tcsendbreak(int fd, int duration) {
-  (void)fd;
-  (void)duration;
-  return 0;
+  fd = fd;
+  duration = duration;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief tcsetattr function. */

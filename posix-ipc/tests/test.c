@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "greatest.h"
 #include "posix-ipc.h"
 #include <stdio.h>
@@ -30,6 +31,7 @@
 
 #else
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 TEST test_ftok(void) {

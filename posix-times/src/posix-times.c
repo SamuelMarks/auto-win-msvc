@@ -1,6 +1,8 @@
 /* posix-times.c - Strict C89 Implementation */
+/* clang-format off */
 #include "sys/times.h"
 #include <stddef.h>
+/* clang-format on */
 
 #if defined(POSIX_TIMES_MSVC)
 

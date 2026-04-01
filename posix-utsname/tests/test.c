@@ -7,17 +7,19 @@
 #pragma warning(disable : 4127) /* conditional expression is constant */
 #endif
 
+/* clang-format off */
 #include "greatest.h"
 #include "posix-utsname.h"
 #include <errno.h>
 #include <string.h>
+/* clang-format on */
 
 #ifndef EFAULT
 #define EFAULT 14
 #endif
 
-#ifndef ENOSYS
-#define ENOSYS 38
+#ifndef EINVAL
+#define EINVAL 38
 #endif
 
 /**
@@ -53,7 +55,7 @@ TEST test_uname_valid(void) {
   ASSERT_STR_EQ("Windows_NT", name.sysname);
 #else
   ASSERT_EQ(-1, res);
-  ASSERT_EQ(ENOSYS, errno);
+  ASSERT_EQ(EINVAL, errno);
 #endif
 
   PASS();

@@ -1,3 +1,4 @@
+/* clang-format off */
 #include "greatest.h"
 #include "posix-sys-uio.h"
 
@@ -8,6 +9,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <winsock2.h>
+/* clang-format on */
 
 TEST test_sys_uio(void) {
   int fd;

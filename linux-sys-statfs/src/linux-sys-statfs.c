@@ -1,4 +1,6 @@
+/* clang-format off */
 #include <linux-sys-statfs.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 
@@ -44,9 +46,9 @@ int statfs(const char *path, struct statfs *buf) {
 
 /** \brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf) {
-  (void)fd; /* Cannot easily get path from standard fd on Windows without handle
+  fd = fd; /* Cannot easily get path from standard fd on Windows without handle
                info */
-  (void)buf;
+  buf = buf;
   return -1;
 }
 

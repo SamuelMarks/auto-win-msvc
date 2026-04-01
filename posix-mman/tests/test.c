@@ -1,4 +1,5 @@
 /* test.c - 100% Test Coverage */
+/* clang-format off */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 
 #include "greatest.h"
 #include "posix-mman.h"
+/* clang-format on */
 
 /* C89 safe printf format for size_t */
 #define NUM_FORMAT "%lu"

@@ -17,6 +17,7 @@
 #if defined(_MSC_VER) || defined(_WIN32)
 
 /* Number formatting shims for long long and size_t on older MSVC runtimes */
+/* clang-format off */
 #include <inttypes.h>
 #ifndef PRId64
 #define PRId64 "I64d"
@@ -85,8 +86,8 @@ typedef unsigned short mode_t;
 /* POSIX Function Shims via Macros */
 #define open _open
 #define close _close
-#define read _read
-#define write _write
+#define read posix_read
+#define write posix_write
 #define lseek _lseek
 #define unlink _unlink
 #define access _access
@@ -138,6 +139,7 @@ typedef unsigned short mode_t;
 #if defined(_MSC_VER)
 #include <intrin.h>
 #include <stdlib.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

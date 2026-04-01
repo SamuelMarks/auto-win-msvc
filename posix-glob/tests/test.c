@@ -1,9 +1,11 @@
 /* test.c - 100% Test Coverage */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-glob.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 /* Greatest setup */
 GREATEST_MAIN_DEFS();

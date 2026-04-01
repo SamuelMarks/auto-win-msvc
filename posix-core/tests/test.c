@@ -1,4 +1,5 @@
 /* test.c - 100% Test Coverage */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-core.h"
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include <stdint.h>
 #else
 #include <stddef.h>
+/* clang-format on */
 #endif
 #endif
 

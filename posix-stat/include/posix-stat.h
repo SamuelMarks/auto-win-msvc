@@ -2,6 +2,7 @@
 #ifndef POSIX_STAT_H
 #define POSIX_STAT_H
 
+/* clang-format off */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -12,6 +13,7 @@
 #else
 #include <fcntl.h>
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 #ifdef __cplusplus

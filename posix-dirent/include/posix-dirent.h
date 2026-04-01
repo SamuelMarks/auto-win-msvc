@@ -9,12 +9,14 @@ extern "C" {
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
+/* clang-format off */
 #include <dirent.h>
 #include <sys/types.h>
 
 #else /* _WIN32 */
 
 #include <stddef.h>
+/* clang-format on */
 
 /* File types for d_type */
 #define DT_UNKNOWN 0

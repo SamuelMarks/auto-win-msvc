@@ -6,8 +6,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
+/* clang-format on */
 #else
 #include_next <netdb.h>
 #endif

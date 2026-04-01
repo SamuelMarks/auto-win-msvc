@@ -1,4 +1,5 @@
 /* posix-time.c - Strict C89 Implementation */
+/* clang-format off */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,7 @@
 #include <minwindef.h>
 #include <sysinfoapi.h>
 #include <timezoneapi.h>
+/* clang-format on */
 #endif
 
 #ifndef FILE_FLAG_BACKUP_SEMANTICS

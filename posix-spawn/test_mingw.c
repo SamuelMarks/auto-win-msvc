@@ -1,6 +1,8 @@
+/* clang-format off */
 #include <sched.h>
 #include <signal.h>
 #include <sys/types.h>
+/* clang-format on */
 
 pid_t p;
 mode_t m;

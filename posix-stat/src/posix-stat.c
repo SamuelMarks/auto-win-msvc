@@ -8,6 +8,7 @@
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
 
+/* clang-format off */
 #include "posix-stat.h"
 #include <errno.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
+/* clang-format on */
 
 #define WINAPI __stdcall
 typedef void *HANDLE;
@@ -106,6 +108,7 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
 #endif /* _WIN32 */
 
 #ifdef _WIN32
+/** \brief fchmod function. */
 int fchmod(int fd, mode_t mode) {
   HANDLE hFile;
   HMODULE hKernel32;
@@ -123,14 +126,14 @@ int fchmod(int fd, mode_t mode) {
 
   hKernel32 = GetModuleHandleA("kernel32.dll");
   if (!hKernel32) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
 
   pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
       hKernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathName) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
 
@@ -162,7 +165,7 @@ int fchmod(int fd, mode_t mode) {
 /** \brief fchmodat function. */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
@@ -172,10 +175,11 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   return _chmod(pathname, mode);
 }
 
+/** \brief fstatat function. */
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
             int flags) {
   if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
@@ -284,7 +288,7 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
     return _mkdir(pathname);
   }
   if (S_ISCHR(mode) || S_ISBLK(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
   hFile = CreateFileA(pathname, GENERIC_WRITE, 0, NULL, CREATE_NEW,
@@ -304,7 +308,7 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
 /** \brief mknodat function. */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
   if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
   return mknod(pathname, mode, dev);
@@ -320,7 +324,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   int omit_a = 0, omit_m = 0;
 
   if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = ENOSYS;
+    errno = EINVAL;
     return -1;
   }
 

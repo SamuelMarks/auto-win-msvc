@@ -3,10 +3,12 @@
 #pragma warning(disable : 4127) /* conditional expression is constant */
 #endif
 
+/* clang-format off */
 #include "greatest.h"
 #include "posix-syslog.h"
 #include <stdio.h>
 #include <string.h>
+/* clang-format on */
 
 /* Test cases */
 

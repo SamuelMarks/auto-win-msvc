@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "bsd-pthread-np.h"
 #include <errno.h>
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 /** \brief pthread_setaffinity_np function. */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
@@ -7,7 +9,7 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
   (void)thread;
   (void)cpusetsize;
   (void)cpuset;
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 #endif

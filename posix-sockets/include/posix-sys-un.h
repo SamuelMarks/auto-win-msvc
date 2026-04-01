@@ -7,12 +7,14 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <afunix.h>
 #include <winsock2.h>
 
 #else
 
 #include <sys/un.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

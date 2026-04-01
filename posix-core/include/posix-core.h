@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+/* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>
 
@@ -68,6 +69,7 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+/* clang-format on */
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -251,7 +253,7 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /** @brief read */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef read
-#define read _read
+#define read posix_read
 #endif
 #else
 /* read */
@@ -259,7 +261,7 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /** @brief write */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef write
-#define write _write
+#define write posix_write
 #endif
 #else
 /* write */
@@ -563,7 +565,14 @@ int fexecve(int fd, char *const argv[], char *const envp[]);
 #endif
 /** @brief fork */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
+#endif
 pid_t fork(void);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #else
 /* fork */
 #endif

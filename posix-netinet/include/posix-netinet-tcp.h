@@ -7,12 +7,14 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #else
 
 #include <netinet/tcp.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

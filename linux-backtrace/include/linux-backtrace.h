@@ -6,6 +6,7 @@
 #if defined(_MSC_VER)
 
 #if _MSC_VER < 1600
+/* clang-format off */
 #include <stddef.h>
 #ifndef _UINTPTR_T_DEFINED
 #ifdef _WIN64
@@ -17,6 +18,7 @@ typedef unsigned int uintptr_t;
 #endif
 #else
 #include <stdint.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,6 +8,7 @@
 #endif
 #endif
 
+/* clang-format off */
 #include "greatest.h"
 #include "posix-dirent.h"
 
@@ -22,6 +23,7 @@
 #else
 #include <sys/stat.h>
 #include <unistd.h>
+/* clang-format on */
 #define MKDIR(path) mkdir(path, 0777)
 #define RMDIR(path) rmdir(path)
 #endif

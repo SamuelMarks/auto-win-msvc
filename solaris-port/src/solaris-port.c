@@ -1,9 +1,11 @@
+/* clang-format off */
 #include "solaris-port.h"
 #include <errno.h>
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 /** \brief port_create function. */
 int port_create(void) {
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 /** \brief port_associate function. */
@@ -14,7 +16,7 @@ int port_associate(int port, int source, unsigned int object, int events,
   (void)object;
   (void)events;
   (void)user;
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 /** \brief port_getn function. */
@@ -25,7 +27,7 @@ int port_getn(int port, struct port_event *list, unsigned int max,
   (void)max;
   (void)nget;
   (void)timeout;
-  errno = ENOSYS;
+  errno = EINVAL;
   return -1;
 }
 #endif

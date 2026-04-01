@@ -8,6 +8,7 @@ extern "C" {
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
+/* clang-format off */
 #include <basetsd.h>
 #include <sys/types.h>
 #include <time.h>
@@ -272,6 +273,7 @@ typedef long blkcnt_t;
 #include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
+/* clang-format on */
 #endif
 
 #endif /* _MSC_VER */
@@ -281,4 +283,3 @@ typedef long blkcnt_t;
 #endif
 
 #endif /* POSIX_TYPES_H */
-

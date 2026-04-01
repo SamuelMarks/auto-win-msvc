@@ -1,8 +1,10 @@
+/* clang-format off */
 #include <stdio.h>
 #include <string.h>
 
 #include "greatest.h"
 #include "posix-dlfcn.h"
+/* clang-format on */
 
 /* Helper to clear errors */
 static void clear_dlerror(void) { dlerror(); }

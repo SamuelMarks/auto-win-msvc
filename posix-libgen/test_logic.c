@@ -1,5 +1,7 @@
+/* clang-format off */
 #include <stdio.h>
 #include <string.h>
+/* clang-format on */
 
 char *my_dirname(char *path) {
   char *p;

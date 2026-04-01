@@ -1,5 +1,11 @@
+#include <errno.h>
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
 /* posix-signal.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-signal.h"
+/* clang-format on */
 
 #if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32)
 
@@ -44,10 +50,11 @@ int posix_signal_sigaddset(sigset_t *set, int signum) {
 int posix_signal_sigaction(int signum, const struct sigaction *act,
                            struct sigaction *oldact) {
   /* Dummy implementation for MSVC porting */
-  (void)signum;
-  (void)act;
-  (void)oldact;
-  return 0;
+  signum = signum;
+  act = act;
+  oldact = oldact;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief posix_signal_kill function. */

@@ -1,6 +1,7 @@
 /* posix-mman.c - Strict C89 Implementation */
 
 #if defined(_WIN32) || defined(_WIN64)
+/* clang-format off */
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
@@ -11,6 +12,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 /* Win32 Type Definitions to avoid windows.h inflating binary size */
 #if defined(_MSC_VER) && !defined(_WIN64)
@@ -122,13 +124,14 @@ typedef unsigned long long posix_mman_uint64_t;
  * madvise - give advice about use of memory
  */
 int madvise(void *addr, size_t length, int advice) {
-  (void)addr;
-  (void)length;
-  (void)advice;
+  addr = addr;
+  length = length;
+  advice = advice;
   /* Windows doesn't have a direct equivalent for most MADV_* flags that works
      on mapped views. It's safe to just return 0 (success) as it's only an
      advice. */
-  return 0;
+  errno = ENOSYS;
+  return -1;
 }
 
 /*
@@ -146,8 +149,9 @@ int mlock(const void *addr, size_t len) {
  * mlockall - lock all process address space
  */
 int mlockall(int flags) {
-  (void)flags;
-  return 0;
+  flags = flags;
+  errno = ENOSYS;
+  return -1;
 }
 
 /*
@@ -399,8 +403,9 @@ int shm_unlink(const char *name) {
 #if defined(__CYGWIN__)
 /** \brief mlockall function. */
 int mlockall(int flags) {
-  (void)flags;
-  return 0;
+  flags = flags;
+  errno = ENOSYS;
+  return -1;
 }
 
 /** \brief munlockall function. */

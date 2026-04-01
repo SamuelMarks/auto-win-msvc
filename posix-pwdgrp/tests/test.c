@@ -8,6 +8,7 @@
 #ifndef _DEFAULT_SOURCE
 #define _DEFAULT_SOURCE
 #endif
+/* clang-format off */
 #include "greatest.h"
 #include "posix-pwdgrp.h"
 #include <string.h>
@@ -22,6 +23,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+/* clang-format on */
 #endif
 
 TEST test_getpwnam(void) {

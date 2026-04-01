@@ -8,6 +8,7 @@ extern "C" {
 
 #if !defined(_WIN32) || defined(__CYGWIN__)
 /* Transparently use native POSIX threads */
+/* clang-format off */
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
@@ -31,6 +32,7 @@ typedef int pthread_spinlock_t;
 /* Win32 Polyfill */
 #include <stddef.h>
 #include <time.h>
+/* clang-format on */
 
 typedef unsigned long pthread_key_t;
 typedef void *pthread_t;
@@ -306,7 +308,7 @@ int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
 /** \brief pthread_rwlockattr_setpshared function. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
 /** \brief pthread_self function. */
-pthread_t win_pthread_self(void);
+pthread_t pthread_self(void);
 /** \brief pthread_setcancelstate function. */
 int pthread_setcancelstate(int state, int *oldstate);
 /** \brief pthread_setcanceltype function. */
@@ -379,8 +381,3 @@ int sem_wait(sem_t *sem);
 #endif
 
 #endif /* POSIX_PTHREAD_H */
-
-
-
-
-

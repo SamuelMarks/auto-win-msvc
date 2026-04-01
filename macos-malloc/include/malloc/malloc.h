@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
+/* clang-format off */
 #include <malloc.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 }

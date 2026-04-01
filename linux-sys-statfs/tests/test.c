@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include <linux-sys-statfs.h>
+/* clang-format on */
 
 TEST simple_test(void) { PASS(); }
 

@@ -2,6 +2,7 @@
 #define _LARGEFILE64_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #define _DARWIN_C_SOURCE
+/* clang-format off */
 #include "greatest.h"
 #include "posix-types.h"
 #include <stddef.h>
@@ -10,6 +11,7 @@
 #ifdef _MSC_VER
 #include <basetsd.h>
 #include <time.h>
+/* clang-format on */
 #endif
 
 #if defined(__APPLE__) || defined(__CYGWIN__)

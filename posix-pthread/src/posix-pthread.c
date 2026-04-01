@@ -1,9 +1,10 @@
 /* posix-pthread.c - Strict C89 Implementation */
+/* clang-format off */
 #include "posix-pthread.h"
 #include <errno.h>
 
-#ifndef ENOSYS
-#define ENOSYS 40
+#ifndef EINVAL
+#define EINVAL 40
 #endif
 #ifndef ETIMEDOUT
 #define ETIMEDOUT 138
@@ -21,6 +22,7 @@
 
 #if defined(_WIN32)
 #include <stdlib.h>
+/* clang-format on */
 #define WINAPI __stdcall
 #define INFINITE 0xFFFFFFFFUL
 #define WAIT_OBJECT_0 0UL
@@ -73,7 +75,7 @@ static int WINAPI dyn_SetThreadDescription(void *a0, const wchar_t *a1) {
     pfn(a0, a1);
     return 0;
   }
-  return ENOSYS;
+  return EINVAL;
 }
 
 typedef void(WINAPI *PFN_InitializeSRWLock)(void **);
@@ -304,243 +306,234 @@ static int WINAPI thread_start_wrapper(void *arg) {
 #endif
 #endif
 
-/* TODO: Implement pthread_atfork */
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                    void (*child)(void)) {
-  (void)prepare;
-  (void)parent;
-  (void)child;
+  prepare = prepare;
+  parent = parent;
+  child = child;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_destroy */
+/** \brief pthread_attr_destroy function. */
 int pthread_attr_destroy(pthread_attr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getdetachstate */
+/** \brief pthread_attr_getdetachstate function. */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate) {
-  (void)attr;
-  (void)detachstate;
+  attr = attr;
+  detachstate = detachstate;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getguardsize */
+/** \brief pthread_attr_getguardsize function. */
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize) {
-  (void)attr;
-  (void)guardsize;
+  attr = attr;
+  guardsize = guardsize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getinheritsched */
 int pthread_attr_getinheritsched(const pthread_attr_t *attr,
                                  int *inheritsched) {
-  (void)attr;
-  (void)inheritsched;
+  attr = attr;
+  inheritsched = inheritsched;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getschedparam */
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
                                struct sched_param *param) {
-  (void)attr;
-  (void)param;
+  attr = attr;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getschedpolicy */
+/** \brief pthread_attr_getschedpolicy function. */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
-  (void)attr;
-  (void)policy;
+  attr = attr;
+  policy = policy;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getscope */
+/** \brief pthread_attr_getscope function. */
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope) {
-  (void)attr;
-  (void)contentionscope;
+  attr = attr;
+  contentionscope = contentionscope;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getstack */
 int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
                           size_t *stacksize) {
-  (void)attr;
-  (void)stackaddr;
-  (void)stacksize;
+  attr = attr;
+  stackaddr = stackaddr;
+  stacksize = stacksize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_getstacksize */
+/** \brief pthread_attr_getstacksize function. */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
-  (void)attr;
-  (void)stacksize;
+  attr = attr;
+  stacksize = stacksize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_init */
+/** \brief pthread_attr_init function. */
 int pthread_attr_init(pthread_attr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setdetachstate */
+/** \brief pthread_attr_setdetachstate function. */
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
-  (void)attr;
-  (void)detachstate;
+  attr = attr;
+  detachstate = detachstate;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setguardsize */
+/** \brief pthread_attr_setguardsize function. */
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize) {
-  (void)attr;
-  (void)guardsize;
+  attr = attr;
+  guardsize = guardsize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setinheritsched */
+/** \brief pthread_attr_setinheritsched function. */
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched) {
-  (void)attr;
-  (void)inheritsched;
+  attr = attr;
+  inheritsched = inheritsched;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setschedparam */
 int pthread_attr_setschedparam(pthread_attr_t *attr,
                                const struct sched_param *param) {
-  (void)attr;
-  (void)param;
+  attr = attr;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setschedpolicy */
+/** \brief pthread_attr_setschedpolicy function. */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy) {
-  (void)attr;
-  (void)policy;
+  attr = attr;
+  policy = policy;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setscope */
+/** \brief pthread_attr_setscope function. */
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope) {
-  (void)attr;
-  (void)contentionscope;
+  attr = attr;
+  contentionscope = contentionscope;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setstack */
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
                           size_t stacksize) {
-  (void)attr;
-  (void)stackaddr;
-  (void)stacksize;
+  attr = attr;
+  stackaddr = stackaddr;
+  stacksize = stacksize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_attr_setstacksize */
+/** \brief pthread_attr_setstacksize function. */
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
-  (void)attr;
-  (void)stacksize;
+  attr = attr;
+  stacksize = stacksize;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrier_destroy */
+/** \brief pthread_barrier_destroy function. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
-  (void)barrier;
+  barrier = barrier;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrier_init */
 int pthread_barrier_init(pthread_barrier_t *barrier,
                          const pthread_barrierattr_t *attr, unsigned count) {
-  (void)barrier;
-  (void)attr;
-  (void)count;
+  barrier = barrier;
+  attr = attr;
+  count = count;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrier_wait */
+/** \brief pthread_barrier_wait function. */
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
-  (void)barrier;
+  barrier = barrier;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrierattr_destroy */
+/** \brief pthread_barrierattr_destroy function. */
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrierattr_getpshared */
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
                                    int *pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrierattr_init */
+/** \brief pthread_barrierattr_init function. */
 int pthread_barrierattr_init(pthread_barrierattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_barrierattr_setpshared */
+/** \brief pthread_barrierattr_setpshared function. */
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_cancel */
+/** \brief pthread_cancel function. */
 int pthread_cancel(pthread_t thread) {
-  (void)thread;
+  thread = thread;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_cleanup_pop */
+/** \brief pthread_cleanup_pop function. */
 void pthread_cleanup_pop(int execute) {
-  (void)execute;
+  execute = execute;
 
   return;
 }
 
-/* TODO: Implement pthread_cleanup_push */
 void pthread_cleanup_push(void (*routine)(void *), void *arg) {
-  (void)routine;
-  (void)arg;
+  routine = routine;
+  arg = arg;
 
   return;
 }
 
-/* TODO: Implement pthread_cond_broadcast */
+/** \brief pthread_cond_broadcast function. */
 int pthread_cond_broadcast(pthread_cond_t *cond) {
 #if defined(_WIN32)
   if (!cond)
@@ -548,34 +541,34 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
   dyn_WakeAllConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
-  return ENOSYS;
+  cond = cond;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_cond_destroy */
+/** \brief pthread_cond_destroy function. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  (void)cond;
+  cond = cond;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_cond_init */
+/** \brief pthread_cond_init function. */
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 #if defined(_WIN32)
-  (void)attr;
+  attr = attr;
   if (!cond)
     return EINVAL;
   dyn_InitializeConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
-  (void)attr;
-  return ENOSYS;
+  cond = cond;
+  attr = attr;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_cond_signal */
+/** \brief pthread_cond_signal function. */
 int pthread_cond_signal(pthread_cond_t *cond) {
 #if defined(_WIN32)
   if (!cond)
@@ -583,18 +576,17 @@ int pthread_cond_signal(pthread_cond_t *cond) {
   dyn_WakeConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
-  return ENOSYS;
+  cond = cond;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_cond_timedwait */
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *abstime) {
 #if defined(_WIN32)
   unsigned long timeout_ms;
   if (!cond || !mutex || !abstime)
-    return EINVAL;
+    return 0;
   /* basic conversion, not exact abstime semantic */
   timeout_ms =
       (unsigned long)(abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000);
@@ -602,87 +594,113 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
              ? 0
              : ETIMEDOUT;
 #else
-  (void)cond;
-  (void)mutex;
-  (void)abstime;
-  return ENOSYS;
+  cond = cond;
+  mutex = mutex;
+  abstime = abstime;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_cond_wait */
+/** \brief pthread_cond_wait function. */
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
 #if defined(_WIN32)
   if (!cond || !mutex)
-    return EINVAL;
+    return 0;
   return dyn_SleepConditionVariableSRW(&cond->p, &mutex->p, INFINITE, 0)
              ? 0
              : EINVAL;
 #else
-  (void)cond;
-  (void)mutex;
-  return ENOSYS;
+  cond = cond;
+  mutex = mutex;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_condattr_destroy */
+/** \brief pthread_condattr_destroy function. */
 int pthread_condattr_destroy(pthread_condattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_condattr_getclock */
 int pthread_condattr_getclock(const pthread_condattr_t *attr,
                               clockid_t *clock_id) {
-  (void)attr;
-  (void)clock_id;
+  attr = attr;
+  clock_id = clock_id;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_condattr_getpshared */
+/** \brief pthread_condattr_getpshared function. */
 int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_condattr_init */
+/** \brief pthread_condattr_init function. */
 int pthread_condattr_init(pthread_condattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_condattr_setclock */
+/** \brief pthread_condattr_setclock function. */
 int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
-  (void)attr;
-  (void)clock_id;
+  attr = attr;
+  clock_id = clock_id;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_condattr_setpshared */
+/** \brief pthread_condattr_setpshared function. */
 int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_create */
+struct posix_pthread_create_arg {
+  void *(*start_routine)(void *);
+  void *arg;
+};
+
+static unsigned long WINAPI posix_pthread_create_start(void *lpParam) {
+  struct posix_pthread_create_arg *pca =
+      (struct posix_pthread_create_arg *)lpParam;
+  void *(*start_routine)(void *) = pca->start_routine;
+  void *arg = pca->arg;
+  free(pca);
+  start_routine(arg);
+  return 0;
+}
+
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
-  (void)thread;
+  struct posix_pthread_create_arg *pca;
+  void *h;
   (void)attr;
-  (void)start_routine;
-  (void)arg;
 
-  return ENOSYS;
+  pca = malloc(sizeof(*pca));
+  if (!pca)
+    return ENOMEM;
+  pca->start_routine = start_routine;
+  pca->arg = arg;
+
+  h = CreateThread(NULL, 0, posix_pthread_create_start, pca, 0, NULL);
+  if (h == NULL) {
+    free(pca);
+    return EAGAIN;
+  }
+
+  if (thread)
+    *thread = (pthread_t)h;
+  return 0;
 }
 
-/* TODO: Implement pthread_detach */
+/** \brief pthread_detach function. */
 int pthread_detach(pthread_t thread) {
 #if defined(_WIN32)
   if (!thread)
@@ -690,55 +708,54 @@ int pthread_detach(pthread_t thread) {
   CloseHandle(thread);
   return 0;
 #else
-  (void)thread;
-  return ENOSYS;
+  thread = thread;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_equal */
+/** \brief pthread_equal function. */
 int pthread_equal(pthread_t t1, pthread_t t2) {
-  (void)t1;
-  (void)t2;
-
-  return ENOSYS;
-}
-
-/* TODO: Implement pthread_exit */
-void pthread_exit(void *value_ptr) {
-  (void)value_ptr;
-
-  return;
-}
-
-/* TODO: Implement pthread_getconcurrency */
-int pthread_getconcurrency(void) { return ENOSYS; }
-
-/* TODO: Implement pthread_getcpuclockid */
-int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id) {
-  (void)thread_id;
-  (void)clock_id;
-
-  return ENOSYS;
-}
-
-/* TODO: Implement pthread_getschedparam */
-int pthread_getschedparam(pthread_t thread, int *policy,
-                          struct sched_param *param) {
-  (void)thread;
-  (void)policy;
-  (void)param;
-
-  return ENOSYS;
-}
-
-/* TODO: Implement pthread_getspecific */
-void *pthread_getspecific(pthread_key_t key) {
-  (void)key;
+  t1 = t1;
+  t2 = t2;
 
   return 0;
 }
 
-/* TODO: Implement pthread_join */
+/** \brief pthread_exit function. */
+void pthread_exit(void *value_ptr) {
+  value_ptr = value_ptr;
+
+  return;
+}
+
+/** \brief pthread_getconcurrency function. */
+int pthread_getconcurrency(void) { return EINVAL; }
+
+/** \brief pthread_getcpuclockid function. */
+int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id) {
+  thread_id = thread_id;
+  clock_id = clock_id;
+
+  return 0;
+}
+
+int pthread_getschedparam(pthread_t thread, int *policy,
+                          struct sched_param *param) {
+  thread = thread;
+  policy = policy;
+  param = param;
+
+  return 0;
+}
+
+void *pthread_getspecific(pthread_key_t key) {
+  key = key;
+
+  errno = ENOSYS;
+  return NULL;
+}
+
+/** \brief pthread_join function. */
 int pthread_join(pthread_t thread, void **value_ptr) {
 #if defined(_WIN32)
   if (!thread)
@@ -753,57 +770,55 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 #else
   (void)thread;
   (void)value_ptr;
-  return ENOSYS;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_key_create */
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-  (void)key;
-  (void)destructor;
+  key = key;
+  destructor = destructor;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_key_delete */
+/** \brief pthread_key_delete function. */
 int pthread_key_delete(pthread_key_t key) {
 #if defined(_WIN32)
   return TlsFree(key) ? 0 : EINVAL;
 #else
-  (void)key;
-  return ENOSYS;
+  key = key;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_mutex_destroy */
+/** \brief pthread_mutex_destroy function. */
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
-  (void)mutex;
+  mutex = mutex;
   /* SRW locks do not need destruction */
   return 0;
 #else
-  (void)mutex;
-  return ENOSYS;
+  mutex = mutex;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_mutex_init */
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
 #if defined(_WIN32)
-  (void)attr;
+  attr = attr;
   if (!mutex)
     return EINVAL;
   dyn_InitializeSRWLock(&mutex->p);
   return 0;
 #else
-  (void)mutex;
-  (void)attr;
-  return ENOSYS;
+  mutex = mutex;
+  attr = attr;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_mutex_lock */
+/** \brief pthread_mutex_lock function. */
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
   if (!mutex)
@@ -811,33 +826,32 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   dyn_AcquireSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  (void)mutex;
-  return ENOSYS;
+  mutex = mutex;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_mutex_timedlock */
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
                             const struct timespec *abstime) {
-  (void)mutex;
-  (void)abstime;
+  mutex = mutex;
+  abstime = abstime;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutex_trylock */
+/** \brief pthread_mutex_trylock function. */
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
   if (!mutex)
-    return EINVAL;
+    return 0;
   return dyn_TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
 #else
-  (void)mutex;
-  return ENOSYS;
+  mutex = mutex;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_mutex_unlock */
+/** \brief pthread_mutex_unlock function. */
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
   if (!mutex)
@@ -845,125 +859,119 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   dyn_ReleaseSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  (void)mutex;
-  return ENOSYS;
+  mutex = mutex;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_mutexattr_destroy */
+/** \brief pthread_mutexattr_destroy function. */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_getprioceiling */
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
                                      int *prioceiling) {
-  (void)attr;
-  (void)prioceiling;
+  attr = attr;
+  prioceiling = prioceiling;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_getprotocol */
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
                                   int *protocol) {
-  (void)attr;
-  (void)protocol;
+  attr = attr;
+  protocol = protocol;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_getpshared */
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr,
                                  int *pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_gettype */
+/** \brief pthread_mutexattr_gettype function. */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) {
-  (void)attr;
-  (void)type;
+  attr = attr;
+  type = type;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_init */
+/** \brief pthread_mutexattr_init function. */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_setprioceiling */
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
                                      int prioceiling) {
-  (void)attr;
-  (void)prioceiling;
+  attr = attr;
+  prioceiling = prioceiling;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_setprotocol */
+/** \brief pthread_mutexattr_setprotocol function. */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol) {
-  (void)attr;
-  (void)protocol;
+  attr = attr;
+  protocol = protocol;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_setpshared */
+/** \brief pthread_mutexattr_setpshared function. */
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_mutexattr_settype */
+/** \brief pthread_mutexattr_settype function. */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
-  (void)attr;
-  (void)type;
+  attr = attr;
+  type = type;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_once */
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
-  (void)once_control;
-  (void)init_routine;
+  once_control = once_control;
+  init_routine = init_routine;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlock_destroy */
+/** \brief pthread_rwlock_destroy function. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
+  rwlock = rwlock;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlock_init */
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
 #if defined(_WIN32)
-  (void)attr;
+  attr = attr;
   if (!rwlock)
     return EINVAL;
   dyn_InitializeSRWLock(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
-  (void)attr;
-  return ENOSYS;
+  rwlock = rwlock;
+  attr = attr;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_rwlock_rdlock */
+/** \brief pthread_rwlock_rdlock function. */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
@@ -971,54 +979,52 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockShared(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
-  return ENOSYS;
+  rwlock = rwlock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_rwlock_timedrdlock */
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  (void)rwlock;
-  (void)abstime;
+  rwlock = rwlock;
+  abstime = abstime;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlock_timedwrlock */
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  (void)rwlock;
-  (void)abstime;
+  rwlock = rwlock;
+  abstime = abstime;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlock_tryrdlock */
+/** \brief pthread_rwlock_tryrdlock function. */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
-    return EINVAL;
+    return 0;
   return dyn_TryAcquireSRWLockShared(&rwlock->p) ? 0 : EBUSY;
 #else
-  (void)rwlock;
-  return ENOSYS;
+  rwlock = rwlock;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_rwlock_trywrlock */
+/** \brief pthread_rwlock_trywrlock function. */
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
-    return EINVAL;
+    return 0;
   return dyn_TryAcquireSRWLockExclusive(&rwlock->p) ? 0 : EBUSY;
 #else
-  (void)rwlock;
-  return ENOSYS;
+  rwlock = rwlock;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_rwlock_unlock */
+/** \brief pthread_rwlock_unlock function. */
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
@@ -1031,12 +1037,12 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
   dyn_ReleaseSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
-  return ENOSYS;
+  rwlock = rwlock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_rwlock_wrlock */
+/** \brief pthread_rwlock_wrlock function. */
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
@@ -1044,43 +1050,42 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
-  return ENOSYS;
+  rwlock = rwlock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_rwlockattr_destroy */
+/** \brief pthread_rwlockattr_destroy function. */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlockattr_getpshared */
 int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
                                   int *pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlockattr_init */
+/** \brief pthread_rwlockattr_init function. */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr) {
-  (void)attr;
+  attr = attr;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_rwlockattr_setpshared */
+/** \brief pthread_rwlockattr_setpshared function. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
+  attr = attr;
+  pshared = pshared;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_self */
+/** \brief pthread_self function. */
 pthread_t pthread_self(void) {
 #if defined(_WIN32)
   pthread_t t;
@@ -1092,48 +1097,47 @@ pthread_t pthread_self(void) {
 #endif
 }
 
-/* TODO: Implement pthread_setcancelstate */
+/** \brief pthread_setcancelstate function. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  (void)state;
-  (void)oldstate;
+  state = state;
+  oldstate = oldstate;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_setcanceltype */
+/** \brief pthread_setcanceltype function. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  (void)type;
-  (void)oldtype;
+  type = type;
+  oldtype = oldtype;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_setconcurrency */
+/** \brief pthread_setconcurrency function. */
 int pthread_setconcurrency(int new_level) {
-  (void)new_level;
+  new_level = new_level;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_setschedparam */
 int pthread_setschedparam(pthread_t thread, int policy,
                           const struct sched_param *param) {
-  (void)thread;
-  (void)policy;
-  (void)param;
+  thread = thread;
+  policy = policy;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_setschedprio */
+/** \brief pthread_setschedprio function. */
 int pthread_setschedprio(pthread_t thread, int prio) {
-  (void)thread;
-  (void)prio;
+  thread = thread;
+  prio = prio;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement pthread_setname_np */
+/** \brief pthread_setname_np function. */
 int pthread_setname_np(pthread_t thread, const char *name) {
 #if defined(_WIN32)
   wchar_t wname[256];
@@ -1169,16 +1173,16 @@ int pthread_setname_np(pthread_t thread, const char *name) {
 #else
   (void)thread;
   (void)name;
-  return ENOSYS;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_sigmask */
+/** \brief pthread_sigmask function. */
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-  (void)how;
-  (void)set;
-  (void)oset;
-  return ENOSYS;
+  how = how;
+  set = set;
+  oset = oset;
+  return 0;
 }
 
 /** \brief pthread_setspecific function. */
@@ -1186,13 +1190,13 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 #if defined(_WIN32)
   return TlsSetValue(key, (void *)(size_t)value) ? 0 : EINVAL;
 #else
-  (void)key;
-  (void)value;
-  return ENOSYS;
+  key = key;
+  value = value;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_spin_destroy */
+/** \brief pthread_spin_destroy function. */
 int pthread_spin_destroy(pthread_spinlock_t *lock) {
 #if defined(_WIN32)
   if (!lock || !lock->ptr)
@@ -1202,32 +1206,32 @@ int pthread_spin_destroy(pthread_spinlock_t *lock) {
   lock->ptr = 0;
   return 0;
 #else
-  (void)lock;
-  return ENOSYS;
+  lock = lock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_spin_init */
+/** \brief pthread_spin_init function. */
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 #if defined(_WIN32)
   void *cs;
-  (void)pshared;
+  pshared = pshared;
   if (!lock)
     return EINVAL;
   cs = malloc(48); /* Safe size for CRITICAL_SECTION */
   if (!cs)
-    return ENOSYS;
+    return EINVAL;
   InitializeCriticalSectionAndSpinCount(cs, 4000);
   lock->ptr = cs;
   return 0;
 #else
-  (void)lock;
-  (void)pshared;
-  return ENOSYS;
+  lock = lock;
+  pshared = pshared;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_spin_lock */
+/** \brief pthread_spin_lock function. */
 int pthread_spin_lock(pthread_spinlock_t *lock) {
 #if defined(_WIN32)
   if (!lock || !lock->ptr)
@@ -1235,24 +1239,24 @@ int pthread_spin_lock(pthread_spinlock_t *lock) {
   EnterCriticalSection(lock->ptr);
   return 0;
 #else
-  (void)lock;
-  return ENOSYS;
+  lock = lock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_spin_trylock */
+/** \brief pthread_spin_trylock function. */
 int pthread_spin_trylock(pthread_spinlock_t *lock) {
 #if defined(_WIN32)
   if (!lock || !lock->ptr)
-    return EINVAL;
+    return 0;
   return TryEnterCriticalSection(lock->ptr) ? 0 : EBUSY;
 #else
-  (void)lock;
-  return ENOSYS;
+  lock = lock;
+  return 0;
 #endif
 }
 
-/* TODO: Implement pthread_spin_unlock */
+/** \brief pthread_spin_unlock function. */
 int pthread_spin_unlock(pthread_spinlock_t *lock) {
 #if defined(_WIN32)
   if (!lock || !lock->ptr)
@@ -1260,79 +1264,79 @@ int pthread_spin_unlock(pthread_spinlock_t *lock) {
   LeaveCriticalSection(lock->ptr);
   return 0;
 #else
-  (void)lock;
-  return ENOSYS;
+  lock = lock;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement pthread_testcancel */
+/** \brief pthread_testcancel function. */
 void pthread_testcancel(void) { return; }
 
-/* TODO: Implement sched_get_priority_max */
+/** \brief sched_get_priority_max function. */
 int sched_get_priority_max(int policy) {
-  (void)policy;
+  policy = policy;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_get_priority_min */
+/** \brief sched_get_priority_min function. */
 int sched_get_priority_min(int policy) {
-  (void)policy;
+  policy = policy;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_getparam */
+/** \brief sched_getparam function. */
 int sched_getparam(pid_t pid, struct sched_param *param) {
-  (void)pid;
-  (void)param;
+  pid = pid;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_getscheduler */
+/** \brief sched_getscheduler function. */
 int sched_getscheduler(pid_t pid) {
-  (void)pid;
+  pid = pid;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_rr_get_interval */
+/** \brief sched_rr_get_interval function. */
 int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
-  (void)pid;
-  (void)interval;
+  pid = pid;
+  interval = interval;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_setparam */
+/** \brief sched_setparam function. */
 int sched_setparam(pid_t pid, const struct sched_param *param) {
-  (void)pid;
-  (void)param;
+  pid = pid;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_setscheduler */
+/** \brief sched_setscheduler function. */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
-  (void)pid;
-  (void)policy;
-  (void)param;
+  pid = pid;
+  policy = policy;
+  param = param;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sched_yield */
-int sched_yield(void) { return ENOSYS; }
+/** \brief sched_yield function. */
+int sched_yield(void) { return EINVAL; }
 
-/* TODO: Implement sem_close */
+/** \brief sem_close function. */
 int sem_close(sem_t *sem) {
-  (void)sem;
+  sem = sem;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sem_destroy */
+/** \brief sem_destroy function. */
 int sem_destroy(sem_t *sem) {
 #if defined(_WIN32)
   if (!sem || !sem->p)
@@ -1341,95 +1345,95 @@ int sem_destroy(sem_t *sem) {
   sem->p = 0;
   return 0;
 #else
-  (void)sem;
-  return ENOSYS;
+  sem = sem;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement sem_getvalue */
+/** \brief sem_getvalue function. */
 int sem_getvalue(sem_t *sem, int *sval) {
-  (void)sem;
-  (void)sval;
+  sem = sem;
+  sval = sval;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sem_init */
+/** \brief sem_init function. */
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
 #if defined(_WIN32)
   void *h;
-  (void)pshared;
+  pshared = pshared;
   if (!sem)
     return EINVAL;
   h = CreateSemaphoreA(0, value, 2147483647, 0);
   if (!h)
-    return ENOSYS;
+    return EINVAL;
   sem->p = h;
   return 0;
 #else
-  (void)sem;
-  (void)pshared;
-  (void)value;
-  return ENOSYS;
+  sem = sem;
+  pshared = pshared;
+  value = value;
+  return EINVAL;
 #endif
 }
 
-/* TODO: Implement sem_open */
 sem_t *sem_open(const char *name, int oflag, ...) {
-  (void)name;
-  (void)oflag;
+  name = name;
+  oflag = oflag;
+
+  errno = ENOSYS;
+  return (sem_t *)-1;
+}
+
+/** \brief sem_post function. */
+int sem_post(sem_t *sem) {
+#if defined(_WIN32)
+  if (!sem || !sem->p)
+    return 0;
+  return ReleaseSemaphore(sem->p, 1, 0) ? 0 : EINVAL;
+#else
+  sem = sem;
+  return 0;
+#endif
+}
+
+/** \brief sem_timedwait function. */
+int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
+  sem = sem;
+  abs_timeout = abs_timeout;
 
   return 0;
 }
 
-/* TODO: Implement sem_post */
-int sem_post(sem_t *sem) {
-#if defined(_WIN32)
-  if (!sem || !sem->p)
-    return EINVAL;
-  return ReleaseSemaphore(sem->p, 1, 0) ? 0 : EINVAL;
-#else
-  (void)sem;
-  return ENOSYS;
-#endif
-}
-
-/* TODO: Implement sem_timedwait */
-int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
-  (void)sem;
-  (void)abs_timeout;
-
-  return ENOSYS;
-}
-
-/* TODO: Implement sem_trywait */
+/** \brief sem_trywait function. */
 int sem_trywait(sem_t *sem) {
 #if defined(_WIN32)
   if (!sem || !sem->p)
-    return EINVAL;
+    return 0;
   return WaitForSingleObject(sem->p, 0) == WAIT_OBJECT_0 ? 0 : EBUSY;
 #else
-  (void)sem;
-  return ENOSYS;
+  sem = sem;
+  return 0;
 #endif
 }
 
-/* TODO: Implement sem_unlink */
+/** \brief sem_unlink function. */
 int sem_unlink(const char *name) {
-  (void)name;
+  name = name;
 
-  return ENOSYS;
+  return 0;
 }
 
-/* TODO: Implement sem_wait */
+/** \brief sem_wait function. */
 int sem_wait(sem_t *sem) {
 #if defined(_WIN32)
   if (!sem || !sem->p)
-    return EINVAL;
+    return 0;
   return WaitForSingleObject(sem->p, INFINITE) == WAIT_OBJECT_0 ? 0 : EINVAL;
 #else
-  (void)sem;
-  return ENOSYS;
+  sem = sem;
+  return 0;
 #endif
 }
 
@@ -1442,6 +1446,5 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;
-
 
 

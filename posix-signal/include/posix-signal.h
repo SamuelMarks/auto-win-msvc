@@ -2,8 +2,10 @@
 #ifndef POSIX_SIGNAL_H
 #define POSIX_SIGNAL_H
 
+/* clang-format off */
 #include <signal.h>
 #include <stddef.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

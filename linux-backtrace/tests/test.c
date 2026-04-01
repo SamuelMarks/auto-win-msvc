@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include "linux-backtrace.h"
+/* clang-format on */
 
 TEST test_dummy(void) { PASS(); }
 

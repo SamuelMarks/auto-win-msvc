@@ -1,5 +1,7 @@
 /* solaris-sys-feature-tests implementation */
+/* clang-format off */
 #include "solaris-sys-feature-tests.h"
+/* clang-format on */
 
 /* Dummy function to ensure library compiles */
 int solaris_sys_feature_tests_dummy(void) { return 0; }

@@ -1,46 +1,28 @@
-#include <linux-epoll.h>
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 
-#if (defined(_MSC_VER) && _MSC_VER < 1600) || defined(__MINGW32__) ||          \
-    defined(__MINGW64__)
-#include <errno.h>
+#include <windows.h>
+#include <wepoll.h>
 
-/** \brief epoll_create function. */
-int epoll_create(int size) {
-  (void)size;
-  errno = ENOSYS;
-  return -1;
+int posix_epoll_create(int size) {
+  HANDLE h = epoll_create(size);
+  if (h == NULL) return -1;
+  return (int)(intptr_t)h;
 }
 
-/** \brief epoll_create1 function. */
-int epoll_create1(int flags) {
-  (void)flags;
-  errno = ENOSYS;
-  return -1;
+int posix_epoll_create1(int flags) {
+  HANDLE h = epoll_create1(flags);
+  if (h == NULL) return -1;
+  return (int)(intptr_t)h;
 }
 
-/** \brief epoll_ctl function. */
-int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
-  (void)epfd;
-  (void)op;
-  (void)fd;
-  (void)event;
-  errno = ENOSYS;
-  return -1;
+int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
+  HANDLE hephnd = (HANDLE)(intptr_t)epfd;
+  return epoll_ctl(hephnd, op, (SOCKET)(intptr_t)fd, event);
 }
 
-/** \brief epoll_wait function. */
-int epoll_wait(int epfd, struct epoll_event *events, int maxevents,
-               int timeout) {
-  (void)epfd;
-  (void)events;
-  (void)maxevents;
-  (void)timeout;
-  errno = ENOSYS;
-  return -1;
+int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout) {
+  HANDLE hephnd = (HANDLE)(intptr_t)epfd;
+  return epoll_wait(hephnd, events, maxevents, timeout);
 }
 
-#endif /* _MSC_VER < 1600 */
-
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-typedef int make_iso_compilers_happy_tu_linux_epoll;
+#endif

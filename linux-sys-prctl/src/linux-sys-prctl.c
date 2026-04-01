@@ -1,9 +1,16 @@
+#include <errno.h>
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
+/* clang-format off */
 #include "linux-sys-prctl.h"
+/* clang-format on */
 #if defined(_MSC_VER) && !defined(__clang__)
 /** \brief prctl function. */
 int prctl(int option, ...) {
-  (void)option;
-  return 0;
+  option = option;
+  errno = ENOSYS;
+  return -1;
 }
 #endif
 

@@ -1,4 +1,6 @@
+/* clang-format off */
 #include "bsd-sys-param.h"
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

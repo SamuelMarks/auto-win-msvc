@@ -71,7 +71,8 @@ else()
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef -Wno-unused-parameter)
 endif()
 
-add_library(posix-core src/posix-core.c)
+add_library(posix-core src/posix-core.c
+    src/posix_read_write.c)
 target_include_directories(posix-core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
