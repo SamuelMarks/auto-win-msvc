@@ -119,7 +119,11 @@ if(MSVC AND NOT MSVC_VERSION LESS 1600)
     target_include_directories(linux-epoll PUBLIC ${wepoll_SOURCE_DIR})
 endif()    
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_linux-epoll tests/test.c)
 target_link_libraries(test_linux-epoll PRIVATE linux-epoll greatest)
 add_test(NAME test_linux-epoll COMMAND test_linux-epoll)
+endif()
+
+

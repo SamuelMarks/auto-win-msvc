@@ -100,7 +100,11 @@ endif()
 add_library(posix-regex src/posix-regex.c)
 target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-regex tests/test.c)
 target_link_libraries(test_posix-regex PRIVATE posix-regex greatest)
 add_test(NAME test_posix-regex COMMAND test_posix-regex)
+endif()
+
+

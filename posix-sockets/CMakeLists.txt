@@ -90,9 +90,13 @@ if(WIN32 OR MSVC)
     target_link_libraries(posix-sockets PUBLIC ws2_32)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-sockets tests/test.c)
 target_include_directories(test_posix-sockets PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-sockets PRIVATE posix-sockets)
 add_test(NAME test_posix-sockets COMMAND test_posix-sockets)
+endif()
+
 target_link_libraries(posix-sockets PUBLIC posix-sys-uio)
+

@@ -88,6 +88,7 @@ endif()
 add_library(solaris-sys-feature-tests src/solaris-sys-feature-tests.c)
 target_include_directories(solaris-sys-feature-tests PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_solaris-sys-feature-tests tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_sou
 
 target_link_libraries(test_solaris-sys-feature-tests PRIVATE solaris-sys-feature-tests)
 add_test(NAME test_solaris-sys-feature-tests COMMAND test_solaris-sys-feature-tests)
+endif()
+
+

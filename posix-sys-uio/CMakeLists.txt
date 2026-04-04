@@ -105,7 +105,11 @@ if(MSVC OR WIN32)
     target_link_libraries(posix-sys-uio PUBLIC ws2_32)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-sys-uio tests/test.c)
 target_link_libraries(test_posix-sys-uio PRIVATE posix-sys-uio greatest)
 add_test(NAME test_posix-sys-uio COMMAND test_posix-sys-uio)
+endif()
+
+

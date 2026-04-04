@@ -11,7 +11,11 @@ if(MSVC)
     target_compile_definitions(posix-langinfo PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-langinfo tests/test.c)
 target_link_libraries(test_posix-langinfo posix-langinfo)
 add_test(NAME posix-langinfo_test COMMAND test_posix-langinfo)
+endif()
+
+

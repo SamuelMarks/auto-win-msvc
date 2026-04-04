@@ -11,7 +11,11 @@ if(MSVC)
     target_compile_definitions(macos-malloc PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_macos-malloc tests/test.c)
 target_link_libraries(test_macos-malloc macos-malloc)
 add_test(NAME macos-malloc_test COMMAND test_macos-malloc)
+endif()
+
+

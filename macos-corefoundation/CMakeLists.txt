@@ -43,7 +43,11 @@ add_library(macos-corefoundation src/macos-corefoundation.c)
 target_include_directories(macos-corefoundation PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-corefoundation PUBLIC posix-stdint posix-stdbool)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_macos-corefoundation tests/test.c)
 target_link_libraries(test_macos-corefoundation PRIVATE macos-corefoundation greatest)
 add_test(NAME test_macos-corefoundation COMMAND test_macos-corefoundation)
+endif()
+
+

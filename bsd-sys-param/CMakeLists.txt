@@ -101,7 +101,11 @@ endif()
 add_library(bsd-sys-param src/bsd-sys-param.c)
 target_include_directories(bsd-sys-param PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-sys-param tests/test.c)
 target_link_libraries(test_bsd-sys-param PRIVATE bsd-sys-param greatest)
 add_test(NAME test_bsd-sys-param COMMAND test_bsd-sys-param)
+endif()
+
+

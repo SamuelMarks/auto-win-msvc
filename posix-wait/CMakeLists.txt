@@ -96,3 +96,4 @@ add_executable(test_posix-wait tests/test.c)
 target_link_libraries(test_posix-wait PRIVATE posix-wait)
 target_include_directories(test_posix-wait PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-wait COMMAND test_posix-wait)
+

@@ -106,7 +106,11 @@ if(MSVC OR WIN32)
     target_link_libraries(posix-arpa PUBLIC ws2_32)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-arpa tests/test.c)
 target_link_libraries(test_posix-arpa PRIVATE posix-arpa greatest)
 add_test(NAME test_posix-arpa COMMAND test_posix-arpa)
+endif()
+
+

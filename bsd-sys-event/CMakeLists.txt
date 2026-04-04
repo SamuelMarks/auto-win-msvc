@@ -88,6 +88,7 @@ endif()
 add_library(bsd-sys-event src/bsd-sys-event.c)
 target_include_directories(bsd-sys-event PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-sys-event tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_bsd-sys-event PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-event PRIVATE bsd-sys-event)
 add_test(NAME test_bsd-sys-event COMMAND test_bsd-sys-event)
+endif()
+
+

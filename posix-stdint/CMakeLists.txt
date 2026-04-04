@@ -88,6 +88,7 @@ endif()
 add_library(posix-stdint src/posix-stdint.c)
 target_include_directories(posix-stdint PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-stdint tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_posix-stdint PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-stdint PRIVATE posix-stdint)
 add_test(NAME test_posix-stdint COMMAND test_posix-stdint)
+endif()
+
+

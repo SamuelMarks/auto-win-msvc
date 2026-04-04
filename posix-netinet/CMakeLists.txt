@@ -105,7 +105,11 @@ if(MSVC OR WIN32)
     target_link_libraries(posix-netinet PUBLIC ws2_32)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-netinet tests/test.c)
 target_link_libraries(test_posix-netinet PRIVATE posix-netinet greatest)
 add_test(NAME test_posix-netinet COMMAND test_posix-netinet)
+endif()
+
+

@@ -101,7 +101,11 @@ endif()
 add_library(posix-strings src/posix-strings.c)
 target_include_directories(posix-strings PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)    
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-strings tests/test.c)
 target_link_libraries(test_posix-strings PRIVATE posix-strings greatest)
 add_test(NAME test_posix-strings COMMAND test_posix-strings)
+endif()
+
+

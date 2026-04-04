@@ -43,7 +43,11 @@ add_library(bsd-vm-param src/bsd-vm-param.c)
 target_include_directories(bsd-vm-param PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(bsd-vm-param PUBLIC posix-stdint posix-stdbool)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-vm-param tests/test.c)
 target_link_libraries(test_bsd-vm-param PRIVATE bsd-vm-param greatest)
 add_test(NAME test_bsd-vm-param COMMAND test_bsd-vm-param)
+endif()
+
+

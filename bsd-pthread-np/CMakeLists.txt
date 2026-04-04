@@ -92,6 +92,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
     target_include_directories(bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-pthread-np tests/test.c)
 
@@ -104,3 +105,6 @@ endif()
 
 target_link_libraries(test_bsd-pthread-np PRIVATE bsd-pthread-np)
 add_test(NAME test_bsd-pthread-np COMMAND test_bsd-pthread-np)
+endif()
+
+

@@ -95,3 +95,4 @@ add_executable(test_posix-termios tests/test.c)
 target_include_directories(test_posix-termios PRIVATE "${greatest_SOURCE_DIR}")
 target_link_libraries(test_posix-termios PRIVATE posix-termios)
 add_test(NAME test_posix-termios COMMAND test_posix-termios)
+

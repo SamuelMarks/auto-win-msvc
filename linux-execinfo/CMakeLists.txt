@@ -104,7 +104,11 @@ if(MSVC)
     target_link_libraries(linux-execinfo PUBLIC dbghelp)
 endif()    
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_linux-execinfo tests/test.c)
 target_link_libraries(test_linux-execinfo PRIVATE linux-execinfo greatest)
 add_test(NAME test_linux-execinfo COMMAND test_linux-execinfo)
+endif()
+
+

@@ -88,6 +88,7 @@ endif()
 add_library(posix-inttypes src/posix-inttypes.c)
 target_include_directories(posix-inttypes PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-inttypes tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_posix-inttypes PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-inttypes PRIVATE posix-inttypes)
 add_test(NAME test_posix-inttypes COMMAND test_posix-inttypes)
+endif()
+
+

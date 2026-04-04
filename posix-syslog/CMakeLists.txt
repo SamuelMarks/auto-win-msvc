@@ -99,3 +99,4 @@ add_executable(test_posix-syslog tests/test.c)
 target_include_directories(test_posix-syslog PRIVATE "${greatest_SOURCE_DIR}")
 target_link_libraries(test_posix-syslog PRIVATE posix-syslog)
 add_test(NAME test_posix-syslog COMMAND test_posix-syslog)
+

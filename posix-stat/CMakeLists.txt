@@ -90,6 +90,7 @@ endif()
 add_library(posix-stat src/posix-stat.c)
 target_include_directories(posix-stat PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-stat tests/test.c)
 
@@ -99,3 +100,5 @@ target_include_directories(test_posix-stat PRIVATE ${greatest_src})
 
 target_link_libraries(test_posix-stat PRIVATE posix-stat)
 add_test(NAME test_posix-stat COMMAND test_posix-stat WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+

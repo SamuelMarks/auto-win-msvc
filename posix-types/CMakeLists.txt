@@ -101,3 +101,4 @@ add_executable(test_posix-types tests/test.c)
 target_include_directories(test_posix-types PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-types PRIVATE posix-types)
 add_test(NAME test_posix-types COMMAND test_posix-types)
+

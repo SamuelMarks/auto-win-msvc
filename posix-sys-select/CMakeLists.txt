@@ -11,7 +11,11 @@ if(MSVC)
     target_compile_definitions(posix-sys-select PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-sys-select tests/test.c)
 target_link_libraries(test_posix-sys-select posix-sys-select)
 add_test(NAME posix-sys-select_test COMMAND test_posix-sys-select)
+endif()
+
+

@@ -88,6 +88,7 @@ endif()
 add_library(solaris-port src/solaris-port.c)
 target_include_directories(solaris-port PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_solaris-port tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_solaris-port PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_solaris-port PRIVATE solaris-port)
 add_test(NAME test_solaris-port COMMAND test_solaris-port)
+endif()
+
+

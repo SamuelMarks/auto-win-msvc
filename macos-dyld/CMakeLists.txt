@@ -43,7 +43,11 @@ add_library(macos-dyld src/macos-dyld.c)
 target_include_directories(macos-dyld PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-dyld PUBLIC posix-stdint posix-stdbool)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_macos-dyld tests/test.c)
 target_link_libraries(test_macos-dyld PRIVATE macos-dyld greatest)
 add_test(NAME test_macos-dyld COMMAND test_macos-dyld)
+endif()
+
+

@@ -43,7 +43,11 @@ add_library(macos-mach src/macos-mach.c)
 target_include_directories(macos-mach PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-mach PUBLIC posix-stdint posix-stdbool)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_macos-mach tests/test.c)
 target_link_libraries(test_macos-mach PRIVATE macos-mach greatest)
 add_test(NAME test_macos-mach COMMAND test_macos-mach)
+endif()
+
+

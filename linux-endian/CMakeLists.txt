@@ -101,7 +101,11 @@ endif()
 add_library(linux-endian src/linux-endian.c)
 target_include_directories(linux-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)    
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_linux-endian tests/test.c)
 target_link_libraries(test_linux-endian PRIVATE linux-endian greatest)
 add_test(NAME test_linux-endian COMMAND test_linux-endian)
+endif()
+
+

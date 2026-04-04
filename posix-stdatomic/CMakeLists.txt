@@ -88,6 +88,7 @@ endif()
 add_library(posix-stdatomic src/posix-stdatomic.c)
 target_include_directories(posix-stdatomic PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-stdatomic tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_posix-stdatomic PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-stdatomic PRIVATE posix-stdatomic)
 add_test(NAME test_posix-stdatomic COMMAND test_posix-stdatomic)
+endif()
+
+

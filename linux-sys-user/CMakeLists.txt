@@ -88,6 +88,7 @@ endif()
 add_library(linux-sys-user src/linux-sys-user.c)
 target_include_directories(linux-sys-user PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_linux-sys-user tests/test.c)
 
@@ -96,3 +97,6 @@ target_include_directories(test_linux-sys-user PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_linux-sys-user PRIVATE linux-sys-user)
 add_test(NAME test_linux-sys-user COMMAND test_linux-sys-user)
+endif()
+
+

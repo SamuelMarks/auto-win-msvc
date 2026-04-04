@@ -88,6 +88,7 @@ endif()
 add_library(bsd-machine-endian src/bsd-machine-endian.c)
 target_include_directories(bsd-machine-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-machine-endian tests/test.c)
 
@@ -97,3 +98,6 @@ target_include_directories(test_bsd-machine-endian PRIVATE ${greatest_source_dir
 
 target_link_libraries(test_bsd-machine-endian PRIVATE bsd-machine-endian)
 add_test(NAME test_bsd-machine-endian COMMAND test_bsd-machine-endian)
+endif()
+
+

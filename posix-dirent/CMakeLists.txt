@@ -87,8 +87,12 @@ endif()
 add_library(posix-dirent src/posix-dirent.c)
 target_include_directories(posix-dirent PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-dirent tests/test.c)
 target_include_directories(test_posix-dirent PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-dirent PRIVATE posix-dirent)
 add_test(NAME test_posix-dirent COMMAND test_posix-dirent)
+endif()
+
+

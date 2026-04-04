@@ -92,3 +92,4 @@ target_include_directories(test_posix-core PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-core PRIVATE posix-core)
 target_link_libraries(posix-core PUBLIC posix-sockets ws2_32)
 add_test(NAME test_posix-core COMMAND test_posix-core)
+

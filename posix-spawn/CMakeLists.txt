@@ -98,3 +98,4 @@ add_executable(test_posix-spawn tests/test.c)
 target_include_directories(test_posix-spawn PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-spawn PRIVATE posix-spawn)
 add_test(NAME test_posix-spawn COMMAND test_posix-spawn)
+

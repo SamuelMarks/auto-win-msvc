@@ -407,7 +407,14 @@ endif()
 
 add_library(auto-win-msvc ${MEGA_SOURCES})
 target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
-target_include_directories(auto-win-msvc PUBLIC ${MEGA_INCLUDES})
+
+set(COMBINED_POSIX_INCLUDES "${CMAKE_BINARY_DIR}/posix_includes")
+file(MAKE_DIRECTORY "${COMBINED_POSIX_INCLUDES}")
+foreach(D IN LISTS MEGA_INCLUDES)
+    file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
+endforeach()
+target_include_directories(auto-win-msvc PUBLIC "${COMBINED_POSIX_INCLUDES}")
+
 
 if(WIN32 OR CYGWIN OR MSYS OR MINGW)
     target_link_libraries(auto-win-msvc PUBLIC ws2_32 dbghelp advapi32 netapi32 userenv ole32 psapi)
@@ -416,5 +423,6 @@ endif()
 if(TARGET wepoll)
     target_link_libraries(auto-win-msvc PUBLIC wepoll)
 endif()
+
 
 
