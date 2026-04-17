@@ -3,7 +3,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 /* clang-format off */
-#include "posix-core.h"
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <direct.h>
 #include <process.h>
@@ -12,6 +11,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "posix-core.h"
 #include <string.h>
 /* clang-format on */
 
@@ -2026,6 +2026,53 @@ useconds_t ualarm(useconds_t value, useconds_t interval) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief vfork function. */
 pid_t vfork(void) { return fork(); }
+#endif
+
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+__declspec(dllimport) int __stdcall MoveFileExA(const char *lpExistingFileName, const char *lpNewFileName, unsigned long dwFlags);
+__declspec(dllimport) int __stdcall CopyFileA(const char *lpExistingFileName, const char *lpNewFileName, int bFailIfExists);
+
+/** \brief rename function (POSIX semantics). */
+int posix_rename(const char *oldpath, const char *newpath) {
+  if (MoveFileExA(oldpath, newpath, 0x00000001 /* MOVEFILE_REPLACE_EXISTING */))
+    return 0;
+
+  if (CopyFileA(oldpath, newpath, 0)) {
+    _unlink(oldpath);
+    return 0;
+  }
+
+  _chmod(newpath, 00200 /* _S_IWRITE */);
+  _unlink(newpath);
+  if (CopyFileA(oldpath, newpath, 0)) {
+    _unlink(oldpath);
+    return 0;
+  }
+
+  errno = EACCES;
+  return -1;
+}
+
+/** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
+int posix_mkstemp(char *tmpl) {
+  void *hFile;
+  int fd;
+  if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0)
+    return -1;
+  
+  hFile = CreateFileA(tmpl, 0x80000000L | 0x40000000L /* GENERIC_READ | GENERIC_WRITE */,
+                      0x00000001 | 0x00000002 | 0x00000004 /* FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE */,
+                      NULL, 2 /* CREATE_ALWAYS */, 0x00000080 /* FILE_ATTRIBUTE_NORMAL */, NULL);
+  if (hFile == (void *)(intptr_t)-1 /* INVALID_HANDLE_VALUE */)
+    return -1;
+    
+  fd = _open_osfhandle((intptr_t)hFile, _O_RDWR);
+  if (fd == -1) {
+    CloseHandle(hFile);
+  }
+  return fd;
+}
 #endif
 
 /* Prevent empty translation unit */

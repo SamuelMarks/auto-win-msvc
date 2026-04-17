@@ -997,6 +997,31 @@ pid_t vfork(void);
 /* strdup */
 #endif
 
+
+/** @brief rename (POSIX semantics) */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#undef rename
+#include <stdio.h>
+#include <io.h>
+int posix_rename(const char *oldpath, const char *newpath);
+#ifndef rename
+#define rename(oldpath, newpath) posix_rename((oldpath), (newpath))
+#endif
+#else
+/* rename is standard on POSIX */
+#endif
+
+/** @brief mkstemp (POSIX semantics with SHARE_DELETE) */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <stdlib.h>
+int posix_mkstemp(char *tmpl);
+#ifndef mkstemp
+#define mkstemp posix_mkstemp
+#endif
+#else
+/* mkstemp is standard on POSIX */
+#endif
+
 #ifdef __cplusplus
 }
 #endif
