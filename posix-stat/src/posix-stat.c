@@ -108,6 +108,77 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
 #endif /* _WIN32 */
 
 #ifdef _WIN32
+#define IS_ABSOLUTE_PATH(p)                                                    \
+  ((p)[0] == '\\' || (p)[0] == '/' ||                                          \
+   (((p)[0] != '\0') && (p)[1] == ':' && ((p)[2] == '\\' || (p)[2] == '/')))
+
+static int posix_stat_resolve_at_path(int dirfd, const char *pathname,
+                                      char *out_path, size_t out_size) {
+  HANDLE hFile;
+  HMODULE hKernel32;
+  typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
+                                                      DWORD);
+  GetFinalPathNameByHandleA_t pGetFinalPathName;
+  DWORD len;
+
+  if (IS_ABSOLUTE_PATH(pathname) || dirfd == AT_FDCWD || dirfd == -1) {
+#if defined(_MSC_VER)
+    strncpy_s(out_path, out_size, pathname, _TRUNCATE);
+#else
+    strncpy(out_path, pathname, out_size - 1);
+    out_path[out_size - 1] = '\0';
+#endif
+    return 0;
+  }
+
+  hFile = (HANDLE)_get_osfhandle(dirfd);
+  if (hFile == INVALID_HANDLE_VALUE) {
+    errno = EBADF;
+    return -1;
+  }
+
+  hKernel32 = GetModuleHandleA("kernel32.dll");
+  if (!hKernel32) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
+      hKernel32, "GetFinalPathNameByHandleA");
+  if (!pGetFinalPathName) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  len = pGetFinalPathName(hFile, out_path, (DWORD)out_size, 0);
+  if (len == 0 || len >= out_size) {
+    errno = EACCES;
+    return -1;
+  }
+
+  /* Strip \\?\ prefix if present */
+  if (strncmp(out_path, "\\\\?\\", 4) == 0) {
+    memmove(out_path, out_path + 4, len - 3);
+    len -= 4;
+  }
+
+  if (len > 0 && out_path[len - 1] != '\\' && out_path[len - 1] != '/') {
+    if (len + 1 < out_size) {
+      out_path[len] = '\\';
+      out_path[len + 1] = '\0';
+      len++;
+    }
+  }
+
+#if defined(_MSC_VER)
+  strncat_s(out_path, out_size, pathname, _TRUNCATE);
+#else
+  strncat(out_path, pathname, out_size - len - 1);
+#endif
+
+  return 0;
+}
+
 /** \brief fchmod function. */
 int fchmod(int fd, mode_t mode) {
   HANDLE hFile;
@@ -164,28 +235,30 @@ int fchmod(int fd, mode_t mode) {
 
 /** \brief fchmodat function. */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
-  if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = EINVAL;
+  char fullpath[MAX_PATH];
+  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
+      0) {
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
     /* _chmod doesn't natively follow symlinks in older Windows,
        but we do the best we can here. */
   }
-  return _chmod(pathname, mode);
+  return _chmod(fullpath, mode);
 }
 
 /** \brief fstatat function. */
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
             int flags) {
-  if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = EINVAL;
+  char fullpath[MAX_PATH];
+  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
+      0) {
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
-    return lstat(pathname, statbuf);
+    return lstat(fullpath, statbuf);
   }
-  return _stat64(pathname, statbuf);
+  return _stat64(fullpath, statbuf);
 }
 
 /** \brief fill_filetime function. */
@@ -307,11 +380,12 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
 
 /** \brief mknodat function. */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
-  if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = EINVAL;
+  char fullpath[MAX_PATH];
+  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
+      0) {
     return -1;
   }
-  return mknod(pathname, mode, dev);
+  return mknod(fullpath, mode, dev);
 }
 
 /** \brief utimensat function. */
@@ -322,9 +396,10 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   FILETIME atime, mtime;
   FILETIME *pAtime = NULL, *pMtime = NULL;
   int omit_a = 0, omit_m = 0;
+  char fullpath[MAX_PATH];
 
-  if (dirfd != AT_FDCWD && dirfd != -1) {
-    errno = EINVAL;
+  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
+      0) {
     return -1;
   }
 
@@ -332,7 +407,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
     attrs |= 0x00200000; /* FILE_FLAG_OPEN_REPARSE_POINT */
   }
 
-  hFile = CreateFileA(pathname, FILE_WRITE_ATTRIBUTES,
+  hFile = CreateFileA(fullpath, FILE_WRITE_ATTRIBUTES,
                       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                       NULL, OPEN_EXISTING, attrs, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {

@@ -57,6 +57,41 @@
 /** \brief wait function. */
 pid_t wait(int *stat_loc) { return waitpid(-1, stat_loc, 0); }
 
+/* Missing functions from TlHelp32 */
+typedef void *WIN_HANDLE;
+typedef unsigned long WIN_DWORD;
+typedef const char *WIN_LPCSTR;
+
+#define WIN_TH32CS_SNAPPROCESS 0x00000002
+typedef struct tagWIN_PROCESSENTRY32 {
+  WIN_DWORD dwSize;
+  WIN_DWORD cntUsage;
+  WIN_DWORD th32ProcessID;
+  WIN_DWORD th32DefaultHeapID;
+  WIN_DWORD th32ModuleID;
+  WIN_DWORD cntThreads;
+  WIN_DWORD th32ParentProcessID;
+  long pcPriClassBase;
+  WIN_DWORD dwFlags;
+  char szExeFile[260];
+} WIN_PROCESSENTRY32;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+__declspec(dllimport)
+WIN_HANDLE __stdcall CreateToolhelp32Snapshot(WIN_DWORD dwFlags,
+                                              WIN_DWORD th32ProcessID);
+__declspec(dllimport) int __stdcall Process32First(WIN_HANDLE hSnapshot,
+                                                   WIN_PROCESSENTRY32 *lppe);
+__declspec(dllimport) int __stdcall Process32Next(WIN_HANDLE hSnapshot,
+                                                  WIN_PROCESSENTRY32 *lppe);
+__declspec(dllimport) WIN_DWORD __stdcall GetCurrentProcessId(void);
+__declspec(dllimport) void __stdcall Sleep(WIN_DWORD dwMilliseconds);
+#ifdef __cplusplus
+}
+#endif
+
 /** \brief waitpid function. */
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
   HANDLE hProcess;
@@ -64,11 +99,89 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
   DWORD exit_code;
 
   if (pid <= 0) {
-    /* On Windows, waiting for any child (-1) or process group is not directly
-     * supported without maintaining an internal list of all child processes.
-     * Return ECHILD to signify no such child process. */
-    errno = ECHILD;
-    return (pid_t)-1;
+    if (pid != -1) {
+      errno = EINVAL;
+      return (pid_t)-1;
+    }
+
+    /* Wait for any child (-1) */
+    while (1) {
+      HANDLE hSnap;
+      WIN_PROCESSENTRY32 pe32;
+      DWORD myPid = GetCurrentProcessId();
+      HANDLE childHandles[64];
+      DWORD childPids[64];
+      DWORD childCount = 0;
+      DWORD i;
+      int exited_found = 0;
+      pid_t ret = -1;
+
+      hSnap = CreateToolhelp32Snapshot(WIN_TH32CS_SNAPPROCESS, 0);
+      if (hSnap == (HANDLE)(size_t)-1) {
+        errno = ECHILD;
+        return (pid_t)-1;
+      }
+
+      pe32.dwSize = sizeof(WIN_PROCESSENTRY32);
+      if (Process32First(hSnap, &pe32)) {
+        do {
+          if (pe32.th32ParentProcessID == myPid) {
+            HANDLE hProc = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION,
+                                       FALSE, pe32.th32ProcessID);
+            if (hProc) {
+              if (childCount < 64) {
+                childHandles[childCount] = hProc;
+                childPids[childCount] = pe32.th32ProcessID;
+                childCount++;
+              } else {
+                CloseHandle(hProc);
+              }
+            }
+          }
+        } while (Process32Next(hSnap, &pe32));
+      }
+      CloseHandle(hSnap);
+
+      if (childCount == 0) {
+        errno = ECHILD;
+        return (pid_t)-1;
+      }
+
+      for (i = 0; i < childCount; i++) {
+        if (WaitForSingleObject(childHandles[i], 0) == WAIT_OBJECT_0) {
+          if (stat_loc != NULL) {
+            if (GetExitCodeProcess(childHandles[i], &exit_code)) {
+              *stat_loc = ((int)(exit_code & 0xFF) << 8);
+            } else {
+              *stat_loc = 0;
+            }
+          }
+          ret = (pid_t)childPids[i];
+          exited_found = 1;
+          break;
+        }
+      }
+
+      if (exited_found) {
+        for (i = 0; i < childCount; i++) {
+          CloseHandle(childHandles[i]);
+        }
+        return ret;
+      }
+
+      if (options & WNOHANG) {
+        for (i = 0; i < childCount; i++) {
+          CloseHandle(childHandles[i]);
+        }
+        return 0;
+      }
+
+      /* Blocking wait, sleep to prevent spinning too fast */
+      for (i = 0; i < childCount; i++) {
+        CloseHandle(childHandles[i]);
+      }
+      Sleep(50);
+    }
   }
 
   hProcess =

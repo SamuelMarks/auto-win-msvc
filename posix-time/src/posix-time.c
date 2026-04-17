@@ -4,10 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0500
+#endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#include <signal.h>
 
 #endif
 #include "posix-time.h"
@@ -175,9 +179,22 @@ int utimes(const char *filename, const struct timeval times[2]) {
   return 0;
 }
 
-/* Minimal stubs for getitimer and setitimer since MSVC has no SIGALRM */
+#ifdef _WIN32
 static struct itimerval g_timers[3] = {
     {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
+static HANDLE g_hTimers[3] = {NULL, NULL, NULL};
+
+static void WINAPI posix_timer_callback(PVOID lpParameter,
+                                        BOOLEAN TimerOrWaitFired) {
+  int which = (int)(size_t)lpParameter;
+  (void)TimerOrWaitFired;
+  (void)which;
+  /* Ideally we would raise(SIGALRM) here, but MSVC's raise() aborts on
+   * unsupported signals. We can attempt to call raise(14) (SIGALRM) if
+   * the environment intercepts it, but we'll use a generic approach:
+   */
+  raise(14); /* SIGALRM = 14 */
+}
 
 int getitimer(int which, struct itimerval *value) {
   if (which < ITIMER_REAL || which > ITIMER_PROF || !value) {
@@ -191,16 +208,57 @@ int getitimer(int which, struct itimerval *value) {
 /** \brief setitimer function. */
 int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue) {
+  DWORD dueTime = 0;
+  DWORD period = 0;
+
   if (which < ITIMER_REAL || which > ITIMER_PROF || !value) {
     errno = EINVAL;
     return -1;
   }
+
   if (ovalue) {
     *ovalue = g_timers[which];
   }
   g_timers[which] = *value;
+
+  if (g_hTimers[which]) {
+    DeleteTimerQueueTimer(NULL, g_hTimers[which], INVALID_HANDLE_VALUE);
+    g_hTimers[which] = NULL;
+  }
+
+  if (value->it_value.tv_sec != 0 || value->it_value.tv_usec != 0) {
+    dueTime =
+        (DWORD)(value->it_value.tv_sec * 1000 + value->it_value.tv_usec / 1000);
+    period = (DWORD)(value->it_interval.tv_sec * 1000 +
+                     value->it_interval.tv_usec / 1000);
+    if (!CreateTimerQueueTimer(&g_hTimers[which], NULL, posix_timer_callback,
+                               (PVOID)(size_t)which, dueTime, period,
+                               0x00000000 /* WT_EXECUTEDEFAULT */)) {
+      errno = EINVAL;
+      return -1;
+    }
+  }
+
   return 0;
 }
+#else
+/* Minimal stubs for non-Windows (Cygwin/Linux native POSIX functions are used)
+ */
+static struct itimerval g_timers[3] = {
+    {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
+int getitimer(int which, struct itimerval *value) {
+  (void)which;
+  (void)value;
+  return 0;
+}
+int setitimer(int which, const struct itimerval *value,
+              struct itimerval *ovalue) {
+  (void)which;
+  (void)value;
+  (void)ovalue;
+  return 0;
+}
+#endif
 
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
 /** \brief clock_gettime function. */

@@ -76,14 +76,14 @@ if(MSVC)
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
     endif()
-    add_compile_options(/WX /wd4127 /wd4204 /wd4221 /wd4706 /wd4055 /wd4201 /wd4214 /wd4116 /wd4100 /wd4090 /wd4098 /wd4701 /wd4267 /wd4244 /wd4054 /wd4152)
+    set(STRICT_C_FLAGS /WX /wd4127 /wd4204 /wd4221 /wd4706 /wd4055 /wd4201 /wd4214 /wd4116 /wd4100 /wd4090 /wd4098 /wd4701 /wd4267 /wd4244 /wd4054 /wd4152)
 else()
-    add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
+    set(STRICT_C_FLAGS -Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
 include(FetchContent)
 
-if(MSVC AND NOT MSVC_VERSION LESS 1600)
+if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
     FetchContent_Declare(
         wepoll
         URL "https://github.com/piscisaureus/wepoll/archive/refs/tags/v1.5.8.zip"
@@ -93,7 +93,9 @@ if(MSVC AND NOT MSVC_VERSION LESS 1600)
         FetchContent_MakeAvailable(wepoll)
     endif()
     add_library(wepoll STATIC ${wepoll_SOURCE_DIR}/wepoll.c)
+    set_target_properties(wepoll PROPERTIES C_STANDARD 99)
     target_include_directories(wepoll PUBLIC ${wepoll_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(wepoll PUBLIC ws2_32)
 endif()
 
 if(NOT TARGET greatest)
@@ -113,17 +115,17 @@ endif()
 
 
 add_library(linux-epoll src/linux-epoll.c)
+target_compile_options(linux-epoll PRIVATE ${STRICT_C_FLAGS})
 target_include_directories(linux-epoll PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-if(MSVC AND NOT MSVC_VERSION LESS 1600)
+if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
     target_link_libraries(linux-epoll PUBLIC wepoll ws2_32)
     target_include_directories(linux-epoll PUBLIC ${wepoll_SOURCE_DIR})
 endif()    
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_linux-epoll tests/test.c)
 target_link_libraries(test_linux-epoll PRIVATE linux-epoll greatest)
+target_compile_options(test_linux-epoll PRIVATE ${STRICT_C_FLAGS})
 add_test(NAME test_linux-epoll COMMAND test_linux-epoll)
-endif()
 
 

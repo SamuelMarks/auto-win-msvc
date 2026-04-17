@@ -1,7 +1,7 @@
 #ifndef POSIX_UCONTEXT_H
 #define POSIX_UCONTEXT_H
 
-#if defined(_MSC_VER)
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 /* clang-format off */
 #include <stddef.h>
@@ -34,11 +34,15 @@ typedef struct posix_ucontext {
 int getcontext(ucontext_t *ucp);
 /** \brief setcontext function. */
 int setcontext(const ucontext_t *ucp);
+/** \brief makecontext function. */
+void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...);
+/** \brief swapcontext function. */
+int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _MSC_VER */
+#endif /* _WIN32 && !__CYGWIN__ */
 
 #endif /* POSIX_UCONTEXT_H */

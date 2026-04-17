@@ -37,19 +37,50 @@ typedef unsigned int WIN_UINT;
 #define WIN_PAGE_EXECUTE_READ 0x20
 #define WIN_PAGE_EXECUTE_READWRITE 0x40
 #define WIN_PAGE_EXECUTE_WRITECOPY 0x80
+#define WIN_PAGE_GUARD 0x100
 
 #define WIN_FILE_MAP_COPY 0x0001
 #define WIN_FILE_MAP_WRITE 0x0002
 #define WIN_FILE_MAP_READ 0x0004
 #define WIN_FILE_MAP_EXECUTE 0x0020
 
+#define WIN_MEM_COMMIT 0x1000
+
 #define WIN_MAX_PATH 260
+
+typedef struct _WIN_MEMORY_BASIC_INFORMATION {
+  WIN_LPVOID BaseAddress;
+  WIN_LPVOID AllocationBase;
+  WIN_DWORD AllocationProtect;
+  size_t RegionSize;
+  WIN_DWORD State;
+  WIN_DWORD Protect;
+  WIN_DWORD Type;
+} WIN_MEMORY_BASIC_INFORMATION;
+
+typedef struct _WIN_SYSTEM_INFO {
+  WIN_DWORD dwOemId;
+  WIN_DWORD dwPageSize;
+  WIN_LPVOID lpMinimumApplicationAddress;
+  WIN_LPVOID lpMaximumApplicationAddress;
+  size_t dwActiveProcessorMask;
+  WIN_DWORD dwNumberOfProcessors;
+  WIN_DWORD dwProcessorType;
+  WIN_DWORD dwAllocationGranularity;
+  unsigned short wProcessorLevel;
+  unsigned short wProcessorRevision;
+} WIN_SYSTEM_INFO;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(_MSC_VER)
+__declspec(dllimport) void WIN_STDCALL
+GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
+__declspec(dllimport) size_t WIN_STDCALL
+VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
+             size_t dwLength);
 __declspec(dllimport) WIN_DWORD WIN_STDCALL
 GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
 __declspec(dllimport) WIN_HANDLE WIN_STDCALL
@@ -64,6 +95,9 @@ __declspec(dllimport) int WIN_STDCALL
 UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
 __declspec(dllimport) int WIN_STDCALL
 FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
+__declspec(dllimport) WIN_LPVOID WIN_STDCALL
+VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flAllocationType,
+             WIN_DWORD flProtect);
 __declspec(dllimport) int WIN_STDCALL VirtualLock(WIN_LPVOID lpAddress,
                                                   size_t dwSize);
 __declspec(dllimport) int WIN_STDCALL VirtualUnlock(WIN_LPVOID lpAddress,
@@ -74,6 +108,12 @@ __declspec(dllimport) int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress,
                                                      WIN_DWORD *lpflOldProtect);
 __declspec(dllimport) int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
 #else
+/** \brief GetSystemInfo function. */
+void WIN_STDCALL GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
+/** \brief VirtualQuery function. */
+size_t WIN_STDCALL VirtualQuery(WIN_LPCVOID lpAddress,
+                                WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
+                                size_t dwLength);
 /** \brief GetTempPathA function. */
 WIN_DWORD WIN_STDCALL GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
 /** \brief CreateFileMappingA function. */
@@ -95,6 +135,10 @@ int WIN_STDCALL UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
 /** \brief FlushViewOfFile function. */
 int WIN_STDCALL FlushViewOfFile(WIN_LPCVOID lpBaseAddress,
                                 size_t dwNumberOfBytesToFlush);
+/** \brief VirtualAlloc function. */
+WIN_LPVOID WIN_STDCALL VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize,
+                                    WIN_DWORD flAllocationType,
+                                    WIN_DWORD flProtect);
 /** \brief VirtualLock function. */
 int WIN_STDCALL VirtualLock(WIN_LPVOID lpAddress, size_t dwSize);
 /** \brief VirtualUnlock function. */
@@ -120,22 +164,80 @@ __extension__ typedef unsigned long long posix_mman_uint64_t;
 typedef unsigned long long posix_mman_uint64_t;
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+__declspec(dllimport) void *__stdcall GetCurrentProcess(void);
+__declspec(dllimport) void *__stdcall GetModuleHandleA(
+    const char *lpModuleName);
+__declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
+                                                     const char *lpProcName);
+
+#ifdef __cplusplus
+}
+#endif
+
 /*
  * madvise - give advice about use of memory
  */
 int madvise(void *addr, size_t length, int advice) {
-  addr = addr;
-  length = length;
-  advice = advice;
-  /* Windows doesn't have a direct equivalent for most MADV_* flags that works
-     on mapped views. It's safe to just return 0 (success) as it's only an
-     advice. */
+#if defined(_WIN32)
+  void *hProcess;
+  void *hKernel32;
+  typedef int(__stdcall * PrefetchVirtualMemory_t)(void *, unsigned long *,
+                                                   void *, unsigned long);
+  PrefetchVirtualMemory_t pPrefetchVirtualMemory = NULL;
+
+  if (!addr || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (advice == 4 /* MADV_DONTNEED */ || advice == 8 /* MADV_FREE */) {
+    /* POSIX advice: the application doesn't need this memory.
+       On Windows, MEM_RESET tells the OS it can discard the pages if needed
+       without writing them to the paging file. It doesn't free the address
+       space. */
+    VirtualAlloc((WIN_LPVOID)(size_t)addr, length, 0x00080000 /* MEM_RESET */,
+                 0x04 /* PAGE_READWRITE */);
+    return 0;
+  }
+
+  if (advice != 3 /* MADV_WILLNEED */) {
+    return 0;
+  }
+
+  hProcess = GetCurrentProcess();
+  hKernel32 = GetModuleHandleA("kernel32.dll");
+
+  if (hKernel32) {
+    pPrefetchVirtualMemory = (PrefetchVirtualMemory_t)(size_t)GetProcAddress(
+        hKernel32, "PrefetchVirtualMemory");
+  }
+
+  if (pPrefetchVirtualMemory) {
+    struct {
+      void *VirtualAddress;
+      size_t NumberOfBytes;
+    } entry;
+    entry.VirtualAddress = addr;
+    entry.NumberOfBytes = length;
+    pPrefetchVirtualMemory(hProcess, (unsigned long *)1, &entry, 0);
+  }
+  return 0;
+#else
+  (void)addr;
+  (void)length;
+  (void)advice;
   errno = ENOSYS;
   return -1;
+#endif
 }
 
 /*
  * mlock - lock a range of process address space
+
  */
 int mlock(const void *addr, size_t len) {
   if (VirtualLock((WIN_LPVOID)(size_t)addr, len) != 0) {
@@ -149,13 +251,48 @@ int mlock(const void *addr, size_t len) {
  * mlockall - lock all process address space
  */
 int mlockall(int flags) {
-  flags = flags;
-  errno = ENOSYS;
-  return -1;
+  WIN_SYSTEM_INFO si;
+  WIN_LPVOID addr = 0;
+  WIN_MEMORY_BASIC_INFORMATION mbi;
+
+  if (flags & ~(1 | 2)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (!(flags & 1 /* MCL_CURRENT */)) {
+    return 0;
+  }
+
+  GetSystemInfo(&si);
+
+  while (addr < si.lpMaximumApplicationAddress) {
+    if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
+      break;
+    }
+
+    if (mbi.State == WIN_MEM_COMMIT && !(mbi.Protect & WIN_PAGE_NOACCESS) &&
+        !(mbi.Protect & WIN_PAGE_GUARD)) {
+      VirtualLock(mbi.BaseAddress, mbi.RegionSize);
+    }
+
+    {
+      WIN_LPVOID next_addr =
+          (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
+      if (next_addr <= addr) {
+        break;
+      }
+      addr = next_addr;
+    }
+  }
+
+  return 0;
 }
 
 /*
  * mmap - map files or devices into memory
+
+
  */
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset) {
@@ -306,7 +443,35 @@ int munlock(const void *addr, size_t len) {
 /*
  * munlockall - unlock all process address space
  */
-int munlockall(void) { return 0; }
+int munlockall(void) {
+  WIN_SYSTEM_INFO si;
+  WIN_LPVOID addr = 0;
+  WIN_MEMORY_BASIC_INFORMATION mbi;
+
+  GetSystemInfo(&si);
+
+  while (addr < si.lpMaximumApplicationAddress) {
+    if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
+      break;
+    }
+
+    if (mbi.State == WIN_MEM_COMMIT && !(mbi.Protect & WIN_PAGE_NOACCESS) &&
+        !(mbi.Protect & WIN_PAGE_GUARD)) {
+      VirtualUnlock(mbi.BaseAddress, mbi.RegionSize);
+    }
+
+    {
+      WIN_LPVOID next_addr =
+          (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
+      if (next_addr <= addr) {
+        break;
+      }
+      addr = next_addr;
+    }
+  }
+
+  return 0;
+}
 
 /*
  * munmap - unmap files or devices
@@ -401,15 +566,11 @@ int shm_unlink(const char *name) {
 #endif
 
 #if defined(__CYGWIN__)
-/** \brief mlockall function. */
-int mlockall(int flags) {
-  flags = flags;
-  errno = ENOSYS;
-  return -1;
-}
+#include <errno.h>
 
-/** \brief munlockall function. */
+/** rief munlockall function. */
 int munlockall(void) { return 0; }
+
 #endif
 
 /* Ensure strict C compliance requires at least one declaration in translation

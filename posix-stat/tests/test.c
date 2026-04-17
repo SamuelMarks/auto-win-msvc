@@ -31,11 +31,152 @@
 #include "posix-stat.h"
 /* clang-format on */
 
-TEST test_fchmodat(void) {
-  /* Execute polyfill for coverage */
-#if defined(_MSC_VER)
-  /* fchmodat stub */
+#ifdef _WIN32
+#include <windows.h>
 #endif
+
+TEST test_fchmodat(void) {
+  int fd;
+  int res;
+#ifdef _WIN32
+  HANDLE hDir = CreateFileA(
+      ".", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  int dirfd = _open_osfhandle((intptr_t)hDir, _O_RDONLY);
+#else
+  int dirfd = _open(".", _O_RDONLY);
+#endif
+
+  fd = _open("fchmodat_test.txt", _O_CREAT | _O_WRONLY, 0666);
+  ASSERT(fd >= 0);
+  _close(fd);
+
+  res = fchmodat(AT_FDCWD, "fchmodat_test.txt", 0644, 0);
+  ASSERT_EQ(0, res);
+
+  res = fchmodat(dirfd, "fchmodat_test.txt", 0666, 0);
+  ASSERT_EQ(0, res);
+
+  _unlink("fchmodat_test.txt");
+  _close(dirfd);
+
+  PASS();
+}
+
+TEST test_fstatat(void) {
+  struct stat st;
+  int res;
+  char abs_path[1024];
+#ifdef _WIN32
+  HANDLE hDir = CreateFileA(
+      ".", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  int dirfd = _open_osfhandle((intptr_t)hDir, _O_RDONLY);
+#else
+  int dirfd = _open(".", _O_RDONLY);
+#endif
+
+  res = fstatat(AT_FDCWD, "CMakeLists.txt", &st, 0);
+  ASSERT_EQ(0, res);
+
+  res = fstatat(dirfd, "CMakeLists.txt", &st, 0);
+  ASSERT_EQ(0, res);
+
+  /* Absolute path test to cover IS_ABSOLUTE_PATH */
+#if defined(_WIN32)
+  if (_fullpath(abs_path, "CMakeLists.txt", sizeof(abs_path))) {
+    res = fstatat(dirfd, abs_path, &st, 0);
+    ASSERT_EQ(0, res);
+  }
+#else
+  if (realpath("CMakeLists.txt", abs_path)) {
+    res = fstatat(dirfd, abs_path, &st, 0);
+    ASSERT_EQ(0, res);
+  }
+#endif
+
+  _close(dirfd);
+
+  PASS();
+}
+
+TEST test_mknodat(void) {
+  int res;
+#ifdef _WIN32
+  HANDLE hDir = CreateFileA(
+      ".", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  int dirfd = _open_osfhandle((intptr_t)hDir, _O_RDONLY);
+#else
+  int dirfd = _open(".", _O_RDONLY);
+#endif
+
+  res = mknodat(AT_FDCWD, "mknodat_test.txt", S_IFREG | 0666, 0);
+  ASSERT_EQ(0, res);
+  _unlink("mknodat_test.txt");
+
+  res = mknodat(dirfd, "mknodat_test.txt", S_IFREG | 0666, 0);
+  ASSERT_EQ(0, res);
+  _unlink("mknodat_test.txt");
+
+  _close(dirfd);
+
+  PASS();
+}
+
+TEST test_utimensat(void) {
+  int fd;
+  int res;
+  struct timespec times[2];
+#ifdef _WIN32
+  HANDLE hDir = CreateFileA(
+      ".", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  int dirfd = _open_osfhandle((intptr_t)hDir, _O_RDONLY);
+#else
+  int dirfd = _open(".", _O_RDONLY);
+#endif
+
+  fd = _open("utimensat_test.txt", _O_CREAT | _O_WRONLY, 0666);
+  ASSERT(fd >= 0);
+  _close(fd);
+
+  times[0].tv_sec = 0;
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_sec = 0;
+  times[1].tv_nsec = UTIME_NOW;
+
+  res = utimensat(AT_FDCWD, "utimensat_test.txt", times, 0);
+  ASSERT_EQ(0, res);
+
+  res = utimensat(dirfd, "utimensat_test.txt", times, 0);
+  ASSERT_EQ(0, res);
+
+  _unlink("utimensat_test.txt");
+  _close(dirfd);
+
+  PASS();
+}
+
+TEST test_futimens(void) {
+  int fd;
+  int res;
+  struct timespec times[2];
+
+  fd = _open("futimens_test.txt", _O_CREAT | _O_WRONLY, 0666);
+  ASSERT(fd >= 0);
+
+  times[0].tv_sec = 0;
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_sec = 0;
+  times[1].tv_nsec = UTIME_NOW;
+
+  res = futimens(fd, times);
+  ASSERT_EQ(0, res);
+
+  _close(fd);
+  _unlink("futimens_test.txt");
+
   PASS();
 }
 
@@ -47,7 +188,6 @@ TEST test_stat(void) {
   ASSERT_EQ(0, stat_res);
   ASSERT(S_ISREG(st.st_mode));
   PASS();
-  RUN_TEST(test_fchmodat);
 }
 
 TEST test_fstat(void) {
@@ -175,6 +315,11 @@ TEST test_mknod_mknodat(void) {
 }
 
 SUITE(posix_stat_suite) {
+  RUN_TEST(test_fchmodat);
+  RUN_TEST(test_fstatat);
+  RUN_TEST(test_mknodat);
+  RUN_TEST(test_utimensat);
+  RUN_TEST(test_futimens);
   RUN_TEST(test_stat);
   RUN_TEST(test_fstat);
   RUN_TEST(test_mkdir_chmod_umask);

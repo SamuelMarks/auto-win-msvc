@@ -162,11 +162,16 @@ struct timespec {
 #define mkdir(path, mode) _mkdir(path)
 
 /* Functions requiring polyfill */
+/** \brief fchmod function. */
 int fchmod(int fd, mode_t mode);
+/** \brief fchmodat function. */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
+/** \brief fstatat function. */
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
             int flags);
+/** \brief futimens function. */
 int futimens(int fd, const struct timespec times[2]);
+/** \brief lstat function. */
 int lstat(const char *pathname, struct _stat64 *statbuf);
 /** \brief mknod function. */
 int mknod(const char *pathname, mode_t mode, unsigned int dev);

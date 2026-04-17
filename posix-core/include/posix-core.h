@@ -191,6 +191,53 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x4000
+#endif
+#ifndef F_GETFD
+#define F_GETFD 1
+#endif
+#ifndef F_SETFD
+#define F_SETFD 2
+#endif
+#ifndef F_GETFL
+#define F_GETFL 3
+#endif
+#ifndef F_SETFL
+#define F_SETFL 4
+#endif
+#ifndef F_GETLK
+#define F_GETLK 5
+#endif
+#ifndef F_SETLK
+#define F_SETLK 6
+#endif
+#ifndef F_SETLKW
+#define F_SETLKW 7
+#endif
+#ifndef F_RDLCK
+#define F_RDLCK 1
+#endif
+#ifndef F_WRLCK
+#define F_WRLCK 2
+#endif
+#ifndef F_UNLCK
+#define F_UNLCK 3
+#endif
+
+#ifndef _FLOCK_DEFINED
+#define _FLOCK_DEFINED
+struct flock {
+  short l_type;
+  short l_whence;
+  off_t l_start;
+  off_t l_len;
+  pid_t l_pid;
+};
+#endif
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef F_OK
 #define F_OK 0
 #endif
@@ -253,6 +300,7 @@ int posix_close(int fd);
 #endif
 /** @brief read */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+int posix_read(int fd, void *buf, unsigned int count);
 #ifndef read
 #define read posix_read
 #endif
@@ -261,6 +309,7 @@ int posix_close(int fd);
 #endif
 /** @brief write */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+int posix_write(int fd, const void *buf, unsigned int count);
 #ifndef write
 #define write posix_write
 #endif
@@ -515,6 +564,10 @@ int chown(const char *pathname, uid_t owner, gid_t group);
 #else
 /* chown */
 #endif
+#ifndef _CS_PATH
+#define _CS_PATH 1
+#endif
+
 /** @brief confstr */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 size_t confstr(int name, char *buf, size_t len);
@@ -577,6 +630,18 @@ pid_t fork(void);
 #else
 /* fork */
 #endif
+#ifndef _PC_LINK_MAX
+#define _PC_LINK_MAX 1
+#define _PC_MAX_CANON 2
+#define _PC_MAX_INPUT 3
+#define _PC_NAME_MAX 4
+#define _PC_PATH_MAX 5
+#define _PC_PIPE_BUF 6
+#define _PC_CHOWN_RESTRICTED 7
+#define _PC_NO_TRUNC 8
+#define _PC_VDISABLE 9
+#endif
+
 /** @brief fpathconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 long fpathconf(int fd, int name);
@@ -632,8 +697,24 @@ int getlogin_r(char *buf, size_t bufsize);
 /* getlogin_r */
 #endif
 /** @brief getopt */
-#if defined(_WIN32) && !defined(__CYGWIN__)
-int getopt(int argc, char *const argv[], const char *optstring);
+#if defined(_WIN32) && !defined(__CYGWIN__) && defined(_MSC_VER)
+#if defined(posix_core_EXPORTS)
+#define POSIX_CORE_API __declspec(dllexport)
+#elif defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+#define POSIX_CORE_API
+#elif defined(posix_core_SHARED) || defined(BUILD_SHARED_LIBS)
+#define POSIX_CORE_API __declspec(dllimport)
+#else
+#define POSIX_CORE_API
+#endif
+
+extern POSIX_CORE_API char *optarg;
+extern POSIX_CORE_API int optind;
+extern POSIX_CORE_API int opterr;
+extern POSIX_CORE_API int optopt;
+POSIX_CORE_API int getopt(int argc, char *const argv[], const char *optstring);
+#elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(_MSC_VER)
+#include <getopt.h>
 #else
 /* getopt */
 #endif
@@ -812,6 +893,16 @@ void sync(void);
 #else
 /* sync */
 #endif
+#ifndef _SC_PAGESIZE
+#define _SC_PAGESIZE 1
+#define _SC_PAGE_SIZE 1
+#define _SC_NPROCESSORS_ONLN 2
+#define _SC_NPROCESSORS_CONF 3
+#define _SC_CLK_TCK 4
+#define _SC_PHYS_PAGES 5
+#define _SC_AVPHYS_PAGES 6
+#endif
+
 /** @brief sysconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 long sysconf(int name);

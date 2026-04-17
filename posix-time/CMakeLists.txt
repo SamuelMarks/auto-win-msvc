@@ -87,12 +87,10 @@ endif()
 add_library(posix-time src/posix-time.c)
 target_include_directories(posix-time PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_posix-time tests/test.c)
 target_link_libraries(test_posix-time PRIVATE posix-time)
 target_include_directories(test_posix-time PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-time COMMAND test_posix-time)
-endif()
 
 

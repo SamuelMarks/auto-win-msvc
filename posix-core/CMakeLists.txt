@@ -87,9 +87,18 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 
+if(NOT TARGET posix-sockets)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets posix-sockets_build EXCLUDE_FROM_ALL)
+endif()
+
 add_executable(test_posix-core tests/test.c)
 target_include_directories(test_posix-core PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-core PRIVATE posix-core)
-target_link_libraries(posix-core PUBLIC posix-sockets ws2_32)
+target_link_libraries(posix-core PUBLIC posix-sockets ws2_32 advapi32)
 add_test(NAME test_posix-core COMMAND test_posix-core)
+
+if(WIN32)
+    # Ensure test can find its dependency DLLs (posix-sockets, posix-sys-uio)
+    set_property(TEST test_posix-core PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sockets>\\;$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
+endif()
 

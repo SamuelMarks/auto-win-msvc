@@ -73,7 +73,30 @@ struct sockaddr;
 struct netent;
 struct protoent;
 struct servent;
+
+#ifdef _WIN32
+#ifndef POLLIN
+struct pollfd {
+  SOCKET fd;
+  short events;
+  short revents;
+};
+#define POLLRDNORM 0x0100
+#define POLLRDBAND 0x0200
+#define POLLIN (POLLRDNORM | POLLRDBAND)
+#define POLLPRI 0x0400
+
+#define POLLWRNORM 0x0010
+#define POLLOUT (POLLWRNORM)
+#define POLLWRBAND 0x0020
+
+#define POLLERR 0x0001
+#define POLLHUP 0x0002
+#define POLLNVAL 0x0004
+#endif
+#endif
 struct pollfd;
+
 typedef struct fd_set fd_set;
 struct timeval;
 struct msghdr;
@@ -205,13 +228,22 @@ void posix_setprotoent(int stayopen);
  */
 void posix_setservent(int stayopen);
 /**
- * @brief POSIX poll stub
- * @return mapped value or -1 with errno EINVAL
+ * @brief POSIX poll implementation
+ * @param fds Array of pollfd structures
+ * @param nfds Number of file descriptors in the array
+ * @param timeout Timeout in milliseconds
+ * @return Number of ready file descriptors, or -1 on error
  */
 int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout);
 /**
- * @brief POSIX pselect stub
- * @return mapped value or -1 with errno EINVAL
+ * @brief POSIX pselect implementation
+ * @param nfds Highest file descriptor plus one (ignored on Windows)
+ * @param readfds fd_set for read events
+ * @param writefds fd_set for write events
+ * @param errorfds fd_set for error events
+ * @param timeout Timeout as a timespec structure
+ * @param sigmask Signal mask (ignored on Windows)
+ * @return Number of ready file descriptors, or -1 on error
  */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                   const struct timespec *timeout, const void *sigmask);

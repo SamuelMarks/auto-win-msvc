@@ -27,6 +27,29 @@
 extern "C" {
 #endif
 
+#ifndef TIOCGWINSZ
+#define TIOCGWINSZ 0x5413
+#endif
+
+#ifndef TIOCSWINSZ
+#define TIOCSWINSZ 0x5414
+#endif
+
+#ifndef FIONREAD
+#define FIONREAD 0x4004667f
+#endif
+
+#ifndef FIONBIO
+#define FIONBIO 0x8004667e
+#endif
+
+struct winsize {
+  unsigned short ws_row;
+  unsigned short ws_col;
+  unsigned short ws_xpixel;
+  unsigned short ws_ypixel;
+};
+
 /**
  * @brief Performs device-specific control functions on a socket.
  *

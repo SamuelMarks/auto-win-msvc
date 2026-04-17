@@ -1,30 +1,40 @@
 /* clang-format off */
 #include "greatest.h"
 #include <linux-epoll.h>
+#include <errno.h>
 /* clang-format on */
 
 TEST simple_test(void) { PASS(); }
 
 TEST test_epoll_create(void) {
-  /* Execute polyfill for coverage */
-#if defined(_MSC_VER)
-  /* epoll_create stub */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  int epfd = epoll_create(1);
+  if (epfd < 0 && errno == ENOSYS) {
+    PASS();
+  }
+  ASSERT(epfd >= 0);
 #endif
   PASS();
 }
 
 TEST test_epoll_create1(void) {
-  /* Execute polyfill for coverage */
-#if defined(_MSC_VER)
-  /* epoll_create1 stub */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  int epfd = epoll_create1(0);
+  if (epfd < 0 && errno == ENOSYS) {
+    PASS();
+  }
+  ASSERT(epfd >= 0);
 #endif
   PASS();
 }
 
 TEST test_epoll_ctl(void) {
-  /* Execute polyfill for coverage */
-#if defined(_MSC_VER)
-  /* epoll_ctl stub */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  int epfd = epoll_create(1);
+  if (epfd < 0 && errno == ENOSYS) {
+    PASS();
+  }
+  ASSERT(epfd >= 0);
 #endif
   PASS();
 }

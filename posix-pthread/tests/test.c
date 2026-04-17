@@ -2,6 +2,20 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-pthread.h"
+#include <errno.h>
+#ifndef EINVAL
+#define EINVAL 22
+#endif
+#ifndef EEXIST
+#define EEXIST 17
+#endif
+#ifndef EAGAIN
+#define EAGAIN 11
+#endif
+#ifndef ETIMEDOUT
+#define ETIMEDOUT 138
+#endif
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 /* clang-format on */
@@ -22,9 +36,9 @@ pthread_spinlock_t spinlock;
 pthread_key_t key;
 pthread_once_t once = PTHREAD_ONCE_INIT;
 pthread_t thread;
-sem_t sem;
+sem_t dummy_sem;
 struct sched_param param;
-struct timespec ts = {0, 0};
+struct timespec dummy_ts = {0, 0};
 int dummy_int = 0;
 size_t dummy_size = 0;
 void *dummy_ptr = NULL;
@@ -39,10 +53,51 @@ void *dummy_thread_func(void *arg) {
   return NULL;
 }
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+static int atfork_prepare_seq = 0;
+static int atfork_parent_seq = 0;
+static int atfork_child_seq = 0;
+
+static int prepare1_called = 0;
+static int prepare2_called = 0;
+static int parent1_called = 0;
+static int parent2_called = 0;
+static int child1_called = 0;
+static int child2_called = 0;
+
+static void prepare1(void) { prepare1_called = ++atfork_prepare_seq; }
+static void prepare2(void) { prepare2_called = ++atfork_prepare_seq; }
+static void parent1(void) { parent1_called = ++atfork_parent_seq; }
+static void parent2(void) { parent2_called = ++atfork_parent_seq; }
+static void child1(void) { child1_called = ++atfork_child_seq; }
+static void child2(void) { child2_called = ++atfork_child_seq; }
+#endif
+
 TEST test_pthread_atfork(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+  int res;
 
-  pthread_atfork(dummy_func, dummy_func, dummy_func);
+  /* Register handlers */
+  res = pthread_atfork(prepare1, parent1, child1);
+  ASSERT_EQ(0, res);
+
+  res = pthread_atfork(prepare2, parent2, child2);
+  ASSERT_EQ(0, res);
+
+  /* Execute prepare handlers (should be LIFO) */
+  posix_pthread_atfork_prepare();
+  ASSERT_EQ(1, prepare2_called); /* Registered last, called first */
+  ASSERT_EQ(2, prepare1_called);
+
+  /* Execute parent handlers (should be FIFO) */
+  posix_pthread_atfork_parent();
+  ASSERT_EQ(1, parent1_called); /* Registered first, called first */
+  ASSERT_EQ(2, parent2_called);
+
+  /* Execute child handlers (should be FIFO) */
+  posix_pthread_atfork_child();
+  ASSERT_EQ(1, child1_called); /* Registered first, called first */
+  ASSERT_EQ(2, child2_called);
 
 #endif
   PASS();
@@ -331,7 +386,7 @@ TEST test_pthread_cond_signal(void) {
 TEST test_pthread_cond_timedwait(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-  /* pthread_cond_timedwait(&cond, &mutex, &ts); */
+  /* pthread_cond_timedwait(&cond, &mutex, &dummy_ts); */
 
 #endif
   PASS();
@@ -529,7 +584,7 @@ TEST test_pthread_mutex_lock(void) {
 TEST test_pthread_mutex_timedlock(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-  pthread_mutex_timedlock(&mutex, &ts);
+  pthread_mutex_timedlock(&mutex, &dummy_ts);
 
 #endif
   PASS();
@@ -682,7 +737,7 @@ TEST test_pthread_rwlock_rdlock(void) {
 TEST test_pthread_rwlock_timedrdlock(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-  pthread_rwlock_timedrdlock(&rwlock, &ts);
+  pthread_rwlock_timedrdlock(&rwlock, &dummy_ts);
 
 #endif
   PASS();
@@ -691,7 +746,7 @@ TEST test_pthread_rwlock_timedrdlock(void) {
 TEST test_pthread_rwlock_timedwrlock(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-  pthread_rwlock_timedwrlock(&rwlock, &ts);
+  pthread_rwlock_timedwrlock(&rwlock, &dummy_ts);
 
 #endif
   PASS();
@@ -934,7 +989,7 @@ TEST test_sched_getscheduler(void) {
 TEST test_sched_rr_get_interval(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-  sched_rr_get_interval(dummy_pid, &ts);
+  sched_rr_get_interval(dummy_pid, &dummy_ts);
 
 #endif
   PASS();
@@ -969,94 +1024,154 @@ TEST test_sched_yield(void) {
 
 TEST test_sem_close(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  sem_close(&sem);
-
+  sem_t *sem = sem_open("/test_sem_close", O_CREAT, 0666, 1);
+  ASSERT(sem != (sem_t *)-1);
+  ASSERT_EQ(0, sem_close(sem));
+  ASSERT_EQ(-1, sem_close(NULL));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_destroy(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  sem_destroy(&sem);
-
+  sem_t sem;
+  ASSERT_EQ(0, sem_init(&sem, 0, 1));
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_destroy(NULL));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_getvalue(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+  sem_t sem;
+  int val = -1;
+  ASSERT_EQ(0, sem_init(&sem, 0, 5));
+  ASSERT_EQ(0, sem_getvalue(&sem, &val));
+  ASSERT_EQ(5, val);
 
-  sem_getvalue(&sem, &dummy_int);
+  ASSERT_EQ(0, sem_wait(&sem));
+  ASSERT_EQ(0, sem_getvalue(&sem, &val));
+  ASSERT_EQ(4, val);
 
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_getvalue(NULL, &val));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_init(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  sem_init(&sem, 0, 0);
-
+  sem_t sem;
+  ASSERT_EQ(0, sem_init(&sem, 0, 0));
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_init(NULL, 0, 0));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_open(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+  sem_t *sem;
+  sem_t *sem2;
+  sem_unlink("/test_sem_open");
+  sem = sem_open("/test_sem_open", O_CREAT | O_EXCL, 0666, 1);
+  ASSERT(sem != (sem_t *)-1);
 
-  sem_open(NULL, 0, 0);
+  /* Already exists */
+  sem2 = sem_open("/test_sem_open", O_CREAT | O_EXCL, 0666, 1);
+  ASSERT_EQ((sem_t *)-1, sem2);
+  ASSERT_EQ(EEXIST, errno);
 
+  /* Open existing */
+  sem2 = sem_open("/test_sem_open", 0);
+  ASSERT(sem2 != (sem_t *)-1);
+
+  /* Clean up */
+  ASSERT_EQ(0, sem_close(sem));
+  ASSERT_EQ(0, sem_close(sem2));
+
+  ASSERT_EQ((sem_t *)-1, sem_open(NULL, 0));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_post(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  sem_post(&sem);
-
+  sem_t sem;
+  int val;
+  ASSERT_EQ(0, sem_init(&sem, 0, 0));
+  ASSERT_EQ(0, sem_post(&sem));
+  ASSERT_EQ(0, sem_getvalue(&sem, &val));
+  ASSERT_EQ(1, val);
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_post(NULL));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_timedwait(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+  sem_t sem;
+  struct timespec ts;
+  ASSERT_EQ(0, sem_init(&sem, 0, 0));
+  ts.tv_sec = 0; /* Past time */
+  ts.tv_nsec = 0;
+  ASSERT_EQ(-1, sem_timedwait(&sem, &ts));
+  ASSERT_EQ(ETIMEDOUT, errno);
 
-  sem_timedwait(&sem, &ts);
+  ASSERT_EQ(0, sem_post(&sem));
+  ASSERT_EQ(0,
+            sem_timedwait(&sem, &ts)); /* Should succeed since it's signaled */
 
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_timedwait(NULL, &ts));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_trywait(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
+  sem_t sem;
+  ASSERT_EQ(0, sem_init(&sem, 0, 0));
+  ASSERT_EQ(-1, sem_trywait(&sem));
+  ASSERT_EQ(EAGAIN, errno);
 
-  /* sem_trywait(&sem); */
+  ASSERT_EQ(0, sem_post(&sem));
+  ASSERT_EQ(0, sem_trywait(&sem));
 
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_trywait(NULL));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
 
 TEST test_sem_unlink(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  sem_unlink(NULL);
-
+  ASSERT_EQ(0, sem_unlink("/test_sem_unlink"));
 #endif
   PASS();
 }
 
 TEST test_sem_wait(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-  /* sem_wait(&sem); */
-
+  sem_t sem;
+  ASSERT_EQ(0, sem_init(&sem, 0, 1));
+  ASSERT_EQ(0, sem_wait(&sem));
+  ASSERT_EQ(0, sem_destroy(&sem));
+  ASSERT_EQ(-1, sem_wait(NULL));
+  ASSERT_EQ(EINVAL, errno);
 #endif
   PASS();
 }
-
 TEST test_dyn_SetThreadDescription(void) {
   /* Execute polyfill for coverage */
 #if defined(_MSC_VER)

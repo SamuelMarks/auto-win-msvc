@@ -48,6 +48,7 @@ __declspec(dllimport) unsigned long WINAPI TlsAlloc(void);
 __declspec(dllimport) int WINAPI TlsFree(unsigned long);
 __declspec(dllimport) void *WINAPI TlsGetValue(unsigned long);
 __declspec(dllimport) int WINAPI TlsSetValue(unsigned long, void *);
+__declspec(dllimport) unsigned long WINAPI GetLastError(void);
 
 __declspec(dllimport) void WINAPI InitializeCriticalSection(void *);
 __declspec(dllimport) void WINAPI DeleteCriticalSection(void *);
@@ -306,208 +307,411 @@ static int WINAPI thread_start_wrapper(void *arg) {
 #endif
 #endif
 
+#ifndef POSIX_PTHREAD_ATFORK_MAX
+#define POSIX_PTHREAD_ATFORK_MAX 128
+#endif
+
+typedef struct posix_pthread_atfork_node {
+  void (*prepare)(void);
+  void (*parent)(void);
+  void (*child)(void);
+  struct posix_pthread_atfork_node *next;
+} posix_pthread_atfork_node_t;
+
+static posix_pthread_atfork_node_t *g_atfork_head = NULL;
+static posix_pthread_atfork_node_t *g_atfork_tail = NULL;
+static pthread_mutex_t g_atfork_mutex = {NULL};
+
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                    void (*child)(void)) {
-  prepare = prepare;
-  parent = parent;
-  child = child;
+  posix_pthread_atfork_node_t *node;
+
+  node = (posix_pthread_atfork_node_t *)malloc(
+      sizeof(posix_pthread_atfork_node_t));
+  if (!node) {
+    return ENOMEM;
+  }
+  node->prepare = prepare;
+  node->parent = parent;
+  node->child = child;
+  node->next = NULL;
+
+  pthread_mutex_lock(&g_atfork_mutex);
+  if (!g_atfork_head) {
+    g_atfork_head = node;
+    g_atfork_tail = node;
+  } else {
+    g_atfork_tail->next = node;
+    g_atfork_tail = node;
+  }
+  pthread_mutex_unlock(&g_atfork_mutex);
 
   return 0;
 }
 
+static void run_prepare_lifo(posix_pthread_atfork_node_t *node) {
+  if (!node)
+    return;
+  run_prepare_lifo(node->next);
+  if (node->prepare) {
+    node->prepare();
+  }
+}
+
+void posix_pthread_atfork_prepare(void) {
+  pthread_mutex_lock(&g_atfork_mutex);
+  run_prepare_lifo(g_atfork_head);
+  pthread_mutex_unlock(&g_atfork_mutex);
+}
+
+void posix_pthread_atfork_parent(void) {
+  posix_pthread_atfork_node_t *curr;
+  pthread_mutex_lock(&g_atfork_mutex);
+  curr = g_atfork_head;
+  while (curr) {
+    if (curr->parent) {
+      curr->parent();
+    }
+    curr = curr->next;
+  }
+  pthread_mutex_unlock(&g_atfork_mutex);
+}
+
+void posix_pthread_atfork_child(void) {
+  posix_pthread_atfork_node_t *curr;
+  pthread_mutex_lock(&g_atfork_mutex);
+  curr = g_atfork_head;
+  while (curr) {
+    if (curr->child) {
+      curr->child();
+    }
+    curr = curr->next;
+  }
+  pthread_mutex_unlock(&g_atfork_mutex);
+}
+
+struct _posix_pthread_attr {
+  int detachstate;
+  size_t stacksize;
+  size_t guardsize;
+  int inheritsched;
+  int schedpolicy;
+  int contentionscope;
+  struct sched_param schedparam;
+  void *stackaddr;
+};
+
 /** \brief pthread_attr_destroy function. */
 int pthread_attr_destroy(pthread_attr_t *attr) {
-  attr = attr;
-
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  free(attr->ptr);
+  attr->ptr = NULL;
   return 0;
 }
 
 /** \brief pthread_attr_getdetachstate function. */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate) {
-  attr = attr;
-  detachstate = detachstate;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !detachstate)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *detachstate = a->detachstate;
   return 0;
 }
 
 /** \brief pthread_attr_getguardsize function. */
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize) {
-  attr = attr;
-  guardsize = guardsize;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !guardsize)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *guardsize = a->guardsize;
   return 0;
 }
 
+/** \brief pthread_attr_getinheritsched function. */
 int pthread_attr_getinheritsched(const pthread_attr_t *attr,
                                  int *inheritsched) {
-  attr = attr;
-  inheritsched = inheritsched;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !inheritsched)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *inheritsched = a->inheritsched;
   return 0;
 }
 
+/** \brief pthread_attr_getschedparam function. */
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
                                struct sched_param *param) {
-  attr = attr;
-  param = param;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !param)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *param = a->schedparam;
   return 0;
 }
 
 /** \brief pthread_attr_getschedpolicy function. */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
-  attr = attr;
-  policy = policy;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !policy)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *policy = a->schedpolicy;
   return 0;
 }
 
 /** \brief pthread_attr_getscope function. */
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope) {
-  attr = attr;
-  contentionscope = contentionscope;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !contentionscope)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *contentionscope = a->contentionscope;
   return 0;
 }
 
+/** \brief pthread_attr_getstack function. */
 int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
                           size_t *stacksize) {
-  attr = attr;
-  stackaddr = stackaddr;
-  stacksize = stacksize;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !stackaddr || !stacksize)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *stackaddr = a->stackaddr;
+  *stacksize = a->stacksize;
   return 0;
 }
 
 /** \brief pthread_attr_getstacksize function. */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
-  (void)attr;
-  if (stacksize) *stacksize = 1048576;
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !stacksize)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  *stacksize = a->stacksize;
   return 0;
 }
 
 /** \brief pthread_attr_init function. */
 int pthread_attr_init(pthread_attr_t *attr) {
-  attr = attr;
-
+  struct _posix_pthread_attr *a;
+  if (!attr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)malloc(sizeof(*a));
+  if (!a)
+    return ENOMEM;
+  a->detachstate = 0; /* PTHREAD_CREATE_JOINABLE */
+  a->stacksize = 0;
+  a->guardsize = 0;
+  a->inheritsched = 0;    /* PTHREAD_INHERIT_SCHED */
+  a->schedpolicy = 0;     /* SCHED_OTHER */
+  a->contentionscope = 0; /* PTHREAD_SCOPE_SYSTEM */
+  a->schedparam.sched_priority = 0;
+  a->stackaddr = NULL;
+  attr->ptr = a;
   return 0;
 }
 
 /** \brief pthread_attr_setdetachstate function. */
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
-  attr = attr;
-  detachstate = detachstate;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  if (detachstate != 0 && detachstate != 1)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->detachstate = detachstate;
   return 0;
 }
 
 /** \brief pthread_attr_setguardsize function. */
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize) {
-  attr = attr;
-  guardsize = guardsize;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->guardsize = guardsize;
   return 0;
 }
 
 /** \brief pthread_attr_setinheritsched function. */
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched) {
-  attr = attr;
-  inheritsched = inheritsched;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->inheritsched = inheritsched;
   return 0;
 }
 
+/** \brief pthread_attr_setschedparam function. */
 int pthread_attr_setschedparam(pthread_attr_t *attr,
                                const struct sched_param *param) {
-  attr = attr;
-  param = param;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr || !param)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->schedparam = *param;
   return 0;
 }
 
 /** \brief pthread_attr_setschedpolicy function. */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy) {
-  attr = attr;
-  policy = policy;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->schedpolicy = policy;
   return 0;
 }
 
 /** \brief pthread_attr_setscope function. */
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope) {
-  attr = attr;
-  contentionscope = contentionscope;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  if (contentionscope != 0 && contentionscope != 1)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->contentionscope = contentionscope;
   return 0;
 }
 
+/** \brief pthread_attr_setstack function. */
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
                           size_t stacksize) {
-  attr = attr;
-  stackaddr = stackaddr;
-  stacksize = stacksize;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->stackaddr = stackaddr;
+  a->stacksize = stacksize;
   return 0;
 }
 
 /** \brief pthread_attr_setstacksize function. */
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
-  attr = attr;
-  stacksize = stacksize;
-
+  struct _posix_pthread_attr *a;
+  if (!attr || !attr->ptr)
+    return EINVAL;
+  a = (struct _posix_pthread_attr *)attr->ptr;
+  a->stacksize = stacksize;
   return 0;
 }
 
+struct _posix_pthread_barrier {
+  unsigned int count;
+  unsigned int limit;
+  unsigned int phase;
+  void *mutex;
+  void *cond;
+};
+
 /** \brief pthread_barrier_destroy function. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
-  barrier = barrier;
-
+#if defined(_WIN32)
+  struct _posix_pthread_barrier *b;
+  if (!barrier || !barrier->ptr)
+    return EINVAL;
+  b = (struct _posix_pthread_barrier *)barrier->ptr;
+  free(b);
+  barrier->ptr = NULL;
   return 0;
+#else
+  barrier = barrier;
+  return EINVAL;
+#endif
 }
 
 int pthread_barrier_init(pthread_barrier_t *barrier,
                          const pthread_barrierattr_t *attr, unsigned count) {
+#if defined(_WIN32)
+  struct _posix_pthread_barrier *b;
+  if (!barrier || count == 0)
+    return EINVAL;
+  (void)attr;
+  b = (struct _posix_pthread_barrier *)malloc(sizeof(*b));
+  if (!b)
+    return ENOMEM;
+  b->count = 0;
+  b->limit = count;
+  b->phase = 0;
+  dyn_InitializeSRWLock(&b->mutex);
+  dyn_InitializeConditionVariable(&b->cond);
+  barrier->ptr = b;
+  return 0;
+#else
   barrier = barrier;
   attr = attr;
   count = count;
-
-  return 0;
+  return EINVAL;
+#endif
 }
 
 /** \brief pthread_barrier_wait function. */
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
-  barrier = barrier;
+#if defined(_WIN32)
+  struct _posix_pthread_barrier *b;
+  unsigned int phase;
+  if (!barrier || !barrier->ptr)
+    return EINVAL;
+  b = (struct _posix_pthread_barrier *)barrier->ptr;
 
-  return 0;
+  dyn_AcquireSRWLockExclusive(&b->mutex);
+  phase = b->phase;
+  b->count++;
+  if (b->count == b->limit) {
+    b->phase++;
+    b->count = 0;
+    dyn_WakeAllConditionVariable(&b->cond);
+    dyn_ReleaseSRWLockExclusive(&b->mutex);
+    return PTHREAD_BARRIER_SERIAL_THREAD;
+  } else {
+    while (phase == b->phase) {
+      dyn_SleepConditionVariableSRW(&b->cond, &b->mutex, 0xFFFFFFFFUL, 0);
+    }
+    dyn_ReleaseSRWLockExclusive(&b->mutex);
+    return 0;
+  }
+#else
+  barrier = barrier;
+  return EINVAL;
+#endif
 }
 
 /** \brief pthread_barrierattr_destroy function. */
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr) {
-  attr = attr;
-
+  if (!attr)
+    return EINVAL;
+  attr->ptr = NULL;
   return 0;
 }
 
+/** \brief pthread_barrierattr_getpshared function. */
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
                                    int *pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  if (!attr || !pshared)
+    return EINVAL;
+  *pshared = 0; /* PTHREAD_PROCESS_PRIVATE */
   return 0;
 }
 
 /** \brief pthread_barrierattr_init function. */
 int pthread_barrierattr_init(pthread_barrierattr_t *attr) {
-  attr = attr;
-
+  if (!attr)
+    return EINVAL;
+  attr->ptr = NULL;
   return 0;
 }
 
 /** \brief pthread_barrierattr_setpshared function. */
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  if (!attr)
+    return EINVAL;
+  if (pshared != 0) /* PTHREAD_PROCESS_PRIVATE */
+    return EINVAL;
   return 0;
 }
 
@@ -518,18 +722,45 @@ int pthread_cancel(pthread_t thread) {
   return 0;
 }
 
-/** \brief pthread_cleanup_pop function. */
-void pthread_cleanup_pop(int execute) {
-  execute = execute;
+static unsigned long g_cleanup_tls_index = TLS_OUT_OF_INDEXES;
 
-  return;
+#ifdef _MSC_VER
+#pragma section(".CRT$XCU", read)
+static void __cdecl __init_pthread_cleanup(void) {
+  g_cleanup_tls_index = TlsAlloc();
+}
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_pthread_cleanup_ptr)(
+    void) = __init_pthread_cleanup;
+#elif defined(__GNUC__) || defined(__clang__)
+__attribute__((constructor)) static void __init_pthread_cleanup(void) {
+  g_cleanup_tls_index = TlsAlloc();
+}
+#endif
+
+void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
+                                 void (*routine)(void *), void *arg) {
+  struct _pthread_cleanup_buffer *top;
+  if (g_cleanup_tls_index == TLS_OUT_OF_INDEXES)
+    return;
+  top = (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+  buffer->routine = routine;
+  buffer->arg = arg;
+  buffer->next = top;
+  TlsSetValue(g_cleanup_tls_index, buffer);
 }
 
-void pthread_cleanup_push(void (*routine)(void *), void *arg) {
-  routine = routine;
-  arg = arg;
-
-  return;
+void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
+                                int execute) {
+  if (g_cleanup_tls_index != TLS_OUT_OF_INDEXES) {
+    struct _pthread_cleanup_buffer *top =
+        (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+    if (top == buffer) {
+      TlsSetValue(g_cleanup_tls_index, buffer->next);
+    }
+  }
+  if (execute && buffer->routine) {
+    buffer->routine(buffer->arg);
+  }
 }
 
 /** \brief pthread_cond_broadcast function. */
@@ -680,7 +911,12 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
   struct posix_pthread_create_arg *pca;
   void *h;
-  (void)attr;
+  size_t stacksize = 0;
+
+  if (attr && attr->ptr) {
+    struct _posix_pthread_attr *a = (struct _posix_pthread_attr *)attr->ptr;
+    stacksize = a->stacksize;
+  }
 
   pca = malloc(sizeof(*pca));
   if (!pca)
@@ -688,7 +924,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
   pca->start_routine = start_routine;
   pca->arg = arg;
 
-  h = CreateThread(NULL, 0, posix_pthread_create_start, pca, 0, NULL);
+  h = CreateThread(NULL, stacksize, posix_pthread_create_start, pca, 0, NULL);
   if (h == NULL) {
     free(pca);
     return EAGAIN;
@@ -720,11 +956,26 @@ int pthread_equal(pthread_t t1, pthread_t t2) {
   return 0;
 }
 
+__declspec(dllimport) void WINAPI ExitThread(unsigned long);
+
 /** \brief pthread_exit function. */
 void pthread_exit(void *value_ptr) {
-  value_ptr = value_ptr;
-
-  return;
+#if defined(_WIN32)
+  if (g_cleanup_tls_index != TLS_OUT_OF_INDEXES) {
+    struct _pthread_cleanup_buffer *top =
+        (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+    while (top) {
+      if (top->routine) {
+        top->routine(top->arg);
+      }
+      top = top->next;
+    }
+    TlsSetValue(g_cleanup_tls_index, NULL);
+  }
+  ExitThread(value_ptr ? 1 : 0);
+#else
+  (void)value_ptr;
+#endif
 }
 
 /** \brief pthread_getconcurrency function. */
@@ -747,11 +998,19 @@ int pthread_getschedparam(pthread_t thread, int *policy,
   return 0;
 }
 
+/** \brief pthread_getspecific function. */
 void *pthread_getspecific(pthread_key_t key) {
-  key = key;
-
+#if defined(_WIN32)
+  void *val = TlsGetValue(key);
+  if (!val && GetLastError() != 0) {
+    return NULL;
+  }
+  return val;
+#else
+  (void)key;
   errno = ENOSYS;
   return NULL;
+#endif
 }
 
 /** \brief pthread_join function. */
@@ -773,11 +1032,23 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 #endif
 }
 
+/** \brief pthread_key_create function. */
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-  key = key;
-  destructor = destructor;
-
+#if defined(_WIN32)
+  unsigned long index;
+  (void)destructor;
+  if (!key)
+    return EINVAL;
+  index = TlsAlloc();
+  if (index == TLS_OUT_OF_INDEXES)
+    return EAGAIN;
+  *key = index;
   return 0;
+#else
+  (void)key;
+  (void)destructor;
+  return ENOSYS;
+#endif
 }
 
 /** \brief pthread_key_delete function. */
@@ -1328,111 +1599,312 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
 /** \brief sched_yield function. */
 int sched_yield(void) { return EINVAL; }
 
-/** \brief sem_close function. */
-int sem_close(sem_t *sem) {
-  sem = sem;
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
-  return 0;
-}
+#if defined(_MSC_VER)
+typedef unsigned __int64 posix_sem_uint64_t;
+#elif defined(__GNUC__)
+__extension__ typedef unsigned long long posix_sem_uint64_t;
+#else
+typedef unsigned long long posix_sem_uint64_t;
+#endif
 
-/** \brief sem_destroy function. */
-int sem_destroy(sem_t *sem) {
 #if defined(_WIN32)
-  if (!sem || !sem->p)
-    return EINVAL;
-  CloseHandle(sem->p);
-  sem->p = 0;
+__declspec(dllimport) void *WINAPI OpenSemaphoreA(unsigned long, int,
+                                                  const char *);
+struct posix_sem_FILETIME {
+  unsigned long dwLowDateTime;
+  unsigned long dwHighDateTime;
+};
+__declspec(dllimport) void WINAPI
+GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
+#define POSIX_SEMAPHORE_ALL_ACCESS 0x1F0003
+#define POSIX_ERROR_ALREADY_EXISTS 183UL
+#endif
+
+/** rief sem_close function. */
+int sem_close(sem_t *sem) {
+#if defined(_WIN32)
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (sem->p) {
+    CloseHandle(sem->p);
+  }
+  free(sem);
   return 0;
 #else
-  sem = sem;
-  return EINVAL;
+  (void)sem;
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
-/** \brief sem_getvalue function. */
-int sem_getvalue(sem_t *sem, int *sval) {
-  sem = sem;
-  sval = sval;
-
+/** rief sem_destroy function. */
+int sem_destroy(sem_t *sem) {
+#if defined(_WIN32)
+  if (!sem || !sem->p) {
+    errno = EINVAL;
+    return -1;
+  }
+  CloseHandle(sem->p);
+  sem->p = NULL;
   return 0;
+#else
+  (void)sem;
+  errno = ENOSYS;
+  return -1;
+#endif
 }
 
-/** \brief sem_init function. */
+/** rief sem_getvalue function. */
+int sem_getvalue(sem_t *sem, int *sval) {
+#if defined(_WIN32)
+  long prev = 0;
+  if (!sem || !sem->p || !sval) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (WaitForSingleObject(sem->p, 0) == WAIT_OBJECT_0) {
+    if (ReleaseSemaphore(sem->p, 1, &prev)) {
+      *sval = (int)prev + 1;
+    } else {
+      *sval = 1;
+    }
+  } else {
+    *sval = 0;
+  }
+  return 0;
+#else
+  (void)sem;
+  (void)sval;
+  errno = ENOSYS;
+  return -1;
+#endif
+}
+
+/** rief sem_init function. */
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
 #if defined(_WIN32)
   void *h;
-  pshared = pshared;
-  if (!sem)
-    return EINVAL;
-  h = CreateSemaphoreA(0, value, 2147483647, 0);
-  if (!h)
-    return EINVAL;
+  (void)pshared;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+  h = CreateSemaphoreA(NULL, value, 2147483647, NULL);
+  if (!h) {
+    errno = EINVAL;
+    return -1;
+  }
   sem->p = h;
   return 0;
 #else
-  sem = sem;
-  pshared = pshared;
-  value = value;
-  return EINVAL;
+  (void)sem;
+  (void)pshared;
+  (void)value;
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
 sem_t *sem_open(const char *name, int oflag, ...) {
-  name = name;
-  oflag = oflag;
+#if defined(_WIN32)
+  void *h;
+  sem_t *sem;
+  char win_name[260];
+  unsigned int value = 0;
+  int i;
 
+  if (!name) {
+    errno = EINVAL;
+    return (sem_t *)-1;
+  }
+
+  if (name[0] == '/')
+    name++;
+
+  win_name[0] = '\0';
+#if defined(_MSC_VER)
+  strncat_s(win_name, sizeof(win_name), "Global\\", _TRUNCATE);
+  strncat_s(win_name, sizeof(win_name), name, _TRUNCATE);
+#else
+  strncat(win_name, "Global\\", sizeof(win_name) - 1);
+  strncat(win_name, name, sizeof(win_name) - strlen(win_name) - 1);
+#endif
+
+  for (i = 7; win_name[i]; i++) {
+    if (win_name[i] == '/')
+      win_name[i] = '_';
+  }
+
+#ifndef O_CREAT
+#define O_CREAT 0x0100
+#endif
+#ifndef O_EXCL
+#define O_EXCL 0x0400
+#endif
+
+  if (oflag & O_CREAT) {
+    va_list ap;
+    va_start(ap, oflag);
+    (void)va_arg(ap, int);
+    value = va_arg(ap, unsigned int);
+    va_end(ap);
+
+    h = CreateSemaphoreA(NULL, value, 2147483647, win_name);
+    if (h) {
+      if ((oflag & O_EXCL) && GetLastError() == POSIX_ERROR_ALREADY_EXISTS) {
+        CloseHandle(h);
+        errno = EEXIST;
+        return (sem_t *)-1;
+      }
+    } else {
+      errno = EINVAL;
+      return (sem_t *)-1;
+    }
+  } else {
+    h = OpenSemaphoreA(POSIX_SEMAPHORE_ALL_ACCESS, 0, win_name);
+    if (!h) {
+      errno = ENOENT;
+      return (sem_t *)-1;
+    }
+  }
+
+  sem = (sem_t *)malloc(sizeof(sem_t));
+  if (!sem) {
+    CloseHandle(h);
+    errno = ENOMEM;
+    return (sem_t *)-1;
+  }
+  sem->p = h;
+  return sem;
+#else
+  (void)name;
+  (void)oflag;
   errno = ENOSYS;
   return (sem_t *)-1;
+#endif
 }
 
-/** \brief sem_post function. */
+/** rief sem_post function. */
 int sem_post(sem_t *sem) {
 #if defined(_WIN32)
-  if (!sem || !sem->p)
-    return 0;
-  return ReleaseSemaphore(sem->p, 1, 0) ? 0 : EINVAL;
-#else
-  sem = sem;
+  if (!sem || !sem->p) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (!ReleaseSemaphore(sem->p, 1, NULL)) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
+#else
+  (void)sem;
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
-/** \brief sem_timedwait function. */
+/** rief sem_timedwait function. */
 int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
-  sem = sem;
-  abs_timeout = abs_timeout;
-
-  return 0;
+#if defined(_WIN32)
+  unsigned long timeout = INFINITE;
+  unsigned long res;
+  if (!sem || !sem->p) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (abs_timeout) {
+    struct posix_sem_FILETIME ft;
+    posix_sem_uint64_t now_100ns;
+    posix_sem_uint64_t abs_100ns;
+    GetSystemTimeAsFileTime(&ft);
+    now_100ns =
+        ((posix_sem_uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+    abs_100ns =
+        (posix_sem_uint64_t)abs_timeout->tv_sec * (posix_sem_uint64_t)10000000 +
+        (posix_sem_uint64_t)abs_timeout->tv_nsec / (posix_sem_uint64_t)100 +
+        ((posix_sem_uint64_t)116444736 * (posix_sem_uint64_t)1000000000);
+    if (abs_100ns <= now_100ns) {
+      timeout = 0;
+    } else {
+      timeout =
+          (unsigned long)((abs_100ns - now_100ns) / (posix_sem_uint64_t)10000);
+    }
+  }
+  res = WaitForSingleObject(sem->p, timeout);
+  if (res == WAIT_OBJECT_0)
+    return 0;
+  if (res == WAIT_TIMEOUT) {
+    errno = ETIMEDOUT;
+    return -1;
+  }
+  errno = EINVAL;
+  return -1;
+#else
+  (void)sem;
+  (void)abs_timeout;
+  errno = ENOSYS;
+  return -1;
+#endif
 }
 
-/** \brief sem_trywait function. */
+/** rief sem_trywait function. */
 int sem_trywait(sem_t *sem) {
 #if defined(_WIN32)
-  if (!sem || !sem->p)
+  unsigned long res;
+  if (!sem || !sem->p) {
+    errno = EINVAL;
+    return -1;
+  }
+  res = WaitForSingleObject(sem->p, 0);
+  if (res == WAIT_OBJECT_0)
     return 0;
-  return WaitForSingleObject(sem->p, 0) == WAIT_OBJECT_0 ? 0 : EBUSY;
+  if (res == WAIT_TIMEOUT) {
+    errno = EAGAIN;
+    return -1;
+  }
+  errno = EINVAL;
+  return -1;
 #else
-  sem = sem;
-  return 0;
+  (void)sem;
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
-/** \brief sem_unlink function. */
+/** rief sem_unlink function. */
 int sem_unlink(const char *name) {
-  name = name;
-
+#if defined(_WIN32)
+  (void)name;
   return 0;
+#else
+  (void)name;
+  errno = ENOSYS;
+  return -1;
+#endif
 }
 
-/** \brief sem_wait function. */
+/** rief sem_wait function. */
 int sem_wait(sem_t *sem) {
 #if defined(_WIN32)
-  if (!sem || !sem->p)
+  if (!sem || !sem->p) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (WaitForSingleObject(sem->p, INFINITE) == WAIT_OBJECT_0)
     return 0;
-  return WaitForSingleObject(sem->p, INFINITE) == WAIT_OBJECT_0 ? 0 : EINVAL;
+  errno = EINVAL;
+  return -1;
 #else
-  sem = sem;
-  return 0;
+  (void)sem;
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 

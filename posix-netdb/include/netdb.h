@@ -11,6 +11,9 @@
 #include <ws2tcpip.h>
 /* clang-format on */
 #else
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#endif
 #include_next <netdb.h>
 #endif
 

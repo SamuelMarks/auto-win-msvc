@@ -86,17 +86,13 @@ else()
 endif()
 
 add_library(bsd-sys-sysctl src/bsd-sys-sysctl.c)
-target_include_directories(bsd-sys-sysctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(bsd-sys-sysctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)        
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
+
 add_executable(test_bsd-sys-sysctl tests/test.c)
-
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_bsd-sys-sysctl PRIVATE ${greatest_source_dir})
-
+target_include_directories(test_bsd-sys-sysctl PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_bsd-sys-sysctl PRIVATE bsd-sys-sysctl)
-add_test(NAME test_bsd-sys-sysctl COMMAND test_bsd-sys-sysctl)
-endif()
 
+add_test(NAME test_bsd-sys-sysctl COMMAND test_bsd-sys-sysctl)
 

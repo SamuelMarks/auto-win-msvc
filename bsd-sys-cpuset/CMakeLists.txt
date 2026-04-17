@@ -88,7 +88,6 @@ endif()
 add_library(bsd-sys-cpuset src/bsd-sys-cpuset.c)
 target_include_directories(bsd-sys-cpuset PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-sys-cpuset tests/test.c)
 
@@ -97,6 +96,5 @@ target_include_directories(test_bsd-sys-cpuset PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-cpuset PRIVATE bsd-sys-cpuset)
 add_test(NAME test_bsd-sys-cpuset COMMAND test_bsd-sys-cpuset)
-endif()
 
 

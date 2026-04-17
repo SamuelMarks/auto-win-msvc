@@ -1,5 +1,6 @@
 /* clang-format off */
 #include <posix-regex.h>
+#include <stdlib.h>
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
@@ -33,7 +34,9 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
 }
 
 /** \brief regfree function. */
-void regfree(regex_t *preg) { preg = preg; }
+void regfree(regex_t *preg) {
+  preg = preg;
+}
 
 #endif /* _MSC_VER */
 

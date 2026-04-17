@@ -13,6 +13,11 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # --- Advanced Tooling & Strictest Compile Options ---
 include(CheckCCompilerFlag)
 
+if(MSVC AND MSVC_VERSION LESS 1600)
+    set(HAVE_INTTYPES_H 0 CACHE INTERNAL "" FORCE)
+    set(HAVE_STDINT_H 0 CACHE INTERNAL "" FORCE)
+endif()
+
 # Valgrind memory check setup for CTest
 find_program(MEMORYCHECK_COMMAND NAMES valgrind)
 if(MEMORYCHECK_COMMAND)
@@ -96,15 +101,10 @@ add_library(greatest INTERFACE)
 target_include_directories(greatest INTERFACE ${greatest_SOURCE_DIR})
 endif()
 
-
 add_library(posix-regex src/posix-regex.c)
 target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-enable_testing()
 add_executable(test_posix-regex tests/test.c)
 target_link_libraries(test_posix-regex PRIVATE posix-regex greatest)
 add_test(NAME test_posix-regex COMMAND test_posix-regex)
-endif()
-
 

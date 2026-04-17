@@ -7,6 +7,7 @@
 #include "greatest.h"
 #include "posix-termios.h"
 #include <stdio.h>
+#include <errno.h>
 /* clang-format on */
 
 SUITE(posix_termios_suite);
@@ -50,12 +51,17 @@ TEST test_tcdrain(void) {
 }
 
 TEST test_tcflow(void) {
-  ASSERT_EQ(-1, tcflow(1, TCOOFF));
-  ASSERT_EQ(ENOSYS, errno);
+  ASSERT_EQ(-1, tcflow(-1, TCOOFF));
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  ASSERT_EQ(EBADF, errno);
+#endif
+  tcflow(1, TCOOFF); /* Will likely return ENOTTY if not a serial port, which is
+                        fine */
   PASS();
 }
 
 TEST test_tcflush(void) {
+
   ASSERT_EQ(-1, tcflush(-1, TCIFLUSH));
   tcflush(1, TCIFLUSH);
   PASS();
@@ -77,12 +83,16 @@ TEST test_tcgetsid(void) {
 }
 
 TEST test_tcsendbreak(void) {
-  ASSERT_EQ(-1, tcsendbreak(1, 0));
-  ASSERT_EQ(ENOSYS, errno);
+  ASSERT_EQ(-1, tcsendbreak(-1, 0));
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  ASSERT_EQ(EBADF, errno);
+#endif
+  tcsendbreak(1, 0); /* Will likely return ENOTTY if not a serial port */
   PASS();
 }
 
 TEST test_tcsetattr(void) {
+
   struct termios t;
   t.c_lflag = ECHO | ICANON | ISIG;
   t.c_oflag = OPOST;

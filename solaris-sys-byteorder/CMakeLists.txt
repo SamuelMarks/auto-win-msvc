@@ -86,14 +86,13 @@ else()
 endif()
 
 add_library(solaris-sys-byteorder src/solaris-sys-byteorder.c)
-target_include_directories(solaris-sys-byteorder PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(solaris-sys-byteorder PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_solaris-sys-byteorder tests/test.c)
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(solaris-sys-byteorder PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include")
 target_include_directories(test_solaris-sys-byteorder PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_solaris-sys-byteorder PRIVATE solaris-sys-byteorder)

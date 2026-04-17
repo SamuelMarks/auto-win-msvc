@@ -124,10 +124,23 @@ struct sched_param {
 #define PTHREAD_CANCEL_ASYNCHRONOUS 1
 /** \brief PTHREAD_CANCELED macro. */
 #define PTHREAD_CANCELED ((void *)-1)
+#ifndef PTHREAD_BARRIER_SERIAL_THREAD
+#define PTHREAD_BARRIER_SERIAL_THREAD -1
+#endif
 
 /** \brief pthread_atfork function. */
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                    void (*child)(void));
+
+#if defined(_WIN32)
+/** \brief Internal helper to execute prepare handlers */
+void posix_pthread_atfork_prepare(void);
+/** \brief Internal helper to execute parent handlers */
+void posix_pthread_atfork_parent(void);
+/** \brief Internal helper to execute child handlers */
+void posix_pthread_atfork_child(void);
+#endif
+
 /** \brief pthread_attr_destroy function. */
 int pthread_attr_destroy(pthread_attr_t *attr);
 /** \brief pthread_attr_getdetachstate function. */
@@ -186,10 +199,27 @@ int pthread_barrierattr_init(pthread_barrierattr_t *attr);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
 /** \brief pthread_cancel function. */
 int pthread_cancel(pthread_t thread);
-/** \brief pthread_cleanup_pop function. */
-void pthread_cleanup_pop(int execute);
-/** \brief pthread_cleanup_push function. */
-void pthread_cleanup_push(void (*routine)(void *), void *arg);
+struct _pthread_cleanup_buffer {
+  void (*routine)(void *);
+  void *arg;
+  struct _pthread_cleanup_buffer *next;
+};
+
+void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
+                                 void (*routine)(void *), void *arg);
+void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
+                                int execute);
+
+/** \brief pthread_cleanup_push macro. */
+#define pthread_cleanup_push(routine, arg)                                     \
+  {                                                                            \
+    struct _pthread_cleanup_buffer _cb;                                        \
+    _posix_pthread_cleanup_push(&_cb, (routine), (arg));
+
+/** \brief pthread_cleanup_pop macro. */
+#define pthread_cleanup_pop(execute)                                           \
+  _posix_pthread_cleanup_pop(&_cb, (execute));                                 \
+  }
 /** \brief pthread_cond_broadcast function. */
 int pthread_cond_broadcast(pthread_cond_t *cond);
 /** \brief pthread_cond_destroy function. */

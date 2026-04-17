@@ -86,14 +86,13 @@ else()
 endif()
 
 add_library(bsd-sys-endian src/bsd-sys-endian.c)
-target_include_directories(bsd-sys-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(bsd-sys-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 add_executable(test_bsd-sys-endian tests/test.c)
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(bsd-sys-endian PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include")
 target_include_directories(test_bsd-sys-endian PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-endian PRIVATE bsd-sys-endian)

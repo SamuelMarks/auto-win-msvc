@@ -134,11 +134,13 @@ TEST test_posix_spawn_file_actions_badf(void) {
 }
 
 TEST test_posix_spawn_execution(void) {
+  posix_spawnattr_t attr;
+  posix_spawn_file_actions_t actions;
+#ifndef __CYGWIN__
   pid_t pid;
   char *argv[] = {"cmd.exe", "/c", "exit 0", NULL};
   char *envp[] = {"TEST=1", NULL};
-  posix_spawnattr_t attr;
-  posix_spawn_file_actions_t actions;
+#endif
 
   posix_spawnattr_init(&attr);
   posix_spawn_file_actions_init(&actions);
@@ -165,8 +167,10 @@ TEST test_posix_spawn_execution(void) {
     }
   }
 #else
+#ifndef __CYGWIN__
   ASSERT_EQ(EINVAL, posix_spawnp(&pid, "ls", &actions, &attr, argv, envp));
   ASSERT_EQ(EINVAL, posix_spawn(&pid, "/bin/ls", &actions, &attr, argv, envp));
+#endif
 #endif
 
   posix_spawnattr_destroy(&attr);
@@ -179,8 +183,10 @@ TEST test_posix_spawn_nulls(void) {
   ASSERT_EQ(EINVAL, posix_spawn(NULL, NULL, NULL, NULL, NULL, NULL));
   ASSERT_EQ(EINVAL, posix_spawnp(NULL, NULL, NULL, NULL, NULL, NULL));
 #else
+#ifndef __CYGWIN__
   ASSERT_EQ(EINVAL, posix_spawn(NULL, NULL, NULL, NULL, NULL, NULL));
   ASSERT_EQ(EINVAL, posix_spawnp(NULL, NULL, NULL, NULL, NULL, NULL));
+#endif
 #endif
   PASS();
 }

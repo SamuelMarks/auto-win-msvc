@@ -39,9 +39,41 @@ endif()
 
 
 
+if(NOT TARGET posix-stdint)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdint/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdint" "posix-stdint_build")
+    else()
+        FetchContent_Declare(
+            posix-stdint
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-stdint"
+        )
+        FetchContent_MakeAvailable(posix-stdint)
+    endif()
+endif()
+
+if(NOT TARGET posix-stdbool)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdbool/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdbool" "posix-stdbool_build")
+    else()
+        FetchContent_Declare(
+            posix-stdbool
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-stdbool"
+        )
+        FetchContent_MakeAvailable(posix-stdbool)
+    endif()
+endif()
+
 add_library(linux-systemd src/linux-systemd.c)
 target_include_directories(linux-systemd PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(linux-systemd PUBLIC posix-stdint posix-stdbool)
+
+if(WIN32)
+    target_link_libraries(linux-systemd PRIVATE ws2_32)
+endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()

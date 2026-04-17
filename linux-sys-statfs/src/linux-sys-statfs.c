@@ -4,29 +4,21 @@
 
 #if defined(_MSC_VER)
 
-typedef int BOOL;
-typedef unsigned __int64 ULONGLONG;
-
-typedef union _ULARGE_INTEGER {
-  struct {
-    unsigned long LowPart;
-    unsigned long HighPart;
-  } u;
-  ULONGLONG QuadPart;
-} ULARGE_INTEGER;
-
-__declspec(dllimport)
-BOOL __stdcall GetDiskFreeSpaceExA(const char *lpDirectoryName,
-                                   ULARGE_INTEGER *lpFreeBytesAvailableToCaller,
-                                   ULARGE_INTEGER *lpTotalNumberOfBytes,
-                                   ULARGE_INTEGER *lpTotalNumberOfFreeBytes);
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <errno.h>
+#include <io.h>
+#include <windows.h>
 
 /** \brief statfs function. */
 int statfs(const char *path, struct statfs *buf) {
   ULARGE_INTEGER freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes;
 
-  if (!buf || !path)
+  if (!buf || !path) {
+    errno = EFAULT;
     return -1;
+  }
 
   if (GetDiskFreeSpaceExA(path, &freeBytesAvailable, &totalNumberOfBytes,
                           &totalNumberOfFreeBytes)) {
@@ -41,15 +33,68 @@ int statfs(const char *path, struct statfs *buf) {
     return 0;
   }
 
+  errno = ENOENT;
   return -1;
 }
 
+#ifndef FILE_NAME_NORMALIZED
+#define FILE_NAME_NORMALIZED 0x0
+#endif
+
+typedef DWORD(WINAPI *GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD, DWORD);
+
 /** \brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf) {
-  fd = fd; /* Cannot easily get path from standard fd on Windows without handle
-               info */
-  buf = buf;
-  return -1;
+  HANDLE hFile;
+  HMODULE hKernel32;
+  GetFinalPathNameByHandleA_t pGetFinalPathNameByHandleA;
+  char path[MAX_PATH];
+  DWORD res;
+
+  if (!buf) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
+  hFile = (HANDLE)_get_osfhandle(fd);
+  if (hFile == INVALID_HANDLE_VALUE) {
+    errno = EBADF;
+    return -1;
+  }
+
+  hKernel32 = GetModuleHandleA("kernel32.dll");
+  if (!hKernel32) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  pGetFinalPathNameByHandleA =
+      (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
+          hKernel32, "GetFinalPathNameByHandleA");
+
+  if (!pGetFinalPathNameByHandleA) {
+    /* Fallback for old Windows versions (XP/2003): no easy way to get path from
+     * handle. */
+    /* Since we just need volume info, we can't reliably get it without a path.
+     */
+    errno = ENOSYS;
+    return -1;
+  }
+
+  res = pGetFinalPathNameByHandleA(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED);
+  if (res == 0 || res >= MAX_PATH) {
+    errno = ENOENT;
+    return -1;
+  }
+
+  /* GetFinalPathNameByHandleA often prepends "\\?\", which GetDiskFreeSpaceExA
+   * handles fine */
+  return statfs(path, buf);
 }
 
 #endif /* _MSC_VER */

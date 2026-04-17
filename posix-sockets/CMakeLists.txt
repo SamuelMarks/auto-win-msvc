@@ -82,7 +82,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(greatest)
 endif()
 
-
 add_library(posix-sockets src/posix-sockets.c)
 target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
@@ -90,13 +89,31 @@ if(WIN32 OR MSVC)
     target_link_libraries(posix-sockets PUBLIC ws2_32)
 endif()
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-enable_testing()
-add_executable(test_posix-sockets tests/test.c)
-target_include_directories(test_posix-sockets PRIVATE ${greatest_SOURCE_DIR})
-target_link_libraries(test_posix-sockets PRIVATE posix-sockets)
-add_test(NAME test_posix-sockets COMMAND test_posix-sockets)
+if(NOT TARGET posix-sys-uio)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio" "posix-sys-uio_build")
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            posix-sys-uio
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-sys-uio"
+        )
+        FetchContent_MakeAvailable(posix-sys-uio)
+    endif()
 endif()
 
 target_link_libraries(posix-sockets PUBLIC posix-sys-uio)
+
+enable_testing()
+if(CMAKE_PROJECT_NAME STREQUAL "posix-sockets" OR AUTO_WIN_MSVC_BUILD_ALL)
+    add_executable(test_posix-sockets tests/test.c)
+    target_include_directories(test_posix-sockets PRIVATE ${greatest_SOURCE_DIR})
+    target_link_libraries(test_posix-sockets PRIVATE posix-sockets)
+    add_test(NAME test_posix-sockets COMMAND test_posix-sockets)
+    if(WIN32)
+        set_property(TEST test_posix-sockets PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
+    endif()
+endif()
 

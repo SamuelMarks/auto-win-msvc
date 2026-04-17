@@ -86,13 +86,38 @@ TEST test_mmap_anon(void) {
   PASS();
 }
 
+TEST test_madvise(void) {
+  void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  ASSERT(ptr != MAP_FAILED);
+  ASSERT_EQ(0, madvise(ptr, 4096, 3)); /* MADV_WILLNEED */
+  ASSERT_EQ(0, madvise(ptr, 4096, 4)); /* MADV_DONTNEED */
+#ifndef __CYGWIN__
+  ASSERT_EQ(0, madvise(ptr, 4096, 8)); /* MADV_FREE */
+#endif
+  ASSERT_EQ(0, madvise(ptr, 4096, 0)); /* Other */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  ASSERT_EQ(-1, madvise(NULL, 4096, 3));
+  ASSERT_EQ(EINVAL, errno);
+  ASSERT_EQ(-1, madvise(ptr, 0, 3));
+  ASSERT_EQ(EINVAL, errno);
+#endif
+  munmap(ptr, 4096);
+  PASS();
+}
+
 TEST test_mlockall_munlockall(void) {
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-  munlockall();
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  ASSERT_EQ(0, mlockall(1 | 2)); /* MCL_CURRENT | MCL_FUTURE */
+  ASSERT_EQ(-1, mlockall(0xFF)); /* Invalid */
+  ASSERT_EQ(EINVAL, errno);
+  ASSERT_EQ(0, munlockall());
+#endif
   PASS();
 }
 
 TEST test_mmap_file(void) {
+
   const char *tmp = "test_mmap_file.txt";
   int fd;
   void *ptr;
@@ -148,8 +173,11 @@ TEST test_shm(void) {
 }
 
 SUITE(mman_suite) {
+
   RUN_TEST(test_mmap_anon);
+  RUN_TEST(test_madvise);
   RUN_TEST(test_mlockall_munlockall);
+
   RUN_TEST(test_mmap_file);
   RUN_TEST(test_shm);
 }

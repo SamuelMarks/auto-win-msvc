@@ -44,6 +44,10 @@ typedef struct {
 } siginfo_t;
 #endif
 
+#ifndef SA_SIGINFO
+#define SA_SIGINFO 0x00000004
+#endif
+
 struct sigaction {
   void (*sa_handler)(int);
   void (*sa_sigaction)(int, siginfo_t *, void *);
@@ -61,8 +65,24 @@ int posix_signal_sigaddset(sigset_t *set, int signum);
 /** \brief posix_signal_sigaction function. */
 int posix_signal_sigaction(int signum, const struct sigaction *act,
                            struct sigaction *oldact);
+/** \brief posix_signal_sigdelset function. */
+int posix_signal_sigdelset(sigset_t *set, int signum);
+/** \brief posix_signal_sigismember function. */
+int posix_signal_sigismember(const sigset_t *set, int signum);
+/** \brief posix_signal_sigprocmask function. */
+int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+/** \brief posix_signal_sigpending function. */
+int posix_signal_sigpending(sigset_t *set);
+/** \brief posix_signal_sigsuspend function. */
+int posix_signal_sigsuspend(const sigset_t *mask);
 /** \brief posix_signal_kill function. */
 int posix_signal_kill(pid_t pid, int sig);
+
+#ifndef SIG_BLOCK
+#define SIG_BLOCK 0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+#endif
 
 #ifndef sigemptyset
 #define sigemptyset posix_signal_sigemptyset
@@ -72,6 +92,21 @@ int posix_signal_kill(pid_t pid, int sig);
 #endif
 #ifndef sigaddset
 #define sigaddset posix_signal_sigaddset
+#endif
+#ifndef sigdelset
+#define sigdelset posix_signal_sigdelset
+#endif
+#ifndef sigismember
+#define sigismember posix_signal_sigismember
+#endif
+#ifndef sigprocmask
+#define sigprocmask posix_signal_sigprocmask
+#endif
+#ifndef sigpending
+#define sigpending posix_signal_sigpending
+#endif
+#ifndef sigsuspend
+#define sigsuspend posix_signal_sigsuspend
 #endif
 #ifndef sigaction
 #define sigaction(sig, act, oact) posix_signal_sigaction((sig), (act), (oact))

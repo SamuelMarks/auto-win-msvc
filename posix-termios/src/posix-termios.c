@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -49,6 +50,15 @@ __declspec(dllimport) BOOL __stdcall GetConsoleMode(HANDLE hConsoleHandle,
                                                     DWORD *lpMode);
 __declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle,
                                                     DWORD dwMode);
+__declspec(dllimport) DWORD __stdcall GetFileType(HANDLE hFile);
+__declspec(dllimport) BOOL __stdcall EscapeCommFunction(HANDLE hFile,
+                                                        DWORD dwFunc);
+__declspec(dllimport) BOOL __stdcall SetCommBreak(HANDLE hFile);
+__declspec(dllimport) BOOL __stdcall ClearCommBreak(HANDLE hFile);
+__declspec(dllimport) void __stdcall Sleep(DWORD dwMilliseconds);
+#define FILE_TYPE_CHAR 0x0002
+#define SETXOFF 1
+#define SETXON 2
 
 #ifdef __cplusplus
 }
@@ -193,15 +203,46 @@ int tcdrain(int fd) {
 #endif
 }
 
-/** \brief tcflow function. */
+/** rief tcflow function. */
 int tcflow(int fd, int action) {
-  fd = fd;
-  action = action;
+#ifdef _WIN32
+  HANDLE h;
+  char errbuf[64];
+  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
+      h != INVALID_HANDLE_VALUE) {
+    if (GetFileType(h) != FILE_TYPE_CHAR) {
+      errno = ENOTTY;
+      return -1;
+    }
+    switch (action) {
+    case TCOOFF:
+      EscapeCommFunction(h, SETXOFF);
+      return 0;
+    case TCOON:
+      EscapeCommFunction(h, SETXON);
+      return 0;
+    case TCIOFF:
+    case TCION:
+      /* Unsupported direct emulation for these, ignore */
+      return 0;
+    default:
+      errno = EINVAL;
+      return -1;
+    }
+  }
+  format_error_msg(errbuf, sizeof(errbuf), fd);
+  errno = EBADF;
+  return -1;
+#else
+  (void)fd;
+  (void)action;
   errno = ENOSYS;
   return -1;
+#endif
 }
 
-/** \brief tcflush function. */
+/** rief tcflush function. */
+
 int tcflush(int fd, int queue_selector) {
 #ifdef _WIN32
   HANDLE h;
@@ -275,15 +316,36 @@ pid_t tcgetsid(int fd) {
   return -1;
 }
 
-/** \brief tcsendbreak function. */
+/** rief tcsendbreak function. */
 int tcsendbreak(int fd, int duration) {
-  fd = fd;
-  duration = duration;
+#ifdef _WIN32
+  HANDLE h;
+  char errbuf[64];
+  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
+      h != INVALID_HANDLE_VALUE) {
+    if (GetFileType(h) != FILE_TYPE_CHAR) {
+      errno = ENOTTY;
+      return -1;
+    }
+    if (SetCommBreak(h)) {
+      Sleep(duration > 0 ? (unsigned long)duration * 250 : 250);
+      ClearCommBreak(h);
+    }
+    return 0;
+  }
+  format_error_msg(errbuf, sizeof(errbuf), fd);
+  errno = EBADF;
+  return -1;
+#else
+  (void)fd;
+  (void)duration;
   errno = ENOSYS;
   return -1;
+#endif
 }
 
-/** \brief tcsetattr function. */
+/** rief tcsetattr function. */
+
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 #ifdef _WIN32
   HANDLE h;
