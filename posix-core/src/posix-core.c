@@ -108,6 +108,10 @@ __declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
                                                      const char *lpProcName);
 __declspec(dllimport) unsigned long __stdcall GetFileAttributesA(
     const char *lpFileName);
+
+__declspec(dllimport) unsigned long __stdcall GetCurrentDirectoryA(unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) int __stdcall SetCurrentDirectoryA(const char *lpPathName);
+
 __declspec(dllimport) void *__stdcall CreateFileA(
     const char *lpFileName, unsigned long dwDesiredAccess,
     unsigned long dwShareMode, void *lpSecurityAttributes,
@@ -1126,7 +1130,13 @@ __attribute__((weak)) void posix_pthread_atfork_parent(void) {}
 __attribute__((weak)) void posix_pthread_atfork_child(void) {}
 #endif
 
-/** \brief fork function. */
+
+#define MAX_POSIX_CHILDREN 1024
+__declspec(selectany) void* g_posix_child_handles[MAX_POSIX_CHILDREN] = {0};
+__declspec(selectany) unsigned long g_posix_child_pids[MAX_POSIX_CHILDREN] = {0};
+__declspec(selectany) int g_posix_child_count = 0;
+
+/** rief fork function. */
 pid_t fork(void) {
   void *ntdll;
   RtlCloneUserProcess_f pRtlCloneUserProcess;
@@ -1149,21 +1159,36 @@ pid_t fork(void) {
   memset(&info, 0, sizeof(info));
   info.Length = sizeof(info);
 
+  
   posix_pthread_atfork_prepare();
+
+  char parent_cwd[260];
+  GetCurrentDirectoryA(260, parent_cwd);
 
   status = pRtlCloneUserProcess(RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES, NULL,
                                 NULL, NULL, &info);
 
   if (status == STATUS_SUCCESS) {
     posix_pthread_atfork_parent();
-    CloseHandle(info.Process);
+    
+    if (g_posix_child_count < 1024) {
+        g_posix_child_handles[g_posix_child_count] = info.Process;
+        g_posix_child_pids[g_posix_child_count] = (unsigned long)(size_t)info.ClientId.UniqueProcess;
+        g_posix_child_count++;
+    } else {
+        CloseHandle(info.Process);
+    }
     CloseHandle(info.Thread);
     return (pid_t)(size_t)info.ClientId.UniqueProcess;
   } else if (status == STATUS_PROCESS_CLONED) {
+    SetCurrentDirectoryA(parent_cwd);
     posix_pthread_atfork_child();
     /* Child */
     return 0;
   }
+
+
+
 
   errno = EAGAIN;
   return -1;

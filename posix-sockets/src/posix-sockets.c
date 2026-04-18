@@ -2,6 +2,44 @@
 /* clang-format off */
 #include "posix-sockets.h"
 #include <errno.h>
+
+#ifdef _WIN32
+
+
+static int _wsaErrorToErrno(int err) {
+    switch (err) {
+    case WSAEWOULDBLOCK: return EWOULDBLOCK;
+    case WSAEINPROGRESS: return EINPROGRESS;
+    case WSAEALREADY: return EALREADY;
+    case WSAENOTSOCK: return ENOTSOCK;
+    case WSAEDESTADDRREQ: return EDESTADDRREQ;
+    case WSAEMSGSIZE: return EMSGSIZE;
+    case WSAEPROTOTYPE: return EPROTOTYPE;
+    case WSAENOPROTOOPT: return ENOPROTOOPT;
+    case WSAEPROTONOSUPPORT: return EPROTONOSUPPORT;
+    case WSAEOPNOTSUPP: return EOPNOTSUPP;
+    case WSAEAFNOSUPPORT: return EAFNOSUPPORT;
+    case WSAEADDRINUSE: return EADDRINUSE;
+    case WSAEADDRNOTAVAIL: return EADDRNOTAVAIL;
+    case WSAENETDOWN: return ENETDOWN;
+    case WSAENETUNREACH: return ENETUNREACH;
+    case WSAENETRESET: return ENETRESET;
+    case WSAECONNABORTED: return ECONNABORTED;
+    case WSAECONNRESET: return ECONNRESET;
+    case WSAENOBUFS: return ENOBUFS;
+    case WSAEISCONN: return EISCONN;
+    case WSAENOTCONN: return ENOTCONN;
+    case WSAETIMEDOUT: return ETIMEDOUT;
+    case WSAECONNREFUSED: return ECONNREFUSED;
+    case WSAELOOP: return ELOOP;
+    case WSAENAMETOOLONG: return ENAMETOOLONG;
+    case WSAEHOSTUNREACH: return EHOSTUNREACH;
+    case WSAENOTEMPTY: return ENOTEMPTY;
+    default: return EINVAL;
+    }
+}
+
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 /* clang-format on */
@@ -88,7 +126,7 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
 #undef getaddrinfo
   int ret = getaddrinfo(nodename, servname, hints, res);
   if (ret != 0) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
   }
   return ret;
 #else
@@ -310,7 +348,7 @@ int posix_accept(int socket, struct sockaddr *address,
 #undef accept
   SOCKET ret = accept((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == INVALID_SOCKET) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return (int)ret;
@@ -329,7 +367,7 @@ int posix_bind(int socket, const struct sockaddr *address,
 #undef bind
   int ret = bind((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -348,7 +386,7 @@ int posix_connect(int socket, const struct sockaddr *address,
 #undef connect
   int ret = connect((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -367,7 +405,7 @@ int posix_getpeername(int socket, struct sockaddr *address,
 #undef getpeername
   int ret = getpeername((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -386,7 +424,7 @@ int posix_getsockname(int socket, struct sockaddr *address,
 #undef getsockname
   int ret = getsockname((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -406,7 +444,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
   int ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)option_value,
                        option_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -426,7 +464,7 @@ int posix_listen(int socket, int backlog) {
 #undef listen
   int ret = listen((SOCKET)(unsigned int)socket, backlog);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -443,7 +481,7 @@ posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
 #undef recv
   int ret = recv((SOCKET)(unsigned int)socket, (char *)buffer, (int)length, flags);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return ret;
@@ -492,7 +530,7 @@ posix_ssize_t posix_send(int socket, const void *message, size_t length,
 #undef send
   int ret = send((SOCKET)(unsigned int)socket, (const char *)message, (int)length, flags);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return ret;
@@ -543,7 +581,7 @@ int posix_setsockopt(int socket, int level, int option_name,
   int ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name,
                        (const char *)option_value, option_len);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -563,7 +601,7 @@ int posix_shutdown(int socket, int how) {
 #undef shutdown
   int ret = shutdown((SOCKET)(unsigned int)socket, how);
   if (ret == SOCKET_ERROR) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return 0;
@@ -580,7 +618,7 @@ int posix_socket(int domain, int type, int protocol) {
 #undef socket
   SOCKET s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (s == INVALID_SOCKET) {
-    errno = WSAGetLastError();
+    errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
   return (int)s;

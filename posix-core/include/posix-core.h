@@ -271,17 +271,30 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
   if (oflag & _O_CREAT) {
     va_list ap;
     va_start(ap, oflag);
-    pmode = va_arg(ap, int);
+    pmode = va_arg(ap, int) & (_S_IREAD | _S_IWRITE);
     va_end(ap);
   }
 #if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
     _MSC_VER >= 1400
   if (_sopen_s(&fd, filename, oflag, _SH_DENYNO, pmode) != 0) {
+    if (errno == EACCES) {
+      struct _stat st;
+      if (_stat(filename, &st) == 0 && (st.st_mode & _S_IFDIR)) {
+        errno = EISDIR;
+      }
+    }
     return -1;
   }
   return fd;
 #else
-  return _open(filename, oflag, pmode);
+  int ret = _open(filename, oflag, pmode);
+  if (ret == -1 && errno == EACCES) {
+    struct _stat st;
+    if (_stat(filename, &st) == 0 && (st.st_mode & _S_IFDIR)) {
+      errno = EISDIR;
+    }
+  }
+  return ret;
 #endif
 }
 #define open posix_core_open

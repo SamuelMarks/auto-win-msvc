@@ -949,12 +949,7 @@ int pthread_detach(pthread_t thread) {
 }
 
 /** \brief pthread_equal function. */
-int pthread_equal(pthread_t t1, pthread_t t2) {
-  t1 = t1;
-  t2 = t2;
-
-  return 0;
-}
+int pthread_equal(pthread_t t1, pthread_t t2) { return t1 == t2; }
 
 __declspec(dllimport) void WINAPI ExitThread(unsigned long);
 
@@ -1917,3 +1912,4 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;
+

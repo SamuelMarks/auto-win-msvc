@@ -92,11 +92,16 @@ __declspec(dllimport) void __stdcall Sleep(WIN_DWORD dwMilliseconds);
 }
 #endif
 
-/** \brief waitpid function. */
+
+__declspec(selectany) void* g_posix_child_handles[1024] = {0};
+__declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
+__declspec(selectany) int g_posix_child_count = 0;
+
+/** rief waitpid function. */
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
-  HANDLE hProcess;
   DWORD wait_res;
   DWORD exit_code;
+  int i;
 
   if (pid <= 0) {
     if (pid != -1) {
@@ -106,112 +111,83 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
 
     /* Wait for any child (-1) */
     while (1) {
-      HANDLE hSnap;
-      WIN_PROCESSENTRY32 pe32;
-      DWORD myPid = GetCurrentProcessId();
-      HANDLE childHandles[64];
-      DWORD childPids[64];
-      DWORD childCount = 0;
-      DWORD i;
-      int exited_found = 0;
-      pid_t ret = -1;
-
-      hSnap = CreateToolhelp32Snapshot(WIN_TH32CS_SNAPPROCESS, 0);
-      if (hSnap == (HANDLE)(size_t)-1) {
+      if (g_posix_child_count == 0) {
         errno = ECHILD;
         return (pid_t)-1;
       }
-
-      pe32.dwSize = sizeof(WIN_PROCESSENTRY32);
-      if (Process32First(hSnap, &pe32)) {
-        do {
-          if (pe32.th32ParentProcessID == myPid) {
-            HANDLE hProc = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION,
-                                       FALSE, pe32.th32ProcessID);
-            if (hProc) {
-              if (childCount < 64) {
-                childHandles[childCount] = hProc;
-                childPids[childCount] = pe32.th32ProcessID;
-                childCount++;
-              } else {
-                CloseHandle(hProc);
-              }
-            }
-          }
-        } while (Process32Next(hSnap, &pe32));
-      }
-      CloseHandle(hSnap);
-
-      if (childCount == 0) {
-        errno = ECHILD;
-        return (pid_t)-1;
-      }
-
-      for (i = 0; i < childCount; i++) {
-        if (WaitForSingleObject(childHandles[i], 0) == WAIT_OBJECT_0) {
+      for (i = 0; i < g_posix_child_count; i++) {
+        if (WaitForSingleObject(g_posix_child_handles[i], 0) == WAIT_OBJECT_0) {
           if (stat_loc != NULL) {
-            if (GetExitCodeProcess(childHandles[i], &exit_code)) {
+            if (GetExitCodeProcess(g_posix_child_handles[i], &exit_code)) {
               *stat_loc = ((int)(exit_code & 0xFF) << 8);
             } else {
               *stat_loc = 0;
             }
           }
-          ret = (pid_t)childPids[i];
-          exited_found = 1;
-          break;
+          pid_t ret = (pid_t)g_posix_child_pids[i];
+          CloseHandle(g_posix_child_handles[i]);
+          g_posix_child_handles[i] = g_posix_child_handles[g_posix_child_count - 1];
+          g_posix_child_pids[i] = g_posix_child_pids[g_posix_child_count - 1];
+          g_posix_child_count--;
+          return ret;
         }
       }
-
-      if (exited_found) {
-        for (i = 0; i < childCount; i++) {
-          CloseHandle(childHandles[i]);
-        }
-        return ret;
-      }
-
       if (options & WNOHANG) {
-        for (i = 0; i < childCount; i++) {
-          CloseHandle(childHandles[i]);
-        }
         return 0;
-      }
-
-      /* Blocking wait, sleep to prevent spinning too fast */
-      for (i = 0; i < childCount; i++) {
-        CloseHandle(childHandles[i]);
       }
       Sleep(50);
     }
   }
 
-  hProcess =
-      OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
-  if (hProcess == NULL) {
-    errno = ECHILD;
-    return (pid_t)-1;
-  }
-
-  wait_res = WaitForSingleObject(hProcess, (options & WNOHANG) ? 0 : INFINITE);
-  if (wait_res == WAIT_TIMEOUT) {
-    CloseHandle(hProcess);
-    return 0;
-  } else if (wait_res == WAIT_OBJECT_0) {
-    if (stat_loc != NULL) {
-      if (GetExitCodeProcess(hProcess, &exit_code)) {
-        /* Simulate POSIX status byte shifting */
-        *stat_loc = ((int)(exit_code & 0xFF) << 8);
-      } else {
-        *stat_loc = 0;
+  {
+    int found_idx = -1;
+    HANDLE hProcess = NULL;
+    for (i = 0; i < g_posix_child_count; i++) {
+      if (g_posix_child_pids[i] == (DWORD)pid) {
+        found_idx = i;
+        hProcess = g_posix_child_handles[i];
+        break;
       }
     }
-    CloseHandle(hProcess);
-    return pid;
-  }
 
-  CloseHandle(hProcess);
-  errno = EINVAL;
-  return (pid_t)-1;
+    if (found_idx == -1) {
+      hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+    }
+
+    if (hProcess == NULL) {
+      errno = ECHILD;
+      return (pid_t)-1;
+    }
+
+    wait_res = WaitForSingleObject(hProcess, (options & WNOHANG) ? 0 : INFINITE);
+    if (wait_res == WAIT_TIMEOUT) {
+      if (found_idx == -1) CloseHandle(hProcess);
+      return 0;
+    } else if (wait_res == WAIT_OBJECT_0) {
+      if (stat_loc != NULL) {
+        if (GetExitCodeProcess(hProcess, &exit_code)) {
+          *stat_loc = ((int)(exit_code & 0xFF) << 8);
+        } else {
+          *stat_loc = 0;
+        }
+      }
+      if (found_idx != -1) {
+        CloseHandle(g_posix_child_handles[found_idx]);
+        g_posix_child_handles[found_idx] = g_posix_child_handles[g_posix_child_count - 1];
+        g_posix_child_pids[found_idx] = g_posix_child_pids[g_posix_child_count - 1];
+        g_posix_child_count--;
+      } else {
+        CloseHandle(hProcess);
+      }
+      return pid;
+    }
+
+    if (found_idx == -1) CloseHandle(hProcess);
+    errno = EINVAL;
+    return (pid_t)-1;
+  }
 }
+
 
 /** \brief waitid function. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
