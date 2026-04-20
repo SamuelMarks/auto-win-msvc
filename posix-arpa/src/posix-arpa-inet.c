@@ -2,7 +2,8 @@
 #include "posix-arpa-inet.h"
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 /** \brief posix_inet_aton function. */
 int posix_inet_aton(const char *cp, struct in_addr *inp) {

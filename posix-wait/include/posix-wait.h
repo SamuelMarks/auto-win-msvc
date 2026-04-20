@@ -2,7 +2,7 @@
 #ifndef POSIX_WAIT_H
 #define POSIX_WAIT_H
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,6 +106,22 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 
 #ifdef __cplusplus
 }
+#endif
+
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+/* DOS has no sys/wait.h */
+#ifndef WNOHANG
+#define WNOHANG 1
+#endif
+#ifndef WUNTRACED
+#define WUNTRACED 2
+#endif
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(w) (((w) >> 8) & 0xff)
+#endif
+#ifndef WIFEXITED
+#define WIFEXITED(w) (((w) & 0xff) == 0)
 #endif
 
 #else /* _WIN32 */

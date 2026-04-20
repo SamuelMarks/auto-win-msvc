@@ -109,8 +109,10 @@ __declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
 __declspec(dllimport) unsigned long __stdcall GetFileAttributesA(
     const char *lpFileName);
 
-__declspec(dllimport) unsigned long __stdcall GetCurrentDirectoryA(unsigned long nBufferLength, char *lpBuffer);
-__declspec(dllimport) int __stdcall SetCurrentDirectoryA(const char *lpPathName);
+__declspec(dllimport) unsigned long __stdcall GetCurrentDirectoryA(
+    unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) int __stdcall SetCurrentDirectoryA(
+    const char *lpPathName);
 
 __declspec(dllimport) void *__stdcall CreateFileA(
     const char *lpFileName, unsigned long dwDesiredAccess,
@@ -746,7 +748,8 @@ int chown(const char *pathname, uid_t owner, gid_t group) {
           }
         }
         free(groups);
-        if (found) return 0;
+        if (found)
+          return 0;
       }
     }
     errno = EPERM;
@@ -1116,13 +1119,25 @@ void posix_pthread_atfork_child(void);
 #if defined(_MSC_VER)
 void posix_core_dummy_atfork(void) {}
 #if defined(_M_IX86)
-#pragma comment(linker, "/alternatename:_posix_pthread_atfork_prepare=_posix_core_dummy_atfork")
-#pragma comment(linker, "/alternatename:_posix_pthread_atfork_parent=_posix_core_dummy_atfork")
-#pragma comment(linker, "/alternatename:_posix_pthread_atfork_child=_posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:_posix_pthread_atfork_prepare=_posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:_posix_pthread_atfork_parent=_posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:_posix_pthread_atfork_child=_posix_core_dummy_atfork")
 #else
-#pragma comment(linker, "/alternatename:posix_pthread_atfork_prepare=posix_core_dummy_atfork")
-#pragma comment(linker, "/alternatename:posix_pthread_atfork_parent=posix_core_dummy_atfork")
-#pragma comment(linker, "/alternatename:posix_pthread_atfork_child=posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:posix_pthread_atfork_prepare=posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:posix_pthread_atfork_parent=posix_core_dummy_atfork")
+#pragma comment(                                                               \
+    linker,                                                                    \
+    "/alternatename:posix_pthread_atfork_child=posix_core_dummy_atfork")
 #endif
 #else
 __attribute__((weak)) void posix_pthread_atfork_prepare(void) {}
@@ -1130,10 +1145,10 @@ __attribute__((weak)) void posix_pthread_atfork_parent(void) {}
 __attribute__((weak)) void posix_pthread_atfork_child(void) {}
 #endif
 
-
 #define MAX_POSIX_CHILDREN 1024
-__declspec(selectany) void* g_posix_child_handles[MAX_POSIX_CHILDREN] = {0};
-__declspec(selectany) unsigned long g_posix_child_pids[MAX_POSIX_CHILDREN] = {0};
+__declspec(selectany) void *g_posix_child_handles[MAX_POSIX_CHILDREN] = {0};
+__declspec(selectany) unsigned long g_posix_child_pids[MAX_POSIX_CHILDREN] = {
+    0};
 __declspec(selectany) int g_posix_child_count = 0;
 
 /** rief fork function. */
@@ -1159,7 +1174,6 @@ pid_t fork(void) {
   memset(&info, 0, sizeof(info));
   info.Length = sizeof(info);
 
-  
   posix_pthread_atfork_prepare();
 
   char parent_cwd[260];
@@ -1170,13 +1184,14 @@ pid_t fork(void) {
 
   if (status == STATUS_SUCCESS) {
     posix_pthread_atfork_parent();
-    
+
     if (g_posix_child_count < 1024) {
-        g_posix_child_handles[g_posix_child_count] = info.Process;
-        g_posix_child_pids[g_posix_child_count] = (unsigned long)(size_t)info.ClientId.UniqueProcess;
-        g_posix_child_count++;
+      g_posix_child_handles[g_posix_child_count] = info.Process;
+      g_posix_child_pids[g_posix_child_count] =
+          (unsigned long)(size_t)info.ClientId.UniqueProcess;
+      g_posix_child_count++;
     } else {
-        CloseHandle(info.Process);
+      CloseHandle(info.Process);
     }
     CloseHandle(info.Thread);
     return (pid_t)(size_t)info.ClientId.UniqueProcess;
@@ -1186,9 +1201,6 @@ pid_t fork(void) {
     /* Child */
     return 0;
   }
-
-
-
 
   errno = EAGAIN;
   return -1;
@@ -2053,10 +2065,13 @@ useconds_t ualarm(useconds_t value, useconds_t interval) {
 pid_t vfork(void) { return fork(); }
 #endif
 
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) int __stdcall MoveFileExA(const char *lpExistingFileName, const char *lpNewFileName, unsigned long dwFlags);
-__declspec(dllimport) int __stdcall CopyFileA(const char *lpExistingFileName, const char *lpNewFileName, int bFailIfExists);
+__declspec(dllimport) int __stdcall MoveFileExA(const char *lpExistingFileName,
+                                                const char *lpNewFileName,
+                                                unsigned long dwFlags);
+__declspec(dllimport) int __stdcall CopyFileA(const char *lpExistingFileName,
+                                              const char *lpNewFileName,
+                                              int bFailIfExists);
 
 /** \brief rename function (POSIX semantics). */
 int posix_rename(const char *oldpath, const char *newpath) {
@@ -2085,13 +2100,17 @@ int posix_mkstemp(char *tmpl) {
   int fd;
   if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0)
     return -1;
-  
-  hFile = CreateFileA(tmpl, 0x80000000L | 0x40000000L /* GENERIC_READ | GENERIC_WRITE */,
-                      0x00000001 | 0x00000002 | 0x00000004 /* FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE */,
-                      NULL, 2 /* CREATE_ALWAYS */, 0x00000080 /* FILE_ATTRIBUTE_NORMAL */, NULL);
+
+  hFile = CreateFileA(
+      tmpl, 0x80000000L | 0x40000000L /* GENERIC_READ | GENERIC_WRITE */,
+      0x00000001 | 0x00000002 | 0x00000004 /* FILE_SHARE_READ | FILE_SHARE_WRITE
+                                              | FILE_SHARE_DELETE */
+      ,
+      NULL, 2 /* CREATE_ALWAYS */, 0x00000080 /* FILE_ATTRIBUTE_NORMAL */,
+      NULL);
   if (hFile == (void *)(intptr_t)-1 /* INVALID_HANDLE_VALUE */)
     return -1;
-    
+
   fd = _open_osfhandle((intptr_t)hFile, _O_RDWR);
   if (fd == -1) {
     CloseHandle(hFile);

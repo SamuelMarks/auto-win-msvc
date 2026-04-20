@@ -15,10 +15,14 @@
 
 #include "posix-glob.h"
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(_MSC_VER)
 #include <io.h>
 #else
+#if defined(__WATCOMC__)
+#include <direct.h>
+#else
 #include <dirent.h>
+#endif
 #include <sys/stat.h>
 /* clang-format on */
 #endif
@@ -131,7 +135,8 @@ int fnmatch(const char *pattern, const char *string, int flags) {
   }
 }
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(_MSC_VER)
 /** \brief glob function. */
 int glob(const char *pattern, int flags,
          int (*errfunc)(const char *epath, int eerrno), glob_t *pglob) {
@@ -378,7 +383,7 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
   token = strtok_s(copy, " \t\n", &context);
 #else
   strcpy(copy, words);
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__)
   token = strtok(copy, " \t\n");
 #else
   token = strtok_r(copy, " \t\n", &context);
@@ -414,7 +419,7 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
 #if defined(_MSC_VER)
     token = strtok_s(NULL, " \t\n", &context);
 #else
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__)
     token = strtok(NULL, " \t\n");
 #else
     token = strtok_r(NULL, " \t\n", &context);

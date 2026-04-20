@@ -1599,7 +1599,7 @@ int sched_yield(void) { return EINVAL; }
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 posix_sem_uint64_t;
 #elif defined(__GNUC__)
 __extension__ typedef unsigned long long posix_sem_uint64_t;
@@ -1912,4 +1912,3 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;
-

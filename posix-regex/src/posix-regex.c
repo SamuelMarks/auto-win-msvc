@@ -3,7 +3,8 @@
 #include <stdlib.h>
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 
 /** \brief regcomp function. */
 int regcomp(regex_t *preg, const char *pattern, int cflags) {
@@ -34,9 +35,7 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
 }
 
 /** \brief regfree function. */
-void regfree(regex_t *preg) {
-  preg = preg;
-}
+void regfree(regex_t *preg) { preg = preg; }
 
 #endif /* _MSC_VER */
 

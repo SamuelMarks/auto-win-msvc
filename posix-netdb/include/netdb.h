@@ -2,7 +2,7 @@
 #ifndef POSIX_NETDB_STUB
 #define POSIX_NETDB_STUB
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -10,6 +10,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 /* clang-format on */
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+/* DOS has no netdb.h by default */
 #else
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header

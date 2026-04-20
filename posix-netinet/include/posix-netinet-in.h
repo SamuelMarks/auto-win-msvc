@@ -3,14 +3,23 @@
 #define POSIX_NETINET_IN_H
 
 #if defined(_MSC_VER) || defined(_WIN32)
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 /* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include <stdint.h>
+#ifndef IPPROTO_IP
+#define IPPROTO_IP 0
+#endif
+#ifndef IPPROTO_TCP
+#define IPPROTO_TCP 6
+#endif
+#ifndef IPPROTO_UDP
+#define IPPROTO_UDP 17
+#endif
 #else
 #include <netinet/in.h>
 /* clang-format on */

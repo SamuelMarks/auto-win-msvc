@@ -441,8 +441,8 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
                      posix_socklen_t *option_len) {
 #ifdef _WIN32
 #undef getsockopt
-  int ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)option_value,
-                       option_len);
+  int ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                       (char *)option_value, option_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -479,7 +479,8 @@ int posix_listen(int socket, int backlog) {
 posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
 #ifdef _WIN32
 #undef recv
-  int ret = recv((SOCKET)(unsigned int)socket, (char *)buffer, (int)length, flags);
+  int ret =
+      recv((SOCKET)(unsigned int)socket, (char *)buffer, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -528,7 +529,8 @@ posix_ssize_t posix_send(int socket, const void *message, size_t length,
                          int flags) {
 #ifdef _WIN32
 #undef send
-  int ret = send((SOCKET)(unsigned int)socket, (const char *)message, (int)length, flags);
+  int ret = send((SOCKET)(unsigned int)socket, (const char *)message,
+                 (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -633,55 +635,71 @@ int posix_socket(int domain, int type, int protocol) {
 
 /** \brief posix_socketpair function. */
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <io.h>
-#include <fcntl.h>
+#endif
 
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
-    SOCKET listener, client, server;
-    struct sockaddr_in addr;
-    int addrlen = sizeof(addr);
-    
-    if (domain != AF_INET && domain != AF_UNSPEC) return -1;
-    
-    listener = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
-    if (listener == INVALID_SOCKET) return -1;
-    
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    addr.sin_port = 0;
-    
-    if (bind(listener, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) goto err;
-    if (getsockname(listener, (struct sockaddr*)&addr, &addrlen) == SOCKET_ERROR) goto err;
-    if (listen(listener, 1) == SOCKET_ERROR) goto err;
-    
-    client = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
-    if (client == INVALID_SOCKET) goto err;
-    
-    if (connect(client, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
-        closesocket(client);
-        goto err;
-    }
-    
-    server = accept(listener, NULL, NULL);
-    if (server == INVALID_SOCKET) {
-        closesocket(client);
-        goto err;
-    }
-    
-    closesocket(listener);
-    
-    socket_vector[0] = (int)server;
-    socket_vector[1] = (int)client;
-    return 0;
-    
-err:
-    closesocket(listener);
-    return -1;
-}
+#if defined(_WIN32)
+  SOCKET listener, client, server;
+  struct sockaddr_in addr;
+  int addrlen = sizeof(addr);
 
+  if (domain != AF_INET && domain != AF_UNSPEC)
+    return -1;
+
+  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  if (listener == INVALID_SOCKET)
+    return -1;
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = 0;
+
+  if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR)
+    goto err;
+  if (getsockname(listener, (struct sockaddr *)&addr, &addrlen) == SOCKET_ERROR)
+    goto err;
+  if (listen(listener, 1) == SOCKET_ERROR)
+    goto err;
+
+  client = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  if (client == INVALID_SOCKET)
+    goto err;
+
+  if (connect(client, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
+    closesocket(client);
+    goto err;
+  }
+
+  server = accept(listener, NULL, NULL);
+  if (server == INVALID_SOCKET) {
+    closesocket(client);
+    goto err;
+  }
+
+  closesocket(listener);
+
+  socket_vector[0] = (int)server;
+  socket_vector[1] = (int)client;
+  return 0;
+
+err:
+  closesocket(listener);
+  return -1;
+#else
+  (void)domain;
+  (void)type;
+  (void)protocol;
+  (void)socket_vector;
+  errno = EINVAL;
+  return -1;
+#endif
+}
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;

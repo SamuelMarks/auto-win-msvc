@@ -40,6 +40,30 @@ typedef _sigset_t sigset_t;
 #define _SIGSET_T_DEFINED
 #endif
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#ifndef _PID_T_DEFINED
+typedef int pid_t;
+#define _PID_T_DEFINED
+#endif
+
+#ifndef _MODE_T_DEFINED
+typedef unsigned short mode_t;
+#define _MODE_T_DEFINED
+#endif
+
+#ifndef _SIGSET_T_DEFINED
+typedef unsigned long sigset_t;
+#define _SIGSET_T_DEFINED
+#endif
+
+#ifndef _SCHED_PARAM_DEFINED
+struct sched_param {
+    int sched_priority;
+};
+#define _SCHED_PARAM_DEFINED
+#endif
+
 #else /* POSIX */
 
 #include <sched.h>

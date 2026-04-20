@@ -8,6 +8,11 @@
 #include <io.h>
 #include <winsock2.h>
 #endif
-int posix_flock(int fd, int operation) { return 0; }
+
+int posix_flock(int fd, int operation) {
+  (void)fd;
+  (void)operation;
+  return 0;
+}
+
 int dummy_bsd_sys_file(void) { return 0; }
-\

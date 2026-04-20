@@ -93,7 +93,7 @@ WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #define POSIX_TIME_10M 10000000i64
 #define POSIX_TIME_10 10i64
 #elif defined(__GNUC__)
-#define POSIX_TIME_EPOCH __extension__ 116444736000000000LL
+#define POSIX_TIME_EPOCH 116444736000000000LL
 #define POSIX_TIME_10M __extension__ 10000000LL
 #define POSIX_TIME_10 __extension__ 10LL
 #else

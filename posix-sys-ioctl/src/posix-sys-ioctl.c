@@ -164,6 +164,15 @@ int posix_ioctl(int fd, unsigned long request, ...) {
   }
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+int posix_ioctl(int fildes, unsigned long request, ...) {
+  if (fildes || request) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
 #endif
 
 /* Prevent empty translation unit */

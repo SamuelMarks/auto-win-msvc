@@ -271,6 +271,8 @@ typedef long blkcnt_t;
 #ifdef __MINGW32__
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+/* DOS has no sys/socket.h */
 #else
 #include <sys/socket.h>
 /* clang-format on */

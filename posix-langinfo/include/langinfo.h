@@ -10,7 +10,8 @@ extern "C" {
 #define POSIX_LANGINFO_MSVC 1
 #endif
 
-#if defined(POSIX_LANGINFO_MSVC) || defined(_WIN32)
+#if defined(POSIX_LANGINFO_MSVC) || defined(_WIN32) || defined(__MSDOS__) ||   \
+    defined(__WATCOMC__)
 
 /** \brief The type used to identify langinfo items. */
 typedef int nl_item;

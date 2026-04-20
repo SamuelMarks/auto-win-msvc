@@ -30,8 +30,10 @@ typedef struct _PROCESS_MEMORY_COUNTERS {
 
 #if defined(__GNUC__) || defined(__clang__)
 __extension__ typedef unsigned long long bsd_malloc_u64;
-#else
+#elif defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 bsd_malloc_u64;
+#else
+typedef unsigned long long bsd_malloc_u64;
 #endif
 
 typedef struct _MEMORYSTATUSEX {

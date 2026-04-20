@@ -17,12 +17,22 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include <stdint.h>
+struct in_addr {
+    uint32_t s_addr;
+};
+#ifndef htonl
+#define posix_htonl(x) ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) | (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
+#define htonl(x) posix_htonl(x)
+#endif
 #else
 #include <arpa/inet.h>
 #endif
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,7 +10,11 @@ extern "C" {
 
 /* On non-Windows platforms, simply include the standard dirent.h */
 /* clang-format off */
+#if defined(__WATCOMC__)
+#include <direct.h>
+#else
 #include <dirent.h>
+#endif
 #include <sys/types.h>
 
 #else /* _WIN32 */

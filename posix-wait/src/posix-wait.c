@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 
 #if defined(_M_AMD64) && !defined(_AMD64_)
 #define _AMD64_
@@ -92,8 +92,7 @@ __declspec(dllimport) void __stdcall Sleep(WIN_DWORD dwMilliseconds);
 }
 #endif
 
-
-__declspec(selectany) void* g_posix_child_handles[1024] = {0};
+__declspec(selectany) void *g_posix_child_handles[1024] = {0};
 __declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
 __declspec(selectany) int g_posix_child_count = 0;
 
@@ -126,7 +125,8 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
           }
           pid_t ret = (pid_t)g_posix_child_pids[i];
           CloseHandle(g_posix_child_handles[i]);
-          g_posix_child_handles[i] = g_posix_child_handles[g_posix_child_count - 1];
+          g_posix_child_handles[i] =
+              g_posix_child_handles[g_posix_child_count - 1];
           g_posix_child_pids[i] = g_posix_child_pids[g_posix_child_count - 1];
           g_posix_child_count--;
           return ret;
@@ -151,7 +151,8 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     }
 
     if (found_idx == -1) {
-      hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+      hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE,
+                             (DWORD)pid);
     }
 
     if (hProcess == NULL) {
@@ -159,9 +160,11 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       return (pid_t)-1;
     }
 
-    wait_res = WaitForSingleObject(hProcess, (options & WNOHANG) ? 0 : INFINITE);
+    wait_res =
+        WaitForSingleObject(hProcess, (options & WNOHANG) ? 0 : INFINITE);
     if (wait_res == WAIT_TIMEOUT) {
-      if (found_idx == -1) CloseHandle(hProcess);
+      if (found_idx == -1)
+        CloseHandle(hProcess);
       return 0;
     } else if (wait_res == WAIT_OBJECT_0) {
       if (stat_loc != NULL) {
@@ -173,8 +176,10 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       }
       if (found_idx != -1) {
         CloseHandle(g_posix_child_handles[found_idx]);
-        g_posix_child_handles[found_idx] = g_posix_child_handles[g_posix_child_count - 1];
-        g_posix_child_pids[found_idx] = g_posix_child_pids[g_posix_child_count - 1];
+        g_posix_child_handles[found_idx] =
+            g_posix_child_handles[g_posix_child_count - 1];
+        g_posix_child_pids[found_idx] =
+            g_posix_child_pids[g_posix_child_count - 1];
         g_posix_child_count--;
       } else {
         CloseHandle(hProcess);
@@ -182,12 +187,12 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       return pid;
     }
 
-    if (found_idx == -1) CloseHandle(hProcess);
+    if (found_idx == -1)
+      CloseHandle(hProcess);
     errno = EINVAL;
     return (pid_t)-1;
   }
 }
-
 
 /** \brief waitid function. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
@@ -227,7 +232,32 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 
-#endif /* _WIN32 */
+#endif /* _WIN32 && !DOS */
+
+#if defined(__MSDOS__) || defined(__WATCOMC__)
+
+pid_t wait(int *stat_loc) {
+  if (stat_loc) {
+  }
+  errno = ECHILD;
+  return -1;
+}
+
+pid_t waitpid(pid_t pid, int *stat_loc, int options) {
+  if (pid || stat_loc || options) {
+  }
+  errno = ECHILD;
+  return -1;
+}
+
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
+  if (idtype || id || infop || options) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+#endif /* MSDOS || WATCOMC */
 
 /* Non-standard Microsoft-compatible cwait */
 pid_t cwait(int *termstat, pid_t pid, int action) {

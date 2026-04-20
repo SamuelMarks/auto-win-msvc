@@ -15,12 +15,22 @@
 #ifndef _TIMEVAL_DEFINED
 #include <winsock2.h>
 #endif
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#ifndef _TIMEVAL_DEFINED
+struct timeval {
+  long tv_sec;
+  long tv_usec;
+};
+#define _TIMEVAL_DEFINED
+#endif
+/* DOS has no sys/resource.h */
 #else /* Not MSVC/Windows */
 #include <sys/resource.h>
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 #define RUSAGE_SELF 0
 #define RUSAGE_CHILDREN -1

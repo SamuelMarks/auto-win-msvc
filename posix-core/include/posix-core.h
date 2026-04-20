@@ -63,6 +63,14 @@ typedef int gid_t;
 #include <share.h>
 #include <sys/stat.h>
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include <fcntl.h>
+#include <io.h>
+#include <process.h>
+#include <share.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -1010,12 +1018,11 @@ pid_t vfork(void);
 /* strdup */
 #endif
 
-
 /** @brief rename (POSIX semantics) */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #undef rename
-#include <stdio.h>
 #include <io.h>
+#include <stdio.h>
 int posix_rename(const char *oldpath, const char *newpath);
 #ifndef rename
 #define rename(oldpath, newpath) posix_rename((oldpath), (newpath))

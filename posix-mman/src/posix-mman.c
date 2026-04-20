@@ -156,7 +156,7 @@ int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
 #endif
 
 /* Provide 64-bit int fallback for C89 */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 posix_mman_uint64_t;
 #elif defined(__GNUC__)
 __extension__ typedef unsigned long long posix_mman_uint64_t;

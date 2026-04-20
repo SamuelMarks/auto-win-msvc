@@ -16,12 +16,15 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+/* DOS has no sys/ioctl.h */
 #else
 #include <sys/ioctl.h>
 #endif
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 #ifdef __cplusplus
 extern "C" {

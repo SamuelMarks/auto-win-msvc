@@ -20,6 +20,8 @@ extern "C" {
 }
 #endif
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+/* DOS has no select.h */
 #else
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header

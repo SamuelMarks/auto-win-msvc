@@ -1,7 +1,8 @@
 #ifndef POSIX_REGEX_H
 #define POSIX_REGEX_H
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 
 /* clang-format off */
 #include <stddef.h>

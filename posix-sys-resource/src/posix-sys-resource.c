@@ -89,6 +89,31 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
   return 0;
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#include <errno.h>
+
+int posix_getrusage(int who, struct rusage *usage) {
+  if (who || usage) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+int posix_getrlimit(int resource, struct rlimit *rlp) {
+  if (resource || rlp) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+int posix_setrlimit(int resource, const struct rlimit *rlp) {
+  if (resource || rlp) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
 #endif
 
 /* Prevent empty translation unit */

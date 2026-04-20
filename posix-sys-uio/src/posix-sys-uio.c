@@ -128,6 +128,24 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   return bytesRecv;
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#include <errno.h>
+
+long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
+  if (fd || iov || iovcnt) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
+  if (fd || iov || iovcnt) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
 #endif
 
 /* Prevent empty translation unit */

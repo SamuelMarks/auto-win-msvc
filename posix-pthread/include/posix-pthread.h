@@ -6,7 +6,8 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32) || defined(__CYGWIN__)
+#if (!defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)) ||      \
+    defined(__CYGWIN__)
 /* Transparently use native POSIX threads */
 /* clang-format off */
 #include <pthread.h>

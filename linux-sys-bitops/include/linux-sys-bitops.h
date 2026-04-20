@@ -223,7 +223,14 @@ LINUX_SYS_BITOPS_INLINE int posix_fls(int x) {
 #endif
 }
 
-__extension__ LINUX_SYS_BITOPS_INLINE int posix_fls64(unsigned long long x) {
+#if defined(__GNUC__) || defined(__clang__)
+#define LINUX_SYS_BITOPS_EXTENSION __extension__
+#else
+#define LINUX_SYS_BITOPS_EXTENSION
+#endif
+
+LINUX_SYS_BITOPS_EXTENSION LINUX_SYS_BITOPS_INLINE int
+posix_fls64(unsigned long long x) {
 #if defined(__GNUC__) || defined(__clang__)
   if (!x)
     return 0;

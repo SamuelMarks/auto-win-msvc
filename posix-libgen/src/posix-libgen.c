@@ -8,7 +8,7 @@
 
 /* Carefully guard every header that is not available on MSVC throughout the
  * codebase; to prevent errors. */
-#if !defined(_MSC_VER)
+#if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MSDOS__)
 #include <sys/param.h>
 #include <unistd.h>
 /* clang-format on */

@@ -11,14 +11,15 @@
  */
 
 /* clang-format off */
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 #include <stddef.h> /* size_t */
 #else
 #include <sched.h>
 #endif
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 #define CPU_SETSIZE 64
 
@@ -27,7 +28,7 @@
  */
 #if defined(__GNUC__)
 __extension__ typedef unsigned long long mask_bit_type;
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 mask_bit_type;
 #else
 typedef unsigned long long mask_bit_type;
@@ -36,7 +37,7 @@ typedef unsigned long long mask_bit_type;
 typedef struct cpu_set {
 #if defined(__GNUC__)
   __extension__ unsigned long long bits;
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined(__WATCOMC__)
   unsigned __int64 bits;
 #else
   unsigned long long bits;

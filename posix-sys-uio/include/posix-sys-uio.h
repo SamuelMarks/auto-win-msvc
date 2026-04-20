@@ -13,12 +13,15 @@
 /* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
 #include <stddef.h> /* size_t */
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include <stddef.h> /* size_t */
 #else
 #include <sys/uio.h>
 #endif
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 /**
  * @brief Vector structure for scatter/gather I/O operations.

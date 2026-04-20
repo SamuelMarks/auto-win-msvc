@@ -94,6 +94,34 @@ int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
   return 0;
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#include <errno.h>
+
+int posix_sched_yield(void) { return 0; }
+
+int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
+  if (pid) {
+  }
+  if (cpusetsize) {
+  }
+  if (mask) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
+  if (pid) {
+  }
+  if (cpusetsize) {
+  }
+  if (mask) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
 #endif
 
 /* Prevent empty translation unit */
