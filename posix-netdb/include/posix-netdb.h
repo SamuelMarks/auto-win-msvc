@@ -15,9 +15,12 @@
 extern "C" {
 #endif
 
+/** \brief posix_getaddrinfo function. */
 int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res);
+/** \brief posix_freeaddrinfo function. */
 void posix_freeaddrinfo(struct addrinfo *ai);
+/** \brief posix_gai_strerror function. */
 const char *posix_gai_strerror(int ecode);
 
 #undef getaddrinfo

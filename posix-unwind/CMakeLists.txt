@@ -30,7 +30,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(greatest)
 endif()
 
-add_executable(test_posix-unwind tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-unwind ${TEST_SOURCES})
 target_include_directories(test_posix-unwind PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-unwind PRIVATE posix-unwind)
 

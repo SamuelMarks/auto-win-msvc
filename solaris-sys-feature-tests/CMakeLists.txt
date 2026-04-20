@@ -90,7 +90,8 @@ target_include_directories(solaris-sys-feature-tests PUBLIC $<BUILD_INTERFACE:${
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_solaris-sys-feature-tests tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_solaris-sys-feature-tests ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_source_dir})

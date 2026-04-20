@@ -90,7 +90,8 @@ target_include_directories(solaris-port PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_solaris-port tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_solaris-port ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_solaris-port PRIVATE ${greatest_source_dir})

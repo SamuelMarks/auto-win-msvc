@@ -45,7 +45,8 @@ target_link_libraries(macos-availabilitymacros PUBLIC posix-stdint posix-stdbool
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_macos-availabilitymacros tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_macos-availabilitymacros ${TEST_SOURCES})
 target_link_libraries(test_macos-availabilitymacros PRIVATE macos-availabilitymacros greatest)
 add_test(NAME test_macos-availabilitymacros COMMAND test_macos-availabilitymacros)
 endif()

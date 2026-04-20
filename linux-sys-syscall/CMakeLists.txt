@@ -90,7 +90,8 @@ target_include_directories(linux-sys-syscall PUBLIC $<BUILD_INTERFACE:${CMAKE_CU
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_linux-sys-syscall tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-sys-syscall ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_linux-sys-syscall PRIVATE ${greatest_source_dir})

@@ -90,7 +90,8 @@ target_include_directories(posix-stdint PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_posix-stdint tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-stdint ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_posix-stdint PRIVATE ${greatest_source_dir})

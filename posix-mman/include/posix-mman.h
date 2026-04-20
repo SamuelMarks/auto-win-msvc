@@ -128,6 +128,7 @@ typedef unsigned short mode_t;
  * @advice: advice to give
  * Returns 0 on success, -1 on failure.
  */
+/** \brief madvise function. */
 int madvise(void *addr, size_t length, int advice);
 
 /*
@@ -136,6 +137,7 @@ int madvise(void *addr, size_t length, int advice);
  * @len: length of the memory to lock
  * Returns 0 on success, -1 on failure.
  */
+/** \brief mlock function. */
 int mlock(const void *addr, size_t len);
 
 /*
@@ -143,6 +145,7 @@ int mlock(const void *addr, size_t len);
  * @flags: MCL_CURRENT and/or MCL_FUTURE
  * Returns 0 on success, -1 on failure.
  */
+/** \brief mlockall function. */
 int mlockall(int flags);
 
 /*
@@ -155,6 +158,7 @@ int mlockall(int flags);
  * @offset: offset within the file
  * Returns mapped address on success, MAP_FAILED on failure.
  */
+/** \brief mmap function. */
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset);
 
@@ -165,6 +169,7 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
  * @prot: protection flags
  * Returns 0 on success, -1 on failure.
  */
+/** \brief mprotect function. */
 int mprotect(void *addr, size_t len, int prot);
 
 /*
@@ -174,6 +179,7 @@ int mprotect(void *addr, size_t len, int prot);
  * @flags: MS_SYNC, MS_ASYNC, MS_INVALIDATE
  * Returns 0 on success, -1 on failure.
  */
+/** \brief msync function. */
 int msync(void *addr, size_t length, int flags);
 
 /*
@@ -182,12 +188,14 @@ int msync(void *addr, size_t length, int flags);
  * @len: length of the memory to unlock
  * Returns 0 on success, -1 on failure.
  */
+/** \brief munlock function. */
 int munlock(const void *addr, size_t len);
 
 /*
  * munlockall - unlock all process address space
  * Returns 0 on success, -1 on failure.
  */
+/** \brief munlockall function. */
 int munlockall(void);
 
 /*
@@ -196,6 +204,7 @@ int munlockall(void);
  * @length: length of the mapping
  * Returns 0 on success, -1 on failure.
  */
+/** \brief munmap function. */
 int munmap(void *addr, size_t length);
 
 /*
@@ -205,6 +214,7 @@ int munmap(void *addr, size_t length);
  * @mode: file mode
  * Returns file descriptor on success, -1 on failure.
  */
+/** \brief shm_open function. */
 int shm_open(const char *name, int oflag, mode_t mode);
 
 /*
@@ -212,6 +222,7 @@ int shm_open(const char *name, int oflag, mode_t mode);
  * @name: name of the object
  * Returns 0 on success, -1 on failure.
  */
+/** \brief shm_unlink function. */
 int shm_unlink(const char *name);
 
 #ifdef __cplusplus

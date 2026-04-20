@@ -97,7 +97,8 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 
-add_executable(test_posix-types tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-types ${TEST_SOURCES})
 target_include_directories(test_posix-types PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-types PRIVATE posix-types)
 add_test(NAME test_posix-types COMMAND test_posix-types)

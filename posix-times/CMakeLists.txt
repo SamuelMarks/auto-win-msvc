@@ -33,7 +33,8 @@ endif()
 
 
 
-add_executable(test_posix-times tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-times ${TEST_SOURCES})
 target_link_libraries(test_posix-times PRIVATE posix-times)
 target_include_directories(test_posix-times PRIVATE ${greatest_SOURCE_DIR})
 

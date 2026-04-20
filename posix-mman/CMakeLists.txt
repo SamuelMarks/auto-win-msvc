@@ -100,7 +100,8 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 
-add_executable(test_posix-mman tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-mman ${TEST_SOURCES})
 target_include_directories(test_posix-mman PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-mman PRIVATE posix-mman)
 

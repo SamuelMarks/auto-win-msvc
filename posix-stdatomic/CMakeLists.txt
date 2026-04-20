@@ -90,7 +90,8 @@ target_include_directories(posix-stdatomic PUBLIC $<BUILD_INTERFACE:${CMAKE_CURR
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_posix-stdatomic tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-stdatomic ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_posix-stdatomic PRIVATE ${greatest_source_dir})

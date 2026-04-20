@@ -103,7 +103,8 @@ target_include_directories(linux-sys-statfs PUBLIC $<BUILD_INTERFACE:${CMAKE_CUR
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_linux-sys-statfs tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-sys-statfs ${TEST_SOURCES})
 target_link_libraries(test_linux-sys-statfs PRIVATE linux-sys-statfs greatest)
 add_test(NAME test_linux-sys-statfs COMMAND test_linux-sys-statfs)
 endif()

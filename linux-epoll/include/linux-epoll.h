@@ -8,11 +8,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/** \brief posix_epoll_create function. */
 int posix_epoll_create(int size);
+/** \brief posix_epoll_create1 function. */
 int posix_epoll_create1(int flags);
+/** \brief posix_epoll_ctl function. */
 int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+/** \brief posix_epoll_wait function. */
 int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
                      int timeout);
+/** \brief posix_epoll_close function. */
 int posix_epoll_close(int epfd);
 #define epoll_create posix_epoll_create
 #define epoll_create1 posix_epoll_create1
@@ -25,10 +30,15 @@ int posix_epoll_close(int epfd);
 #ifdef __cplusplus
 extern "C" {
 #endif
+/** \brief posix_epoll_create function. */
 int posix_epoll_create(int size);
+/** \brief posix_epoll_create1 function. */
 int posix_epoll_create1(int flags);
+/** \brief posix_epoll_ctl function. */
 int posix_epoll_ctl(int epfd, int op, int fd, void *event);
+/** \brief posix_epoll_wait function. */
 int posix_epoll_wait(int epfd, void *events, int maxevents, int timeout);
+/** \brief posix_epoll_close function. */
 int posix_epoll_close(int epfd);
 #define epoll_create posix_epoll_create
 #define epoll_create1 posix_epoll_create1

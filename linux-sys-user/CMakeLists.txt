@@ -90,7 +90,8 @@ target_include_directories(linux-sys-user PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRE
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_linux-sys-user tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-sys-user ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_linux-sys-user PRIVATE ${greatest_source_dir})

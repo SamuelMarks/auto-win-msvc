@@ -94,7 +94,8 @@ endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_posix-pwdgrp tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-pwdgrp ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_posix-pwdgrp PRIVATE ${greatest_source_dir})

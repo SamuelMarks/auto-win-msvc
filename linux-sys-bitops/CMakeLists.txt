@@ -30,7 +30,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(greatest)
 endif()
 
-add_executable(test_linux-sys-bitops tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-sys-bitops ${TEST_SOURCES})
 target_include_directories(test_linux-sys-bitops PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_linux-sys-bitops PRIVATE linux-sys-bitops)
 

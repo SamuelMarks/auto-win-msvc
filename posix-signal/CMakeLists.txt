@@ -33,7 +33,8 @@ endif()
 
 
 
-add_executable(test_posix-signal tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-signal ${TEST_SOURCES})
 target_link_libraries(test_posix-signal PRIVATE posix-signal)
 target_include_directories(test_posix-signal PRIVATE ${greatest_SOURCE_DIR})
 

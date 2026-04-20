@@ -91,7 +91,8 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 
-add_executable(test_posix-dlfcn tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-dlfcn ${TEST_SOURCES})
 target_link_libraries(test_posix-dlfcn PRIVATE posix-dlfcn)
 target_include_directories(test_posix-dlfcn PRIVATE ${greatest_SOURCE_DIR})
 

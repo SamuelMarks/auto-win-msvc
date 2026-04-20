@@ -90,7 +90,8 @@ target_include_directories(bsd-sys-sysctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRE
 
 enable_testing()
 
-add_executable(test_bsd-sys-sysctl tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_bsd-sys-sysctl ${TEST_SOURCES})
 target_include_directories(test_bsd-sys-sysctl PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_bsd-sys-sysctl PRIVATE bsd-sys-sysctl)
 

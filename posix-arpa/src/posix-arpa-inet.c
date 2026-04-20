@@ -10,7 +10,7 @@ int posix_inet_aton(const char *cp, struct in_addr *inp) {
   unsigned long val = 0;
   int base = 10;
   char c;
-  unsigned int parts[4];
+  unsigned long parts[4];
   int pp = 0;
 
   if (!cp || !inp)

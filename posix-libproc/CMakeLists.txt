@@ -33,7 +33,8 @@ endif()
 
 
 
-add_executable(test_posix-libproc tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-libproc ${TEST_SOURCES})
 target_link_libraries(test_posix-libproc PRIVATE posix-libproc)
 target_include_directories(test_posix-libproc PRIVATE ${greatest_SOURCE_DIR})
 

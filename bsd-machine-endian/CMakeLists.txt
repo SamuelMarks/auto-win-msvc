@@ -90,7 +90,8 @@ target_include_directories(bsd-machine-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_C
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_bsd-machine-endian tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_bsd-machine-endian ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_bsd-machine-endian PRIVATE ${greatest_source_dir})

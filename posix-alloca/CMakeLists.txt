@@ -14,12 +14,13 @@ target_include_directories(posix-alloca PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT
 include(FetchContent)
 FetchContent_Declare(
   greatest
-  GIT_REPOSITORY https://github.com/silentbicycle/greatest.git
-  GIT_TAG        v1.4.2
+  URL https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h
+  DOWNLOAD_NO_EXTRACT TRUE
 )
 FetchContent_MakeAvailable(greatest)
 
-add_executable(test_posix-alloca tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-alloca ${TEST_SOURCES})
 target_include_directories(test_posix-alloca PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-alloca PRIVATE posix-alloca)
 if(TARGET greatest)

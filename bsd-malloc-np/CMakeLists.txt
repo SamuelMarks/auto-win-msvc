@@ -90,7 +90,8 @@ target_include_directories(bsd-malloc-np PUBLIC $<BUILD_INTERFACE:${CMAKE_CURREN
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_bsd-malloc-np tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_bsd-malloc-np ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_bsd-malloc-np PRIVATE ${greatest_source_dir})

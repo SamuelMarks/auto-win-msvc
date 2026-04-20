@@ -103,7 +103,8 @@ target_include_directories(posix-libgen PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_posix-libgen tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-libgen ${TEST_SOURCES})
 target_link_libraries(test_posix-libgen PRIVATE posix-libgen greatest)
 add_test(NAME test_posix-libgen COMMAND test_posix-libgen)
 endif()

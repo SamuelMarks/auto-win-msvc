@@ -103,7 +103,8 @@ target_include_directories(linux-getopt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
-add_executable(test_linux-getopt tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-getopt ${TEST_SOURCES})
 target_link_libraries(test_linux-getopt PRIVATE linux-getopt greatest)
 add_test(NAME test_linux-getopt COMMAND test_linux-getopt)
 endif()

@@ -577,3 +577,4 @@ endif()
 
 
 
+include(CPack)

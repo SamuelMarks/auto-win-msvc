@@ -193,6 +193,7 @@ LINUX_SYS_BITOPS_INLINE int posix_test_bit(int nr,
 
 LINUX_SYS_BITOPS_INLINE int posix_ffs(int x) {
 #if defined(__GNUC__) || defined(__clang__)
+  /** \brief __builtin_ffs function. */
   return __builtin_ffs(x);
 #else
   int i;
@@ -261,6 +262,7 @@ LINUX_SYS_BITOPS_INLINE unsigned long posix___ffs(unsigned long word) {
 }
 
 LINUX_SYS_BITOPS_INLINE unsigned long posix_ffz(unsigned long word) {
+  /** \brief posix___ffs function. */
   return posix___ffs(~word);
 }
 

@@ -89,7 +89,8 @@ add_library(bsd-sys-cpuset src/bsd-sys-cpuset.c)
 target_include_directories(bsd-sys-cpuset PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
-add_executable(test_bsd-sys-cpuset tests/test.c)
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_bsd-sys-cpuset ${TEST_SOURCES})
 
 FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
 target_include_directories(test_bsd-sys-cpuset PRIVATE ${greatest_source_dir})
