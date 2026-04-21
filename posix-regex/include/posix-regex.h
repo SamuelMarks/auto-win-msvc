@@ -58,7 +58,7 @@ typedef struct {
 #define REG_ASSERT 15
 #define REG_INVARG 16
 #define REG_ILLSEQ 17
-#define REG_NOSYS 18
+#define REG_ENOSYS 18
 
 /** \brief regcomp function. */
 int regcomp(regex_t *preg, const char *pattern, int cflags);

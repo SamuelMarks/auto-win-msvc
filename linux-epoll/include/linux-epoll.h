@@ -1,10 +1,18 @@
 #ifndef LINUX_EPOLL_H
 #define LINUX_EPOLL_H
 
+/* clang-format off */
 #if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
     (!defined(_MSC_VER) || _MSC_VER >= 1600)
 #include <stdint.h>
 #include <wepoll.h>
+#elif defined(__linux__)
+#include <sys/epoll.h>
+#endif
+/* clang-format on */
+
+#if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
+    (!defined(_MSC_VER) || _MSC_VER >= 1600)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,8 +55,8 @@ int posix_epoll_close(int epfd);
 #ifdef __cplusplus
 }
 #endif
-#elif defined(__linux__) || (defined(__CYGWIN__) && defined(__x86_64__))
-#include <sys/epoll.h>
+#elif defined(__linux__)
+/* Includes moved to the top */
 #else
 #ifdef __cplusplus
 extern "C" {

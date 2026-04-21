@@ -11,7 +11,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
   preg = preg;
   pattern = pattern;
   cflags = cflags;
-  return REG_NOSYS;
+  return REG_ENOSYS;
 }
 
 /** \brief regexec function. */
@@ -22,7 +22,7 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   nmatch = nmatch;
   pmatch = pmatch;
   eflags = eflags;
-  return REG_NOSYS;
+  return REG_ENOSYS;
 }
 
 /** \brief regerror function. */

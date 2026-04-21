@@ -9,11 +9,19 @@ extern "C" {
 /* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>
+#include <errno.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #if defined(_MSC_VER)
+#ifndef EACCES
+#define EACCES 13
+#endif
+
+#ifndef EISDIR
+#define EISDIR 21
+#endif
+
 #ifndef _SSIZE_T_DEFINED
-#define _SSIZE_T_DEFINED
 #ifdef _WIN64
 typedef __int64 ssize_t;
 #else
