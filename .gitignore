@@ -117,6 +117,8 @@ check.txt
 # Broad wildcards for careless git add . (applies everywhere)
 test_*
 test.*
+!*/tests/
+!*/tests/*
 temp_*
 temp.*
 tmp_*
