@@ -1,34 +1,34 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "posix-pthread.h"
 #include <stddef.h>
 
 TEST test_pthread_spin_destroy(void) {
-    SKIP(); /* Generated stub for pthread_spin_destroy */
+  SKIP(); /* Generated stub for pthread_spin_destroy */
 }
 
 TEST test_pthread_spin_init(void) {
-    SKIP(); /* Generated stub for pthread_spin_init */
+  SKIP(); /* Generated stub for pthread_spin_init */
 }
 
 TEST test_pthread_spin_lock(void) {
-    SKIP(); /* Generated stub for pthread_spin_lock */
+  SKIP(); /* Generated stub for pthread_spin_lock */
 }
 
 TEST test_pthread_spin_trylock(void) {
-    SKIP(); /* Generated stub for pthread_spin_trylock */
+  SKIP(); /* Generated stub for pthread_spin_trylock */
 }
 
 TEST test_pthread_spin_unlock(void) {
-    SKIP(); /* Generated stub for pthread_spin_unlock */
+  SKIP(); /* Generated stub for pthread_spin_unlock */
 }
 
 SUITE(suite_posix_pthread_pthread_spin) {
-    RUN_TEST(test_pthread_spin_destroy);
-    RUN_TEST(test_pthread_spin_init);
-    RUN_TEST(test_pthread_spin_lock);
-    RUN_TEST(test_pthread_spin_trylock);
-    RUN_TEST(test_pthread_spin_unlock);
+  RUN_TEST(test_pthread_spin_destroy);
+  RUN_TEST(test_pthread_spin_init);
+  RUN_TEST(test_pthread_spin_lock);
+  RUN_TEST(test_pthread_spin_trylock);
+  RUN_TEST(test_pthread_spin_unlock);
 }

@@ -1,39 +1,39 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "posix-pthread.h"
 #include <stddef.h>
 
 TEST test_pthread_cond_broadcast(void) {
-    SKIP(); /* Generated stub for pthread_cond_broadcast */
+  SKIP(); /* Generated stub for pthread_cond_broadcast */
 }
 
 TEST test_pthread_cond_destroy(void) {
-    SKIP(); /* Generated stub for pthread_cond_destroy */
+  SKIP(); /* Generated stub for pthread_cond_destroy */
 }
 
 TEST test_pthread_cond_init(void) {
-    SKIP(); /* Generated stub for pthread_cond_init */
+  SKIP(); /* Generated stub for pthread_cond_init */
 }
 
 TEST test_pthread_cond_signal(void) {
-    SKIP(); /* Generated stub for pthread_cond_signal */
+  SKIP(); /* Generated stub for pthread_cond_signal */
 }
 
 TEST test_pthread_cond_timedwait(void) {
-    SKIP(); /* Generated stub for pthread_cond_timedwait */
+  SKIP(); /* Generated stub for pthread_cond_timedwait */
 }
 
 TEST test_pthread_cond_wait(void) {
-    SKIP(); /* Generated stub for pthread_cond_wait */
+  SKIP(); /* Generated stub for pthread_cond_wait */
 }
 
 SUITE(suite_posix_pthread_pthread_cond) {
-    RUN_TEST(test_pthread_cond_broadcast);
-    RUN_TEST(test_pthread_cond_destroy);
-    RUN_TEST(test_pthread_cond_init);
-    RUN_TEST(test_pthread_cond_signal);
-    RUN_TEST(test_pthread_cond_timedwait);
-    RUN_TEST(test_pthread_cond_wait);
+  RUN_TEST(test_pthread_cond_broadcast);
+  RUN_TEST(test_pthread_cond_destroy);
+  RUN_TEST(test_pthread_cond_init);
+  RUN_TEST(test_pthread_cond_signal);
+  RUN_TEST(test_pthread_cond_timedwait);
+  RUN_TEST(test_pthread_cond_wait);
 }

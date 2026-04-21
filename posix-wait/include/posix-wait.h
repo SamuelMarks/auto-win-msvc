@@ -129,6 +129,9 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 /* For non-Windows environments (like Darwin/Linux testing), include native
  * headers */
 /* clang-format off */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>

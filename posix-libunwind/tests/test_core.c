@@ -1,13 +1,9 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "posix-libunwind.h"
 
-TEST test_libunwind(void) {
-    SKIP(); /* Stubbed */
-}
+TEST test_libunwind(void) { SKIP(); /* Stubbed */ }
 
-SUITE(suite_posix_libunwind_core) {
-    RUN_TEST(test_libunwind);
-}
+SUITE(suite_posix_libunwind_core) { RUN_TEST(test_libunwind); }

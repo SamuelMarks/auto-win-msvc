@@ -1,18 +1,14 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "posix-pwdgrp.h"
 
-TEST test_getpwuid(void) {
-    SKIP(); /* Generated stub for getpwuid */
-}
+TEST test_getpwuid(void) { SKIP(); /* Generated stub for getpwuid */ }
 
-TEST test_getpwuid_r(void) {
-    SKIP(); /* Generated stub for getpwuid_r */
-}
+TEST test_getpwuid_r(void) { SKIP(); /* Generated stub for getpwuid_r */ }
 
 SUITE(suite_posix_pwdgrp_getpwuid) {
-    RUN_TEST(test_getpwuid);
-    RUN_TEST(test_getpwuid_r);
+  RUN_TEST(test_getpwuid);
+  RUN_TEST(test_getpwuid_r);
 }

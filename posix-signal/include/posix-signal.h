@@ -3,6 +3,9 @@
 #define POSIX_SIGNAL_H
 
 /* clang-format off */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include <signal.h>
 #include <stddef.h>
 /* clang-format on */

@@ -1,20 +1,16 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 
 TEST test_stub(void) { SKIP(); }
 
-TEST test_kqueue(void) {
-    SKIP(); /* Generated stub for kqueue */
-}
+TEST test_kqueue(void) { SKIP(); /* Generated stub for kqueue */ }
 
-TEST test_kevent(void) {
-    SKIP(); /* Generated stub for kevent */
-}
+TEST test_kevent(void) { SKIP(); /* Generated stub for kevent */ }
 
 SUITE(suite_bsd_sys_event_core) {
-    RUN_TEST(test_stub);
-    RUN_TEST(test_kqueue);
-    RUN_TEST(test_kevent);
+  RUN_TEST(test_stub);
+  RUN_TEST(test_kqueue);
+  RUN_TEST(test_kevent);
 }

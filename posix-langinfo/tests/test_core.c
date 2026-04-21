@@ -1,21 +1,21 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "langinfo.h"
 #include <stddef.h>
 
 TEST test_nl_langinfo(void) {
-    char *cs = nl_langinfo(CODESET);
-    ASSERT_NEQ(NULL, cs);
-    PASS();
+  char *cs = nl_langinfo(CODESET);
+  ASSERT_NEQ(NULL, cs);
+  PASS();
 }
 
 TEST test_posix_langinfo(void) {
-    SKIP(); /* Generated stub for posix_langinfo */
+  SKIP(); /* Generated stub for posix_langinfo */
 }
 
 SUITE(suite_posix_langinfo_core) {
-    RUN_TEST(test_nl_langinfo);
-    RUN_TEST(test_posix_langinfo);
+  RUN_TEST(test_nl_langinfo);
+  RUN_TEST(test_posix_langinfo);
 }

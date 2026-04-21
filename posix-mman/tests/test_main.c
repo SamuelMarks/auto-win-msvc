@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 
@@ -18,18 +18,18 @@ SUITE_EXTERN(suite_posix_mman_shm);
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
-    GREATEST_MAIN_BEGIN();
-    RUN_SUITE(suite_posix_mman_mman);
-    RUN_SUITE(suite_posix_mman_mlockall);
-    RUN_SUITE(suite_posix_mman_munlockall);
-    RUN_SUITE(suite_posix_mman_madvise);
-    RUN_SUITE(suite_posix_mman_mlock);
-    RUN_SUITE(suite_posix_mman_mmap);
-    RUN_SUITE(suite_posix_mman_mprotect);
-    RUN_SUITE(suite_posix_mman_msync);
-    RUN_SUITE(suite_posix_mman_munlock);
-    RUN_SUITE(suite_posix_mman_munmap);
-    RUN_SUITE(suite_posix_mman_shm);
-    GREATEST_MAIN_END();
-    return 0;
+  GREATEST_MAIN_BEGIN();
+  RUN_SUITE(suite_posix_mman_mman);
+  RUN_SUITE(suite_posix_mman_mlockall);
+  RUN_SUITE(suite_posix_mman_munlockall);
+  RUN_SUITE(suite_posix_mman_madvise);
+  RUN_SUITE(suite_posix_mman_mlock);
+  RUN_SUITE(suite_posix_mman_mmap);
+  RUN_SUITE(suite_posix_mman_mprotect);
+  RUN_SUITE(suite_posix_mman_msync);
+  RUN_SUITE(suite_posix_mman_munlock);
+  RUN_SUITE(suite_posix_mman_munmap);
+  RUN_SUITE(suite_posix_mman_shm);
+  GREATEST_MAIN_END();
+  return 0;
 }

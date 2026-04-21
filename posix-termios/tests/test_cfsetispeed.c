@@ -1,13 +1,9 @@
 #ifdef _MSC_VER
-#pragma warning(disable: 4702)
+#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 #include "greatest.h"
 #include "posix-termios.h"
 
-TEST test_cfsetispeed(void) {
-    SKIP(); /* Generated stub for cfsetispeed */
-}
+TEST test_cfsetispeed(void) { SKIP(); /* Generated stub for cfsetispeed */ }
 
-SUITE(suite_posix_termios_cfsetispeed) {
-    RUN_TEST(test_cfsetispeed);
-}
+SUITE(suite_posix_termios_cfsetispeed) { RUN_TEST(test_cfsetispeed); }
