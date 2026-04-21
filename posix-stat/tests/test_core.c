@@ -5,7 +5,7 @@
 #include "posix-stat.h"
 
 TEST test_stat(void) {
-  struct _stat64 st;
+  struct stat st;
   int res = lstat(".", &st);
   ASSERT_EQ(0, res);
   PASS();

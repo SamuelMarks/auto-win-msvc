@@ -94,7 +94,14 @@
 #endif
 
 #else
+/* clang-format off */
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netdb.h>
+#include <poll.h>
 #include <stddef.h>
+#include <errno.h>
+/* clang-format on */
 #endif
 
 #ifdef __cplusplus

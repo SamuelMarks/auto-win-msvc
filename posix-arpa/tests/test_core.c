@@ -5,7 +5,7 @@
 #include "posix-arpa-inet.h"
 
 TEST test_arpa(void) {
-  ASSERT_NEQ((unsigned long)-1, posix_inet_addr("127.0.0.1"));
+  ASSERT_NEQ((unsigned long)-1, (unsigned long)inet_addr("127.0.0.1"));
   PASS();
 }
 
