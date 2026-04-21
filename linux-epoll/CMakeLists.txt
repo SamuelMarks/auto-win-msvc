@@ -87,6 +87,7 @@ if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
     FetchContent_Declare(
         wepoll
         URL "https://github.com/piscisaureus/wepoll/archive/refs/tags/v1.5.8.zip"
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     FetchContent_GetProperties(wepoll)
     if(NOT wepoll_POPULATED)

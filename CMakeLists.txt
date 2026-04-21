@@ -5,6 +5,8 @@ if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/Users/samue/repos/vcpkg/scri
 endif()
 project(auto-win-msvc VERSION 0.1.0 LANGUAGES C)
 
+include(CTest)
+
 # --- NEW OPTIONS FOR AUTO-WIN-MSVC ---
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON) # Required to export symbols from shared libs without declspec
