@@ -557,7 +557,7 @@ int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
     void *hMap;
     void *ptr;
     void *kernel32;
-    int(__stdcall * pPrefetchVirtualMemory)(void *, unsigned long, void *,
+    int(__stdcall * pPrefetchVirtualMemory)(void *, size_t, void *,
                                             unsigned long);
     __int64 file_size;
     size_t map_len;
@@ -566,7 +566,7 @@ int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
     if (!kernel32)
       return 0;
     pPrefetchVirtualMemory =
-        (int(__stdcall *)(void *, unsigned long, void *, unsigned long))(
+        (int(__stdcall *)(void *, size_t, void *, unsigned long))(
             intptr_t)GetProcAddress(kernel32, "PrefetchVirtualMemory");
     if (!pPrefetchVirtualMemory)
       return 0;

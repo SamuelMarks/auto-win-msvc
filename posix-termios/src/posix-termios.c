@@ -25,7 +25,7 @@ typedef unsigned long DWORD;
 typedef int BOOL;
 
 /** \brief INVALID_HANDLE_VALUE macro. */
-#define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+#define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief STD_INPUT_HANDLE macro. */
 #define STD_INPUT_HANDLE ((DWORD) - 10)
 /** \brief STD_OUTPUT_HANDLE macro. */
@@ -129,7 +129,7 @@ static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
 #endif
 
   if (fd >= 0) {
-    h = (HANDLE)_get_osfhandle(fd);
+    h = (HANDLE)(size_t)_get_osfhandle(fd);
   }
 
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)

@@ -71,7 +71,7 @@ extern "C" {
 #endif
 #ifndef MAP_FAILED
 /** \brief MAP_FAILED macro. */
-#define MAP_FAILED ((void *)-1)
+#define MAP_FAILED ((void *)(size_t)-1)
 #endif
 
 /* msync flags */

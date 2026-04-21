@@ -27,7 +27,7 @@ int getcontext(ucontext_t *ucp) {
   }
 
   fiber = GetCurrentFiber();
-  if (fiber == (void *)0x1e00 || fiber == NULL) {
+  if (fiber == (void *)(size_t)0x1e00 || fiber == NULL) {
     fiber = ConvertThreadToFiber(NULL);
   }
 

@@ -164,14 +164,14 @@ void *shmat(int shmid, const void *shmaddr, int shmflg) {
   (void)shmaddr; /* Suppress unused warning */
 
   if (shmid < 0 || shmid >= MAX_SHM)
-    return (void *)-1;
+    return (void *)(size_t)-1;
 
   lock_shm();
   hMap = g_shm[shmid].hMap;
   unlock_shm();
 
   if (!hMap)
-    return (void *)-1;
+    return (void *)(size_t)-1;
 
   if (shmflg & SHM_RDONLY) {
     access = FILE_MAP_READ;
@@ -179,7 +179,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg) {
 
   addr = MapViewOfFile(hMap, access, 0, 0, 0);
   if (!addr)
-    return (void *)-1;
+    return (void *)(size_t)-1;
 
   return addr;
 }

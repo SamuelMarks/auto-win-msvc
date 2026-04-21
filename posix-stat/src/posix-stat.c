@@ -30,7 +30,7 @@ typedef char *LPSTR;
 
 #define MAX_PATH 260
 /** \brief INVALID_HANDLE_VALUE macro. */
-#define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+#define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief INVALID_FILE_ATTRIBUTES macro. */
 #define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
 #define FILE_ATTRIBUTE_READONLY 1
@@ -132,7 +132,7 @@ static int posix_stat_resolve_at_path(int dirfd, const char *pathname,
     return 0;
   }
 
-  hFile = (HANDLE)_get_osfhandle(dirfd);
+  hFile = (HANDLE)(size_t)_get_osfhandle(dirfd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -190,7 +190,7 @@ int fchmod(int fd, mode_t mode) {
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
 
-  hFile = (HANDLE)_get_osfhandle(fd);
+  hFile = (HANDLE)(size_t)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -287,7 +287,7 @@ static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
 
 /** \brief futimens function. */
 int futimens(int fd, const struct timespec times[2]) {
-  HANDLE hFile = (HANDLE)_get_osfhandle(fd);
+  HANDLE hFile = (HANDLE)(size_t)_get_osfhandle(fd);
   FILETIME atime, mtime;
   FILETIME *pAtime = NULL, *pMtime = NULL;
   int omit_a = 0, omit_m = 0;

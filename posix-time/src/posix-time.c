@@ -55,7 +55,7 @@
 
 #ifndef INVALID_HANDLE_VALUE
 /** \brief INVALID_HANDLE_VALUE macro. */
-#define INVALID_HANDLE_VALUE ((HANDLE)(long)-1)
+#define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 #endif
 
 #ifdef __cplusplus

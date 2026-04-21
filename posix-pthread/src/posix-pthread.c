@@ -1955,7 +1955,7 @@ sem_t *sem_open(const char *name, int oflag, ...) {
 
   if (!name) {
     errno = EINVAL;
-    return (sem_t *)-1;
+    return (sem_t *)(size_t)-1;
   }
 
   if (name[0] == '/')
@@ -1994,17 +1994,17 @@ sem_t *sem_open(const char *name, int oflag, ...) {
       if ((oflag & O_EXCL) && GetLastError() == POSIX_ERROR_ALREADY_EXISTS) {
         CloseHandle(h);
         errno = EEXIST;
-        return (sem_t *)-1;
+        return (sem_t *)(size_t)-1;
       }
     } else {
       errno = EINVAL;
-      return (sem_t *)-1;
+      return (sem_t *)(size_t)-1;
     }
   } else {
     h = OpenSemaphoreA(POSIX_SEMAPHORE_ALL_ACCESS, 0, win_name);
     if (!h) {
       errno = ENOENT;
-      return (sem_t *)-1;
+      return (sem_t *)(size_t)-1;
     }
   }
 
@@ -2012,7 +2012,7 @@ sem_t *sem_open(const char *name, int oflag, ...) {
   if (!sem) {
     CloseHandle(h);
     errno = ENOMEM;
-    return (sem_t *)-1;
+    return (sem_t *)(size_t)-1;
   }
   sem->p = h;
   return sem;
@@ -2020,7 +2020,7 @@ sem_t *sem_open(const char *name, int oflag, ...) {
   (void)name;
   (void)oflag;
   errno = ENOSYS;
-  return (sem_t *)-1;
+  return (sem_t *)(size_t)-1;
 #endif
 }
 

@@ -139,7 +139,7 @@ int posix_ioctl(int fd, unsigned long request, ...) {
     int wsaErr = WSAGetLastError();
     if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
       /* Not a socket. Try as a file/console handle. */
-      h = (HANDLE)_get_osfhandle(fd);
+      h = (HANDLE)(size_t)_get_osfhandle(fd);
       if (h == INVALID_HANDLE_VALUE) {
         errno = EBADF;
         return -1;

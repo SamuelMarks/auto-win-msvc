@@ -193,8 +193,8 @@ int madvise(void *addr, size_t length, int advice) {
 #if defined(_WIN32)
   void *hProcess;
   void *hKernel32;
-  typedef int(__stdcall * PrefetchVirtualMemory_t)(void *, unsigned long *,
-                                                   void *, unsigned long);
+  typedef int(__stdcall * PrefetchVirtualMemory_t)(void *, size_t, void *,
+                                                   unsigned long);
   PrefetchVirtualMemory_t pPrefetchVirtualMemory = NULL;
 
   if (!addr || length == 0) {
@@ -231,7 +231,7 @@ int madvise(void *addr, size_t length, int advice) {
     } entry;
     entry.VirtualAddress = addr;
     entry.NumberOfBytes = length;
-    pPrefetchVirtualMemory(hProcess, (unsigned long *)1, &entry, 0);
+    pPrefetchVirtualMemory(hProcess, (size_t)1, &entry, 0);
   }
   return 0;
 #else

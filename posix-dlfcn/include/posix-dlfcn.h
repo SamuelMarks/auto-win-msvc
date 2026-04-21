@@ -10,6 +10,7 @@ extern "C" {
 #if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
 #include <dlfcn.h>
 #else
+#include <stddef.h>
 /* clang-format on */
 
 /**
@@ -44,7 +45,7 @@ extern "C" {
 #ifndef RTLD_NEXT
 /** @brief Special handle to find the next occurrence of a symbol in the search
  * order after the current library. */
-#define RTLD_NEXT ((void *)-1l)
+#define RTLD_NEXT ((void *)(size_t)-1)
 #endif
 
 /**

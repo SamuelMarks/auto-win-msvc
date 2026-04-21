@@ -61,7 +61,7 @@ int fstatfs(int fd, struct statfs *buf) {
     return -1;
   }
 
-  hFile = (HANDLE)_get_osfhandle(fd);
+  hFile = (HANDLE)(size_t)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
