@@ -31,15 +31,19 @@ def update_readme():
                         if orig_match:
                             idx = orig_match.start()
                             preceding = orig_content[max(0, idx-800):idx]
-                            if '/**' in preceding:
-                                doc_funcs += 1
+                            last_doc_idx = preceding.rfind('/**')
+                            if last_doc_idx != -1:
+                                if ';' not in preceding[last_doc_idx:]:
+                                    doc_funcs += 1
                         else:
                             # Fallback if regex fails on orig_content due to weird formatting
                             idx = orig_content.find(func_name)
                             if idx != -1:
                                 preceding = orig_content[max(0, idx-800):idx]
-                                if '/**' in preceding:
-                                    doc_funcs += 1
+                                last_doc_idx = preceding.rfind('/**')
+                                if last_doc_idx != -1:
+                                    if ';' not in preceding[last_doc_idx:]:
+                                        doc_funcs += 1
 
     tested_funcs = 0
     for proj, funcs in modules.items():
@@ -75,8 +79,8 @@ def update_readme():
         with open(readme_path, 'r', encoding='utf-8') as f:
             readme = f.read()
 
-        readme = re.sub(r'\n*!\[Doc Coverage\].*?\n*', '\n', readme)
-        readme = re.sub(r'\n*!\[Test Coverage\].*?\n*', '\n', readme)
+        readme = re.sub(r'(?m)^.*https://img\.shields\.io/badge/doc__coverage.*$\n?', '', readme)
+        readme = re.sub(r'(?m)^.*https://img\.shields\.io/badge/test__coverage.*$\n?', '', readme)
 
         title_match = re.search(r'^(#\s+.*|.*?\n=+)\n', readme, re.MULTILINE)
         if title_match:

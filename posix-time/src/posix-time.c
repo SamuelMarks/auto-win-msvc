@@ -93,7 +93,7 @@ WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #define POSIX_TIME_10M 10000000i64
 #define POSIX_TIME_10 10i64
 #elif defined(__GNUC__)
-#define POSIX_TIME_EPOCH 116444736000000000LL
+#define POSIX_TIME_EPOCH __extension__ 116444736000000000LL
 #define POSIX_TIME_10M __extension__ 10000000LL
 #define POSIX_TIME_10 __extension__ 10LL
 #else
@@ -342,6 +342,63 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
     return result;
   }
 #endif
+}
+
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
+
+int getitimer(int which, struct itimerval *value) {
+  (void)which;
+  (void)value;
+  errno = ENOSYS;
+  return -1;
+}
+
+int gettimeofday(struct timeval *tv, struct timezone *tz) {
+  (void)tv;
+  (void)tz;
+  errno = ENOSYS;
+  return -1;
+}
+
+int setitimer(int which, const struct itimerval *value,
+              struct itimerval *ovalue) {
+  (void)which;
+  (void)value;
+  (void)ovalue;
+  errno = ENOSYS;
+  return -1;
+}
+
+int utimes(const char *filename, const struct timeval times[2]) {
+  (void)filename;
+  (void)times;
+  errno = ENOSYS;
+  return -1;
+}
+
+int clock_gettime(int clk_id, struct timespec *tp) {
+  (void)clk_id;
+  (void)tp;
+  errno = ENOSYS;
+  return -1;
+}
+
+int nanosleep(const struct timespec *req, struct timespec *rem) {
+  (void)req;
+  (void)rem;
+  errno = ENOSYS;
+  return -1;
+}
+
+struct tm *localtime_r(const time_t *timep, struct tm *result) {
+  (void)timep;
+  (void)result;
+  errno = ENOSYS;
+  return NULL;
 }
 
 #endif /* _WIN32 */

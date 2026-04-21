@@ -17,7 +17,9 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4100)
+#ifdef _MSC_VER
 #pragma warning(disable : 4996)
+#endif /* _MSC_VER */
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1151,12 +1153,13 @@ __declspec(selectany) unsigned long g_posix_child_pids[MAX_POSIX_CHILDREN] = {
     0};
 __declspec(selectany) int g_posix_child_count = 0;
 
-/** rief fork function. */
+/**  rief fork function. */
 pid_t fork(void) {
   void *ntdll;
   RtlCloneUserProcess_f pRtlCloneUserProcess;
   RTL_USER_PROCESS_INFORMATION info;
   unsigned long status;
+  char parent_cwd[260];
 
   ntdll = GetModuleHandleA("ntdll.dll");
   if (!ntdll) {
@@ -1176,7 +1179,6 @@ pid_t fork(void) {
 
   posix_pthread_atfork_prepare();
 
-  char parent_cwd[260];
   GetCurrentDirectoryA(260, parent_cwd);
 
   status = pRtlCloneUserProcess(RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES, NULL,

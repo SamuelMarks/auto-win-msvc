@@ -9,9 +9,12 @@ extern "C" {
 /* clang-format off */
 #include <time.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+
+#if defined(_WIN32)
 #include <sys/utime.h>
 #include <winsock2.h>
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* UCRT defines struct timespec in time.h */

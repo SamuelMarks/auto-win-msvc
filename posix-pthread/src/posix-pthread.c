@@ -16,8 +16,246 @@
 #define EINVAL 22
 #endif
 
-#if !defined(_WIN32) || defined(__CYGWIN__)
+#if (!defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)) || defined(__CYGWIN__)
 /* Nothing to implement, native POSIX used */
+
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
+  (void)mutex; (void)attr;
+  return ENOSYS;
+}
+
+int pthread_mutex_destroy(pthread_mutex_t *mutex) {
+  (void)mutex;
+  return ENOSYS;
+}
+
+int pthread_mutex_lock(pthread_mutex_t *mutex) {
+  (void)mutex;
+  return ENOSYS;
+}
+
+int pthread_mutex_trylock(pthread_mutex_t *mutex) {
+  (void)mutex;
+  return ENOSYS;
+}
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex) {
+  (void)mutex;
+  return ENOSYS;
+}
+
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine)(void *), void *arg) {
+  (void)thread; (void)attr; (void)start_routine; (void)arg;
+  return ENOSYS;
+}
+
+int pthread_join(pthread_t thread, void **retval) {
+  (void)thread; (void)retval;
+  return ENOSYS;
+}
+
+int pthread_detach(pthread_t thread) {
+  (void)thread;
+  return ENOSYS;
+}
+
+int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
+  (void)cond; (void)attr;
+  return ENOSYS;
+}
+
+int pthread_cond_destroy(pthread_cond_t *cond) {
+  (void)cond;
+  return ENOSYS;
+}
+
+int pthread_cond_signal(pthread_cond_t *cond) {
+  (void)cond;
+  return ENOSYS;
+}
+
+int pthread_cond_broadcast(pthread_cond_t *cond) {
+  (void)cond;
+  return ENOSYS;
+}
+
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+  (void)cond; (void)mutex;
+  return ENOSYS;
+}
+
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime) {
+  (void)cond; (void)mutex; (void)abstime;
+  return ENOSYS;
+}
+
+int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
+  (void)rwlock; (void)attr;
+  return ENOSYS;
+}
+
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
+  (void)rwlock;
+  return ENOSYS;
+}
+
+int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
+  (void)key; (void)destructor;
+  return ENOSYS;
+}
+
+int pthread_key_delete(pthread_key_t key) {
+  (void)key;
+  return ENOSYS;
+}
+
+void *pthread_getspecific(pthread_key_t key) {
+  (void)key;
+  return NULL;
+}
+
+int pthread_setspecific(pthread_key_t key, const void *value) {
+  (void)key; (void)value;
+  return ENOSYS;
+}
+
+pthread_t pthread_self(void) {
+  return 0;
+}
+
+int pthread_equal(pthread_t t1, pthread_t t2) {
+  return t1 == t2;
+}
+
+void pthread_exit(void *retval) {
+  (void)retval;
+}
+
+int pthread_cancel(pthread_t thread) {
+  (void)thread;
+  return ENOSYS;
+}
+
+int pthread_setcancelstate(int state, int *oldstate) {
+  (void)state; (void)oldstate;
+  return ENOSYS;
+}
+
+int pthread_setcanceltype(int type, int *oldtype) {
+  (void)type; (void)oldtype;
+  return ENOSYS;
+}
+
+void pthread_testcancel(void) {
+}
+
+int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
+  (void)lock; (void)pshared;
+  return ENOSYS;
+}
+
+int pthread_spin_destroy(pthread_spinlock_t *lock) {
+  (void)lock;
+  return ENOSYS;
+}
+
+int pthread_spin_lock(pthread_spinlock_t *lock) {
+  (void)lock;
+  return ENOSYS;
+}
+
+int pthread_spin_trylock(pthread_spinlock_t *lock) {
+  (void)lock;
+  return ENOSYS;
+}
+
+int pthread_spin_unlock(pthread_spinlock_t *lock) {
+  (void)lock;
+  return ENOSYS;
+}
+
+int sem_init(sem_t *sem, int pshared, unsigned int value) {
+  (void)sem; (void)pshared; (void)value;
+  return -1;
+}
+
+int sem_destroy(sem_t *sem) {
+  (void)sem;
+  return -1;
+}
+
+int sem_wait(sem_t *sem) {
+  (void)sem;
+  return -1;
+}
+
+int sem_trywait(sem_t *sem) {
+  (void)sem;
+  return -1;
+}
+
+int sem_post(sem_t *sem) {
+  (void)sem;
+  return -1;
+}
+
+int sem_getvalue(sem_t *sem, int *sval) {
+  (void)sem; (void)sval;
+  return -1;
+}
+
+int sched_yield(void) {
+  return 0;
+}
+
+int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned count) {
+  (void)barrier; (void)attr; (void)count;
+  return ENOSYS;
+}
+
+int pthread_barrier_destroy(pthread_barrier_t *barrier) {
+  (void)barrier;
+  return ENOSYS;
+}
+
+int pthread_barrier_wait(pthread_barrier_t *barrier) {
+  (void)barrier;
+  return ENOSYS;
+}
+
+int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
+  (void)once_control; (void)init_routine;
+  return ENOSYS;
+}
+
 #else
 
 #if defined(_WIN32)

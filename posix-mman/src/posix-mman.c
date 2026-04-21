@@ -563,6 +563,97 @@ int shm_unlink(const char *name) {
   return -1;
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+/* clang-format off */
+#include "posix-mman.h"
+#include <errno.h>
+#include <stddef.h>
+#include <sys/types.h>
+/* clang-format on */
+
+int madvise(void *addr, size_t length, int advice) {
+  (void)addr;
+  (void)length;
+  (void)advice;
+  errno = ENOSYS;
+  return -1;
+}
+
+int mlock(const void *addr, size_t len) {
+  (void)addr;
+  (void)len;
+  errno = ENOSYS;
+  return -1;
+}
+
+int mlockall(int flags) {
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
+}
+
+void *mmap(void *addr, size_t length, int prot, int flags, int fd,
+           off_t offset) {
+  (void)addr;
+  (void)length;
+  (void)prot;
+  (void)flags;
+  (void)fd;
+  (void)offset;
+  errno = ENOSYS;
+  return (void *)-1;
+}
+
+int mprotect(void *addr, size_t len, int prot) {
+  (void)addr;
+  (void)len;
+  (void)prot;
+  errno = ENOSYS;
+  return -1;
+}
+
+int msync(void *addr, size_t length, int flags) {
+  (void)addr;
+  (void)length;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
+}
+
+int munlock(const void *addr, size_t len) {
+  (void)addr;
+  (void)len;
+  errno = ENOSYS;
+  return -1;
+}
+
+int munlockall(void) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int munmap(void *addr, size_t length) {
+  (void)addr;
+  (void)length;
+  errno = ENOSYS;
+  return -1;
+}
+
+int shm_open(const char *name, int oflag, mode_t mode) {
+  (void)name;
+  (void)oflag;
+  (void)mode;
+  errno = ENOSYS;
+  return -1;
+}
+
+int shm_unlink(const char *name) {
+  (void)name;
+  errno = ENOSYS;
+  return -1;
+}
+
 #endif
 
 #if defined(__CYGWIN__)

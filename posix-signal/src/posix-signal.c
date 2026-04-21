@@ -362,6 +362,78 @@ int posix_signal_kill(pid_t pid, int sig) {
   return 0;
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+int posix_signal_sigemptyset(sigset_t *set) {
+  if (!set)
+    return -1;
+  *set = 0;
+  return 0;
+}
+
+int posix_signal_sigfillset(sigset_t *set) {
+  if (!set)
+    return -1;
+  *set = ~((sigset_t)0);
+  return 0;
+}
+
+int posix_signal_sigaddset(sigset_t *set, int signum) {
+  if (!set || signum < 1 || signum > 31)
+    return -1;
+  *set |= (1UL << signum);
+  return 0;
+}
+
+int posix_signal_sigdelset(sigset_t *set, int signum) {
+  if (!set || signum < 1 || signum > 31)
+    return -1;
+  *set &= ~(1UL << signum);
+  return 0;
+}
+
+int posix_signal_sigismember(const sigset_t *set, int signum) {
+  if (!set || signum < 1 || signum > 31)
+    return -1;
+  return (*set & (1UL << signum)) ? 1 : 0;
+}
+
+int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oset) {
+  (void)how;
+  (void)set;
+  (void)oset;
+  errno = ENOSYS;
+  return -1;
+}
+
+int posix_signal_sigpending(sigset_t *set) {
+  (void)set;
+  errno = ENOSYS;
+  return -1;
+}
+
+int posix_signal_sigsuspend(const sigset_t *mask) {
+  (void)mask;
+  errno = ENOSYS;
+  return -1;
+}
+
+int posix_signal_sigaction(int sig, const struct sigaction *act,
+                           struct sigaction *oact) {
+  (void)sig;
+  (void)act;
+  (void)oact;
+  errno = ENOSYS;
+  return -1;
+}
+
+int posix_signal_kill(pid_t pid, int sig) {
+  (void)pid;
+  (void)sig;
+  errno = ENOSYS;
+  return -1;
+}
+
 #else
 
 typedef int make_iso_compilers_happy_tu_posix_signal;

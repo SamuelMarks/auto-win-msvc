@@ -352,7 +352,8 @@ void globfree(glob_t *pglob) {
 int wordexp(const char *words, wordexp_t *pwordexp, int flags) {
   char *copy;
   char *token;
-#if defined(_MSC_VER) || !defined(_WIN32)
+#if defined(_MSC_VER) ||                                                       \
+    (!defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__))
   char *context = NULL;
 #endif
   char **new_we_wordv;

@@ -1,20 +1,10 @@
 auto-win-msvc
 =============
 
-![Doc Coverage](https://img.shields.io/badge/doc__coverage-100%25-brightgreen)
+![Doc Coverage](https://img.shields.io/badge/doc__coverage-98%25-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/test__coverage-100%25-brightgreen)
 
-(https://img.shields.io/badge/doc__coverage-100%25-brightgreen)
-(https://img.shields.io/badge/test__coverage-100%25-brightgreen)
 
-(https://img.shields.io/badge/doc__coverage-100%25-brightgreen)
-(https://img.shields.io/badge/test__coverage-100%25-brightgreen)
-
-(https://img.shields.io/badge/doc__coverage-97%25-brightgreen)
-(https://img.shields.io/badge/test__coverage-100%25-brightgreen)
-
-(https://img.shields.io/badge/doc__coverage-94%25-brightgreen)
-(https://img.shields.io/badge/test__coverage-100%25-brightgreen)
 
 
 [![License](https://img.shields.io/badge/license-CC0%20OR%20Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -54,8 +44,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(auto-win-msvc)
 
 # Build configurations (can be toggled before MakeAvailable or via command line):
-(https://img.shields.io/badge/doc__coverage-94%25-brightgreen)
-(https://img.shields.io/badge/test__coverage-100%25-brightgreen)
 
 # set(BUILD_SHARED_LIBS ON)
 # set(AUTO_WIN_MSVC_UNICODE ON)

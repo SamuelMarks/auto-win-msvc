@@ -159,14 +159,18 @@ int prctl(int option, ...) {
         info.szName = name;
         info.dwThreadID = (DWORD)-1;
         info.dwFlags = 0;
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 6320 6322)
+#endif /* _MSC_VER */
         __try {
           RaiseException(0x406D1388, 0, sizeof(info) / sizeof(ULONG_PTR),
                          (const ULONG_PTR *)&info);
         } __except (1) {
         }
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif /* _MSC_VER */
       }
 #endif
       return 0;

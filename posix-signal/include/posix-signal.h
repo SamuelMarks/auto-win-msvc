@@ -15,7 +15,8 @@ extern "C" {
 #define POSIX_SIGNAL_MSVC 1
 #endif
 
-#if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32)
+#if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32) || defined(__MSDOS__) ||     \
+    defined(__WATCOMC__)
 
 typedef unsigned long sigset_t;
 

@@ -694,6 +694,38 @@ int posix_spawnp(pid_t *pid, const char *file,
   return internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
+
+int posix_spawn(pid_t *pid, const char *path,
+                const posix_spawn_file_actions_t *file_actions,
+                const posix_spawnattr_t *attrp, char *const argv[],
+                char *const envp[]) {
+  (void)pid;
+  (void)path;
+  (void)file_actions;
+  (void)attrp;
+  (void)argv;
+  (void)envp;
+  return ENOSYS;
+}
+
+int posix_spawnp(pid_t *pid, const char *file,
+                 const posix_spawn_file_actions_t *file_actions,
+                 const posix_spawnattr_t *attrp, char *const argv[],
+                 char *const envp[]) {
+  (void)pid;
+  (void)file;
+  (void)file_actions;
+  (void)attrp;
+  (void)argv;
+  (void)envp;
+  return ENOSYS;
+}
+
 #endif
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;

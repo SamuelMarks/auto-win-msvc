@@ -47,7 +47,11 @@ int posix_epoll_close(int epfd) {
 }
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1600
+#if (defined(_MSC_VER) && _MSC_VER < 1600) ||                                  \
+    (!defined(_WIN32) && !defined(__linux__) &&                                \
+     !(defined(__CYGWIN__) && defined(__x86_64__))) ||                         \
+    (defined(_WIN32) && !defined(_MSC_VER) && !defined(__MINGW32__) &&         \
+     !defined(__MINGW64__))
 #include <errno.h>
 int posix_epoll_create(int size) {
   (void)size;

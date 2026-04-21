@@ -116,6 +116,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       }
       for (i = 0; i < g_posix_child_count; i++) {
         if (WaitForSingleObject(g_posix_child_handles[i], 0) == WAIT_OBJECT_0) {
+          pid_t ret;
           if (stat_loc != NULL) {
             if (GetExitCodeProcess(g_posix_child_handles[i], &exit_code)) {
               *stat_loc = ((int)(exit_code & 0xFF) << 8);
@@ -123,7 +124,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
               *stat_loc = 0;
             }
           }
-          pid_t ret = (pid_t)g_posix_child_pids[i];
+          ret = (pid_t)g_posix_child_pids[i];
           CloseHandle(g_posix_child_handles[i]);
           g_posix_child_handles[i] =
               g_posix_child_handles[g_posix_child_count - 1];

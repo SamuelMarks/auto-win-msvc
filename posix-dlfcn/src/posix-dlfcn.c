@@ -22,10 +22,14 @@
 
 #if defined(_MSC_VER) && _MSC_VER <= 1400
 #pragma warning(push)
+#ifdef _MSC_VER
 #pragma warning(disable : 4201 4214)
+#endif /* _MSC_VER */
 #include <windows.h>
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif /* _MSC_VER */
 #else
 #include <windows.h>
 #include <errhandlingapi.h>
@@ -107,7 +111,9 @@ void *dlopen(const char *file, int mode) {
 
 #if defined(_MSC_VER)
 #pragma warning(push)
+#ifdef _MSC_VER
 #pragma warning(disable : 4996)
+#endif /* _MSC_VER */
 #endif
   {
     char fixed_file[MAX_PATH];
@@ -243,6 +249,35 @@ int dladdr(const void *addr, Dl_info *info) {
   info->dli_saddr = NULL;
 
   return 1;
+}
+
+#else
+
+#include <errno.h>
+
+void *dlopen(const char *file, int mode) {
+  (void)file;
+  (void)mode;
+  return NULL;
+}
+
+int dlclose(void *handle) {
+  (void)handle;
+  return -1;
+}
+
+void *dlsym(void *handle, const char *name) {
+  (void)handle;
+  (void)name;
+  return NULL;
+}
+
+char *dlerror(void) { return "Dynamic linking not supported on this platform"; }
+
+int dladdr(const void *addr, Dl_info *info) {
+  (void)addr;
+  (void)info;
+  return 0;
 }
 
 #endif

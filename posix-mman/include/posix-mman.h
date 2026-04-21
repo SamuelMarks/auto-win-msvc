@@ -2,7 +2,8 @@
 #ifndef POSIX_MMAN_H
 #define POSIX_MMAN_H
 
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__MSDOS__) &&             \
+    !defined(__WATCOMC__)
 
 /* Fallback to system mman on POSIX platforms */
 /* clang-format off */
@@ -116,8 +117,9 @@ extern "C" {
 #endif
 
 /* Windows mode_t polyfill if needed */
-#ifndef _MODE_T_
+#if !defined(_MODE_T_) && !defined(__WATCOMC__) && !defined(_MODE_T_DEFINED_)
 #define _MODE_T_
+#define _MODE_T_DEFINED_
 typedef unsigned short mode_t;
 #endif
 

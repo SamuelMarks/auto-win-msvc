@@ -187,6 +187,8 @@ LINUX_SYS_BITOPS_INLINE int posix_test_bit(int nr,
 
 #if defined(__GNUC__) || defined(__clang__)
 #define LINUX_SYS_BITOPS_INLINE static __inline__
+#elif defined(__WATCOMC__)
+#define LINUX_SYS_BITOPS_INLINE static __inline
 #else
 #define LINUX_SYS_BITOPS_INLINE static
 #endif

@@ -9,8 +9,6 @@
 
 #if defined(__MSDOS__) || defined(__WATCOMC__)
 char *posix_langinfo(nl_item item) {
-  static char codeset_buf[32] = {0};
-
   switch (item) {
   case CODESET:
     return "CP437";

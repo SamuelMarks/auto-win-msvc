@@ -13,9 +13,11 @@
 #endif
 #ifdef _MSC_VER
 #pragma warning(push)
+#ifdef _MSC_VER
 #pragma warning(disable : 4201) /* nameless struct/union */
 #pragma warning(disable : 4214) /* bit field types other than int */
 #pragma warning(disable : 4244) /* possible loss of data */
+#endif                          /* _MSC_VER */
 #endif
 /* clang-format off */
 #include <windows.h>
