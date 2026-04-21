@@ -6,6 +6,12 @@
 extern "C" {
 #endif
 
+/* clang-format off */
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
+#include <dlfcn.h>
+#else
+/* clang-format on */
+
 /**
  * @file posix-dlfcn.h
  * @brief Strict C89 POSIX dlfcn.h implementation for MSVC
@@ -111,6 +117,8 @@ char *dlerror(void);
  * @return Non-zero on success, or 0 on error.
  */
 int dladdr(const void *addr, Dl_info *info);
+
+#endif
 
 #ifdef __cplusplus
 }

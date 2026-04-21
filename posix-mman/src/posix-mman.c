@@ -1,7 +1,7 @@
 /* posix-mman.c - Strict C89 Implementation */
 
-#if defined(_WIN32) || defined(_WIN64)
 /* clang-format off */
+#if defined(_WIN32) || defined(_WIN64)
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
@@ -12,7 +12,15 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include "posix-mman.h"
+#include <errno.h>
+#include <stddef.h>
+#include <sys/types.h>
+#endif
 /* clang-format on */
+
+#if defined(_WIN32) || defined(_WIN64)
 
 /* Win32 Type Definitions to avoid windows.h inflating binary size */
 #if defined(_MSC_VER) && !defined(_WIN64)
@@ -564,13 +572,6 @@ int shm_unlink(const char *name) {
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-
-/* clang-format off */
-#include "posix-mman.h"
-#include <errno.h>
-#include <stddef.h>
-#include <sys/types.h>
-/* clang-format on */
 
 int madvise(void *addr, size_t length, int advice) {
   (void)addr;

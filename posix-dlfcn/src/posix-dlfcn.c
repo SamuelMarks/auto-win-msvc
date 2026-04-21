@@ -251,7 +251,9 @@ int dladdr(const void *addr, Dl_info *info) {
   return 1;
 }
 
-#else
+#elif !defined(__linux__) && !defined(__CYGWIN__) && !defined(__APPLE__) &&    \
+    !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) &&  \
+    !defined(__sun) && !defined(__QNX__)
 
 #include <errno.h>
 

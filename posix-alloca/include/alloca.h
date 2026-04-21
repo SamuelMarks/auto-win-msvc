@@ -14,6 +14,11 @@ extern "C" {
 #endif
 #else
 #include <stdlib.h>
+#if defined(__GNUC__) || defined(__clang__)
+#ifndef alloca
+#define alloca __builtin_alloca
+#endif
+#endif
 #endif
 /* clang-format on */
 
