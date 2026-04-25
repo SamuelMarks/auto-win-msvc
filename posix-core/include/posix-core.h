@@ -653,6 +653,7 @@ int fexecve(int fd, char *const argv[], char *const envp[]);
 #pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
 #endif
 pid_t fork(void);
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif

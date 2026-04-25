@@ -9,6 +9,7 @@
 /* clang-format off */
 #include "posix-wait.h"
 #include <errno.h>
+#include <stdio.h>
 #include <stddef.h>
 
 #if defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
@@ -119,7 +120,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
           pid_t ret;
           if (stat_loc != NULL) {
             if (GetExitCodeProcess(g_posix_child_handles[i], &exit_code)) {
-              *stat_loc = ((int)(exit_code & 0xFF) << 8);
+              printf("CHILD EXIT CODE: 0x%X\n", exit_code); *stat_loc = ((int)(exit_code & 0xFF) << 8);
             } else {
               *stat_loc = 0;
             }
@@ -170,7 +171,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     } else if (wait_res == WAIT_OBJECT_0) {
       if (stat_loc != NULL) {
         if (GetExitCodeProcess(hProcess, &exit_code)) {
-          *stat_loc = ((int)(exit_code & 0xFF) << 8);
+          printf("CHILD EXIT CODE: 0x%X\n", exit_code); *stat_loc = ((int)(exit_code & 0xFF) << 8);
         } else {
           *stat_loc = 0;
         }

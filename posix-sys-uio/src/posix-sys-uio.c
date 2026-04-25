@@ -58,11 +58,18 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
       return total;
     }
 
-    if (wsaErr == WSAEWOULDBLOCK)
-      errno = EWOULDBLOCK;
-    else
-      errno = EINVAL;
-
+    if (wsaErr == WSAEWOULDBLOCK) errno = EAGAIN;
+    else if (wsaErr == WSA_IO_PENDING) errno = EAGAIN;
+    else if (wsaErr == WSAECONNRESET) errno = 104; // ECONNRESET
+    else if (wsaErr == WSAEINPROGRESS) errno = 115; // EINPROGRESS
+    else if (wsaErr == WSAEALREADY) errno = 114; // EALREADY
+    else if (wsaErr == WSAENOTSOCK) errno = 108; // ENOTSOCK
+    else if (wsaErr == WSAEMSGSIZE) errno = 90; // EMSGSIZE
+    else if (wsaErr == WSAEADDRINUSE) errno = 98; // EADDRINUSE
+    else if (wsaErr == WSAEADDRNOTAVAIL) errno = 99; // EADDRNOTAVAIL
+    else if (wsaErr == WSAECONNABORTED) errno = 103; // ECONNABORTED
+    else if (wsaErr == WSAECONNREFUSED) errno = 111; // ECONNREFUSED
+    else errno = wsaErr;
     return -1;
   }
 
@@ -117,11 +124,18 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
       return total;
     }
 
-    if (wsaErr == WSAEWOULDBLOCK)
-      errno = EWOULDBLOCK;
-    else
-      errno = EINVAL;
-
+    if (wsaErr == WSAEWOULDBLOCK) errno = EAGAIN;
+    else if (wsaErr == WSA_IO_PENDING) errno = EAGAIN;
+    else if (wsaErr == WSAECONNRESET) errno = 104; // ECONNRESET
+    else if (wsaErr == WSAEINPROGRESS) errno = 115; // EINPROGRESS
+    else if (wsaErr == WSAEALREADY) errno = 114; // EALREADY
+    else if (wsaErr == WSAENOTSOCK) errno = 108; // ENOTSOCK
+    else if (wsaErr == WSAEMSGSIZE) errno = 90; // EMSGSIZE
+    else if (wsaErr == WSAEADDRINUSE) errno = 98; // EADDRINUSE
+    else if (wsaErr == WSAEADDRNOTAVAIL) errno = 99; // EADDRNOTAVAIL
+    else if (wsaErr == WSAECONNABORTED) errno = 103; // ECONNABORTED
+    else if (wsaErr == WSAECONNREFUSED) errno = 111; // ECONNREFUSED
+    else errno = wsaErr;
     return -1;
   }
 

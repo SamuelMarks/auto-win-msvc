@@ -278,6 +278,65 @@ static unsigned long get_current_rid(int is_group) {
 #define O_NONBLOCK 0x4000
 #endif
 
+static SOCKET nb_sockets[8192] = {0};
+
+void set_nonblock(SOCKET s, int nb) {
+    for(int i=0; i<8192; i++) {
+        if(nb_sockets[i] == s) {
+            if(!nb) nb_sockets[i] = 0;
+            return;
+        }
+    }
+    if(nb) {
+        for(int i=0; i<8192; i++) {
+            if(nb_sockets[i] == 0) {
+                nb_sockets[i] = s;
+                return;
+            }
+        }
+    }
+}
+
+int get_nonblock(SOCKET s) {
+    for(int i=0; i<8192; i++) if(nb_sockets[i] == s) return O_NONBLOCK;
+    return 0;
+}
+
+void clear_nonblock(SOCKET s) {
+    set_nonblock(s, 0);
+}
+
+void copy_nonblock(SOCKET src, SOCKET dst) {
+    if (get_nonblock(src)) set_nonblock(dst, 1);
+}
+
+static unsigned char g_is_socket[8192] = {0};
+
+void mark_as_socket(int fd) {
+    if (fd >= 0 && fd < 8192) g_is_socket[fd] = 1;
+}
+
+void clear_as_socket(int fd) {
+    if (fd >= 0 && fd < 8192) g_is_socket[fd] = 0;
+}
+
+int is_socket(int fd) {
+    if (fd >= 0 && fd < 8192) return g_is_socket[fd];
+    return 1; // Assuming large FDs are sockets
+}
+
+void my_exit_hook(int status) {
+    TerminateProcess(GetCurrentProcess(), status);
+}
+
+__declspec(dllimport) void* __stdcall GetModuleHandleA(const char*);
+__declspec(dllimport) void* __stdcall GetProcAddress(void*, const char*);
+
+void auto_win_exit(int code) {
+    int (__stdcall *tp)(void*, unsigned int) = (void*)(size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"), "TerminateProcess");
+    if (tp) tp((void*)-1LL, code);
+}
+
 int fcntl(int fd, int cmd, ...) {
   va_list ap;
   va_start(ap, cmd);
@@ -288,13 +347,14 @@ int fcntl(int fd, int cmd, ...) {
   }
   if (cmd == F_GETFL) {
     va_end(ap);
-    return 0; /* return 0, assuming blocking */
+    return get_nonblock((SOCKET)(unsigned int)fd);
   }
   if (cmd == F_SETFL) {
     int flags = va_arg(ap, int);
     unsigned long mode = (flags & O_NONBLOCK) ? 1 : 0;
     SOCKET s = (SOCKET)(unsigned int)fd;
     ioctlsocket(s, FIONBIO, &mode);
+    set_nonblock(s, mode);
     va_end(ap);
     return 0;
   }
@@ -1201,6 +1261,25 @@ pid_t fork(void) {
     SetCurrentDirectoryA(parent_cwd);
     posix_pthread_atfork_child();
     /* Child */
+    void* ucrt = GetModuleHandleA("ucrtbase.dll");
+    if (ucrt) {
+        void* p_exits[] = { (void*)(size_t)GetProcAddress(ucrt, "_exit"), (void*)(size_t)GetProcAddress(ucrt, "exit") };
+        for (int i = 0; i < 2; i++) {
+            void* p_exit = p_exits[i];
+            if (p_exit) {
+                unsigned long oldProtect;
+                int (*vp)(void*, size_t, unsigned long, unsigned long*) = (void*)(size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"), "VirtualProtect");
+                if (vp && vp(p_exit, 12, 0x40, &oldProtect)) {
+                    unsigned char* p = (unsigned char*)p_exit;
+                    p[0] = 0x48; p[1] = 0xB8;
+                    void* target = (void*)(size_t)my_exit_hook;
+                    memcpy(p + 2, &target, 8);
+                    p[10] = 0xFF; p[11] = 0xE0;
+                    vp(p_exit, 12, oldProtect, &oldProtect);
+                }
+            }
+        }
+    }
     return 0;
   }
 
@@ -1519,11 +1598,9 @@ int pause(void) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pipe function. */
+extern int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 int pipe(int pipefd[2]) {
-  if (_pipe(pipefd, 4096, _O_BINARY) == -1) {
-    return -1;
-  }
-  return 0;
+  return posix_socketpair(2, 1, 0, pipefd);
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -2125,3 +2202,4 @@ int posix_mkstemp(char *tmpl) {
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_core;
+

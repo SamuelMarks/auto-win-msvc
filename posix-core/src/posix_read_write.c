@@ -2,33 +2,203 @@
 #include <errno.h>
 #include <io.h>
 #include <winsock2.h>
+#include <stdlib.h>
+
+static void my_invalid_parameter_handler(const wchar_t *expression,
+                                         const wchar_t *function,
+                                         const wchar_t *file,
+                                         unsigned int line,
+                                         uintptr_t pReserved) {
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
+}
 
 #undef _read
 #undef _write
+#define _CRT_SECURE_NO_WARNINGS
+#include <fcntl.h>
 
+#include <stdio.h>
+#include <string.h>
+
+FILE *posix_fopen(const char *pathname, const char *mode) {
+    char bmode[16];
+    size_t len = strlen(mode);
+    if (len > 14) len = 14;
+    for (size_t i = 0; i < len; i++) bmode[i] = mode[i];
+    bmode[len] = 0;
+    if (strchr(bmode, 'b') == NULL) {
+        bmode[len] = 'b';
+        bmode[len+1] = 0;
+    }
+    FILE* f = NULL;
+    fopen_s(&f, pathname, bmode);
+    return f;
+}
+
+#include <sys/stat.h>
+int posix_open(const char *pathname, int flags, ...) {
+    int mode = 0;
+    if (flags & O_CREAT) {
+        va_list ap;
+        va_start(ap, flags);
+        mode = va_arg(ap, int);
+        va_end(ap);
+    }
+
+    DWORD dwDesiredAccess = 0;
+    if ((flags & 3) == O_RDONLY) dwDesiredAccess = GENERIC_READ;
+    else if ((flags & 3) == O_WRONLY) dwDesiredAccess = GENERIC_WRITE;
+    else if ((flags & 3) == O_RDWR) dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
+
+    DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+
+    DWORD dwCreationDisposition = OPEN_EXISTING;
+    if ((flags & O_CREAT) && (flags & O_EXCL)) {
+        dwCreationDisposition = CREATE_NEW;
+    } else if ((flags & O_CREAT) && (flags & O_TRUNC)) {
+        dwCreationDisposition = CREATE_ALWAYS;
+    } else if (flags & O_TRUNC) {
+        dwCreationDisposition = TRUNCATE_EXISTING;
+    } else if (flags & O_CREAT) {
+        dwCreationDisposition = OPEN_ALWAYS;
+    }
+
+    DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+
+    HANDLE hFile = CreateFileA(pathname, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        DWORD err = GetLastError();
+        if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS) errno = EEXIST;
+        else if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) errno = ENOENT;
+        else if (err == ERROR_ACCESS_DENIED) errno = EACCES;
+        else errno = EINVAL;
+        return -1;
+    }
+
+    int fd_flags = _O_BINARY;
+    if (flags & O_APPEND) fd_flags |= _O_APPEND;
+    if ((flags & 3) == O_RDONLY) fd_flags |= _O_RDONLY;
+    else if ((flags & 3) == O_WRONLY) fd_flags |= _O_WRONLY;
+    else if ((flags & 3) == O_RDWR) fd_flags |= _O_RDWR;
+
+    int fd = _open_osfhandle((intptr_t)hFile, fd_flags);
+    if (fd == -1) {
+        CloseHandle(hFile);
+        errno = EMFILE;
+        return -1;
+    }
+    return fd;
+}
+
+extern int is_socket(int fd);
 int posix_read(int fd, void *buf, unsigned int count) {
+  if (!is_socket(fd)) {
+      _invalid_parameter_handler old = _set_thread_local_invalid_parameter_handler(my_invalid_parameter_handler);
+      intptr_t osfh = _get_osfhandle(fd);
+      if (osfh != -1 && osfh != -2) {
+          int rret = _read(fd, buf, count);
+          _set_thread_local_invalid_parameter_handler(old);
+          if (rret == -1 && errno == EINVAL) errno = EBADF;
+          return rret;
+      }
+      _set_thread_local_invalid_parameter_handler(old);
+  }
   int ret = recv((SOCKET)(unsigned int)fd, buf, count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
+    if (err == WSANOTINITIALISED) {
+        WSADATA wsaData;
+        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        ret = recv((SOCKET)(unsigned int)fd, buf, count, 0);
+        if (ret != SOCKET_ERROR) return ret;
+        err = WSAGetLastError();
+    }
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
-      return _read(fd, buf, count);
+      DWORD bytes_read = 0;
+      if (ReadFile((HANDLE)(intptr_t)fd, buf, count, &bytes_read, NULL)) {
+          return (int)bytes_read;
+      }
+      errno = EBADF;
+      return -1;
     }
-    errno = err;
+    if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT) errno = EAGAIN;
+    else if (err == WSAECONNRESET) errno = ECONNRESET;
+    else if (err == WSAEINPROGRESS) errno = EINPROGRESS;
+    else if (err == WSAEALREADY) errno = EALREADY;
+    else if (err == WSAENOTSOCK) errno = ENOTSOCK;
+    else if (err == WSAEMSGSIZE) errno = EMSGSIZE;
+    else if (err == WSAEADDRINUSE) errno = EADDRINUSE;
+    else if (err == WSAEADDRNOTAVAIL) errno = EADDRNOTAVAIL;
+    else if (err == WSAECONNABORTED) errno = ECONNABORTED;
+    else if (err == WSAECONNREFUSED) errno = ECONNREFUSED;
+    else errno = err;
     return -1;
   }
   return ret;
 }
 
+extern int is_socket(int fd);
 int posix_write(int fd, const void *buf, unsigned int count) {
+  if (!is_socket(fd)) {
+      _invalid_parameter_handler old = _set_thread_local_invalid_parameter_handler(my_invalid_parameter_handler);
+      intptr_t osfh = _get_osfhandle(fd);
+      if (osfh != -1 && osfh != -2) {
+          int wret = _write(fd, buf, count);
+          _set_thread_local_invalid_parameter_handler(old);
+          if (wret == -1 && errno == EINVAL) errno = EBADF;
+          return wret;
+      }
+      _set_thread_local_invalid_parameter_handler(old);
+  }
   int ret = send((SOCKET)(unsigned int)fd, buf, count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
+    if (err == WSANOTINITIALISED) {
+        WSADATA wsaData;
+        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        ret = send((SOCKET)(unsigned int)fd, buf, count, 0);
+        if (ret != SOCKET_ERROR) return ret;
+        err = WSAGetLastError();
+    }
+    if (err != WSAEWOULDBLOCK) {
+        // printf("DEBUG posix_write send failed: fd=%d, err=%d\n", fd, err);
+    }
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
-      return _write(fd, buf, count);
+      DWORD written = 0;
+      OVERLAPPED ov = {0};
+      if (WriteFile((HANDLE)(intptr_t)fd, buf, count, &written, &ov)) {
+          // If WriteFile completes synchronously, we get the result.
+          return (int)written;
+      } else {
+          DWORD err = GetLastError();
+          if (err == ERROR_IO_PENDING) {
+              if (GetOverlappedResult((HANDLE)(intptr_t)fd, &ov, &written, TRUE)) {
+                  return (int)written;
+              }
+              err = GetLastError();
+          }
+          printf("DEBUG posix_write WriteFile failed: fd=%d, err=%lu\n", fd, err);
+      }
+      errno = EBADF;
+      return -1;
     }
-    errno = err;
+    if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT) errno = EAGAIN;
+    else if (err == WSAECONNRESET) errno = ECONNRESET;
+    else if (err == WSAEINPROGRESS) errno = EINPROGRESS;
+    else if (err == WSAEALREADY) errno = EALREADY;
+    else if (err == WSAENOTSOCK) errno = ENOTSOCK;
+    else if (err == WSAEMSGSIZE) errno = EMSGSIZE;
+    else if (err == WSAEADDRINUSE) errno = EADDRINUSE;
+    else if (err == WSAEADDRNOTAVAIL) errno = EADDRNOTAVAIL;
+    else if (err == WSAECONNABORTED) errno = ECONNABORTED;
+    else if (err == WSAECONNREFUSED) errno = ECONNREFUSED;
+    else errno = err;
     return -1;
   }
   return ret;
@@ -36,20 +206,25 @@ int posix_write(int fd, const void *buf, unsigned int count) {
 
 #undef close
 
+extern void clear_nonblock(SOCKET s);
+extern void clear_as_socket(int fd);
 int posix_close(int fd) {
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
-    /* wepoll handle leak workaround? No, this is handled separately if needed.
-     */
   }
   s = (SOCKET)(unsigned int)fd;
+  clear_nonblock(s);
+  clear_as_socket(fd);
   ret = closesocket(s);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
-      return _close(fd);
+      _invalid_parameter_handler old = _set_thread_local_invalid_parameter_handler(my_invalid_parameter_handler);
+      int cret = _close(fd);
+      _set_thread_local_invalid_parameter_handler(old);
+      return cret;
     }
     errno = err;
     return -1;
@@ -59,3 +234,4 @@ int posix_close(int fd) {
 #endif
 
 typedef int make_iso_compilers_happy_posix_read_write;
+
