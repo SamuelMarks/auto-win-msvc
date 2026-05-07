@@ -107,7 +107,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
   if (tv) {
     FILETIME ft;
     ULARGE_INTEGER uli;
-    GetSystemTimeAsFileTime(&ft);
+    GetSystemTimePreciseAsFileTime(&ft);
     uli.LowPart = ft.dwLowDateTime;
     uli.HighPart = ft.dwHighDateTime;
     /* Convert from 100-nanosecond intervals since 1601 to microseconds since
@@ -270,7 +270,7 @@ int clock_gettime(int clk_id, struct timespec *tp) {
   if (clk_id == CLOCK_REALTIME) {
     FILETIME ft;
     ULARGE_INTEGER uli;
-    GetSystemTimeAsFileTime(&ft);
+    GetSystemTimePreciseAsFileTime(&ft);
     uli.LowPart = ft.dwLowDateTime;
     uli.HighPart = ft.dwHighDateTime;
     uli.QuadPart -= POSIX_TIME_EPOCH;

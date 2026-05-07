@@ -24,18 +24,43 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 #include <stdio.h>
 #include <string.h>
 
+char g_cloned_cwd[1024] = {0};
+
 FILE *posix_fopen(const char *pathname, const char *mode) {
-    char bmode[16];
-    size_t len = strlen(mode);
-    if (len > 14) len = 14;
-    for (size_t i = 0; i < len; i++) bmode[i] = mode[i];
-    bmode[len] = 0;
-    if (strchr(bmode, 'b') == NULL) {
-        bmode[len] = 'b';
-        bmode[len+1] = 0;
+    int flags = 0;
+    DWORD dwAccess = 0, dwCreation = OPEN_EXISTING;
+    if (strchr(mode, 'r')) { flags |= _O_RDONLY; dwAccess |= GENERIC_READ; }
+    if (strchr(mode, 'w')) { flags |= _O_WRONLY | _O_CREAT | _O_TRUNC; dwAccess |= GENERIC_WRITE; dwCreation = CREATE_ALWAYS; }
+    if (strchr(mode, 'a')) { flags |= _O_WRONLY | _O_CREAT | _O_APPEND; dwAccess |= GENERIC_WRITE; dwCreation = OPEN_ALWAYS; }
+    if (strchr(mode, '+')) {
+        flags &= ~(_O_RDONLY | _O_WRONLY);
+        flags |= _O_RDWR;
+        dwAccess |= GENERIC_READ | GENERIC_WRITE;
     }
-    FILE* f = NULL;
-    fopen_s(&f, pathname, bmode);
+    flags |= _O_BINARY;
+    
+    char abs_path[1024];
+    if (pathname[0] != '/' && pathname[0] != '\\' && pathname[1] != ':' && g_cloned_cwd[0] != 0) {
+        snprintf(abs_path, 1024, "%s\\%s", g_cloned_cwd, pathname);
+    } else {
+        snprintf(abs_path, 1024, "%s", pathname);
+    }
+    
+    HANDLE h = CreateFileA(abs_path, dwAccess, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, dwCreation, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE) { 
+        errno = GetLastError(); 
+        return NULL; 
+    }
+    int fd = _open_osfhandle((intptr_t)h, flags);
+    if (fd == -1) { 
+        CloseHandle(h); 
+        return NULL; 
+    }
+    FILE* f = _fdopen(fd, mode);
+    if (f == NULL) { 
+        _close(fd); 
+        return NULL;
+    }
     return f;
 }
 

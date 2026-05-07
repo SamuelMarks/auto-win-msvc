@@ -326,7 +326,7 @@ int is_socket(int fd) {
 }
 
 void my_exit_hook(int status) {
-    TerminateProcess(GetCurrentProcess(), status);
+    ExitProcess(status);
 }
 
 __declspec(dllimport) void* __stdcall GetModuleHandleA(const char*);

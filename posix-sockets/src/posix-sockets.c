@@ -371,6 +371,19 @@ int posix_bind(int socket, const struct sockaddr *address,
                posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef bind
+  if (address->sa_family == AF_UNIX) {
+      struct sockaddr_in fake_addr;
+      memset(&fake_addr, 0, sizeof(fake_addr));
+      fake_addr.sin_family = AF_INET;
+      fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+      fake_addr.sin_port = 0;
+      int ret = bind((SOCKET)(unsigned int)socket, (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
+      if (ret == SOCKET_ERROR) {
+        errno = _wsaErrorToErrno(WSAGetLastError());
+        return -1;
+      }
+      return 0;
+  }
   int ret = bind((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
@@ -604,6 +617,9 @@ int posix_setsockopt(int socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
 #undef setsockopt
+  if (level == SOL_SOCKET && option_name == SO_REUSEADDR) {
+      return 0;
+  }
   int ret;
   if (level == SOL_SOCKET && (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len == sizeof(struct timeval)) {
@@ -652,6 +668,7 @@ int posix_shutdown(int socket, int how) {
 int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
 #undef socket
+  if (domain == AF_UNIX) domain = AF_INET;
   SOCKET s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (s == INVALID_SOCKET) {
     errno = _wsaErrorToErrno(WSAGetLastError());
@@ -687,7 +704,7 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
   if (domain != AF_INET && domain != AF_UNSPEC)
     return -1;
 
-  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
+  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (listener == INVALID_SOCKET)
     return -1;
 
@@ -703,7 +720,7 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
   if (listen(listener, 1) == SOCKET_ERROR)
     goto err;
 
-  client = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
+  client = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (client == INVALID_SOCKET)
     goto err;
 

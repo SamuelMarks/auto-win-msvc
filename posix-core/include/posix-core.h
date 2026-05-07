@@ -282,6 +282,7 @@ struct flock {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
+  oflag |= _O_BINARY;
   int fd = -1;
   int pmode = 0;
   if (oflag & _O_CREAT) {
@@ -384,7 +385,7 @@ int posix_write(int fd, const void *buf, unsigned int count);
 /** @brief ftruncate */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef ftruncate
-#define ftruncate _chsize
+#define ftruncate(fd, size) _chsize(fd, (long)(size))
 #endif
 #else
 /* ftruncate */
@@ -1051,6 +1052,8 @@ int posix_mkstemp(char *tmpl);
 /* mkstemp is standard on POSIX */
 #endif
 
+FILE *posix_fopen(const char *pathname, const char *mode);
+#define fopen posix_fopen
 #ifdef __cplusplus
 }
 #endif
