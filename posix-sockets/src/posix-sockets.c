@@ -72,6 +72,58 @@ __attribute__((constructor)) static void __init_winsock_auto_gcc(void) {
 
 #ifdef _WIN32
 /* Helper removed */
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x4000
+#endif
+
+static SOCKET nb_sockets[8192] = {0};
+__declspec(dllexport) void set_nonblock(SOCKET s, int nb) {
+  int i;
+  for (i = 0; i < 8192; i++) {
+    if (nb_sockets[i] == s) {
+      if (!nb)
+        nb_sockets[i] = 0;
+      return;
+    }
+  }
+  if (nb) {
+    for (i = 0; i < 8192; i++) {
+      if (nb_sockets[i] == 0) {
+        nb_sockets[i] = s;
+        return;
+      }
+    }
+  }
+}
+int get_nonblock(SOCKET s) {
+  int i;
+  for (i = 0; i < 8192; i++)
+    if (nb_sockets[i] == s)
+      return O_NONBLOCK;
+  return 0;
+}
+__declspec(dllexport) void clear_nonblock(SOCKET s) { set_nonblock(s, 0); }
+__declspec(dllexport) void copy_nonblock(SOCKET src, SOCKET dst) {
+  if (get_nonblock(src))
+    set_nonblock(dst, 1);
+}
+
+static unsigned char g_is_socket[8192] = {0};
+__declspec(dllexport) void mark_as_socket(int fd) {
+  if (fd >= 0 && fd < 8192)
+    g_is_socket[fd] = 1;
+}
+__declspec(dllexport) void clear_as_socket(int fd) {
+  if (fd >= 0 && fd < 8192)
+    g_is_socket[fd] = 0;
+}
+int is_socket(int fd) {
+  if (fd >= 0 && fd < 8192)
+    return g_is_socket[fd];
+  return 1; /* Assuming large FDs are sockets */
+}
+
 #endif
 
 /** \brief posix_endhostent function. */
@@ -349,13 +401,15 @@ int posix_accept(int socket, struct sockaddr *address,
   SOCKET ret = accept((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == INVALID_SOCKET) {
     int err = WSAGetLastError();
-    if (err == WSAEWOULDBLOCK) errno = EAGAIN;
-    else errno = _wsaErrorToErrno(err);
+    if (err == WSAEWOULDBLOCK)
+      errno = EAGAIN;
+    else
+      errno = _wsaErrorToErrno(err);
     return -1;
   }
-  extern void copy_nonblock(SOCKET src, SOCKET dst);
+
   copy_nonblock((SOCKET)(unsigned int)socket, ret);
-  extern void mark_as_socket(int fd);
+
   mark_as_socket((int)ret);
   return (int)ret;
 #else
@@ -372,17 +426,18 @@ int posix_bind(int socket, const struct sockaddr *address,
 #ifdef _WIN32
 #undef bind
   if (address->sa_family == AF_UNIX) {
-      struct sockaddr_in fake_addr;
-      memset(&fake_addr, 0, sizeof(fake_addr));
-      fake_addr.sin_family = AF_INET;
-      fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-      fake_addr.sin_port = 0;
-      int ret = bind((SOCKET)(unsigned int)socket, (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
-      if (ret == SOCKET_ERROR) {
-        errno = _wsaErrorToErrno(WSAGetLastError());
-        return -1;
-      }
-      return 0;
+    struct sockaddr_in fake_addr;
+    memset(&fake_addr, 0, sizeof(fake_addr));
+    fake_addr.sin_family = AF_INET;
+    fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    fake_addr.sin_port = 0;
+    int ret = bind((SOCKET)(unsigned int)socket,
+                   (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
+    if (ret == SOCKET_ERROR) {
+      errno = _wsaErrorToErrno(WSAGetLastError());
+      return -1;
+    }
+    return 0;
   }
   int ret = bind((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
@@ -406,9 +461,12 @@ int posix_connect(int socket, const struct sockaddr *address,
   int ret = connect((SOCKET)(unsigned int)socket, address, address_len);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
-    if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY) errno = EINPROGRESS;
-    else errno = _wsaErrorToErrno(err);
-    if (err != WSAEWOULDBLOCK) printf("DEBUG: posix_connect err=%d\n", err);
+    if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY)
+      errno = EINPROGRESS;
+    else
+      errno = _wsaErrorToErrno(err);
+    if (err != WSAEWOULDBLOCK)
+      printf("DEBUG: posix_connect err=%d\n", err);
     return -1;
   }
   return 0;
@@ -464,21 +522,25 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
 #ifdef _WIN32
 #undef getsockopt
   int ret;
-  if (level == SOL_SOCKET && (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
+  if (level == SOL_SOCKET &&
+      (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len && *option_len == sizeof(struct timeval)) {
       DWORD ms = 0;
       int ms_len = sizeof(DWORD);
-      ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)&ms, &ms_len);
+      ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                       (char *)&ms, &ms_len);
       if (ret == 0) {
         struct timeval *tv = (struct timeval *)option_value;
         tv->tv_sec = ms / 1000;
         tv->tv_usec = (ms % 1000) * 1000;
       }
     } else {
-      ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)option_value, option_len);
+      ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                       (char *)option_value, option_len);
     }
   } else {
-    ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name, (char *)option_value, option_len);
+    ret = getsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                     (char *)option_value, option_len);
   }
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
@@ -618,19 +680,23 @@ int posix_setsockopt(int socket, int level, int option_name,
 #ifdef _WIN32
 #undef setsockopt
   if (level == SOL_SOCKET && option_name == SO_REUSEADDR) {
-      return 0;
+    return 0;
   }
   int ret;
-  if (level == SOL_SOCKET && (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
+  if (level == SOL_SOCKET &&
+      (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len == sizeof(struct timeval)) {
       struct timeval *tv = (struct timeval *)option_value;
       DWORD ms = (DWORD)(tv->tv_sec * 1000 + tv->tv_usec / 1000);
-      ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name, (const char *)&ms, sizeof(DWORD));
+      ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                       (const char *)&ms, sizeof(DWORD));
     } else {
-      ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name, (const char *)option_value, option_len);
+      ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                       (const char *)option_value, option_len);
     }
   } else {
-    ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name, (const char *)option_value, option_len);
+    ret = setsockopt((SOCKET)(unsigned int)socket, level, option_name,
+                     (const char *)option_value, option_len);
   }
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
@@ -668,13 +734,14 @@ int posix_shutdown(int socket, int how) {
 int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
 #undef socket
-  if (domain == AF_UNIX) domain = AF_INET;
+  if (domain == AF_UNIX)
+    domain = AF_INET;
   SOCKET s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (s == INVALID_SOCKET) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
   }
-  extern void mark_as_socket(int fd);
+
   mark_as_socket((int)s);
   return (int)s;
 #else
@@ -736,7 +803,7 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
   }
 
   closesocket(listener);
-  extern void mark_as_socket(int fd);
+
   mark_as_socket((int)server);
   mark_as_socket((int)client);
 
@@ -774,4 +841,3 @@ static void __cdecl __init_winsock(void) {
 __declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr)(void) =
     __init_winsock;
 #endif
-

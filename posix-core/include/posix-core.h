@@ -21,6 +21,34 @@ extern "C" {
 #define EISDIR 21
 #endif
 
+#ifndef ECONNRESET
+#define ECONNRESET 108
+#endif
+#ifndef EINPROGRESS
+#define EINPROGRESS 112
+#endif
+#ifndef EALREADY
+#define EALREADY 103
+#endif
+#ifndef ENOTSOCK
+#define ENOTSOCK 128
+#endif
+#ifndef EMSGSIZE
+#define EMSGSIZE 115
+#endif
+#ifndef EADDRINUSE
+#define EADDRINUSE 100
+#endif
+#ifndef EADDRNOTAVAIL
+#define EADDRNOTAVAIL 101
+#endif
+#ifndef ECONNABORTED
+#define ECONNABORTED 106
+#endif
+#ifndef ECONNREFUSED
+#define ECONNREFUSED 107
+#endif
+
 #ifndef _SSIZE_T_DEFINED
 #ifdef _WIN64
 typedef __int64 ssize_t;
@@ -282,9 +310,9 @@ struct flock {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
-  oflag |= _O_BINARY;
   int fd = -1;
   int pmode = 0;
+  oflag |= _O_BINARY;
   if (oflag & _O_CREAT) {
     va_list ap;
     va_start(ap, oflag);

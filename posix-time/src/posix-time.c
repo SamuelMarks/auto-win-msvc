@@ -102,12 +102,31 @@ WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #define POSIX_TIME_10 10LL
 #endif
 
+#ifdef _WIN32
+typedef void(__stdcall *posix_GetSystemTimePreciseAsFileTime_t)(FILETIME *);
+static void posix_get_system_time(FILETIME *ft) {
+  static posix_GetSystemTimePreciseAsFileTime_t p = NULL;
+  static int init = 0;
+  if (!init) {
+    HMODULE k = GetModuleHandleA("kernel32.dll");
+    if (k)
+      p = (posix_GetSystemTimePreciseAsFileTime_t)(size_t)GetProcAddress(
+          k, "GetSystemTimePreciseAsFileTime");
+    init = 1;
+  }
+  if (p)
+    p(ft);
+  else
+    GetSystemTimeAsFileTime(ft);
+}
+#endif
+
 /* Polyfill for gettimeofday using GetSystemTimeAsFileTime */
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
   if (tv) {
     FILETIME ft;
     ULARGE_INTEGER uli;
-    GetSystemTimePreciseAsFileTime(&ft);
+    posix_get_system_time(&ft);
     uli.LowPart = ft.dwLowDateTime;
     uli.HighPart = ft.dwHighDateTime;
     /* Convert from 100-nanosecond intervals since 1601 to microseconds since
@@ -270,7 +289,7 @@ int clock_gettime(int clk_id, struct timespec *tp) {
   if (clk_id == CLOCK_REALTIME) {
     FILETIME ft;
     ULARGE_INTEGER uli;
-    GetSystemTimePreciseAsFileTime(&ft);
+    posix_get_system_time(&ft);
     uli.LowPart = ft.dwLowDateTime;
     uli.HighPart = ft.dwHighDateTime;
     uli.QuadPart -= POSIX_TIME_EPOCH;
