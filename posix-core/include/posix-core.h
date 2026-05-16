@@ -739,7 +739,7 @@ long gethostid(void);
 #endif
 /** @brief gethostname */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int gethostname(char *name, int len);
+// int gethostname(char *name, int len);
 #else
 /* gethostname */
 #endif

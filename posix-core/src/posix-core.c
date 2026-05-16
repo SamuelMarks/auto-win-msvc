@@ -1315,7 +1315,7 @@ long gethostid(void) { return 0; }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief gethostname function. */
-int gethostname(char *name, int len) {
+int gethostname_removed(char *name, int len) {
   unsigned long size = (unsigned long)len;
   if (name == NULL || len <= 0) {
     errno = EINVAL;
