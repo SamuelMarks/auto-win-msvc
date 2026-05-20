@@ -163,7 +163,7 @@ int posix_open(const char *pathname, int flags, ...) {
 }
 
 extern int is_socket(int fd);
-int posix_read(int fd, void *buf, unsigned int count) {
+ssize_t posix_read(int fd, void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -232,7 +232,7 @@ int posix_read(int fd, void *buf, unsigned int count) {
 }
 
 extern int is_socket(int fd);
-int posix_write(int fd, const void *buf, unsigned int count) {
+ssize_t posix_write(int fd, const void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400

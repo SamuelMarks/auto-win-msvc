@@ -358,7 +358,7 @@ int posix_close(int fd);
 #endif
 /** @brief read */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int posix_read(int fd, void *buf, unsigned int count);
+ssize_t posix_read(int fd, void *buf, size_t count);
 #ifndef read
 #define read posix_read
 #endif
@@ -367,7 +367,7 @@ int posix_read(int fd, void *buf, unsigned int count);
 #endif
 /** @brief write */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int posix_write(int fd, const void *buf, unsigned int count);
+ssize_t posix_write(int fd, const void *buf, size_t count);
 #ifndef write
 #define write posix_write
 #endif
