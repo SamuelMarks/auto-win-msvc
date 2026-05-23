@@ -79,9 +79,9 @@
 /* POSIX Type Shims */
 #include <sys/stat.h>
 #include <sys/types.h>
-typedef SSIZE_T ssize_t;
-typedef int pid_t;
-typedef unsigned short mode_t;
+
+
+
 
 /* POSIX Function Shims via Macros */
 #define open _open
@@ -206,3 +206,67 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 
 #endif /* NAMESPACE_WIN_SHIM_H */
 #undef LoadString
+
+#ifndef __attribute__
+#define __attribute__(x)
+#endif
+#ifndef __typeof
+#define __typeof typeof
+#endif
+#ifndef __thread
+#define __thread __declspec(thread)
+#endif
+#define AUTO_WIN_MSVC_SKIP_IOVEC 1
+#include "posix-time.h"
+#include "posix-core.h"
+#include "posix-sockets.h"
+#include "posix-netinet-in.h"
+#include "posix-netinet-tcp.h"
+#include "posix-netdb.h"
+#include "posix-stat.h"
+#include "posix-arpa-inet.h"
+#include "posix-dirent.h"
+#include "posix-poll.h"
+#include "linux-getopt.h"
+#include "posix-signal.h"
+#ifndef SIGPIPE
+#define SIGPIPE 13
+#endif
+#ifndef _MODE_T_
+#define _MODE_T_
+#endif
+
+#ifndef SSIZE_MAX
+#define SSIZE_MAX LONG_MAX
+#endif
+
+#ifndef SIGCHLD
+#define SIGCHLD 20
+#endif
+
+#ifndef setenv
+#define setenv(k, v, o) _putenv_s(k, v)
+#endif
+#ifndef unsetenv
+#define unsetenv(k) _putenv_s(k, "")
+#endif
+#ifndef sysconf
+#define sysconf(x) (x)
+#endif
+
+#ifndef SIGUSR1
+#define SIGUSR1 10
+#endif
+#ifndef _SC_OPEN_MAX
+#define _SC_OPEN_MAX 4
+#endif
+
+#ifndef SIGUSR1
+#define SIGUSR1 10
+#endif
+#ifndef _SC_OPEN_MAX
+#define _SC_OPEN_MAX 4
+#endif
+#ifndef sysconf
+#define sysconf(x) (x)
+#endif

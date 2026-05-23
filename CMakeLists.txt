@@ -554,6 +554,11 @@ if(AUTO_WIN_MSVC_COVERAGE)
     endif()
 endif()
 
+add_subdirectory(posix-netdb)
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-netdb/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-poll/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/bsd-sys-param/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-resource/include")
 add_library(auto-win-msvc ${MEGA_SOURCES})
 target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
 

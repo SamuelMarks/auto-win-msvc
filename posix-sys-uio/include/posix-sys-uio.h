@@ -26,10 +26,12 @@
 /**
  * @brief Vector structure for scatter/gather I/O operations.
  */
+#ifndef AUTO_WIN_MSVC_SKIP_IOVEC
 struct iovec {
   void *iov_base; /* Base address */
   size_t iov_len; /* Length */
 };
+#endif
 
 #ifdef __cplusplus
 extern "C" {
