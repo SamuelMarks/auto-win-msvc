@@ -496,7 +496,7 @@ int posix_accept(int socket, struct sockaddr *address,
   if (ret == INVALID_SOCKET) {
     int err = WSAGetLastError();
     if (err == WSAEWOULDBLOCK)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else
       errno = _wsaErrorToErrno(err);
     return -1;

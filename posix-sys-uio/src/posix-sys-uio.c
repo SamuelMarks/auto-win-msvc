@@ -12,9 +12,7 @@
 #include <winsock2.h>
 /* clang-format on */
 
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK EAGAIN
-#endif
+/* Removed EWOULDBLOCK override */
 
 /** \brief posix_writev function. */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
@@ -59,9 +57,9 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     }
 
     if (wsaErr == WSAEWOULDBLOCK)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (wsaErr == WSA_IO_PENDING)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (wsaErr == WSAECONNRESET)
       errno = 104; // ECONNRESET
     else if (wsaErr == WSAEINPROGRESS)
@@ -137,9 +135,9 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
     }
 
     if (wsaErr == WSAEWOULDBLOCK)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (wsaErr == WSA_IO_PENDING)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (wsaErr == WSAECONNRESET)
       errno = 104; // ECONNRESET
     else if (wsaErr == WSAEINPROGRESS)

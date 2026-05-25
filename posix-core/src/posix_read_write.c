@@ -27,7 +27,7 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 #include <stdio.h>
 #include <string.h>
 
-char g_cloned_cwd[1024] = {0};
+/* Removed g_cloned_cwd */
 
 FILE *posix_fopen(const char *pathname, const char *mode) {
   int flags = 0;
@@ -58,12 +58,13 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   }
   flags |= _O_BINARY;
 
-  if (pathname[0] != '/' && pathname[0] != '\\' && pathname[1] != ':' &&
-      g_cloned_cwd[0] != 0) {
+  if (pathname[0] != '/' && pathname[0] != '\\' && pathname[1] != ':') {
+    char cwd[1024];
+    GetCurrentDirectoryA(1024, cwd);
 #if defined(_MSC_VER) && _MSC_VER < 1900
-    _snprintf(abs_path, 1024, "%s\\%s", g_cloned_cwd, pathname);
+    _snprintf(abs_path, 1024, "%s\\%s", cwd, pathname);
 #else
-    snprintf(abs_path, 1024, "%s\\%s", g_cloned_cwd, pathname);
+    snprintf(abs_path, 1024, "%s\\%s", cwd, pathname);
 #endif
   } else {
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -205,7 +206,7 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
       return -1;
     }
     if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (err == WSAECONNRESET)
       errno = ECONNRESET;
     else if (err == WSAEINPROGRESS)
@@ -289,7 +290,7 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
       return -1;
     }
     if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT)
-      errno = EAGAIN;
+      errno = EWOULDBLOCK;
     else if (err == WSAECONNRESET)
       errno = ECONNRESET;
     else if (err == WSAEINPROGRESS)

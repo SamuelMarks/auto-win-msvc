@@ -79,8 +79,8 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
 
   if (resource == RLIMIT_NOFILE) {
     if (rlp->rlim_cur > 8192) {
-      errno = EINVAL;
-      return -1;
+      _setmaxstdio(8192);
+      return 0;
     }
     _setmaxstdio((int)rlp->rlim_cur);
     return 0;

@@ -1224,6 +1224,8 @@ pid_t fork(void) {
     SetCurrentDirectoryA(parent_cwd);
     posix_pthread_atfork_child(); printf("CHILD CLONED\n"); fflush(stdout);
     /* Child */
+    _set_errno(0);
+
     ucrt = GetModuleHandleA("ucrtbase.dll");
     if (ucrt) {
       void *p_exits[2];
