@@ -1222,7 +1222,7 @@ pid_t fork(void) {
   } else if (status == STATUS_PROCESS_CLONED) {
     void *ucrt;
     SetCurrentDirectoryA(parent_cwd);
-    posix_pthread_atfork_child();
+    posix_pthread_atfork_child(); printf("CHILD CLONED\n"); fflush(stdout);
     /* Child */
     ucrt = GetModuleHandleA("ucrtbase.dll");
     if (ucrt) {
@@ -1570,7 +1570,7 @@ int pause(void) {
 /** \brief pipe function. */
 extern int posix_socketpair(int domain, int type, int protocol,
                             int socket_vector[2]);
-int pipe(int pipefd[2]) { return posix_socketpair(2, 1, 0, pipefd); }
+int pipe(int pipefd[2]) { printf("IN POSIX PIPE\n"); return posix_socketpair(2, 1, 0, pipefd); }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pipe2 function. */

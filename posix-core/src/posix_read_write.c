@@ -350,3 +350,14 @@ int posix_close(int fd) {
 #endif
 
 typedef int make_iso_compilers_happy_posix_read_write;
+int posix_dup2(int oldfd, int newfd) {
+    int ret = _dup2(oldfd, newfd);
+    if (ret != -1) {
+        extern int is_socket(int);
+        extern void mark_as_socket(int);
+        extern void clear_as_socket(int);
+        if (is_socket(oldfd)) mark_as_socket(newfd);
+        else clear_as_socket(newfd);
+    }
+    return ret;
+}

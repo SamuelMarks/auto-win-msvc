@@ -94,14 +94,14 @@ typedef int gid_t;
 
 #include <direct.h>
 #include <fcntl.h>
-#include <io.h>
+#include <corecrt_io.h>
 #include <process.h>
 #include <share.h>
 #include <sys/stat.h>
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <fcntl.h>
-#include <io.h>
+#include <corecrt_io.h>
 #include <process.h>
 #include <share.h>
 #include <sys/stat.h>
@@ -393,7 +393,7 @@ ssize_t posix_write(int fd, const void *buf, size_t count);
 /** @brief dup2 */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef dup2
-#define dup2 _dup2
+#define dup2 posix_dup2`nint posix_dup2(int oldfd, int newfd);
 #endif
 #else
 /* dup2 */
@@ -1059,7 +1059,7 @@ pid_t vfork(void);
 /** @brief rename (POSIX semantics) */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #undef rename
-#include <io.h>
+#include <corecrt_io.h>
 #include <stdio.h>
 int posix_rename(const char *oldpath, const char *newpath);
 #ifndef rename

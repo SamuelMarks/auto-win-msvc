@@ -9,7 +9,7 @@
 
 #ifdef _WIN32
 #include <direct.h>
-#include <io.h>
+#include <corecrt_io.h>
 #else
 #include <fcntl.h>
 #include <unistd.h>

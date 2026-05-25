@@ -45,7 +45,7 @@
 /* Standard MSVC CRT Headers */
 #include <BaseTsd.h>
 #include <direct.h>
-#include <io.h>
+#include <corecrt_io.h>
 #include <process.h>
 
 /* Minimal Synchapi for Sleep (if needed without Windows.h) */
@@ -70,7 +70,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <direct.h>
-#include <io.h>
+#include <corecrt_io.h>
 #include <process.h>
 #include <winsock2.h>
 
@@ -85,7 +85,7 @@
 
 /* POSIX Function Shims via Macros */
 #define open _open
-#define close _close
+// #define close _close
 #define read posix_read
 #define write posix_write
 #define lseek _lseek
@@ -270,3 +270,16 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #ifndef sysconf
 #define sysconf(x) (x)
 #endif
+#define SIGUSR2 12
+#define SIGHUP 1
+#define SIGALRM 14
+#define WNOHANG 1
+#define O_NOFOLLOW 0
+#define O_DIRECTORY 0
+#define AT_REMOVEDIR 0x200
+#define RSYNC_RSH "ssh"
+#define NOBODY_USER "nobody"
+#define NOBODY_GROUP "nobody"
+#define RSYNCD_SYSCONF "/etc/rsyncd.conf"
+#define RSYNC_PATH "rsync"
+#define DEFAULT_CVSIGNORE ".svn .git .hg .bzr .cvs"
