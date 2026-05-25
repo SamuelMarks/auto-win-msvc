@@ -393,7 +393,8 @@ ssize_t posix_write(int fd, const void *buf, size_t count);
 /** @brief dup2 */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef dup2
-#define dup2 posix_dup2`nint posix_dup2(int oldfd, int newfd);
+#define dup2 posix_dup2
+int posix_dup2(int oldfd, int newfd);
 #endif
 #else
 /* dup2 */
