@@ -902,23 +902,10 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
 
   closesocket(listener);
 
-  int fd0 = _open_osfhandle((intptr_t)server, _O_RDWR | _O_BINARY);
-  int fd1 = _open_osfhandle((intptr_t)client, _O_RDWR | _O_BINARY);
-  if (fd0 == -1 || fd1 == -1) {
-    if (fd0 != -1)
-      _close(fd0);
-    else
-      closesocket(server);
-    if (fd1 != -1)
-      _close(fd1);
-    else
-      closesocket(client);
-    return -1;
-  }
-  mark_as_socket(fd0);
-  mark_as_socket(fd1);
-  socket_vector[0] = fd0;
-  socket_vector[1] = fd1;
+  socket_vector[0] = (int)server;
+  socket_vector[1] = (int)client;
+  mark_as_socket((int)server);
+  mark_as_socket((int)client);
   return 0;
 
 err:
