@@ -50,5 +50,3 @@ add_executable(test_macos-availabilitymacros ${TEST_SOURCES})
 target_link_libraries(test_macos-availabilitymacros PRIVATE macos-availabilitymacros greatest)
 add_test(NAME test_macos-availabilitymacros COMMAND test_macos-availabilitymacros)
 endif()
-
-

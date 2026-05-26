@@ -99,5 +99,3 @@ target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_sou
 target_link_libraries(test_solaris-sys-feature-tests PRIVATE solaris-sys-feature-tests)
 add_test(NAME test_solaris-sys-feature-tests COMMAND test_solaris-sys-feature-tests)
 endif()
-
-

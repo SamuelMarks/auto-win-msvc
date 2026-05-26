@@ -99,5 +99,3 @@ target_include_directories(test_posix-inttypes PRIVATE ${greatest_source_dir})
 target_link_libraries(test_posix-inttypes PRIVATE posix-inttypes)
 add_test(NAME test_posix-inttypes COMMAND test_posix-inttypes)
 endif()
-
-

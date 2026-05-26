@@ -99,5 +99,3 @@ target_include_directories(test_posix-stdint PRIVATE ${greatest_source_dir})
 target_link_libraries(test_posix-stdint PRIVATE posix-stdint)
 add_test(NAME test_posix-stdint COMMAND test_posix-stdint)
 endif()
-
-

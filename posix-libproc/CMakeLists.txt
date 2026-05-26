@@ -17,7 +17,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-libproc src/posix-libproc.c)
-target_include_directories(posix-libproc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)     
+target_include_directories(posix-libproc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
 
@@ -39,5 +39,3 @@ target_link_libraries(test_posix-libproc PRIVATE posix-libproc)
 target_include_directories(test_posix-libproc PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-libproc COMMAND test_posix-libproc)
-
-

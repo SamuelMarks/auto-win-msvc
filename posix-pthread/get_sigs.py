@@ -124,4 +124,3 @@ for func in data['mappings']['functions']:
     name = func['posix']
     if name not in sigs:
         print(f"MISSING: {name}")
-

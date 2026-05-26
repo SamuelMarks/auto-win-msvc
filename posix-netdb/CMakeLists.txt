@@ -18,5 +18,3 @@ add_executable(test_posix-netdb ${TEST_SOURCES})
 target_link_libraries(test_posix-netdb posix-netdb)
 add_test(NAME posix-netdb_test COMMAND test_posix-netdb)
 endif()
-
-

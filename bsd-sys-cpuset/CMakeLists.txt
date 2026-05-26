@@ -97,5 +97,3 @@ target_include_directories(test_bsd-sys-cpuset PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-cpuset PRIVATE bsd-sys-cpuset)
 add_test(NAME test_bsd-sys-cpuset COMMAND test_bsd-sys-cpuset)
-
-

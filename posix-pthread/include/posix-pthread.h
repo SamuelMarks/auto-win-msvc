@@ -103,10 +103,14 @@ struct sched_param {
   int sched_priority;
 };
 
-#define PTHREAD_MUTEX_INITIALIZER {0}
-#define PTHREAD_COND_INITIALIZER {0}
-#define PTHREAD_RWLOCK_INITIALIZER {0}
-#define PTHREAD_ONCE_INIT {0}
+#define PTHREAD_MUTEX_INITIALIZER                                              \
+  { 0 }
+#define PTHREAD_COND_INITIALIZER                                               \
+  { 0 }
+#define PTHREAD_RWLOCK_INITIALIZER                                             \
+  { 0 }
+#define PTHREAD_ONCE_INIT                                                      \
+  { 0 }
 
 #define PTHREAD_CREATE_JOINABLE 0
 #define PTHREAD_CREATE_DETACHED 1

@@ -127,7 +127,7 @@ def extract_args(sig):
     args_str = sig[sig.index('(')+1 : sig.rindex(')')]
     if args_str == 'void' or not args_str:
         return []
-    
+
     parts = []
     depth = 0
     curr = []
@@ -141,7 +141,7 @@ def extract_args(sig):
         curr.append(c)
     if curr:
         parts.append("".join(curr).strip())
-        
+
     res = []
     for p in parts:
         if p == '...':
@@ -188,13 +188,13 @@ for func in data['mappings']['functions']:
     sig = sigs[name]
     is_void = sig.startswith('void ')
     is_ptr = sig.startswith('void *') or sig.startswith('sem_t *') or sig.startswith('pthread_t ')
-    
+
     args = extract_args(sig)
     arg_casts = "".join(f"    (void){arg};\n" for arg in args)
-    
+
     # We can inject some simple native Windows API mappings here based on `func.get('windows_api')`
     wapi = func.get('windows_api')
-    
+
     out_c.append(f"/* TODO: Implement {name} */")
     out_c.append(f"{sig} {{")
     if arg_casts:
@@ -216,4 +216,3 @@ for func in data['mappings']['functions']:
 
 with open('src/posix-pthread.c', 'w') as f:
     f.write('\n'.join(out_c))
-

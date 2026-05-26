@@ -95,5 +95,3 @@ target_include_directories(test_posix-dirent PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-dirent PRIVATE posix-dirent)
 add_test(NAME test_posix-dirent COMMAND test_posix-dirent)
 endif()
-
-

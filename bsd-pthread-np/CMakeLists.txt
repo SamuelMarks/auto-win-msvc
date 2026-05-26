@@ -107,5 +107,3 @@ endif()
 target_link_libraries(test_bsd-pthread-np PRIVATE bsd-pthread-np)
 add_test(NAME test_bsd-pthread-np COMMAND test_bsd-pthread-np)
 endif()
-
-

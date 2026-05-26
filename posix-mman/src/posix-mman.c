@@ -85,35 +85,34 @@ extern "C" {
 
 #if defined(_MSC_VER)
 __declspec(dllimport) void WIN_STDCALL
-GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
+    GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
 __declspec(dllimport) size_t WIN_STDCALL
-VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
-             size_t dwLength);
+    VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
+                 size_t dwLength);
 __declspec(dllimport) WIN_DWORD WIN_STDCALL
-GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
+    GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
 __declspec(dllimport) WIN_HANDLE WIN_STDCALL
-CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes,
-                   WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh,
-                   WIN_DWORD dwMaximumSizeLow, const char *lpName);
+    CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes,
+                       WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh,
+                       WIN_DWORD dwMaximumSizeLow, const char *lpName);
 __declspec(dllimport) WIN_LPVOID WIN_STDCALL
-MapViewOfFileEx(WIN_HANDLE hFileMappingObject, WIN_DWORD dwDesiredAccess,
-                WIN_DWORD dwFileOffsetHigh, WIN_DWORD dwFileOffsetLow,
-                size_t dwNumberOfBytesToMap, WIN_LPVOID lpBaseAddress);
+    MapViewOfFileEx(WIN_HANDLE hFileMappingObject, WIN_DWORD dwDesiredAccess,
+                    WIN_DWORD dwFileOffsetHigh, WIN_DWORD dwFileOffsetLow,
+                    size_t dwNumberOfBytesToMap, WIN_LPVOID lpBaseAddress);
 __declspec(dllimport) int WIN_STDCALL
-UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
+    UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
 __declspec(dllimport) int WIN_STDCALL
-FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
+    FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
 __declspec(dllimport) WIN_LPVOID WIN_STDCALL
-VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flAllocationType,
-             WIN_DWORD flProtect);
-__declspec(dllimport) int WIN_STDCALL VirtualLock(WIN_LPVOID lpAddress,
-                                                  size_t dwSize);
-__declspec(dllimport) int WIN_STDCALL VirtualUnlock(WIN_LPVOID lpAddress,
-                                                    size_t dwSize);
-__declspec(dllimport) int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress,
-                                                     size_t dwSize,
-                                                     WIN_DWORD flNewProtect,
-                                                     WIN_DWORD *lpflOldProtect);
+    VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize,
+                 WIN_DWORD flAllocationType, WIN_DWORD flProtect);
+__declspec(dllimport) int WIN_STDCALL
+    VirtualLock(WIN_LPVOID lpAddress, size_t dwSize);
+__declspec(dllimport) int WIN_STDCALL
+    VirtualUnlock(WIN_LPVOID lpAddress, size_t dwSize);
+__declspec(dllimport) int WIN_STDCALL
+    VirtualProtect(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flNewProtect,
+                   WIN_DWORD *lpflOldProtect);
 __declspec(dllimport) int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
 #else
 /** \brief GetSystemInfo function. */

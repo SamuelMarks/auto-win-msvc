@@ -18,5 +18,3 @@ add_executable(test_posix-poll ${TEST_SOURCES})
 target_link_libraries(test_posix-poll posix-poll)
 add_test(NAME posix-poll_test COMMAND test_posix-poll)
 endif()
-
-

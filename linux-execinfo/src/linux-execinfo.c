@@ -24,30 +24,30 @@ typedef unsigned long DWORD;
 
 #ifndef STD_ERR_HANDLE
 /** \brief STD_ERR_HANDLE macro. */
-#define STD_ERR_HANDLE ((DWORD) - 12)
+#define STD_ERR_HANDLE ((DWORD)-12)
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-__declspec(dllimport) USHORT __stdcall RtlCaptureStackBackTrace(
-    ULONG FramesToSkip, ULONG FramesToCapture, PVOID *BackTrace,
-    PULONG BackTraceHash);
+__declspec(dllimport) USHORT
+    __stdcall RtlCaptureStackBackTrace(ULONG FramesToSkip,
+                                       ULONG FramesToCapture, PVOID *BackTrace,
+                                       PULONG BackTraceHash);
 __declspec(dllimport) HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) BOOL __stdcall SymInitialize(HANDLE hProcess,
-                                                   const char *UserSearchPath,
-                                                   BOOL fInvadeProcess);
+__declspec(dllimport) BOOL
+    __stdcall SymInitialize(HANDLE hProcess, const char *UserSearchPath,
+                            BOOL fInvadeProcess);
 __declspec(dllimport) BOOL __stdcall SymSetOptions(DWORD SymOptions);
 __declspec(dllimport) DWORD __stdcall SymGetOptions(void);
 __declspec(dllimport) PVOID __stdcall GetStdHandle(DWORD nStdHandle);
 
 /* WriteFile */
-__declspec(dllimport) BOOL __stdcall WriteFile(HANDLE hFile,
-                                               const void *lpBuffer,
-                                               DWORD nNumberOfBytesToWrite,
-                                               DWORD *lpNumberOfBytesWritten,
-                                               void *lpOverlapped);
+__declspec(dllimport) BOOL
+    __stdcall WriteFile(HANDLE hFile, const void *lpBuffer,
+                        DWORD nNumberOfBytesToWrite,
+                        DWORD *lpNumberOfBytesWritten, void *lpOverlapped);
 
 /* DbgHelp structs */
 #pragma pack(push, 8)
@@ -73,10 +73,9 @@ typedef struct _SYMBOL_INFO {
 #define SYMOPT_DEFERRED_LOADS 0x00000004
 #define SYMOPT_UNDNAME 0x00000002
 
-__declspec(dllimport) BOOL __stdcall SymFromAddr(HANDLE hProcess,
-                                                 DWORD64 Address,
-                                                 DWORD64 *Displacement,
-                                                 PSYMBOL_INFO Symbol);
+__declspec(dllimport) BOOL
+    __stdcall SymFromAddr(HANDLE hProcess, DWORD64 Address,
+                          DWORD64 *Displacement, PSYMBOL_INFO Symbol);
 
 #ifdef __cplusplus
 }

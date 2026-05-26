@@ -17,7 +17,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-times src/posix-times.c)
-target_include_directories(posix-times PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)     
+target_include_directories(posix-times PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
 
@@ -39,5 +39,3 @@ target_link_libraries(test_posix-times PRIVATE posix-times)
 target_include_directories(test_posix-times PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-times COMMAND test_posix-times)
-
-

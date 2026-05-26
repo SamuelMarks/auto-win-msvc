@@ -105,4 +105,3 @@ if(WIN32)
     # Ensure test can find its dependency DLLs (posix-sockets, posix-sys-uio)
     set_property(TEST test_posix-core PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sockets>\\;$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
 endif()
-

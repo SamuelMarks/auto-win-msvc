@@ -102,4 +102,3 @@ target_include_directories(test_posix-stat PRIVATE ${greatest_src})
 target_link_libraries(test_posix-stat PRIVATE posix-stat)
 add_test(NAME test_posix-stat COMMAND test_posix-stat WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
-

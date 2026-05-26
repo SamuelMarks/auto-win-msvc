@@ -10,22 +10,22 @@ def update_readme():
         if 'build' in hf or 'valkey' in hf: continue
         proj = os.path.basename(os.path.dirname(os.path.dirname(hf)))
         if proj not in modules: modules[proj] = []
-        
+
         with open(hf, 'r', encoding='utf-8', errors='ignore') as f:
             orig_content = f.read()
             content = re.sub(r'/\*.*?\*/', '', orig_content, flags=re.DOTALL)
             content = re.sub(r'//.*', '', content)
             content = re.sub(r'^\s*#.*$', '', content, flags=re.MULTILINE)
-            
+
             matches = re.finditer(r'^[ \t]*((?:[A-Za-z0-9_]+\s+)+\**)([A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)\s*;', content, re.MULTILINE)
-            
+
             for match in matches:
                 func_name = match.group(2)
-                if func_name not in ['extern', 'struct', 'union', 'enum', 'int', 'void', 'char', 'long', 'short', 'float', 'double', '__inline']: 
+                if func_name not in ['extern', 'struct', 'union', 'enum', 'int', 'void', 'char', 'long', 'short', 'float', 'double', '__inline']:
                     if func_name not in modules[proj]:
                         modules[proj].append(func_name)
                         total_funcs += 1
-                        
+
                         decl_pattern = re.compile(r'^[ \t]*((?:[A-Za-z0-9_]+\s+)+\**)' + re.escape(func_name) + r'\s*\([^;{}]*\)\s*;', re.MULTILINE)
                         orig_match = decl_pattern.search(orig_content)
                         if orig_match:
@@ -53,7 +53,7 @@ def update_readme():
         for f in proj_test_files:
             with open(f, 'r', encoding='utf-8', errors='ignore') as file:
                 proj_test_content += file.read() + "\n"
-        
+
         for func in funcs:
             if f'test_{func}' in proj_test_content or f'test_{func}(' in proj_test_content:
                 tested_funcs += 1
@@ -86,12 +86,12 @@ def update_readme():
         if title_match:
             doc_color = 'brightgreen' if doc_cov >= 90 else ('yellow' if doc_cov >= 70 else 'red')
             test_color = 'brightgreen' if test_cov >= 90 else ('yellow' if test_cov >= 70 else 'red')
-            
+
             shields = f"\n![Doc Coverage](https://img.shields.io/badge/doc__coverage-{doc_cov:.0f}%25-{doc_color})\n![Test Coverage](https://img.shields.io/badge/test__coverage-{test_cov:.0f}%25-{test_color})\n\n"
-            
+
             insert_pos = title_match.end()
             readme = readme[:insert_pos] + shields + readme[insert_pos:]
-            
+
             with open(readme_path, 'w', encoding='utf-8') as f:
                 f.write(readme)
 

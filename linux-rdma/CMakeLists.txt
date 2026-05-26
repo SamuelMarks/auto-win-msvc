@@ -50,5 +50,3 @@ add_executable(test_linux-rdma ${TEST_SOURCES})
 target_link_libraries(test_linux-rdma PRIVATE linux-rdma greatest)
 add_test(NAME test_linux-rdma COMMAND test_linux-rdma)
 endif()
-
-

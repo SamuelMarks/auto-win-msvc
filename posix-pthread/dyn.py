@@ -24,9 +24,9 @@ c = re.sub(r'__declspec\(dllimport\) void\*\s+WINAPI\s+InterlockedCompareExchang
 for ret, name, args in funcs:
     pattern = r'__declspec\(dllimport\)\s+' + ret + r'\s+WINAPI\s+' + name + r'\s*\(.*?\);'
     c = re.sub(pattern, '', c)
-    
+
     clean_args = args[1:-1].split(',')
-    
+
     wrapper_args = []
     call_args = []
     arg_idx = 0
@@ -38,7 +38,7 @@ for ret, name, args in funcs:
             wrapper_args.append(f'{t} a{arg_idx}')
             call_args.append(f'a{arg_idx}')
             arg_idx += 1
-            
+
     wrapper = f'''
 typedef {ret} (WINAPI * PFN_{name}){args};
 static {ret} WINAPI dyn_{name}({', '.join(wrapper_args)}) {{
@@ -54,7 +54,7 @@ static {ret} WINAPI dyn_{name}({', '.join(wrapper_args)}) {{
     if ret != 'void':
         wrapper += '    return 0;\n'
     wrapper += '}\n'
-    
+
     c = c.replace('typedef struct {', wrapper + '\ntypedef struct {', 1)
 
 c = c.replace('__declspec(dllimport) unsigned long WINAPI GetCurrentThreadId(void);', '__declspec(dllimport) unsigned long WINAPI GetCurrentThreadId(void);\n__declspec(dllimport) void* WINAPI GetModuleHandleA(const char*);\n__declspec(dllimport) void* WINAPI GetProcAddress(void*, const char*);')

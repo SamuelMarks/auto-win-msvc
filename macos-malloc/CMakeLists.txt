@@ -18,5 +18,3 @@ add_executable(test_macos-malloc ${TEST_SOURCES})
 target_link_libraries(test_macos-malloc macos-malloc)
 add_test(NAME macos-malloc_test COMMAND test_macos-malloc)
 endif()
-
-

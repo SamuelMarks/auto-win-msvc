@@ -93,5 +93,3 @@ add_executable(test_posix-time ${TEST_SOURCES})
 target_link_libraries(test_posix-time PRIVATE posix-time)
 target_include_directories(test_posix-time PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-time COMMAND test_posix-time)
-
-

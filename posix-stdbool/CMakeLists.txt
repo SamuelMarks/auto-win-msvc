@@ -99,5 +99,3 @@ target_include_directories(test_posix-stdbool PRIVATE ${greatest_source_dir})
 target_link_libraries(test_posix-stdbool PRIVATE posix-stdbool)
 add_test(NAME test_posix-stdbool COMMAND test_posix-stdbool)
 endif()
-
-

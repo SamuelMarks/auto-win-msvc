@@ -96,5 +96,3 @@ add_executable(test_posix-pthread ${TEST_SOURCES})
 target_link_libraries(test_posix-pthread PRIVATE posix-pthread)
 target_include_directories(test_posix-pthread PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-pthread COMMAND test_posix-pthread)
-
-

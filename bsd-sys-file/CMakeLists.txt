@@ -108,5 +108,3 @@ add_executable(test_bsd-sys-file ${TEST_SOURCES})
 target_link_libraries(test_bsd-sys-file PRIVATE bsd-sys-file greatest)
 add_test(NAME test_bsd-sys-file COMMAND test_bsd-sys-file)
 endif()
-
-

@@ -50,5 +50,3 @@ add_executable(test_bsd-vm-param ${TEST_SOURCES})
 target_link_libraries(test_bsd-vm-param PRIVATE bsd-vm-param greatest)
 add_test(NAME test_bsd-vm-param COMMAND test_bsd-vm-param)
 endif()
-
-

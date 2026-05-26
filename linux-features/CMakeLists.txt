@@ -99,5 +99,3 @@ target_include_directories(test_linux-features PRIVATE ${greatest_source_dir})
 target_link_libraries(test_linux-features PRIVATE linux-features)
 add_test(NAME test_linux-features COMMAND test_linux-features)
 endif()
-
-

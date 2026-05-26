@@ -128,4 +128,3 @@ out.append("""
 
 with open('include/posix-pthread.h', 'w') as f:
     f.write('\n'.join(out))
-

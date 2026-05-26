@@ -99,5 +99,3 @@ target_include_directories(test_solaris-sys-byteorder PRIVATE ${greatest_source_
 target_link_libraries(test_solaris-sys-byteorder PRIVATE solaris-sys-byteorder)
 add_test(NAME test_solaris-sys-byteorder COMMAND test_solaris-sys-byteorder)
 endif()
-
-

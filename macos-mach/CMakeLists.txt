@@ -80,5 +80,3 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-mach ${TEST_SOURCES})
 target_link_libraries(test_macos-mach PRIVATE macos-mach greatest)
 add_test(NAME test_macos-mach COMMAND test_macos-mach)
-
-

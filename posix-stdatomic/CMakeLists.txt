@@ -99,5 +99,3 @@ target_include_directories(test_posix-stdatomic PRIVATE ${greatest_source_dir})
 target_link_libraries(test_posix-stdatomic PRIVATE posix-stdatomic)
 add_test(NAME test_posix-stdatomic COMMAND test_posix-stdatomic)
 endif()
-
-

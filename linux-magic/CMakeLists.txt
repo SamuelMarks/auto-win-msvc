@@ -50,5 +50,3 @@ add_executable(test_linux-magic ${TEST_SOURCES})
 target_link_libraries(test_linux-magic PRIVATE linux-magic greatest)
 add_test(NAME test_linux-magic COMMAND test_linux-magic)
 endif()
-
-

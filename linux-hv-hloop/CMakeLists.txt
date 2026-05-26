@@ -18,5 +18,3 @@ add_executable(test_linux-hv-hloop ${TEST_SOURCES})
 target_link_libraries(test_linux-hv-hloop linux-hv-hloop)
 add_test(NAME linux-hv-hloop_test COMMAND test_linux-hv-hloop)
 endif()
-
-

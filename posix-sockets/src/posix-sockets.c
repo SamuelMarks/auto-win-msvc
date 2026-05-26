@@ -380,13 +380,14 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 }
 
 /** \brief posix_select function. */
-#include <winsock2.h>
-#include <io.h>
 #include <errno.h>
+#include <io.h>
+#include <winsock2.h>
 
 extern int is_socket(int fd);
 
-int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout) {
+int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+                 struct timeval *timeout) {
   fd_set ws_readfds, ws_writefds, ws_errorfds;
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
   unsigned int i;
@@ -398,7 +399,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, 
       int fd = (int)readfds->fd_array[i];
       if (is_socket(fd)) {
         SOCKET s = (SOCKET)_get_osfhandle(fd);
-        if (s != INVALID_SOCKET) FD_SET(s, &ws_readfds);
+        if (s != INVALID_SOCKET)
+          FD_SET(s, &ws_readfds);
       } else {
         FD_SET((SOCKET)fd, &ws_readfds); // Pass through
       }
@@ -412,7 +414,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, 
       int fd = (int)writefds->fd_array[i];
       if (is_socket(fd)) {
         SOCKET s = (SOCKET)_get_osfhandle(fd);
-        if (s != INVALID_SOCKET) FD_SET(s, &ws_writefds);
+        if (s != INVALID_SOCKET)
+          FD_SET(s, &ws_writefds);
       } else {
         FD_SET((SOCKET)fd, &ws_writefds);
       }
@@ -426,7 +429,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, 
       int fd = (int)errorfds->fd_array[i];
       if (is_socket(fd)) {
         SOCKET s = (SOCKET)_get_osfhandle(fd);
-        if (s != INVALID_SOCKET) FD_SET(s, &ws_errorfds);
+        if (s != INVALID_SOCKET)
+          FD_SET(s, &ws_errorfds);
       } else {
         FD_SET((SOCKET)fd, &ws_errorfds);
       }
@@ -486,7 +490,6 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, 
 
   return ret;
 }
-
 
 int posix_accept(int socket, struct sockaddr *address,
                  posix_socklen_t *address_len) {
@@ -898,12 +901,18 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
 
   closesocket(listener);
 
-    int fd0 = _open_osfhandle((intptr_t)server, _O_RDWR | _O_BINARY);
+  int fd0 = _open_osfhandle((intptr_t)server, _O_RDWR | _O_BINARY);
   int fd1 = _open_osfhandle((intptr_t)client, _O_RDWR | _O_BINARY);
   if (fd0 == -1 || fd1 == -1) {
-      if (fd0 != -1) _close(fd0); else closesocket(server);
-      if (fd1 != -1) _close(fd1); else closesocket(client);
-      return -1;
+    if (fd0 != -1)
+      _close(fd0);
+    else
+      closesocket(server);
+    if (fd1 != -1)
+      _close(fd1);
+    else
+      closesocket(client);
+    return -1;
   }
   mark_as_socket(fd0);
   mark_as_socket(fd1);

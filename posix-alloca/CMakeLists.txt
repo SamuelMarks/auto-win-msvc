@@ -29,4 +29,3 @@ endif()
 
 enable_testing()
 add_test(NAME test_posix-alloca COMMAND test_posix-alloca)
-

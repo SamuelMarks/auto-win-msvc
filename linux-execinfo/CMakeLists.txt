@@ -102,7 +102,7 @@ add_library(linux-execinfo src/linux-execinfo.c)
 target_include_directories(linux-execinfo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 if(MSVC)
     target_link_libraries(linux-execinfo PUBLIC dbghelp)
-endif()    
+endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
@@ -111,5 +111,3 @@ add_executable(test_linux-execinfo ${TEST_SOURCES})
 target_link_libraries(test_linux-execinfo PRIVATE linux-execinfo greatest)
 add_test(NAME test_linux-execinfo COMMAND test_linux-execinfo)
 endif()
-
-

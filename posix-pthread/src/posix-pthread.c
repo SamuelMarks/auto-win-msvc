@@ -271,16 +271,15 @@ typedef void(WINAPI *FARPROC_T)(void);
 __declspec(dllimport) unsigned long WINAPI GetCurrentThreadId(void);
 __declspec(dllimport) void *WINAPI GetModuleHandleA(const char *);
 __declspec(dllimport) FARPROC_T WINAPI GetProcAddress(void *, const char *);
-__declspec(dllimport) void *WINAPI CreateThread(void *, size_t,
-                                                unsigned long(WINAPI *)(void *),
-                                                void *, unsigned long,
-                                                unsigned long *);
-__declspec(dllimport) unsigned long WINAPI WaitForSingleObject(void *,
-                                                               unsigned long);
+__declspec(dllimport) void *WINAPI
+    CreateThread(void *, size_t, unsigned long(WINAPI *)(void *), void *,
+                 unsigned long, unsigned long *);
+__declspec(dllimport) unsigned long WINAPI
+    WaitForSingleObject(void *, unsigned long);
 __declspec(dllimport) int WINAPI CloseHandle(void *);
 __declspec(dllimport) void WINAPI Sleep(unsigned long);
-__declspec(dllimport) void *WINAPI CreateSemaphoreA(void *, long, long,
-                                                    const char *);
+__declspec(dllimport) void *WINAPI
+    CreateSemaphoreA(void *, long, long, const char *);
 __declspec(dllimport) int WINAPI ReleaseSemaphore(void *, long, long *);
 __declspec(dllimport) unsigned long WINAPI TlsAlloc(void);
 __declspec(dllimport) int WINAPI TlsFree(unsigned long);
@@ -294,9 +293,9 @@ __declspec(dllimport) void WINAPI EnterCriticalSection(void *);
 __declspec(dllimport) void WINAPI LeaveCriticalSection(void *);
 __declspec(dllimport) unsigned char WINAPI TryEnterCriticalSection(void *);
 __declspec(dllimport) int WINAPI
-InitializeCriticalSectionAndSpinCount(void *, unsigned long);
-__declspec(dllimport) void *WINAPI OpenThread(unsigned long, int,
-                                              unsigned long);
+    InitializeCriticalSectionAndSpinCount(void *, unsigned long);
+__declspec(dllimport) void *WINAPI
+    OpenThread(unsigned long, int, unsigned long);
 
 typedef long(WINAPI *PFN_SetThreadDescription)(void *, const wchar_t *);
 /** \brief dyn_SetThreadDescription function. */
@@ -1846,14 +1845,14 @@ typedef unsigned long long posix_sem_uint64_t;
 #endif
 
 #if defined(_WIN32)
-__declspec(dllimport) void *WINAPI OpenSemaphoreA(unsigned long, int,
-                                                  const char *);
+__declspec(dllimport) void *WINAPI
+    OpenSemaphoreA(unsigned long, int, const char *);
 struct posix_sem_FILETIME {
   unsigned long dwLowDateTime;
   unsigned long dwHighDateTime;
 };
 __declspec(dllimport) void WINAPI
-GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
+    GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
 #define POSIX_SEMAPHORE_ALL_ACCESS 0x1F0003
 #define POSIX_ERROR_ALREADY_EXISTS 183UL
 #endif

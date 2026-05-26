@@ -113,5 +113,3 @@ add_executable(test_posix-arpa ${TEST_SOURCES})
 target_link_libraries(test_posix-arpa PRIVATE posix-arpa greatest)
 add_test(NAME test_posix-arpa COMMAND test_posix-arpa)
 endif()
-
-

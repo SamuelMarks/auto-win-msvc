@@ -84,16 +84,19 @@ typedef struct _PROCESS_INFORMATION {
 
 __declspec(dllimport) HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
-__declspec(dllimport) HANDLE WINAPI CreateFileA(
-    const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-    LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
-    DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
-__declspec(dllimport) BOOL WINAPI CreateProcessA(
-    const char *lpApplicationName, char *lpCommandLine,
-    LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
-    DWORD dwCreationFlags, LPVOID lpEnvironment, const char *lpCurrentDirectory,
-    LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+__declspec(dllimport) HANDLE WINAPI
+    CreateFileA(const char *lpFileName, DWORD dwDesiredAccess,
+                DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
+                HANDLE hTemplateFile);
+__declspec(dllimport) BOOL WINAPI
+    CreateProcessA(const char *lpApplicationName, char *lpCommandLine,
+                   LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                   LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                   BOOL bInheritHandles, DWORD dwCreationFlags,
+                   LPVOID lpEnvironment, const char *lpCurrentDirectory,
+                   LPSTARTUPINFOA lpStartupInfo,
+                   LPPROCESS_INFORMATION lpProcessInformation);
 
 #endif
 

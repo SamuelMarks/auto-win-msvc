@@ -50,5 +50,3 @@ add_executable(test_macos-dyld ${TEST_SOURCES})
 target_link_libraries(test_macos-dyld PRIVATE macos-dyld greatest)
 add_test(NAME test_macos-dyld COMMAND test_macos-dyld)
 endif()
-
-

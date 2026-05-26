@@ -68,7 +68,7 @@ if(NOT TARGET posix-stdbool)
 endif()
 
 add_library(macos-corefoundation src/macos-corefoundation.c)
-target_include_directories(macos-corefoundation PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)  
+target_include_directories(macos-corefoundation PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-corefoundation PUBLIC posix-stdint posix-stdbool)
 
 if(WIN32)
@@ -84,5 +84,3 @@ if(WIN32)
 endif()
 add_test(NAME test_macos-corefoundation COMMAND test_macos-corefoundation)
 endif()
-
-

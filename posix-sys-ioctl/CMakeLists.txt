@@ -112,5 +112,3 @@ add_executable(test_posix-sys-ioctl ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-ioctl PRIVATE posix-sys-ioctl greatest)
 add_test(NAME test_posix-sys-ioctl COMMAND test_posix-sys-ioctl)
 endif()
-
-

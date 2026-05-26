@@ -27,11 +27,11 @@ typedef int BOOL;
 /** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief STD_INPUT_HANDLE macro. */
-#define STD_INPUT_HANDLE ((DWORD) - 10)
+#define STD_INPUT_HANDLE ((DWORD)-10)
 /** \brief STD_OUTPUT_HANDLE macro. */
-#define STD_OUTPUT_HANDLE ((DWORD) - 11)
+#define STD_OUTPUT_HANDLE ((DWORD)-11)
 /** \brief STD_ERROR_HANDLE macro. */
-#define STD_ERROR_HANDLE ((DWORD) - 12)
+#define STD_ERROR_HANDLE ((DWORD)-12)
 
 #define ENABLE_PROCESSED_INPUT 0x0001
 #define ENABLE_LINE_INPUT 0x0002
@@ -44,15 +44,15 @@ extern "C" {
 
 __declspec(dllimport) HANDLE __stdcall GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL __stdcall FlushFileBuffers(HANDLE hFile);
-__declspec(dllimport)
-BOOL __stdcall FlushConsoleInputBuffer(HANDLE hConsoleInput);
-__declspec(dllimport) BOOL __stdcall GetConsoleMode(HANDLE hConsoleHandle,
-                                                    DWORD *lpMode);
-__declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle,
-                                                    DWORD dwMode);
+__declspec(dllimport) BOOL
+    __stdcall FlushConsoleInputBuffer(HANDLE hConsoleInput);
+__declspec(dllimport) BOOL
+    __stdcall GetConsoleMode(HANDLE hConsoleHandle, DWORD *lpMode);
+__declspec(dllimport) BOOL
+    __stdcall SetConsoleMode(HANDLE hConsoleHandle, DWORD dwMode);
 __declspec(dllimport) DWORD __stdcall GetFileType(HANDLE hFile);
-__declspec(dllimport) BOOL __stdcall EscapeCommFunction(HANDLE hFile,
-                                                        DWORD dwFunc);
+__declspec(dllimport) BOOL
+    __stdcall EscapeCommFunction(HANDLE hFile, DWORD dwFunc);
 __declspec(dllimport) BOOL __stdcall SetCommBreak(HANDLE hFile);
 __declspec(dllimport) BOOL __stdcall ClearCommBreak(HANDLE hFile);
 __declspec(dllimport) void __stdcall Sleep(DWORD dwMilliseconds);

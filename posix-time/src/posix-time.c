@@ -71,17 +71,17 @@ extern "C" {
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
 struct _SECURITY_ATTRIBUTES;
 __declspec(dllimport) HANDLE POSIX_TIME_STDCALL
-CreateWaitableTimerA(struct _SECURITY_ATTRIBUTES *lpTimerAttributes,
-                     int bManualReset, const char *lpTimerName);
+    CreateWaitableTimerA(struct _SECURITY_ATTRIBUTES *lpTimerAttributes,
+                         int bManualReset, const char *lpTimerName);
 typedef void(POSIX_TIME_STDCALL *PTIMERAPCROUTINE)(void *, unsigned long,
                                                    unsigned long);
 __declspec(dllimport) int POSIX_TIME_STDCALL
-SetWaitableTimer(HANDLE hTimer, const LARGE_INTEGER *pDueTime, long lPeriod,
-                 PTIMERAPCROUTINE pfnCompletionRoutine,
-                 void *lpArgToCompletionRoutine, int fResume);
+    SetWaitableTimer(HANDLE hTimer, const LARGE_INTEGER *pDueTime, long lPeriod,
+                     PTIMERAPCROUTINE pfnCompletionRoutine,
+                     void *lpArgToCompletionRoutine, int fResume);
 __declspec(dllimport) int POSIX_TIME_STDCALL CloseHandle(HANDLE hObject);
 __declspec(dllimport) unsigned long POSIX_TIME_STDCALL
-WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
+    WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #endif
 
 #ifdef __cplusplus

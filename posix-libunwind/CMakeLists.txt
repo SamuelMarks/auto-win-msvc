@@ -18,5 +18,3 @@ add_executable(test_posix-libunwind ${TEST_SOURCES})
 target_link_libraries(test_posix-libunwind posix-libunwind)
 add_test(NAME posix-libunwind_test COMMAND test_posix-libunwind)
 endif()
-
-

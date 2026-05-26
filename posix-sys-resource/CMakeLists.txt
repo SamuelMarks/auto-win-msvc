@@ -112,5 +112,3 @@ add_executable(test_posix-sys-resource ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-resource PRIVATE posix-sys-resource greatest)
 add_test(NAME test_posix-sys-resource COMMAND test_posix-sys-resource)
 endif()
-
-

@@ -99,7 +99,7 @@ endif()
 
 
 add_library(posix-stropts src/posix-stropts.c)
-target_include_directories(posix-stropts PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)    
+target_include_directories(posix-stropts PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
@@ -108,5 +108,3 @@ add_executable(test_posix-stropts ${TEST_SOURCES})
 target_link_libraries(test_posix-stropts PRIVATE posix-stropts greatest)
 add_test(NAME test_posix-stropts COMMAND test_posix-stropts)
 endif()
-
-

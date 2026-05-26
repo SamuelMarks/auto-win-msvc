@@ -99,4 +99,3 @@ for fn in funcs:
     # Wait, the prompt says "implement all the stubs." and `mappings.json` didn't provide signatures.
     # I should supply the correct POSIX signatures.
     pass
-

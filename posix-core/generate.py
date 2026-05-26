@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 for m in data['mappings'].get('macros', []):
     if m.get('shim', {}).get('type') == 'macro':
         header_h += f"""
-/** 
+/**
  * @brief Macro mapping for {m['posix']}
  */
 #ifdef _MSC_VER
@@ -221,14 +221,14 @@ header_h += "\n/* Functions */\n"
 for f in data['mappings']['functions']:
     name = f['posix']
     sig = signatures.get(name, f"int {name}(void)")
-    
+
     header_h += f"""
 /**
  * @brief Implementation or stub for {name}
  * @details {f.get('windows_api', 'POSIX polyfill or macro')}
  */
 """
-    
+
     if f.get('shim', {}).get('type') == 'macro':
         header_h += f"""#ifdef _MSC_VER
 #ifndef {name}
@@ -240,7 +240,7 @@ for f in data['mappings']['functions']:
 """
     else:
         header_h += f"{sig};\n"
-        
+
         args = sig.split('(')[1].split(')')[0]
         arg_names = []
         if args != "void":
@@ -257,7 +257,7 @@ for f in data['mappings']['functions']:
                     if '[' in arg_name:
                          arg_name = arg_name.split('[')[0]
                     arg_names.append(arg_name)
-                    
+
         c_impl += f"""
 /**
  * @brief Polyfill for {name}

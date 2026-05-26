@@ -48,9 +48,9 @@ for func in data['mappings']['functions']:
     name = func['posix']
     sig = sigs[name]
     args = extract_args(sig)
-    
+
     out.append(f"TEST test_{name}() {{")
-    
+
     # build call
     call_args = []
     for arg in args:
@@ -88,7 +88,7 @@ for func in data['mappings']['functions']:
             if 'void' in arg: pass
             elif '*' in sig.split(arg)[0][-2:]: call_args.append('&dummy_int')
             else: call_args.append('0')
-    
+
     call_str = f"{name}({', '.join(call_args)})"
     out.append(f"    /* {call_str}; */")
     out.append(f"    {call_str};")
@@ -109,4 +109,3 @@ out.append("""int main(int argc, char **argv) {
 
 with open('tests/test.c', 'w') as f:
     f.write('\n'.join(out))
-

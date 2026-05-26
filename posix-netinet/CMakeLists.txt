@@ -112,5 +112,3 @@ add_executable(test_posix-netinet ${TEST_SOURCES})
 target_link_libraries(test_posix-netinet PRIVATE posix-netinet greatest)
 add_test(NAME test_posix-netinet COMMAND test_posix-netinet)
 endif()
-
-

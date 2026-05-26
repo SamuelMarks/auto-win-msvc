@@ -99,5 +99,3 @@ target_include_directories(test_linux-sys-user PRIVATE ${greatest_source_dir})
 target_link_libraries(test_linux-sys-user PRIVATE linux-sys-user)
 add_test(NAME test_linux-sys-user COMMAND test_linux-sys-user)
 endif()
-
-

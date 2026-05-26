@@ -121,7 +121,7 @@ target_include_directories(linux-epoll PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_
 if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
     target_link_libraries(linux-epoll PUBLIC wepoll ws2_32)
     target_include_directories(linux-epoll PUBLIC ${wepoll_SOURCE_DIR})
-endif()    
+endif()
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
@@ -129,5 +129,3 @@ add_executable(test_linux-epoll ${TEST_SOURCES})
 target_link_libraries(test_linux-epoll PRIVATE linux-epoll greatest)
 target_compile_options(test_linux-epoll PRIVATE ${STRICT_C_FLAGS})
 add_test(NAME test_linux-epoll COMMAND test_linux-epoll)
-
-

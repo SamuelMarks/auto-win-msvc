@@ -108,5 +108,3 @@ add_executable(test_posix-libgen ${TEST_SOURCES})
 target_link_libraries(test_posix-libgen PRIVATE posix-libgen greatest)
 add_test(NAME test_posix-libgen COMMAND test_posix-libgen)
 endif()
-
-

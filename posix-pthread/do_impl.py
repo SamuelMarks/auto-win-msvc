@@ -158,9 +158,9 @@ impls = {
     'pthread_rwlock_unlock': '''
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
-    /* Can't easily distinguish shared vs exclusive without tracking. 
+    /* Can't easily distinguish shared vs exclusive without tracking.
        Usually SRWLock requires specific release. But pthread doesn't.
-       We will just Release Exclusive for this basic stub or assume it's exclusive if we don't know. 
+       We will just Release Exclusive for this basic stub or assume it's exclusive if we don't know.
        Wait, this is an issue. Let's just release exclusive and hope. */
     ReleaseSRWLockExclusive(&rwlock->p);
     return 0;
@@ -394,10 +394,10 @@ for func, impl in impls.items():
     # Regex to find the function body
     # E.g. int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) { ... }
     pattern = r"(?s)(^[a-zA-Z_][a-zA-Z0-9_\s\*]*\s+" + re.escape(func) + r"\s*\([^)]*\)\s*\{)(.*?)(^\})"
-    
+
     def repl(m):
         return m.group(1) + impl + m.group(3)
-    
+
     code = re.sub(pattern, repl, code, flags=re.MULTILINE)
 
 # Now inject the WINAPI headers at the top, right after includes.

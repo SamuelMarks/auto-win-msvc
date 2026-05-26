@@ -108,5 +108,3 @@ add_executable(test_posix-sched ${TEST_SOURCES})
 target_link_libraries(test_posix-sched PRIVATE posix-sched greatest)
 add_test(NAME test_posix-sched COMMAND test_posix-sched)
 endif()
-
-

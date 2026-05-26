@@ -41,13 +41,13 @@ for func in data['mappings']['functions']:
     sig = sigs[name]
     is_void = sig.startswith('void ')
     is_ptr = sig.startswith('void *') or sig.startswith('sem_t *') or sig.startswith('pthread_t ')
-    
+
     args = extract_args(sig)
     arg_casts = "".join(f"    (void){arg};\n" for arg in args)
-    
+
     out_c.append(f"/* TODO: Implement {name} */")
     out_c.append(f"{sig} {{")
-    
+
     if name in impls:
         out_c.append(impls[name])
     else:
@@ -63,4 +63,3 @@ for func in data['mappings']['functions']:
 
 with open('src/posix-pthread.c', 'w') as f:
     f.write('\n'.join(out_c))
-

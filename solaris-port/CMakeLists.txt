@@ -99,5 +99,3 @@ target_include_directories(test_solaris-port PRIVATE ${greatest_source_dir})
 target_link_libraries(test_solaris-port PRIVATE solaris-port)
 add_test(NAME test_solaris-port COMMAND test_solaris-port)
 endif()
-
-

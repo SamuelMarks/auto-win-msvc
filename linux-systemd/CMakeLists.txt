@@ -82,5 +82,3 @@ add_executable(test_linux-systemd ${TEST_SOURCES})
 target_link_libraries(test_linux-systemd PRIVATE linux-systemd greatest)
 add_test(NAME test_linux-systemd COMMAND test_linux-systemd)
 endif()
-
-

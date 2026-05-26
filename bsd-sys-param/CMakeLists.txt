@@ -108,5 +108,3 @@ add_executable(test_bsd-sys-param ${TEST_SOURCES})
 target_link_libraries(test_bsd-sys-param PRIVATE bsd-sys-param greatest)
 add_test(NAME test_bsd-sys-param COMMAND test_bsd-sys-param)
 endif()
-
-

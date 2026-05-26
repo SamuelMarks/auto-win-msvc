@@ -18,5 +18,3 @@ add_executable(test_haiku-os ${TEST_SOURCES})
 target_link_libraries(test_haiku-os haiku-os)
 add_test(NAME haiku-os_test COMMAND test_haiku-os)
 endif()
-
-

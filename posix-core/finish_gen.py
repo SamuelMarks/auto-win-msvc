@@ -278,7 +278,7 @@ header_h += "\n/* Functions */\n"
 for f in data['mappings']['functions']:
     name = f['posix']
     sig = signatures.get(name, f"int {name}(void)")
-    
+
     header_h += f"/** @brief {name} */\n"
     if f.get('shim', {}).get('type') == 'macro':
         header_h += f"#ifdef _MSC_VER\n#ifndef {name}\n{f['shim']['code']}\n#endif\n#else\n/* {name} */\n#endif\n"
@@ -287,7 +287,7 @@ for f in data['mappings']['functions']:
         if ret_type == "void": dummy_return = ""
         elif "*" in sig.split('(')[0]: dummy_return = "return NULL;"
         else: dummy_return = "return -1;"
-        
+
         header_h += f"#ifdef _MSC_VER\n{sig};\n#else\n/* {name} */\n#endif\n"
         c_impl += f"#ifdef _MSC_VER\n{sig} {{\n    errno = ENOSYS;\n    {dummy_return}\n}}\n#endif\n"
 
@@ -315,4 +315,3 @@ with open('src/posix-core.c', 'w') as f:
 
 with open('tests/test.c', 'w') as f:
     f.write(test_c)
-

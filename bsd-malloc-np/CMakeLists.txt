@@ -99,5 +99,3 @@ target_include_directories(test_bsd-malloc-np PRIVATE ${greatest_source_dir})
 target_link_libraries(test_bsd-malloc-np PRIVATE bsd-malloc-np)
 add_test(NAME test_bsd-malloc-np COMMAND test_bsd-malloc-np)
 endif()
-
-

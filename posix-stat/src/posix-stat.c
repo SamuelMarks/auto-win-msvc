@@ -32,7 +32,7 @@ typedef char *LPSTR;
 /** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief INVALID_FILE_ATTRIBUTES macro. */
-#define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #define FILE_ATTRIBUTE_READONLY 1
 #define FILE_ATTRIBUTE_NORMAL 128
 #define FILE_ATTRIBUTE_REPARSE_POINT 1024
@@ -81,25 +81,27 @@ extern "C" {
 #endif
 
 __declspec(dllimport) HMODULE WINAPI GetModuleHandleA(const char *lpModuleName);
-__declspec(dllimport) void *WINAPI GetProcAddress(HMODULE hModule,
-                                                  const char *lpProcName);
+__declspec(dllimport) void *WINAPI
+    GetProcAddress(HMODULE hModule, const char *lpProcName);
 __declspec(dllimport) DWORD WINAPI GetFileAttributesA(const char *lpFileName);
-__declspec(dllimport) BOOL WINAPI SetFileAttributesA(const char *lpFileName,
-                                                     DWORD dwFileAttributes);
-__declspec(dllimport) BOOL WINAPI GetFileAttributesExA(
-    const char *lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
-    void *lpFileInformation);
+__declspec(dllimport) BOOL WINAPI
+    SetFileAttributesA(const char *lpFileName, DWORD dwFileAttributes);
+__declspec(dllimport) BOOL WINAPI
+    GetFileAttributesExA(const char *lpFileName,
+                         GET_FILEEX_INFO_LEVELS fInfoLevelId,
+                         void *lpFileInformation);
 __declspec(dllimport) void WINAPI GetSystemTime(SYSTEMTIME *lpSystemTime);
 __declspec(dllimport) BOOL WINAPI
-SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
-__declspec(dllimport) BOOL WINAPI SetFileTime(HANDLE hFile,
-                                              const FILETIME *lpCreationTime,
-                                              const FILETIME *lpLastAccessTime,
-                                              const FILETIME *lpLastWriteTime);
+    SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
+__declspec(dllimport) BOOL WINAPI
+    SetFileTime(HANDLE hFile, const FILETIME *lpCreationTime,
+                const FILETIME *lpLastAccessTime,
+                const FILETIME *lpLastWriteTime);
 __declspec(dllimport) HANDLE WINAPI
-CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-            void *lpSecurityAttributes, DWORD dwCreationDisposition,
-            DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+    CreateFileA(const char *lpFileName, DWORD dwDesiredAccess,
+                DWORD dwShareMode, void *lpSecurityAttributes,
+                DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
+                HANDLE hTemplateFile);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 __declspec(dllimport) DWORD WINAPI GetLastError(void);
 

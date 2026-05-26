@@ -99,5 +99,3 @@ target_include_directories(test_linux-backtrace PRIVATE ${greatest_source_dir})
 target_link_libraries(test_linux-backtrace PRIVATE linux-backtrace)
 add_test(NAME test_linux-backtrace COMMAND test_linux-backtrace)
 endif()
-
-

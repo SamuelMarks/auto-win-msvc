@@ -103,5 +103,3 @@ target_include_directories(test_posix-pwdgrp PRIVATE ${greatest_source_dir})
 target_link_libraries(test_posix-pwdgrp PRIVATE posix-pwdgrp)
 add_test(NAME test_posix-pwdgrp COMMAND test_posix-pwdgrp)
 endif()
-
-

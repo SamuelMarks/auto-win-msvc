@@ -112,5 +112,3 @@ add_executable(test_posix-sys-uio ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-uio PRIVATE posix-sys-uio greatest)
 add_test(NAME test_posix-sys-uio COMMAND test_posix-sys-uio)
 endif()
-
-

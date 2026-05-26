@@ -117,4 +117,3 @@ add_executable(test_posix-sockets ${TEST_SOURCES})
         set_property(TEST test_posix-sockets PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
     endif()
 endif()
-

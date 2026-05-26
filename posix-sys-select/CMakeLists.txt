@@ -18,5 +18,3 @@ add_executable(test_posix-sys-select ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-select posix-sys-select)
 add_test(NAME posix-sys-select_test COMMAND test_posix-sys-select)
 endif()
-
-

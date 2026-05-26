@@ -108,4 +108,3 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-regex ${TEST_SOURCES})
 target_link_libraries(test_posix-regex PRIVATE posix-regex greatest)
 add_test(NAME test_posix-regex COMMAND test_posix-regex)
-

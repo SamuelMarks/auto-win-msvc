@@ -105,8 +105,8 @@ typedef int(__stdcall *CloseHandle_t)(HANDLE);
 typedef HANDLE(__stdcall *GetCurrentProcess_t)(void);
 
 __declspec(dllimport) HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName);
-__declspec(dllimport) FARPROC __stdcall GetProcAddress(HMODULE hModule,
-                                                       LPCSTR lpProcName);
+__declspec(dllimport) FARPROC
+    __stdcall GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 __declspec(dllimport) HANDLE __stdcall GetCurrentThread(void);
 __declspec(dllimport) int __stdcall MultiByteToWideChar(
     UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,

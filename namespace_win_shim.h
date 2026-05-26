@@ -217,18 +217,18 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #define __thread __declspec(thread)
 #endif
 #define AUTO_WIN_MSVC_SKIP_IOVEC 1
-#include "posix-time.h"
+#include "linux-getopt.h"
+#include "posix-arpa-inet.h"
 #include "posix-core.h"
-#include "posix-sockets.h"
+#include "posix-dirent.h"
+#include "posix-netdb.h"
 #include "posix-netinet-in.h"
 #include "posix-netinet-tcp.h"
-#include "posix-netdb.h"
-#include "posix-stat.h"
-#include "posix-arpa-inet.h"
-#include "posix-dirent.h"
 #include "posix-poll.h"
-#include "linux-getopt.h"
 #include "posix-signal.h"
+#include "posix-sockets.h"
+#include "posix-stat.h"
+#include "posix-time.h"
 #ifndef SIGPIPE
 #define SIGPIPE 13
 #endif

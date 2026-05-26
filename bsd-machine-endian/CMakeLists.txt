@@ -99,5 +99,3 @@ target_include_directories(test_bsd-machine-endian PRIVATE ${greatest_source_dir
 target_link_libraries(test_bsd-machine-endian PRIVATE bsd-machine-endian)
 add_test(NAME test_bsd-machine-endian COMMAND test_bsd-machine-endian)
 endif()
-
-
