@@ -1,8 +1,14 @@
 auto-win-msvc
 =============
-
 ![Doc Coverage](https://img.shields.io/badge/doc__coverage-98%25-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/test__coverage-100%25-brightgreen)
+
+
+
+
+
+
+
 
 
 

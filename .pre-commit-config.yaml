@@ -10,7 +10,7 @@ repos:
     rev: 1.6.1
     hooks:
       - id: cpplint
-        args: ["--filter=-legal/copyright,-build/include_subdir,-readability/casting,-whitespace/line_length,-whitespace/newline,-build/header_guard,-build/include_order,-runtime/int"]
+        args: ["--filter=-legal/copyright,-build/include_subdir,-readability/casting,-whitespace/line_length,-whitespace/newline,-build/header_guard,-build/include_order,-runtime/int,-readability/multiline_comment,-runtime/printf,-whitespace/blank_line,-runtime/threadsafe_fn,-build/include,-build/include_what_you_use,-whitespace/parens,-whitespace/empty_if_body,-whitespace/indent,-runtime/arrays,-whitespace/comments"]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v17.0.6

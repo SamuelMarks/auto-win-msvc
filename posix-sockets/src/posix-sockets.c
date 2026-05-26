@@ -438,8 +438,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     p_ws_errorfds = &ws_errorfds;
   }
 
+#undef select
   ret = select(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds, timeout);
-
+#define select posix_select
   if (ret == SOCKET_ERROR) {
     errno = EBADF; // Simplify
     return -1;

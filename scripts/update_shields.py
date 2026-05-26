@@ -87,7 +87,7 @@ def update_readme():
             doc_color = 'brightgreen' if doc_cov >= 90 else ('yellow' if doc_cov >= 70 else 'red')
             test_color = 'brightgreen' if test_cov >= 90 else ('yellow' if test_cov >= 70 else 'red')
 
-            shields = f"\n![Doc Coverage](https://img.shields.io/badge/doc__coverage-{doc_cov:.0f}%25-{doc_color})\n![Test Coverage](https://img.shields.io/badge/test__coverage-{test_cov:.0f}%25-{test_color})\n\n"
+            shields = f"![Doc Coverage](https://img.shields.io/badge/doc__coverage-{doc_cov:.0f}%25-{doc_color})\n![Test Coverage](https://img.shields.io/badge/test__coverage-{test_cov:.0f}%25-{test_color})\n"
 
             insert_pos = title_match.end()
             readme = readme[:insert_pos] + shields + readme[insert_pos:]

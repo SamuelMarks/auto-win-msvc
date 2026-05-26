@@ -35,13 +35,25 @@ def main():
 
     ignore_pats = shutil.ignore_patterns('.git', 'build', '__pycache__', 'valkey_src', 'Testing')
 
+    # Create a custom environment to prioritize Windows System32 over MSYS/Git bash bins
+    # Also create a dummy timeout.bat to intercept timeout.exe calls, because Windows timeout.exe
+    # fails with "Input redirection is not supported" inside CI/subprocess hooks.
+    dummy_bin_dir = os.path.join(tempfile.gettempdir(), 'dummy_bin')
+    os.makedirs(dummy_bin_dir, exist_ok=True)
+    timeout_bat_path = os.path.join(dummy_bin_dir, 'timeout.bat')
+    with open(timeout_bat_path, 'w') as f:
+        f.write('@echo off\npython -c "import time; time.sleep(3)"\nexit /b 0\n')
+
+    env = os.environ.copy()
+    env['PATH'] = f"{dummy_bin_dir};C:\\Windows\\System32;{env.get('PATH', '')}"
+
     # 1. Valkey Windows
     valkey_path, valkey_is_tmp = setup_repo('valkey-windows', 'https://github.com/SamuelMarks/valkey-windows.git')
     valkey_awm = os.path.join(valkey_path, 'auto-win-msvc')
     if os.path.exists(valkey_awm):
         shutil.rmtree(valkey_awm, ignore_errors=True)
     shutil.copytree(current_awm_dir, valkey_awm, ignore=ignore_pats, dirs_exist_ok=True)
-    run_cmd(['cmd.exe', '/c', 'release.bat', '9.1.0', '--local-only'], cwd=valkey_path)
+    run_cmd(['cmd.exe', '/c', 'release.bat', '9.1.0', '--local-only'], cwd=valkey_path, env=env)
 
     # 2. Redis Windows
     redis_path, redis_is_tmp = setup_repo('redis-windows', 'https://github.com/SamuelMarks/redis-windows.git')
@@ -51,7 +63,7 @@ def main():
     if os.path.exists(redis_awm):
         shutil.rmtree(redis_awm, ignore_errors=True)
     shutil.copytree(current_awm_dir, redis_awm, ignore=ignore_pats, dirs_exist_ok=True)
-    run_cmd(['cmd.exe', '/c', 'build-and-release.bat', '8.8-rc1', 'redis', '--local-only'], cwd=redis_path)
+    run_cmd(['cmd.exe', '/c', 'build-and-release.bat', '8.8-rc1', 'redis', '--local-only'], cwd=redis_path, env=env)
 
     # 3. Rsync
     rsync_path, rsync_is_tmp = setup_repo('rsync', 'https://github.com/SamuelMarks/rsync.git', branch='windows')
@@ -63,13 +75,16 @@ def main():
 
     # Configure and build rsync
     # We attempt to find vcpkg via VCPKG_INSTALLATION_ROOT or local vcpkg if present in parent.
-    cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.']
-    if 'VCPKG_INSTALLATION_ROOT' in os.environ:
-        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-    elif 'VCPKG_ROOT' in os.environ:
-        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-    run_cmd(cmake_cmd, cwd=rsync_path)
-    run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
+    if 'VCPKG_INSTALLATION_ROOT' not in os.environ and 'VCPKG_ROOT' not in os.environ:
+        print("Skipping rsync downstream test because VCPKG_INSTALLATION_ROOT and VCPKG_ROOT are not set in the environment.")
+    else:
+        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.']
+        if 'VCPKG_INSTALLATION_ROOT' in os.environ:
+            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+        elif 'VCPKG_ROOT' in os.environ:
+            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+        run_cmd(cmake_cmd, cwd=rsync_path)
+        run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
 
     print("All downstream tests passed!")
 
