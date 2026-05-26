@@ -74,17 +74,13 @@ def main():
         shutil.copytree(current_awm_dir, rsync_awm, ignore=ignore_pats, dirs_exist_ok=True)
 
     # Configure and build rsync
-    # We attempt to find vcpkg via VCPKG_INSTALLATION_ROOT or local vcpkg if present in parent.
-    if 'VCPKG_INSTALLATION_ROOT' not in os.environ and 'VCPKG_ROOT' not in os.environ:
-        print("Skipping rsync downstream test because VCPKG_INSTALLATION_ROOT and VCPKG_ROOT are not set in the environment.")
-    else:
-        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.']
-        if 'VCPKG_INSTALLATION_ROOT' in os.environ:
-            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-        elif 'VCPKG_ROOT' in os.environ:
-            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-        run_cmd(cmake_cmd, cwd=rsync_path)
-        run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
+    cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.']
+    if 'VCPKG_INSTALLATION_ROOT' in os.environ:
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+    elif 'VCPKG_ROOT' in os.environ:
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+    run_cmd(cmake_cmd, cwd=rsync_path)
+    run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
 
     print("All downstream tests passed!")
 
