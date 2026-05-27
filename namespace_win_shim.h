@@ -45,7 +45,7 @@
 /* Standard MSVC CRT Headers */
 #include <BaseTsd.h>
 #include <direct.h>
-#include <corecrt_io.h>
+#include <io.h>
 #include <process.h>
 
 /* Minimal Synchapi for Sleep (if needed without Windows.h) */
@@ -70,7 +70,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <direct.h>
-#include <corecrt_io.h>
+#include <io.h>
 #include <process.h>
 #include <winsock2.h>
 

@@ -348,9 +348,7 @@ int posix_close(int fd) {
   }
   return ret;
 }
-#endif
 
-typedef int make_iso_compilers_happy_posix_read_write;
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
@@ -364,3 +362,7 @@ int posix_dup2(int oldfd, int newfd) {
   }
   return ret;
 }
+
+#endif
+
+typedef int make_iso_compilers_happy_posix_read_write;

@@ -1,3 +1,6 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 /* posix-dirent.h - Strict C89 Header */
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
@@ -13,7 +16,11 @@ extern "C" {
 #if defined(__WATCOMC__)
 #include <direct.h>
 #else
+#if defined(__GNUC__) || defined(__clang__)
+#include_next <dirent.h>
+#else
 #include <dirent.h>
+#endif
 #endif
 #include <sys/types.h>
 

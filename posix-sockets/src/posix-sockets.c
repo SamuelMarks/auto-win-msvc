@@ -381,13 +381,16 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
 /** \brief posix_select function. */
 #include <errno.h>
+#if defined(_WIN32)
 #include <io.h>
 #include <winsock2.h>
+#endif
 
 extern int is_socket(int fd);
 
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {
+#if defined(_WIN32)
   fd_set ws_readfds, ws_writefds, ws_errorfds;
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
   unsigned int i;
@@ -490,6 +493,15 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   }
 
   return ret;
+#else
+  (void)nfds;
+  (void)readfds;
+  (void)writefds;
+  (void)errorfds;
+  (void)timeout;
+  errno = EINVAL;
+  return -1;
+#endif
 }
 
 int posix_accept(int socket, struct sockaddr *address,
@@ -855,8 +867,10 @@ int posix_socket(int domain, int type, int protocol) {
 
 #if defined(_WIN32)
 #include <fcntl.h>
+#if defined(_WIN32)
 #include <io.h>
 #include <winsock2.h>
+#endif
 #include <ws2tcpip.h>
 #endif
 
