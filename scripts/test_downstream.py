@@ -97,6 +97,10 @@ def main():
 
     # Configure and build s2n-tls
     cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
+    if 'VCPKG_INSTALLATION_ROOT' in os.environ:
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+    elif 'VCPKG_ROOT' in os.environ:
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
     run_cmd(cmake_cmd, cwd=s2n_tls_path)
     run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=s2n_tls_path)
     run_cmd(['ctest', '--test-dir', 'build', '-C', 'Release', '--output-on-failure'], cwd=s2n_tls_path)
