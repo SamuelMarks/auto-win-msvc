@@ -455,7 +455,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     for (i = 0; i < ws_readfds.fd_count; i++) {
       SOCKET s = ws_readfds.fd_array[i];
       // Find matching fd
-      for (int j = 0; j < 8192; j++) {
+      int j;
+      for (j = 0; j < 8192; j++) {
         if (is_socket(j) && (SOCKET)_get_osfhandle(j) == s) {
           FD_SET((SOCKET)j, readfds);
           break;
@@ -469,7 +470,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     FD_ZERO(writefds);
     for (i = 0; i < ws_writefds.fd_count; i++) {
       SOCKET s = ws_writefds.fd_array[i];
-      for (int j = 0; j < 8192; j++) {
+      int j;
+      for (j = 0; j < 8192; j++) {
         if (is_socket(j) && (SOCKET)_get_osfhandle(j) == s) {
           FD_SET((SOCKET)j, writefds);
           break;
@@ -483,7 +485,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     FD_ZERO(errorfds);
     for (i = 0; i < ws_errorfds.fd_count; i++) {
       SOCKET s = ws_errorfds.fd_array[i];
-      for (int j = 0; j < 8192; j++) {
+      int j;
+      for (j = 0; j < 8192; j++) {
         if (is_socket(j) && (SOCKET)_get_osfhandle(j) == s) {
           FD_SET((SOCKET)j, errorfds);
           break;
@@ -535,13 +538,15 @@ int posix_bind(int socket, const struct sockaddr *address,
                posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef bind
+  int ret;
   if (address->sa_family == AF_UNIX) {
     struct sockaddr_in fake_addr;
+    int ret;
     memset(&fake_addr, 0, sizeof(fake_addr));
     fake_addr.sin_family = AF_INET;
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     fake_addr.sin_port = 0;
-    int ret = bind((SOCKET)_get_osfhandle(socket),
+    ret = bind((SOCKET)_get_osfhandle(socket),
                    (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
     if (ret == SOCKET_ERROR) {
       errno = _wsaErrorToErrno(WSAGetLastError());
@@ -549,7 +554,7 @@ int posix_bind(int socket, const struct sockaddr *address,
     }
     return 0;
   }
-  int ret = bind((SOCKET)_get_osfhandle(socket), address, address_len);
+  ret = bind((SOCKET)_get_osfhandle(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -789,10 +794,10 @@ int posix_setsockopt(int socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
 #undef setsockopt
+  int ret;
   if (level == SOL_SOCKET && option_name == SO_REUSEADDR) {
     return 0;
   }
-  int ret;
   if (level == SOL_SOCKET &&
       (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len == sizeof(struct timeval)) {
@@ -844,9 +849,10 @@ int posix_shutdown(int socket, int how) {
 int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
 #undef socket
+  SOCKET s;
   if (domain == AF_UNIX)
     domain = AF_INET;
-  SOCKET s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (s == INVALID_SOCKET) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;

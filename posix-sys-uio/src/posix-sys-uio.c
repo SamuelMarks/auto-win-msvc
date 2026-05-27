@@ -1,12 +1,44 @@
 /* clang-format off */
 #include "posix-sys-uio.h"
 
+
 #if defined(_MSC_VER) || defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <errno.h>
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK 140
+#endif
+#ifndef ECONNRESET
+#define ECONNRESET 108
+#endif
+#ifndef EINPROGRESS
+#define EINPROGRESS 112
+#endif
+#ifndef EALREADY
+#define EALREADY 103
+#endif
+#ifndef ENOTSOCK
+#define ENOTSOCK 128
+#endif
+#ifndef EMSGSIZE
+#define EMSGSIZE 122
+#endif
+#ifndef EADDRINUSE
+#define EADDRINUSE 100
+#endif
+#ifndef EADDRNOTAVAIL
+#define EADDRNOTAVAIL 101
+#endif
+#ifndef ECONNABORTED
+#define ECONNABORTED 106
+#endif
+#ifndef ECONNREFUSED
+#define ECONNREFUSED 107
+#endif
+
 #include <io.h>
 #include <stdlib.h>
 #include <winsock2.h>
@@ -167,6 +199,37 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #include <errno.h>
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK 140
+#endif
+#ifndef ECONNRESET
+#define ECONNRESET 108
+#endif
+#ifndef EINPROGRESS
+#define EINPROGRESS 112
+#endif
+#ifndef EALREADY
+#define EALREADY 103
+#endif
+#ifndef ENOTSOCK
+#define ENOTSOCK 128
+#endif
+#ifndef EMSGSIZE
+#define EMSGSIZE 122
+#endif
+#ifndef EADDRINUSE
+#define EADDRINUSE 100
+#endif
+#ifndef EADDRNOTAVAIL
+#define EADDRNOTAVAIL 101
+#endif
+#ifndef ECONNABORTED
+#define ECONNABORTED 106
+#endif
+#ifndef ECONNREFUSED
+#define ECONNREFUSED 107
+#endif
+
 
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   if (fd || iov || iovcnt) {

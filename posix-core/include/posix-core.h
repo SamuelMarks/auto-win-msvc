@@ -30,6 +30,10 @@ extern "C" {
 #ifndef EALREADY
 #define EALREADY 103
 #endif
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK 140
+#endif
+
 #ifndef ENOTSOCK
 #define ENOTSOCK 128
 #endif
