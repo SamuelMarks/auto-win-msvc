@@ -230,7 +230,6 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
 #define ECONNREFUSED 107
 #endif
 
-
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   if (fd || iov || iovcnt) {
   }

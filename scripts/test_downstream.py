@@ -94,7 +94,7 @@ def main():
         s2n_tls_parent = os.path.dirname(s2n_tls_path)
         s2n_tls_awm = os.path.join(s2n_tls_parent, 'auto-win-msvc')
         shutil.copytree(current_awm_dir, s2n_tls_awm, ignore=ignore_pats, dirs_exist_ok=True)
-    
+
     # Configure and build s2n-tls
     cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
     run_cmd(cmake_cmd, cwd=s2n_tls_path)

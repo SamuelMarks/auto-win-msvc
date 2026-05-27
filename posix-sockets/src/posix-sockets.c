@@ -547,7 +547,7 @@ int posix_bind(int socket, const struct sockaddr *address,
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     fake_addr.sin_port = 0;
     ret = bind((SOCKET)_get_osfhandle(socket),
-                   (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
+               (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
     if (ret == SOCKET_ERROR) {
       errno = _wsaErrorToErrno(WSAGetLastError());
       return -1;
