@@ -1,11 +1,12 @@
-#ifndef LINUX_SYS_STATFS_H
-#define LINUX_SYS_STATFS_H
-
-#if defined(_MSC_VER)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef LINUX_SYS_STATFS_H
+#define LINUX_SYS_STATFS_H
+
+#if defined(_MSC_VER)
 
 struct statfs {
   long f_type;
@@ -27,10 +28,10 @@ int statfs(const char *path, struct statfs *buf);
 /** \brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf);
 
+#endif /* _MSC_VER */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _MSC_VER */
+#endif /* __cplusplus */
 
 #endif /* LINUX_SYS_STATFS_H */

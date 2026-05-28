@@ -10,25 +10,25 @@
  * mapping to Winsock's ioctlsocket API.
  */
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 /* DOS has no sys/ioctl.h */
 #else
 #include <sys/ioctl.h>
-#endif
 /* clang-format on */
-
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 #ifndef TIOCGWINSZ
 #define TIOCGWINSZ 0x5413
@@ -67,10 +67,10 @@ int posix_ioctl(int fd, unsigned long request, ...);
 #define ioctl posix_ioctl
 #endif
 
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYS_IOCTL_H */

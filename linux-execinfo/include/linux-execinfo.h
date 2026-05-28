@@ -16,10 +16,10 @@ char **backtrace_symbols(void *const *buffer, int size);
 /** \brief backtrace_symbols_fd function. */
 void backtrace_symbols_fd(void *const *buffer, int size, int fd);
 
+#endif /* _MSC_VER */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _MSC_VER */
+#endif /* __cplusplus */
 
 #endif /* LINUX_EXECINFO_H */

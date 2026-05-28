@@ -35,6 +35,6 @@ clock_t posix_times(struct tms *buf);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_TIMES_H */

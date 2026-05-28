@@ -1,11 +1,12 @@
-#ifndef LINUX_GETOPT_H
-#define LINUX_GETOPT_H
-
-#if defined(_MSC_VER)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef LINUX_GETOPT_H
+#define LINUX_GETOPT_H
+
+#if defined(_MSC_VER)
 
 extern char *optarg;
 extern int optind;
@@ -29,10 +30,10 @@ int getopt(int argc, char *const argv[], const char *optstring);
 int getopt_long(int argc, char *const argv[], const char *optstring,
                 const struct option *longopts, int *longindex);
 
+#endif /* _MSC_VER */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _MSC_VER */
+#endif /* __cplusplus */
 
 #endif /* LINUX_GETOPT_H */

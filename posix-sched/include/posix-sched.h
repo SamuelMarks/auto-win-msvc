@@ -10,13 +10,18 @@
  * using Windows process APIs.
  */
 
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 /* clang-format off */
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 #include <stddef.h> /* size_t */
 #else
 #include <sched.h>
-#endif
 /* clang-format on */
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
     defined(__WATCOMC__)
@@ -76,10 +81,6 @@ typedef struct cpu_set {
 #define CPU_ISSET(cpu, set)                                                    \
   (((cpu) < 64) ? (((set)->bits & (((mask_bit_type)1) << (cpu))) != 0) : 0)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief Relinquish the CPU.
  *
@@ -119,10 +120,10 @@ int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
 #define sched_getaffinity posix_sched_getaffinity
 #endif
 
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_SCHED_H */

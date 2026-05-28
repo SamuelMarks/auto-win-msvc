@@ -9,7 +9,6 @@
 /* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
-/* clang-format on */
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 /* DOS has no netdb.h by default */
 #else
@@ -17,10 +16,12 @@
 #pragma GCC system_header
 #endif
 #include_next <netdb.h>
-#endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
 #endif
 
 #if defined(_WIN32)
@@ -30,6 +31,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_NETDB_STUB */

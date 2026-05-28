@@ -42,7 +42,6 @@ static int _wsaErrorToErrno(int err) {
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-/* clang-format on */
 #ifdef _WIN32
 static void __cdecl __init_winsock_auto(void) {
   WSADATA wsaData;
@@ -382,7 +381,11 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 /** \brief posix_select function. */
 #include <errno.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <winsock2.h>
 #endif
 
@@ -395,6 +398,7 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
   unsigned int i;
   int ret;
+  (void)nfds;
 
   if (readfds) {
     FD_ZERO(&ws_readfds);
@@ -405,7 +409,7 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
         if (s != INVALID_SOCKET)
           FD_SET(s, &ws_readfds);
       } else {
-        FD_SET((SOCKET)fd, &ws_readfds); // Pass through
+        FD_SET((SOCKET)fd, &ws_readfds); /* Pass through */
       }
     }
     p_ws_readfds = &ws_readfds;
@@ -445,16 +449,16 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   ret = select(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds, timeout);
 #define select posix_select
   if (ret == SOCKET_ERROR) {
-    errno = EBADF; // Simplify
+    errno = EBADF; /* Simplify */
     return -1;
   }
 
   if (readfds) {
-    int orig_count = readfds->fd_count;
+
     FD_ZERO(readfds);
     for (i = 0; i < ws_readfds.fd_count; i++) {
       SOCKET s = ws_readfds.fd_array[i];
-      // Find matching fd
+      /* Find matching fd */
       int j;
       for (j = 0; j < 8192; j++) {
         if (is_socket(j) && (SOCKET)_get_osfhandle(j) == s) {
@@ -466,8 +470,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   }
 
   if (writefds) {
-    int orig_count = writefds->fd_count;
-    FD_ZERO(writefds);
+  int orig_count = writefds->fd_count;
+  (void)orig_count;
+  FD_ZERO(writefds);
     for (i = 0; i < ws_writefds.fd_count; i++) {
       SOCKET s = ws_writefds.fd_array[i];
       int j;
@@ -481,8 +486,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   }
 
   if (errorfds) {
-    int orig_count = errorfds->fd_count;
-    FD_ZERO(errorfds);
+  int orig_count = errorfds->fd_count;
+  (void)orig_count;
+  FD_ZERO(errorfds);
     for (i = 0; i < ws_errorfds.fd_count; i++) {
       SOCKET s = ws_errorfds.fd_array[i];
       int j;
@@ -541,7 +547,7 @@ int posix_bind(int socket, const struct sockaddr *address,
   int ret;
   if (address->sa_family == AF_UNIX) {
     struct sockaddr_in fake_addr;
-    int ret;
+
     memset(&fake_addr, 0, sizeof(fake_addr));
     fake_addr.sin_family = AF_INET;
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -645,7 +651,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
       ret = getsockopt((SOCKET)_get_osfhandle(socket), level, option_name,
                        (char *)&ms, &ms_len);
       if (ret == 0) {
-        struct timeval *tv = (struct timeval *)option_value;
+        struct timeval *tv = (struct timeval *)((size_t)option_value);
         tv->tv_sec = ms / 1000;
         tv->tv_usec = (ms % 1000) * 1000;
       }
@@ -801,7 +807,7 @@ int posix_setsockopt(int socket, int level, int option_name,
   if (level == SOL_SOCKET &&
       (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len == sizeof(struct timeval)) {
-      struct timeval *tv = (struct timeval *)option_value;
+      struct timeval *tv = (struct timeval *)((size_t)option_value);
       DWORD ms = (DWORD)(tv->tv_sec * 1000 + tv->tv_usec / 1000);
       ret = setsockopt((SOCKET)_get_osfhandle(socket), level, option_name,
                        (const char *)&ms, sizeof(DWORD));
@@ -874,10 +880,15 @@ int posix_socket(int domain, int type, int protocol) {
 #if defined(_WIN32)
 #include <fcntl.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <winsock2.h>
 #endif
 #include <ws2tcpip.h>
+/* clang-format on */
 #endif
 
 int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {

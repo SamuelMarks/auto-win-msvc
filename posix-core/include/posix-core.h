@@ -2,16 +2,18 @@
 #ifndef POSIX_CORE_H
 #define POSIX_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>
 #include <errno.h>
+#include <stdio.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #if defined(_MSC_VER)
 #ifndef EACCES
 #define EACCES 13
@@ -98,14 +100,22 @@ typedef int gid_t;
 
 #include <direct.h>
 #include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <process.h>
 #include <share.h>
 #include <sys/stat.h>
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <process.h>
 #include <share.h>
 #include <sys/stat.h>
@@ -117,7 +127,6 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-/* clang-format on */
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -744,7 +753,7 @@ long gethostid(void);
 #endif
 /** @brief gethostname */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-// int gethostname(char *name, int len);
+/* int gethostname(char *name, int len); */
 #else
 /* gethostname */
 #endif
@@ -1064,7 +1073,11 @@ pid_t vfork(void);
 /** @brief rename (POSIX semantics) */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #undef rename
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <stdio.h>
 int posix_rename(const char *oldpath, const char *newpath);
 #ifndef rename
@@ -1077,6 +1090,12 @@ int posix_rename(const char *oldpath, const char *newpath);
 /** @brief mkstemp (POSIX semantics with SHARE_DELETE) */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <stdlib.h>
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int posix_mkstemp(char *tmpl);
 #ifndef mkstemp
 #define mkstemp posix_mkstemp
@@ -1087,7 +1106,9 @@ int posix_mkstemp(char *tmpl);
 
 FILE *posix_fopen(const char *pathname, const char *mode);
 #define fopen posix_fopen
+
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
+
 #endif

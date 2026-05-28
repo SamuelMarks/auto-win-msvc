@@ -4,10 +4,6 @@
 
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief PID type definition for Windows.
  */
@@ -104,10 +100,6 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
  */
 /* cwait removed */
 
-#ifdef __cplusplus
-}
-#endif
-
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 /* DOS has no sys/wait.h */
@@ -128,14 +120,18 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 
 /* For non-Windows environments (like Darwin/Linux testing), include native
  * headers */
-/* clang-format off */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
+/* clang-format off */
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __CYGWIN__
 #ifndef _IDTYPE_T_DEFINED
@@ -153,10 +149,6 @@ typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
 #define WNOWAIT 0x01000000
 #endif
 #endif /* __CYGWIN__ */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef __CYGWIN__
 /**
@@ -182,10 +174,10 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
  */
 /* cwait removed */
 
+#endif /* _WIN32 */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _WIN32 */
+#endif /* __cplusplus */
 
 #endif /* POSIX_WAIT_H */

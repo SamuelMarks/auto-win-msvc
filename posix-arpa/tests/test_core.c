@@ -1,8 +1,11 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-arpa-inet.h"
+/* clang-format on */
 
 TEST test_arpa(void) {
   ASSERT_NEQ((unsigned long)-1, (unsigned long)inet_addr("127.0.0.1"));

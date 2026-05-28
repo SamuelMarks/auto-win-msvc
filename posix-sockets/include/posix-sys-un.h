@@ -24,6 +24,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYS_UN_H */

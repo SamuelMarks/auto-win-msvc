@@ -2,16 +2,16 @@
 #ifndef MACOS_MALLOC_STUB
 #define MACOS_MALLOC_STUB
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <malloc.h>
 /* clang-format on */
 
 #ifdef __cplusplus
-}
+extern "C" {
 #endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* MACOS_MALLOC_STUB */

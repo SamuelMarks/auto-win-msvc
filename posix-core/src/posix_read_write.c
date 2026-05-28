@@ -2,12 +2,18 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/* clang-format off */
 #include "posix-core.h"
 #include <errno.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <stdlib.h>
 #include <winsock2.h>
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400
 static void my_invalid_parameter_handler(const wchar_t *expression,
                                          const wchar_t *function,
                                          const wchar_t *file, unsigned int line,
@@ -18,6 +24,7 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
   (void)line;
   (void)pReserved;
 }
+#endif
 
 #undef _read
 #undef _write
@@ -95,6 +102,7 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
 }
 
 #include <sys/stat.h>
+/* clang-format on */
 int posix_open(const char *pathname, int flags, ...) {
   int mode = 0;
   DWORD dwDesiredAccess = 0;
@@ -104,6 +112,7 @@ int posix_open(const char *pathname, int flags, ...) {
   HANDLE hFile;
   int fd_flags;
   int fd;
+  (void)mode;
 
   if (flags & O_CREAT) {
     va_list ap;

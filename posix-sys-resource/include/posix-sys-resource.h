@@ -10,9 +10,9 @@
  * using Windows process APIs.
  */
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef _TIMEVAL_DEFINED
+/* clang-format off */
 #include <winsock2.h>
 #endif
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
@@ -26,8 +26,12 @@ struct timeval {
 /* DOS has no sys/resource.h */
 #else /* Not MSVC/Windows */
 #include <sys/resource.h>
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
 /* clang-format on */
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
     defined(__WATCOMC__)
@@ -79,10 +83,6 @@ struct rlimit {
 /** \brief RLIM_INFINITY macro. */
 #define RLIM_INFINITY (~0UL)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief Retrieves system resource usage measures for the calling process.
  *
@@ -120,10 +120,10 @@ int posix_setrlimit(int resource, const struct rlimit *rlp);
 #define setrlimit posix_setrlimit
 #endif
 
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYS_RESOURCE_H */

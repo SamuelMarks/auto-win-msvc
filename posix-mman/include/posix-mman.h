@@ -10,9 +10,6 @@
 #include <sys/mman.h>
 
 #if defined(__CYGWIN__)
-#ifdef __cplusplus
-extern "C" {
-#endif
 #ifndef MCL_CURRENT
 #define MCL_CURRENT 0x01
 #endif
@@ -24,9 +21,6 @@ extern "C" {
 int mlockall(int flags);
 /** \brief munlockall function. */
 int munlockall(void);
-#ifdef __cplusplus
-}
-#endif
 #endif
 
 #else
@@ -227,10 +221,10 @@ int shm_open(const char *name, int oflag, mode_t mode);
 /** \brief shm_unlink function. */
 int shm_unlink(const char *name);
 
+#endif /* _WIN32 */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _WIN32 */
+#endif /* __cplusplus */
 
 #endif /* POSIX_MMAN_H */

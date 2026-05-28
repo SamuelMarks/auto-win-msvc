@@ -17,7 +17,11 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 /* clang-format on */
 
 #define WINAPI __stdcall

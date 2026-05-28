@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-sys-uio.h"
 #include <stddef.h>
+/* clang-format on */
 
 TEST test_sys_uio(void) {
   if (readv(0, NULL, 0) == -1)

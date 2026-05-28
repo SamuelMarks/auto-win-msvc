@@ -15,6 +15,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* HAIKU_KERNEL_OS_H */

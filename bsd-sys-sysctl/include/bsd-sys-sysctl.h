@@ -94,9 +94,10 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
 int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
                  const void *newp, size_t newlen);
 
+#endif /* _WIN32 */
+
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
-#endif /* _WIN32 */
 #endif

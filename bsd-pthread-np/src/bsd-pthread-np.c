@@ -1,13 +1,13 @@
 /* clang-format off */
 #include "bsd-pthread-np.h"
 #include <errno.h>
-/* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+/* clang-format on */
 
 /** \brief pthread_setaffinity_np function. */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,

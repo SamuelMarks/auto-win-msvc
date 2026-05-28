@@ -162,6 +162,6 @@ void wordfree(wordexp_t *pwordexp);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_GLOB_H */

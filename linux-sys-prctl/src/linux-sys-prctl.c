@@ -1,8 +1,8 @@
+/* clang-format off */
 #include <errno.h>
 #ifndef ENOSYS
 #define ENOSYS 38
 #endif
-/* clang-format off */
 #include "linux-sys-prctl.h"
 #include <stdarg.h>
 #include <stddef.h>

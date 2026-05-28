@@ -5,15 +5,11 @@
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
-/* clang-format off */
 #if defined(__WATCOMC__)
+/* clang-format off */
 #include <direct.h>
 #else
 #if defined(__GNUC__) || defined(__clang__)
@@ -28,6 +24,10 @@ extern "C" {
 
 #include <stddef.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* File types for d_type */
 #define DT_UNKNOWN 0
@@ -126,6 +126,6 @@ int alphasort(const struct dirent **a, const struct dirent **b);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_DIRENT_H */

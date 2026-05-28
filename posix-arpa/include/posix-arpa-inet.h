@@ -10,11 +10,11 @@
  * implemented using safe Microsoft CRT extensions.
  */
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
@@ -28,15 +28,15 @@ struct in_addr {
 #endif
 #else
 #include <arpa/inet.h>
-#endif
 /* clang-format on */
-
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
 
 /**
  * @brief Converts the Internet host address cp from the IPv4 numbers-and-dots
@@ -52,10 +52,10 @@ int posix_inet_aton(const char *cp, struct in_addr *inp);
 #define inet_aton posix_inet_aton
 #endif
 
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_ARPA_INET_H */

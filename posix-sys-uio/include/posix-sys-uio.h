@@ -10,15 +10,19 @@
  * mapped to WSASend and _write system calls.
  */
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
+/* clang-format off */
 #include <stddef.h> /* size_t */
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <stddef.h> /* size_t */
 #else
 #include <sys/uio.h>
-#endif
 /* clang-format on */
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
     defined(__WATCOMC__)
@@ -31,10 +35,6 @@ struct iovec {
   void *iov_base; /* Base address */
   size_t iov_len; /* Length */
 };
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 /**
@@ -66,10 +66,10 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt);
 #define writev posix_writev
 #endif
 
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYS_UIO_H */

@@ -1,7 +1,11 @@
-/* clang-format off */
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)
+/* clang-format off */
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <wepoll.h>
 #include <windows.h>
 #endif
@@ -11,8 +15,8 @@
     (defined(_WIN32) && !defined(_MSC_VER) && !defined(__MINGW32__) &&         \
      !defined(__MINGW64__))
 #include <errno.h>
-#endif
 /* clang-format on */
+#endif
 
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)

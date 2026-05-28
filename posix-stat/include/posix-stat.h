@@ -9,15 +9,20 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #else
 #include <fcntl.h>
 #include <unistd.h>
 /* clang-format on */
-#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
 #endif
 
 #ifdef _WIN32
@@ -184,6 +189,6 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_STAT_H */

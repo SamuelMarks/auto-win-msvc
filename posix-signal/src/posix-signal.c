@@ -1,3 +1,4 @@
+/* clang-format off */
 #include <errno.h>
 #ifndef ENOSYS
 #define ENOSYS 38
@@ -6,7 +7,6 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4306)
 #endif
-/* clang-format off */
 #include "posix-signal.h"
 /* clang-format on */
 

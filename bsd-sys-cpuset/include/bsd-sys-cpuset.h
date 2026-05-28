@@ -1,14 +1,14 @@
 #ifndef BSD_SYS_CPUSET_H
 #define BSD_SYS_CPUSET_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(_MSC_VER) || defined(__MINGW32__)
 /* clang-format off */
 #include <stddef.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CPU_SETSIZE 64
 
@@ -112,6 +112,6 @@ int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* BSD_SYS_CPUSET_H */

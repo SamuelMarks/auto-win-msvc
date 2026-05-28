@@ -18,6 +18,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* BSD_MACHINE_ENDIAN_H */

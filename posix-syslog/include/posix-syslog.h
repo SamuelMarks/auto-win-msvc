@@ -100,6 +100,6 @@ void syslog(int priority, const char *format, ...);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYSLOG_H */

@@ -1,21 +1,22 @@
 #ifndef LINUX_EPOLL_H
 #define LINUX_EPOLL_H
 
-/* clang-format off */
 #if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
     (!defined(_MSC_VER) || _MSC_VER >= 1600)
+/* clang-format off */
 #include <stdint.h>
 #include <wepoll.h>
 #elif defined(__linux__)
 #include <sys/epoll.h>
-#endif
 /* clang-format on */
+#endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
-    (!defined(_MSC_VER) || _MSC_VER >= 1600)
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
+    (!defined(_MSC_VER) || _MSC_VER >= 1600)
 /** \brief posix_epoll_create function. */
 int posix_epoll_create(int size);
 /** \brief posix_epoll_create1 function. */
@@ -31,13 +32,7 @@ int posix_epoll_close(int epfd);
 #define epoll_create1 posix_epoll_create1
 #define epoll_ctl posix_epoll_ctl
 #define epoll_wait posix_epoll_wait
-#ifdef __cplusplus
-}
-#endif
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-#ifdef __cplusplus
-extern "C" {
-#endif
 /** \brief posix_epoll_create function. */
 int posix_epoll_create(int size);
 /** \brief posix_epoll_create1 function. */
@@ -52,15 +47,9 @@ int posix_epoll_close(int epfd);
 #define epoll_create1 posix_epoll_create1
 #define epoll_ctl posix_epoll_ctl
 #define epoll_wait posix_epoll_wait
-#ifdef __cplusplus
-}
-#endif
 #elif defined(__linux__)
 /* Includes moved to the top */
 #else
-#ifdef __cplusplus
-extern "C" {
-#endif
 /** \brief posix_epoll_create function. */
 int posix_epoll_create(int size);
 /** \brief posix_epoll_create1 function. */
@@ -75,9 +64,10 @@ int posix_epoll_close(int epfd);
 #define epoll_create1 posix_epoll_create1
 #define epoll_ctl posix_epoll_ctl
 #define epoll_wait posix_epoll_wait
+#endif
+
 #ifdef __cplusplus
 }
-#endif
-#endif
+#endif /* __cplusplus */
 
 #endif /* LINUX_EPOLL_H */

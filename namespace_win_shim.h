@@ -45,7 +45,11 @@
 /* Standard MSVC CRT Headers */
 #include <BaseTsd.h>
 #include <direct.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <process.h>
 
 /* Minimal Synchapi for Sleep (if needed without Windows.h) */
@@ -70,7 +74,11 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <direct.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <process.h>
 #include <winsock2.h>
 
@@ -85,7 +93,7 @@
 
 /* POSIX Function Shims via Macros */
 #define open _open
-// #define close _close
+/* #define close _close */
 #define read posix_read
 #define write posix_write
 #define lseek _lseek
@@ -139,11 +147,6 @@
 #if defined(_MSC_VER)
 #include <intrin.h>
 #include <stdlib.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef __builtin_expect
 /** \brief __builtin_expect macro. */
@@ -200,10 +203,6 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* NAMESPACE_WIN_SHIM_H */
 #undef LoadString
 
@@ -229,6 +228,12 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #include "posix-sockets.h"
 #include "posix-stat.h"
 #include "posix-time.h"
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef SIGPIPE
 #define SIGPIPE 13
 #endif
@@ -269,6 +274,11 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #endif
 #ifndef sysconf
 #define sysconf(x) (x)
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif
 #define SIGUSR2 12
 #define SIGHUP 1
@@ -283,3 +293,28 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #define RSYNCD_SYSCONF "/etc/rsyncd.conf"
 #define RSYNC_PATH "rsync"
 #define DEFAULT_CVSIGNORE ".svn .git .hg .bzr .cvs"
+
+#ifndef _SSIZE_T_DEFINED
+typedef intptr_t ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
+#ifndef _UCHAR_T_DEFINED
+typedef unsigned char uchar;
+#define _UCHAR_T_DEFINED
+#endif
+#ifndef _MODE_T_DEFINED
+typedef unsigned short mode_t;
+#define _MODE_T_DEFINED
+#endif
+#ifndef _UID_T_DEFINED
+typedef int uid_t;
+#define _UID_T_DEFINED
+#endif
+#ifndef _GID_T_DEFINED
+typedef int gid_t;
+#define _GID_T_DEFINED
+#endif
+#ifndef _PID_T_DEFINED
+typedef int pid_t;
+#define _PID_T_DEFINED
+#endif

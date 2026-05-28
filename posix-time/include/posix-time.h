@@ -2,10 +2,6 @@
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <time.h>
 
@@ -173,10 +169,14 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
 #include <utime.h>
 /* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif /* _WIN32 */
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_TIME_H */

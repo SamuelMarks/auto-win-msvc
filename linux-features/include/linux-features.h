@@ -1,9 +1,10 @@
-#ifndef LINUX_FEATURES_H
-#define LINUX_FEATURES_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef LINUX_FEATURES_H
+#define LINUX_FEATURES_H
 
 /* Polyfill for <features.h> */
 
@@ -13,6 +14,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* LINUX_FEATURES_H */

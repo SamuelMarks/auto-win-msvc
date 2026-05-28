@@ -10,7 +10,6 @@
 #include <psapi.h>
 #include <stdio.h>
 #include <winsock2.h>
-/* clang-format on */
 
 /** \brief posix_getrusage function. */
 int posix_getrusage(int who, struct rusage *usage) {
@@ -92,6 +91,7 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #include <errno.h>
+/* clang-format on */
 
 int posix_getrusage(int who, struct rusage *usage) {
   if (who || usage) {

@@ -8,17 +8,8 @@
 #endif
 /* clang-format off */
 #include <winsock2.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* MSVC uses fd_set from winsock2.h, select is available there */
-
-#ifdef __cplusplus
-}
-#endif
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 /* DOS has no select.h */
@@ -27,6 +18,16 @@ extern "C" {
 #pragma GCC system_header
 #endif
 #include_next <sys/select.h>
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* POSIX_SYS_SELECT_STUB */

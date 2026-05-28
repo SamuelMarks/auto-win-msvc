@@ -2,13 +2,13 @@
 #ifndef COREFOUNDATION_COREFOUNDATION_H
 #define COREFOUNDATION_COREFOUNDATION_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <stddef.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void *CFRunLoopRef;
 typedef void *CFSocketRef;
@@ -54,6 +54,6 @@ void CFRelease(void *cf);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* COREFOUNDATION_COREFOUNDATION_H */

@@ -4,7 +4,11 @@
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <errno.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>

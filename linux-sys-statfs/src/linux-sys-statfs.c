@@ -1,6 +1,5 @@
 /* clang-format off */
 #include <linux-sys-statfs.h>
-/* clang-format on */
 
 #if defined(_MSC_VER)
 
@@ -8,8 +7,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <errno.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <windows.h>
+/* clang-format on */
 
 /** \brief statfs function. */
 int statfs(const char *path, struct statfs *buf) {

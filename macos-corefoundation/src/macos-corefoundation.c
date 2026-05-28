@@ -12,8 +12,8 @@
 #endif
 #include <windows.h>
 #include <winsock2.h>
-#endif
 /* clang-format on */
+#endif
 
 #if defined(_WIN32)
 

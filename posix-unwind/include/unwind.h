@@ -4,10 +4,12 @@
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
+/* clang-format off */
 #include_next <unwind.h>
 #else
 
 #include <stddef.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,9 +51,10 @@ size_t _Unwind_GetIP(struct _Unwind_Context *context);
 _Unwind_Reason_Code _Unwind_Backtrace(_Unwind_Trace_Fn trace,
                                       void *trace_argument);
 
+#endif /* __GNUC__ || __clang__ */
+
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
-#endif /* __GNUC__ || __clang__ */
 #endif /* POSIX_UNWIND_H */

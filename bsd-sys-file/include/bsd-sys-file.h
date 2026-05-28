@@ -18,10 +18,6 @@
 #define LOCK_NB 4
 #define LOCK_UN 8
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief Apply or remove an advisory lock on the open file.
  *
@@ -36,17 +32,21 @@ int posix_flock(int fd, int operation);
 #define flock posix_flock
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 #else /* Not MSVC/Windows */
 
 /* clang-format off */
 #include <sys/file.h>
 /* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif /* defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||      \
           defined(__DOS__) */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* BSD_SYS_FILE_H */

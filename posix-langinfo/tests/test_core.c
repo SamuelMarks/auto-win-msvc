@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "langinfo.h"
 #include <stddef.h>
+/* clang-format on */
 
 TEST test_nl_langinfo(void) {
   char *cs = nl_langinfo(CODESET);

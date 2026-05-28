@@ -1,3 +1,4 @@
+/* clang-format off */
 #include <errno.h>
 #include <stddef.h>
 #ifndef ENOSYS
@@ -5,9 +6,7 @@
 #endif
 /* linux-systemd.c - Strict C89 Implementation */
 
-/* clang-format off */
 #include "systemd/sd-daemon.h"
-/* clang-format on */
 
 #include <errno.h>
 #include <stddef.h>
@@ -21,7 +20,6 @@
 
 /* linux-systemd.c - Strict C89 Implementation */
 
-/* clang-format off */
 #include "systemd/sd-daemon.h"
 
 #if defined(_WIN32)
@@ -31,6 +29,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+/* clang-format on */
 #ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -45,7 +44,6 @@ struct sockaddr_un {
   char sun_path[108];
 };
 #endif
-/* clang-format on */
 
 struct sd_event_source {
   int fd;

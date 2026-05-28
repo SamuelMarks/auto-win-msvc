@@ -5,8 +5,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <errno.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <winsock2.h>
+/* clang-format on */
 #endif
 
 int posix_flock(int fd, int operation) {

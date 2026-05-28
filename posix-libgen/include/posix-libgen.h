@@ -1,10 +1,11 @@
-/* posix-libgen.h - Strict C89 Header */
-#ifndef POSIX_LIBGEN_H
-#define POSIX_LIBGEN_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* posix-libgen.h - Strict C89 Header */
+#ifndef POSIX_LIBGEN_H
+#define POSIX_LIBGEN_H
 
 /**
  * @file posix-libgen.h
@@ -50,6 +51,6 @@ char *dirname(char *path);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_LIBGEN_H */

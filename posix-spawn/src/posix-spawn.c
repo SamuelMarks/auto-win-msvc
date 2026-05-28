@@ -9,7 +9,11 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 /* clang-format on */
 
 #ifndef O_ACCMODE

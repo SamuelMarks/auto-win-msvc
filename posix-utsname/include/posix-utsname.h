@@ -1,13 +1,14 @@
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file posix-utsname.h
  * @brief POSIX sys/utsname.h compatibility layer for MSVC.
  */
 #ifndef POSIX_UTSNAME_H
 #define POSIX_UTSNAME_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * @def _UTSNAME_LENGTH
@@ -50,6 +51,6 @@ int uname(struct utsname *name);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_UTSNAME_H */

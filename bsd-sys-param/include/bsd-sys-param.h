@@ -76,6 +76,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* BSD_SYS_PARAM_H */

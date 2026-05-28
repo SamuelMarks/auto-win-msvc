@@ -16,6 +16,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* SOLARIS_SYS_BYTEORDER_H */

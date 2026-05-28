@@ -1,15 +1,15 @@
 /* macos-mach.c - Strict C89 Implementation */
 
+/* clang-format off */
 #include <errno.h>
 
-/* clang-format off */
 #include "mach/mach.h"
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <psapi.h>
-#endif
 /* clang-format on */
+#endif
 
 /** \brief Polyfill for mach_absolute_time
  * \return Absolute time in nanoseconds, or 0 on error.

@@ -23,12 +23,15 @@
 #else
 #include <netinet/in.h>
 /* clang-format on */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
 #ifdef __cplusplus
 }
-#endif
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* __cplusplus */
 
 #endif /* POSIX_NETINET_IN_H */

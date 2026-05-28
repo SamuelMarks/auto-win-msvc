@@ -1,9 +1,10 @@
-#ifndef LINUX_SYS_PROCFS_H
-#define LINUX_SYS_PROCFS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef LINUX_SYS_PROCFS_H
+#define LINUX_SYS_PROCFS_H
 
 /* Polyfill for <sys/procfs.h> */
 
@@ -13,6 +14,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* LINUX_SYS_PROCFS_H */

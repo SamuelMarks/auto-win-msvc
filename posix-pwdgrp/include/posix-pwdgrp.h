@@ -27,10 +27,6 @@ typedef unsigned int uid_t;
 typedef unsigned int gid_t;
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @struct passwd
  * @brief Structure containing user account information.
@@ -167,10 +163,6 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
  */
 void setpwent(void);
 
-#ifdef __cplusplus
-}
-#endif
-
 #else /* _WIN32 */
 
 #include <grp.h>
@@ -178,6 +170,14 @@ void setpwent(void);
 #include <sys/types.h>
 /* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif /* _WIN32 */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* POSIX_PWDGRP_H */

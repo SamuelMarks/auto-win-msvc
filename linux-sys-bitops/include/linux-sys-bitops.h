@@ -2,10 +2,6 @@
 #ifndef LINUX_SYS_BITOPS_H
 #define LINUX_SYS_BITOPS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(_MSC_VER)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -26,6 +22,10 @@ extern "C" {
 #pragma intrinsic(_bittestandset)
 #pragma intrinsic(_bittestandreset)
 #pragma intrinsic(_bittestandcomplement)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define LINUX_SYS_BITOPS_INLINE static __inline
 
@@ -458,6 +458,6 @@ LINUX_SYS_BITOPS_INLINE int posix_test_bit(int nr,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* LINUX_SYS_BITOPS_H */

@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-core.h"
 #include <process.h> /* For _getpid if needed */
+/* clang-format on */
 
 TEST test__creat(void) { SKIP(); /* Generated stub for _creat */ }
 

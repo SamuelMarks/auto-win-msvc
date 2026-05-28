@@ -1,9 +1,10 @@
-#ifndef LINUX_SYS_PRCTL_H
-#define LINUX_SYS_PRCTL_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef LINUX_SYS_PRCTL_H
+#define LINUX_SYS_PRCTL_H
 
 #if defined(_MSC_VER) && !defined(__clang__)
 
@@ -30,6 +31,6 @@ int prctl(int option, ...);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif

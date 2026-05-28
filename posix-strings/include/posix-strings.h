@@ -28,10 +28,10 @@ int ffsl(long i);
 /** \brief ffsll function. */
 int ffsll(long long i);
 
+#endif /* _MSC_VER */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _MSC_VER */
+#endif /* __cplusplus */
 
 #endif /* POSIX_STRINGS_H */

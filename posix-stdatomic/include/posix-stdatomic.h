@@ -81,6 +81,6 @@ typedef volatile unsigned long atomic_ulong;
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_STDATOMIC_H */

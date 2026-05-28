@@ -11,7 +11,11 @@
 #include <errno.h>
 
 #ifdef _WIN32
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <stdlib.h>
 /* clang-format on */
 

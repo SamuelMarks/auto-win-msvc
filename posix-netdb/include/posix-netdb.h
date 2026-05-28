@@ -1,4 +1,3 @@
-
 #ifndef POSIX_NETDB_H
 #define POSIX_NETDB_H
 
@@ -35,6 +34,6 @@ const char *posix_gai_strerror(int ecode);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif

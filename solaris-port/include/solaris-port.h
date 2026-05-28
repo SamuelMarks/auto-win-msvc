@@ -1,9 +1,10 @@
-#ifndef SOLARIS_PORT_H
-#define SOLARIS_PORT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef SOLARIS_PORT_H
+#define SOLARIS_PORT_H
 
 #if defined(_MSC_VER) && !defined(__clang__)
 struct port_event {
@@ -26,6 +27,6 @@ int port_getn(int port, struct port_event *list, unsigned int max,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif

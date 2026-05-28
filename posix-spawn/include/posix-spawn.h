@@ -70,10 +70,10 @@ struct sched_param {
 #include <sys/types.h>
 /* clang-format on */
 
-#endif
-
 #ifdef __cplusplus
 extern "C" {
+#endif
+
 #endif
 
 /* Flags */
@@ -302,6 +302,6 @@ int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_SPAWN_H */

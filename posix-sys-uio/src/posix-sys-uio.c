@@ -39,10 +39,13 @@
 #define ECONNREFUSED 107
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <stdlib.h>
 #include <winsock2.h>
-/* clang-format on */
 
 /* Removed EWOULDBLOCK override */
 
@@ -93,23 +96,23 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     else if (wsaErr == WSA_IO_PENDING)
       errno = EWOULDBLOCK;
     else if (wsaErr == WSAECONNRESET)
-      errno = 104; // ECONNRESET
+      errno = 104; /* ECONNRESET */
     else if (wsaErr == WSAEINPROGRESS)
-      errno = 115; // EINPROGRESS
+      errno = 115; /* EINPROGRESS */
     else if (wsaErr == WSAEALREADY)
-      errno = 114; // EALREADY
+      errno = 114; /* EALREADY */
     else if (wsaErr == WSAENOTSOCK)
-      errno = 108; // ENOTSOCK
+      errno = 108; /* ENOTSOCK */
     else if (wsaErr == WSAEMSGSIZE)
-      errno = 90; // EMSGSIZE
+      errno = 90; /* EMSGSIZE */
     else if (wsaErr == WSAEADDRINUSE)
-      errno = 98; // EADDRINUSE
+      errno = 98; /* EADDRINUSE */
     else if (wsaErr == WSAEADDRNOTAVAIL)
-      errno = 99; // EADDRNOTAVAIL
+      errno = 99; /* EADDRNOTAVAIL */
     else if (wsaErr == WSAECONNABORTED)
-      errno = 103; // ECONNABORTED
+      errno = 103; /* ECONNABORTED */
     else if (wsaErr == WSAECONNREFUSED)
-      errno = 111; // ECONNREFUSED
+      errno = 111; /* ECONNREFUSED */
     else
       errno = wsaErr;
     return -1;
@@ -171,23 +174,23 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
     else if (wsaErr == WSA_IO_PENDING)
       errno = EWOULDBLOCK;
     else if (wsaErr == WSAECONNRESET)
-      errno = 104; // ECONNRESET
+      errno = 104; /* ECONNRESET */
     else if (wsaErr == WSAEINPROGRESS)
-      errno = 115; // EINPROGRESS
+      errno = 115; /* EINPROGRESS */
     else if (wsaErr == WSAEALREADY)
-      errno = 114; // EALREADY
+      errno = 114; /* EALREADY */
     else if (wsaErr == WSAENOTSOCK)
-      errno = 108; // ENOTSOCK
+      errno = 108; /* ENOTSOCK */
     else if (wsaErr == WSAEMSGSIZE)
-      errno = 90; // EMSGSIZE
+      errno = 90; /* EMSGSIZE */
     else if (wsaErr == WSAEADDRINUSE)
-      errno = 98; // EADDRINUSE
+      errno = 98; /* EADDRINUSE */
     else if (wsaErr == WSAEADDRNOTAVAIL)
-      errno = 99; // EADDRNOTAVAIL
+      errno = 99; /* EADDRNOTAVAIL */
     else if (wsaErr == WSAECONNABORTED)
-      errno = 103; // ECONNABORTED
+      errno = 103; /* ECONNABORTED */
     else if (wsaErr == WSAECONNREFUSED)
-      errno = 111; // ECONNREFUSED
+      errno = 111; /* ECONNREFUSED */
     else
       errno = wsaErr;
     return -1;
@@ -199,6 +202,7 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #include <errno.h>
+/* clang-format on */
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK 140
 #endif

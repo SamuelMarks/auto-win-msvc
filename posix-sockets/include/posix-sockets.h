@@ -94,18 +94,12 @@
 #endif
 
 #else
-/* clang-format off */
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netdb.h>
 #include <poll.h>
 #include <stddef.h>
 #include <errno.h>
-/* clang-format on */
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 /* POSIX types that need to be defined safely for our stubs */
@@ -148,6 +142,11 @@ struct msghdr {
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <time.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #else
 struct timespec {
   long tv_sec;
@@ -506,6 +505,6 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_SOCKETS_H */

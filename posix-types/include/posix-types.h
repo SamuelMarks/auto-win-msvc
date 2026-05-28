@@ -2,10 +2,6 @@
 #ifndef POSIX_TYPES_H
 #define POSIX_TYPES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 /* clang-format off */
@@ -62,6 +58,40 @@ typedef SSIZE_T ssize_t;
 #ifndef _MODE_T_DEFINED
 #define _MODE_T_DEFINED
 typedef unsigned short mode_t;
+#endif
+
+#ifndef HAVE_MODE_T
+#define HAVE_MODE_T 1
+#endif
+#ifndef HAVE_PID_T
+#define HAVE_PID_T 1
+#endif
+#ifndef HAVE_ID_T
+#define HAVE_ID_T 1
+#endif
+#ifndef HAVE_OFF_T
+#define HAVE_OFF_T 1
+#endif
+
+#ifndef _UID_T_DEFINED
+#define _UID_T_DEFINED
+typedef int uid_t;
+#endif
+#ifndef HAVE_UID_T
+#define HAVE_UID_T 1
+#endif
+
+#ifndef _GID_T_DEFINED
+#define _GID_T_DEFINED
+typedef int gid_t;
+#endif
+#ifndef HAVE_GID_T
+#define HAVE_GID_T 1
+#endif
+
+#ifndef _UCHAR_T_DEFINED
+#define _UCHAR_T_DEFINED
+typedef unsigned char uchar;
 #endif
 
 /**
@@ -276,12 +306,17 @@ typedef long blkcnt_t;
 #else
 #include <sys/socket.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif
 
 #endif /* _MSC_VER */
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_TYPES_H */

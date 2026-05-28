@@ -63,6 +63,6 @@ static __inline int backtrace_pcinfo(struct backtrace_state *state,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* LINUX_BACKTRACE_H */

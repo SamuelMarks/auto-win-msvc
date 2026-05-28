@@ -83,18 +83,10 @@ endif()
 
 if(NOT TARGET greatest)
 include(FetchContent)
-FetchContent_Declare(
-    greatest
-    URL "https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h"
-    DOWNLOAD_NO_EXTRACT TRUE
-)
+FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
 FetchContent_GetProperties(greatest)
-if(NOT greatest_POPULATED)
-    FetchContent_MakeAvailable(greatest)
-endif()
+FetchContent_MakeAvailable(greatest)
 
-add_library(greatest INTERFACE)
-target_include_directories(greatest INTERFACE ${greatest_SOURCE_DIR})
 endif()
 
 

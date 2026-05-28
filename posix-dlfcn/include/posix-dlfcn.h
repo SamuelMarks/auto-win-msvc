@@ -2,16 +2,18 @@
 #ifndef POSIX_DLFCN_H
 #define POSIX_DLFCN_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) ||         \
+    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) ||     \
+    defined(__sun) || defined(__QNX__)
 /* clang-format off */
-#if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
 #include <dlfcn.h>
 #else
 #include <stddef.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @file posix-dlfcn.h
@@ -123,6 +125,6 @@ int dladdr(const void *addr, Dl_info *info);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_DLFCN_H */

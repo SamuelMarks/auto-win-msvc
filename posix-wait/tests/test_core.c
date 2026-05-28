@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-wait.h"
 #include <stddef.h>
+/* clang-format on */
 
 TEST test_waitpid_nohang(void) {
   pid_t res = waitpid(-1, NULL, WNOHANG);

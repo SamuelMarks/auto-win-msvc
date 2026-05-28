@@ -39,10 +39,10 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...);
 /** \brief swapcontext function. */
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
+#endif /* _WIN32 && !__CYGWIN__ */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _WIN32 && !__CYGWIN__ */
+#endif /* __cplusplus */
 
 #endif /* POSIX_UCONTEXT_H */

@@ -2,8 +2,8 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-/* clang-format off */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/* clang-format off */
 #include <direct.h>
 #include <process.h>
 #endif
@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include "posix-core.h"
 #include <string.h>
-/* clang-format on */
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4100)
@@ -30,7 +29,11 @@
 #else
 #include <stddef.h>
 #endif
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -293,10 +296,10 @@ __declspec(dllimport) void *__stdcall GetModuleHandleA(const char *);
 __declspec(dllimport) void *__stdcall GetProcAddress(void *, const char *);
 
 void auto_win_exit(int code) {
-  int(__stdcall * tp)(void *, unsigned int) = (void *)(size_t)GetProcAddress(
-      GetModuleHandleA("kernel32.dll"), "TerminateProcess");
+  int(__stdcall * tp)(void *, unsigned int) = NULL;
+  *(void **)(&tp) = GetProcAddress(GetModuleHandleA("kernel32.dll"), "TerminateProcess");
   if (tp)
-    tp((void *)-1LL, code);
+    tp((void *)(intptr_t)-1, code);
 }
 
 int fcntl(int fd, int cmd, ...) {
@@ -1239,7 +1242,7 @@ pid_t fork(void) {
         if (p_exit) {
           unsigned long oldProtect;
           int(__stdcall * vp)(void *, size_t, unsigned long, unsigned long *) =
-              (void *)(size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
+              (int(__stdcall *)(void *, size_t, unsigned long, unsigned long *))(intptr_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
                                              "VirtualProtect");
           if (vp && vp(p_exit, 12, 0x40, &oldProtect)) {
             unsigned char *p = (unsigned char *)p_exit;
@@ -1507,6 +1510,7 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief lockf function. */
 #include <sys/locking.h>
+/* clang-format on */
 int lockf(int fd, int cmd, off_t len) {
   int mode;
   long nbytes;

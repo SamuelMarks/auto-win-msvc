@@ -2,10 +2,10 @@
 #ifndef POSIX_SIGNAL_H
 #define POSIX_SIGNAL_H
 
-/* clang-format off */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
+/* clang-format off */
 #include <signal.h>
 #include <stddef.h>
 /* clang-format on */
@@ -123,6 +123,6 @@ int posix_signal_kill(pid_t pid, int sig);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_SIGNAL_H */

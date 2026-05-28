@@ -2,10 +2,6 @@
 #ifndef POSIX_LANGINFO_H
 #define POSIX_LANGINFO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(_MSC_VER) && !defined(__clang__)
 #define POSIX_LANGINFO_MSVC 1
 #endif
@@ -143,11 +139,18 @@ char *posix_langinfo(nl_item item);
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #endif
+/* clang-format off */
 #include_next <langinfo.h>
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_LANGINFO_H */

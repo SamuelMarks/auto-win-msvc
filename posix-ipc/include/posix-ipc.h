@@ -57,11 +57,12 @@ typedef int key_t;
 #include <sys/shm.h>
 #include <sys/types.h>
 /* clang-format on */
-#endif /* !_WIN32 */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#endif /* !_WIN32 */
 
 #ifdef _WIN32
 
@@ -276,6 +277,6 @@ int shmget(key_t key, size_t size, int shmflg);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_IPC_H */

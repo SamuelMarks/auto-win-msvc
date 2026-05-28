@@ -3,13 +3,17 @@
 #include <errno.h>
 #include <stdarg.h>
 #if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#endif
 /* clang-format on */
+#endif
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

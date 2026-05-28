@@ -1,9 +1,13 @@
 /* posix-mman.c - Strict C89 Implementation */
 
-/* clang-format off */
 #if defined(_WIN32) || defined(_WIN64)
+/* clang-format off */
 #include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #include <sys/stat.h>
 #if defined(_MSC_VER)
 #include <share.h>
@@ -18,7 +22,6 @@
 #include <stddef.h>
 #include <sys/types.h>
 #endif
-/* clang-format on */
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -658,6 +661,7 @@ int shm_unlink(const char *name) {
 
 #if defined(__CYGWIN__)
 #include <errno.h>
+/* clang-format on */
 
 /** rief munlockall function. */
 int munlockall(void) { return 0; }

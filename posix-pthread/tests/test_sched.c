@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-pthread.h"
 #include <stddef.h>
+/* clang-format on */
 
 TEST test_sched_get_priority_max(void) {
   SKIP(); /* Generated stub for sched_get_priority_max */

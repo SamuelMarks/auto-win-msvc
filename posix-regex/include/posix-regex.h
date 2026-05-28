@@ -7,10 +7,6 @@
 /* clang-format off */
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   int re_magic;
   size_t re_nsub;
@@ -71,13 +67,18 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
 /** \brief regfree function. */
 void regfree(regex_t *preg);
 
-#ifdef __cplusplus
-}
-#endif
-
 #else
 #include <regex.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #endif /* _MSC_VER */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* POSIX_REGEX_H */

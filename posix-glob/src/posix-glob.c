@@ -16,7 +16,11 @@
 #include "posix-glob.h"
 
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
 #include <io.h>
+#endif
 #else
 #if defined(__WATCOMC__)
 #include <direct.h>

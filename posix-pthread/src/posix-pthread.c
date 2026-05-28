@@ -260,7 +260,6 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
 
 #if defined(_WIN32)
 #include <stdlib.h>
-/* clang-format on */
 #define WINAPI __stdcall
 #define INFINITE 0xFFFFFFFFUL
 #define WAIT_OBJECT_0 0UL
@@ -1835,6 +1834,7 @@ int sched_yield(void) { return EINVAL; }
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 posix_sem_uint64_t;

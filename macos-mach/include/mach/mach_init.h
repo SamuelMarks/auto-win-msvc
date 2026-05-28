@@ -2,13 +2,13 @@
 #ifndef MACH_MACH_INIT_H
 #define MACH_MACH_INIT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <posix-stdint.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef unsigned int mach_port_t;
 typedef mach_port_t task_t;
@@ -38,6 +38,6 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* MACH_MACH_INIT_H */

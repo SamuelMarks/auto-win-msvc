@@ -1,9 +1,10 @@
-#ifndef BSD_SYS_EVENT_H
-#define BSD_SYS_EVENT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef BSD_SYS_EVENT_H
+#define BSD_SYS_EVENT_H
 
 #if defined(_MSC_VER) && !defined(__clang__)
 struct kevent {
@@ -25,6 +26,6 @@ int kevent(int kq, const struct kevent *changelist, int nchanges,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif

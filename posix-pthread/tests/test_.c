@@ -1,9 +1,11 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "posix-pthread.h"
 #include <stddef.h>
+/* clang-format on */
 
 TEST test__posix_pthread_cleanup_push(void) {
   SKIP(); /* Generated stub for _posix_pthread_cleanup_push */

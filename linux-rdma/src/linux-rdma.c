@@ -1,10 +1,10 @@
+/* clang-format off */
 #include <errno.h>
 #ifndef ENOSYS
 #define ENOSYS 38
 #endif
 /* linux-rdma.c - Strict C89 Implementation */
 
-/* clang-format off */
 #include "rdma/rdma_cma.h"
 /* clang-format on */
 

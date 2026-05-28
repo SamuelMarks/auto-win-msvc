@@ -1,8 +1,10 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4702)
 #endif /* _MSC_VER */
+/* clang-format off */
 #include "greatest.h"
 #include "linux-sys-bitops.h"
+/* clang-format on */
 
 TEST test_bitops(void) {
   ASSERT_EQ(0, posix_ffs(0));

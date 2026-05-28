@@ -2,10 +2,6 @@
 #ifndef POSIX_PTHREAD_H
 #define POSIX_PTHREAD_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if (!defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)) ||      \
     defined(__CYGWIN__)
 /* Transparently use native POSIX threads */
@@ -34,6 +30,10 @@ typedef int pthread_spinlock_t;
 #include <stddef.h>
 #include <time.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef unsigned long pthread_key_t;
 typedef void *pthread_t;
@@ -413,6 +413,6 @@ int sem_wait(sem_t *sem);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_PTHREAD_H */

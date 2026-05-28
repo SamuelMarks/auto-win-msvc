@@ -2,13 +2,13 @@
 #ifndef SYSTEMD_SD_EVENT_H
 #define SYSTEMD_SD_EVENT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* clang-format off */
 #include <posix-stdint.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct sd_event sd_event;
 typedef struct sd_event_source sd_event_source;
@@ -24,6 +24,6 @@ sd_event *sd_event_unref(sd_event *e);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* SYSTEMD_SD_EVENT_H */

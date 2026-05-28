@@ -1,3 +1,8 @@
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* posix-termios.h - Strict C89 Header */
 /**
  * @file posix-termios.h
@@ -7,10 +12,6 @@
  */
 #ifndef POSIX_TERMIOS_H
 #define POSIX_TERMIOS_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * @brief Terminal flag type.
@@ -244,6 +245,6 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_TERMIOS_H */

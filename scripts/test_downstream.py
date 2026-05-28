@@ -33,7 +33,7 @@ def setup_repo(repo_name, github_url, branch=None):
 def main():
     current_awm_dir = os.getcwd()
 
-    ignore_pats = shutil.ignore_patterns('.git', 'build', '__pycache__', 'valkey_src', 'Testing')
+    ignore_pats = shutil.ignore_patterns('.git', 'build*', '__pycache__', 'valkey_src', 'Testing', '.vs', 'out')
 
     # Create a custom environment to prioritize Windows System32 over MSYS/Git bash bins
     # Also create a dummy timeout.bat to intercept timeout.exe calls, because Windows timeout.exe
@@ -67,21 +67,26 @@ def main():
 
     # 3. Rsync
     rsync_path, rsync_is_tmp = setup_repo('rsync', 'https://github.com/SamuelMarks/rsync.git', branch='windows')
-    if rsync_is_tmp:
-        # Rsync CMakeLists.txt looks for ../auto-win-msvc
-        rsync_parent = os.path.dirname(rsync_path)
-        rsync_awm = os.path.join(rsync_parent, 'auto-win-msvc')
+    # Rsync CMakeLists.txt looks for ../auto-win-msvc
+    rsync_parent = os.path.dirname(rsync_path)
+    rsync_awm = os.path.join(rsync_parent, 'auto-win-msvc')
+    if os.path.abspath(rsync_awm) != os.path.abspath(current_awm_dir):
+        if os.path.exists(rsync_awm):
+            shutil.rmtree(rsync_awm, ignore_errors=True)
         shutil.copytree(current_awm_dir, rsync_awm, ignore=ignore_pats, dirs_exist_ok=True)
 
     # Configure and build rsync
-    if 'VCPKG_INSTALLATION_ROOT' not in os.environ and 'VCPKG_ROOT' not in os.environ:
-        print("Skipping rsync downstream test because VCPKG_INSTALLATION_ROOT and VCPKG_ROOT are not set in the environment.")
+    with open(os.path.join(rsync_path, 'CMakeLists.txt'), 'a') as f:
+        f.write('\nif(TARGET popt)\n  target_compile_definitions(popt PRIVATE HAVE_CONFIG_H=1)\nendif()\n')
+        f.write('file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rounding.h "#define EXTRA_ROUNDING 0\\n")\n')
+        f.write('file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git-version.h "#define RSYNC_GITOBJ \\"\\"\\n")\n')
+
+    vcpkg_path = os.environ.get('VCPKG_INSTALLATION_ROOT') or os.environ.get('VCPKG_ROOT') or r'C:\Users\samue\repos\vcpkg'
+    if not os.path.exists(vcpkg_path):
+        print("Skipping rsync downstream test because VCPKG is not set in the environment.")
     else:
-        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.']
-        if 'VCPKG_INSTALLATION_ROOT' in os.environ:
-            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-        elif 'VCPKG_ROOT' in os.environ:
-            cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={vcpkg_path}/scripts/buildsystems/vcpkg.cmake")
         run_cmd(cmake_cmd, cwd=rsync_path)
         run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
 
@@ -93,14 +98,15 @@ def main():
         # (similar to rsync).
         s2n_tls_parent = os.path.dirname(s2n_tls_path)
         s2n_tls_awm = os.path.join(s2n_tls_parent, 'auto-win-msvc')
-        shutil.copytree(current_awm_dir, s2n_tls_awm, ignore=ignore_pats, dirs_exist_ok=True)
+        if os.path.abspath(s2n_tls_awm) != os.path.abspath(current_awm_dir):
+            if os.path.exists(s2n_tls_awm):
+                shutil.rmtree(s2n_tls_awm, ignore_errors=True)
+            shutil.copytree(current_awm_dir, s2n_tls_awm, ignore=ignore_pats, dirs_exist_ok=True)
 
     # Configure and build s2n-tls
     cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
-    if 'VCPKG_INSTALLATION_ROOT' in os.environ:
-        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_INSTALLATION_ROOT']}/scripts/buildsystems/vcpkg.cmake")
-    elif 'VCPKG_ROOT' in os.environ:
-        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={os.environ['VCPKG_ROOT']}/scripts/buildsystems/vcpkg.cmake")
+    if os.path.exists(vcpkg_path):
+        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={vcpkg_path}/scripts/buildsystems/vcpkg.cmake")
     run_cmd(cmake_cmd, cwd=s2n_tls_path)
     run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=s2n_tls_path)
     run_cmd(['ctest', '--test-dir', 'build', '-C', 'Release', '--output-on-failure'], cwd=s2n_tls_path)

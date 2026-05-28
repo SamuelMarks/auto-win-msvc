@@ -37,7 +37,6 @@
 #include <memoryapi.h>
 #include <minwindef.h>
 #include <windows.h>
-/* clang-format on */
 
 #endif
 
@@ -256,6 +255,7 @@ int dladdr(const void *addr, Dl_info *info) {
     !defined(__sun) && !defined(__QNX__)
 
 #include <errno.h>
+/* clang-format on */
 
 void *dlopen(const char *file, int mode) {
   (void)file;
