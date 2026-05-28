@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 file(GLOB SOURCES "src/*.c")
 add_library(posix-alloca ${SOURCES})
+set_target_properties(posix-alloca PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 if(NOT SOURCES)
   set_target_properties(posix-alloca PROPERTIES LINKER_LANGUAGE C)
 endif()
@@ -25,3 +26,7 @@ endif()
 
 enable_testing()
 add_test(NAME test_posix-alloca COMMAND test_posix-alloca)
+
+if(MSVC)
+    target_compile_options(posix-alloca PRIVATE /wd4273 /wd4141)
+endif()

@@ -1,6 +1,7 @@
 /* posix-syslog.h - Strict C89 Header */
 #ifndef POSIX_SYSLOG_H
 #define POSIX_SYSLOG_H
+#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <stdarg.h>
@@ -71,7 +72,7 @@ extern "C" {
  *
  * Closes the descriptor being used to write to the system logger.
  */
-void closelog(void);
+AUTO_WIN_MSVC_EXPORT void closelog(void);
 
 /**
  * @brief Open a connection to the system logger
@@ -80,7 +81,7 @@ void closelog(void);
  * @param option Logging options (e.g., LOG_PID, LOG_NDELAY).
  * @param facility The default facility to assign to messages.
  */
-void openlog(const char *ident, int option, int facility);
+AUTO_WIN_MSVC_EXPORT void openlog(const char *ident, int option, int facility);
 
 /**
  * @brief Set the log priority mask
@@ -88,7 +89,7 @@ void openlog(const char *ident, int option, int facility);
  * @param mask The new log priority mask.
  * @return The previous log priority mask.
  */
-int setlogmask(int mask);
+AUTO_WIN_MSVC_EXPORT int setlogmask(int mask);
 
 /**
  * @brief Generate a log message
@@ -96,7 +97,7 @@ int setlogmask(int mask);
  * @param priority The priority and facility of the message.
  * @param format The format string, followed by format arguments.
  */
-void syslog(int priority, const char *format, ...);
+AUTO_WIN_MSVC_EXPORT void syslog(int priority, const char *format, ...);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,6 @@
 #ifndef POSIX_STDBOOL_H
 #define POSIX_STDBOOL_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <stdbool.h> */
 

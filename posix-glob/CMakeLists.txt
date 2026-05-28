@@ -80,6 +80,7 @@ endif()
 
 
 add_library(posix-glob src/posix-glob.c)
+set_target_properties(posix-glob PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-glob PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -89,4 +90,8 @@ add_executable(test_posix-glob ${TEST_SOURCES})
 target_link_libraries(test_posix-glob PRIVATE posix-glob)
 target_include_directories(test_posix-glob PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-glob COMMAND test_posix-glob)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-glob PRIVATE /wd4273 /wd4141)
 endif()

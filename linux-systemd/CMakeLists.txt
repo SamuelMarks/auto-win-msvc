@@ -62,6 +62,7 @@ if(NOT TARGET posix-stdbool)
 endif()
 
 add_library(linux-systemd src/linux-systemd.c)
+set_target_properties(linux-systemd PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-systemd PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(linux-systemd PUBLIC posix-stdint posix-stdbool)
 
@@ -75,4 +76,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-systemd ${TEST_SOURCES})
 target_link_libraries(test_linux-systemd PRIVATE linux-systemd greatest)
 add_test(NAME test_linux-systemd COMMAND test_linux-systemd)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-systemd PRIVATE /wd4273 /wd4141)
 endif()

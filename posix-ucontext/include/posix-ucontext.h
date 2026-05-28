@@ -1,5 +1,6 @@
 #ifndef POSIX_UCONTEXT_H
 #define POSIX_UCONTEXT_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
@@ -31,13 +32,14 @@ typedef struct posix_ucontext {
 } ucontext_t;
 
 /** \brief getcontext function. */
-int getcontext(ucontext_t *ucp);
+AUTO_WIN_MSVC_EXPORT int getcontext(ucontext_t *ucp);
 /** \brief setcontext function. */
-int setcontext(const ucontext_t *ucp);
+AUTO_WIN_MSVC_EXPORT int setcontext(const ucontext_t *ucp);
 /** \brief makecontext function. */
-void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...);
+AUTO_WIN_MSVC_EXPORT void makecontext(ucontext_t *ucp, void (*func)(void),
+                                      int argc, ...);
 /** \brief swapcontext function. */
-int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
+AUTO_WIN_MSVC_EXPORT int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
 #endif /* _WIN32 && !__CYGWIN__ */
 

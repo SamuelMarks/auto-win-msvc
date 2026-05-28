@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(solaris-port src/solaris-port.c)
+set_target_properties(solaris-port PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(solaris-port PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_solaris-port PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_solaris-port PRIVATE solaris-port)
 add_test(NAME test_solaris-port COMMAND test_solaris-port)
+endif()
+
+if(MSVC)
+    target_compile_options(solaris-port PRIVATE /wd4273 /wd4141)
 endif()

@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(solaris-sys-feature-tests src/solaris-sys-feature-tests.c)
+set_target_properties(solaris-sys-feature-tests PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(solaris-sys-feature-tests PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_sou
 
 target_link_libraries(test_solaris-sys-feature-tests PRIVATE solaris-sys-feature-tests)
 add_test(NAME test_solaris-sys-feature-tests COMMAND test_solaris-sys-feature-tests)
+endif()
+
+if(MSVC)
+    target_compile_options(solaris-sys-feature-tests PRIVATE /wd4273 /wd4141)
 endif()

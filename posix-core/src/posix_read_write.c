@@ -172,7 +172,7 @@ int posix_open(const char *pathname, int flags, ...) {
   return fd;
 }
 
-extern int is_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
 ssize_t posix_read(int fd, void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
@@ -241,7 +241,7 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
   return ret;
 }
 
-extern int is_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
 ssize_t posix_write(int fd, const void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
@@ -327,8 +327,8 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 
 #undef close
 
-extern void clear_nonblock(SOCKET s);
-extern void clear_as_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT void clear_nonblock(SOCKET s);
+extern AUTO_WIN_MSVC_EXPORT void clear_as_socket(int fd);
 int posix_close(int fd) {
   SOCKET s;
   int ret;
@@ -361,9 +361,9 @@ int posix_close(int fd) {
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
-    extern int is_socket(int);
-    extern void mark_as_socket(int);
-    extern void clear_as_socket(int);
+    extern AUTO_WIN_MSVC_EXPORT int is_socket(int);
+    extern AUTO_WIN_MSVC_EXPORT void mark_as_socket(int);
+    extern AUTO_WIN_MSVC_EXPORT void clear_as_socket(int);
     if (is_socket(oldfd))
       mark_as_socket(newfd);
     else

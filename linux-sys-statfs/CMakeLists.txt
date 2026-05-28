@@ -91,6 +91,7 @@ endif()
 
 
 add_library(linux-sys-statfs src/linux-sys-statfs.c)
+set_target_properties(linux-sys-statfs PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-statfs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -99,4 +100,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-sys-statfs ${TEST_SOURCES})
 target_link_libraries(test_linux-sys-statfs PRIVATE linux-sys-statfs greatest)
 add_test(NAME test_linux-sys-statfs COMMAND test_linux-sys-statfs)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-sys-statfs PRIVATE /wd4273 /wd4141)
 endif()

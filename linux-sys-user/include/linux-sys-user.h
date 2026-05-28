@@ -5,6 +5,7 @@ extern "C" {
 
 #ifndef LINUX_SYS_USER_H
 #define LINUX_SYS_USER_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <sys/user.h> */
 

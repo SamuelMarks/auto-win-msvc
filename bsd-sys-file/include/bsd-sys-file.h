@@ -1,6 +1,7 @@
 /* bsd-sys-file.h - Strict C89 Header */
 #ifndef BSD_SYS_FILE_H
 #define BSD_SYS_FILE_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file bsd-sys-file.h
@@ -26,7 +27,7 @@
  * LOCK_UN).
  * @return 0 on success, -1 on error with errno set appropriately.
  */
-int posix_flock(int fd, int operation);
+AUTO_WIN_MSVC_EXPORT int posix_flock(int fd, int operation);
 
 #ifndef flock
 #define flock posix_flock

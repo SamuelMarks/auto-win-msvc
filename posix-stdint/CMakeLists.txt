@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-stdint src/posix-stdint.c)
+set_target_properties(posix-stdint PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stdint PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_posix-stdint PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-stdint PRIVATE posix-stdint)
 add_test(NAME test_posix-stdint COMMAND test_posix-stdint)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-stdint PRIVATE /wd4273 /wd4141)
 endif()

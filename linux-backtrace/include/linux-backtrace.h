@@ -1,5 +1,6 @@
 #ifndef LINUX_BACKTRACE_H
 #define LINUX_BACKTRACE_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <backtrace.h> */
 
@@ -35,7 +36,7 @@ typedef int (*backtrace_full_callback)(void *data, uintptr_t pc,
                                        const char *filename, int lineno,
                                        const char *function);
 
-static __inline struct backtrace_state *
+static __inline struct backtrace_state *AUTO_WIN_MSVC_EXPORT
 backtrace_create_state(const char *filename, int threaded,
                        backtrace_error_callback error_callback, void *data) {
   (void)filename;

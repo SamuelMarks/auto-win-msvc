@@ -81,6 +81,7 @@ endif()
 
 
 add_library(posix-time src/posix-time.c)
+set_target_properties(posix-time PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-time PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -89,3 +90,7 @@ add_executable(test_posix-time ${TEST_SOURCES})
 target_link_libraries(test_posix-time PRIVATE posix-time)
 target_include_directories(test_posix-time PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-time COMMAND test_posix-time)
+
+if(MSVC)
+    target_compile_options(posix-time PRIVATE /wd4273 /wd4141)
+endif()

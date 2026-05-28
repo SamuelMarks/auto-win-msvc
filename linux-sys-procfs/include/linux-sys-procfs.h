@@ -5,6 +5,7 @@ extern "C" {
 
 #ifndef LINUX_SYS_PROCFS_H
 #define LINUX_SYS_PROCFS_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <sys/procfs.h> */
 

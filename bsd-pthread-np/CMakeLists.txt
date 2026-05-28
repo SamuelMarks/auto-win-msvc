@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(bsd-pthread-np src/bsd-pthread-np.c)
+set_target_properties(bsd-pthread-np PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-pthread-np PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
@@ -102,4 +103,8 @@ endif()
 
 target_link_libraries(test_bsd-pthread-np PRIVATE bsd-pthread-np)
 add_test(NAME test_bsd-pthread-np COMMAND test_bsd-pthread-np)
+endif()
+
+if(MSVC)
+    target_compile_options(bsd-pthread-np PRIVATE /wd4273 /wd4141)
 endif()

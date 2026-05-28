@@ -1,6 +1,7 @@
 /* posix-spawn.h - Strict C89 Header */
 #ifndef POSIX_SPAWN_H
 #define POSIX_SPAWN_H
+#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <stddef.h>
@@ -113,10 +114,10 @@ typedef struct {
  * @param envp Environment list
  * @return 0 on success, error code on failure
  */
-int posix_spawn(pid_t *pid, const char *path,
-                const posix_spawn_file_actions_t *file_actions,
-                const posix_spawnattr_t *attrp, char *const argv[],
-                char *const envp[]);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawn(
+    pid_t *pid, const char *path,
+    const posix_spawn_file_actions_t *file_actions,
+    const posix_spawnattr_t *attrp, char *const argv[], char *const envp[]);
 
 /**
  * @brief Spawn a new process using the PATH environment variable
@@ -128,10 +129,10 @@ int posix_spawn(pid_t *pid, const char *path,
  * @param envp Environment list
  * @return 0 on success, error code on failure
  */
-int posix_spawnp(pid_t *pid, const char *file,
-                 const posix_spawn_file_actions_t *file_actions,
-                 const posix_spawnattr_t *attrp, char *const argv[],
-                 char *const envp[]);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawnp(
+    pid_t *pid, const char *file,
+    const posix_spawn_file_actions_t *file_actions,
+    const posix_spawnattr_t *attrp, char *const argv[], char *const envp[]);
 
 /* File Actions */
 
@@ -140,14 +141,16 @@ int posix_spawnp(pid_t *pid, const char *file,
  * @param file_actions Pointer to the file actions object to initialize
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_init(posix_spawn_file_actions_t *file_actions);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
+posix_spawn_file_actions_init(posix_spawn_file_actions_t *file_actions);
 
 /**
  * @brief Destroy a file actions object
  * @param file_actions Pointer to the file actions object to destroy
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
+posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions);
 
 /**
  * @brief Add a close action to the file actions object
@@ -155,8 +158,8 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions);
  * @param fildes File descriptor to close
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
-                                      int fildes);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawn_file_actions_addclose(
+    posix_spawn_file_actions_t *file_actions, int fildes);
 
 /**
  * @brief Add a dup2 action to the file actions object
@@ -165,8 +168,8 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
  * @param newfildes Target file descriptor
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
-                                     int fildes, int newfildes);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawn_file_actions_adddup2(
+    posix_spawn_file_actions_t *file_actions, int fildes, int newfildes);
 
 /**
  * @brief Add an open action to the file actions object
@@ -177,9 +180,9 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
  * @param mode File mode
  * @return 0 on success, error code on failure
  */
-int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
-                                     int fildes, const char *path, int oflag,
-                                     mode_t mode);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawn_file_actions_addopen(
+    posix_spawn_file_actions_t *file_actions, int fildes, const char *path,
+    int oflag, mode_t mode);
 
 /* Attributes */
 
@@ -188,14 +191,14 @@ int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
  * @param attr Pointer to the attributes object to initialize
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_init(posix_spawnattr_t *attr);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_init(posix_spawnattr_t *attr);
 
 /**
  * @brief Destroy a spawn attributes object
  * @param attr Pointer to the attributes object to destroy
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_destroy(posix_spawnattr_t *attr);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_destroy(posix_spawnattr_t *attr);
 
 /**
  * @brief Get the spawn flags from a spawn attributes object
@@ -203,7 +206,8 @@ int posix_spawnattr_destroy(posix_spawnattr_t *attr);
  * @param flags Pointer to store the flags
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getflags(const posix_spawnattr_t *attr, short *flags);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_getflags(const posix_spawnattr_t *attr,
+                                                  short *flags);
 
 /**
  * @brief Set the spawn flags in a spawn attributes object
@@ -211,7 +215,8 @@ int posix_spawnattr_getflags(const posix_spawnattr_t *attr, short *flags);
  * @param flags The flags to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setflags(posix_spawnattr_t *attr, short flags);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_setflags(posix_spawnattr_t *attr,
+                                                  short flags);
 
 /**
  * @brief Get the process group ID from a spawn attributes object
@@ -219,7 +224,8 @@ int posix_spawnattr_setflags(posix_spawnattr_t *attr, short flags);
  * @param pgroup Pointer to store the process group ID
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getpgroup(const posix_spawnattr_t *attr, pid_t *pgroup);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
+posix_spawnattr_getpgroup(const posix_spawnattr_t *attr, pid_t *pgroup);
 
 /**
  * @brief Set the process group ID in a spawn attributes object
@@ -227,7 +233,8 @@ int posix_spawnattr_getpgroup(const posix_spawnattr_t *attr, pid_t *pgroup);
  * @param pgroup The process group ID to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setpgroup(posix_spawnattr_t *attr, pid_t pgroup);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_setpgroup(posix_spawnattr_t *attr,
+                                                   pid_t pgroup);
 
 /**
  * @brief Get the scheduling parameters from a spawn attributes object
@@ -235,8 +242,8 @@ int posix_spawnattr_setpgroup(posix_spawnattr_t *attr, pid_t pgroup);
  * @param schedparam Pointer to store the scheduling parameters
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr,
-                                  struct sched_param *schedparam);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawnattr_getschedparam(
+    const posix_spawnattr_t *attr, struct sched_param *schedparam);
 
 /**
  * @brief Set the scheduling parameters in a spawn attributes object
@@ -244,8 +251,8 @@ int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr,
  * @param schedparam Pointer to the scheduling parameters to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setschedparam(posix_spawnattr_t *attr,
-                                  const struct sched_param *schedparam);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawnattr_setschedparam(
+    posix_spawnattr_t *attr, const struct sched_param *schedparam);
 
 /**
  * @brief Get the scheduling policy from a spawn attributes object
@@ -253,8 +260,8 @@ int posix_spawnattr_setschedparam(posix_spawnattr_t *attr,
  * @param schedpolicy Pointer to store the scheduling policy
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr,
-                                   int *schedpolicy);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
+posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr, int *schedpolicy);
 
 /**
  * @brief Set the scheduling policy in a spawn attributes object
@@ -262,7 +269,8 @@ int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr,
  * @param schedpolicy The scheduling policy to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr, int schedpolicy);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr,
+                                                        int schedpolicy);
 
 /**
  * @brief Get the default signal mask from a spawn attributes object
@@ -270,8 +278,8 @@ int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr, int schedpolicy);
  * @param sigdefault Pointer to store the default signal mask
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr,
-                                  sigset_t *sigdefault);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawnattr_getsigdefault(
+    const posix_spawnattr_t *attr, sigset_t *sigdefault);
 
 /**
  * @brief Set the default signal mask in a spawn attributes object
@@ -279,8 +287,8 @@ int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr,
  * @param sigdefault Pointer to the default signal mask to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr,
-                                  const sigset_t *sigdefault);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT posix_spawnattr_setsigdefault(
+    posix_spawnattr_t *attr, const sigset_t *sigdefault);
 
 /**
  * @brief Get the signal mask from a spawn attributes object
@@ -288,8 +296,8 @@ int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr,
  * @param sigmask Pointer to store the signal mask
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr,
-                               sigset_t *sigmask);
+AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
+posix_spawnattr_getsigmask(const posix_spawnattr_t *attr, sigset_t *sigmask);
 
 /**
  * @brief Set the signal mask in a spawn attributes object
@@ -297,8 +305,8 @@ int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr,
  * @param sigmask Pointer to the signal mask to set
  * @return 0 on success, error code on failure
  */
-int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
-                               const sigset_t *sigmask);
+AUTO_WIN_MSVC_EXPORT int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
+                                                    const sigset_t *sigmask);
 
 #ifdef __cplusplus
 }

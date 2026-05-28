@@ -1,3 +1,4 @@
+#include "auto_win_msvc_export.h"
 /* posix-netdb/include/netdb.h - Strict C89 Implementation */
 #ifndef POSIX_NETDB_STUB
 #define POSIX_NETDB_STUB

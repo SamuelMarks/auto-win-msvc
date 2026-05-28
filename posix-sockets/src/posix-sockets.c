@@ -77,7 +77,7 @@ __attribute__((constructor)) static void __init_winsock_auto_gcc(void) {
 #endif
 
 static SOCKET nb_sockets[8192] = {0};
-__declspec(dllexport) void set_nonblock(SOCKET s, int nb) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT void set_nonblock(SOCKET s, int nb) {
   int i;
   for (i = 0; i < 8192; i++) {
     if (nb_sockets[i] == s) {
@@ -95,29 +95,29 @@ __declspec(dllexport) void set_nonblock(SOCKET s, int nb) {
     }
   }
 }
-int get_nonblock(SOCKET s) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int get_nonblock(SOCKET s) {
   int i;
   for (i = 0; i < 8192; i++)
     if (nb_sockets[i] == s)
       return O_NONBLOCK;
   return 0;
 }
-__declspec(dllexport) void clear_nonblock(SOCKET s) { set_nonblock(s, 0); }
-__declspec(dllexport) void copy_nonblock(SOCKET src, SOCKET dst) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT void clear_nonblock(SOCKET s) { set_nonblock(s, 0); }
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT void copy_nonblock(SOCKET src, SOCKET dst) {
   if (get_nonblock(src))
     set_nonblock(dst, 1);
 }
 
 static unsigned char g_is_socket[8192] = {0};
-__declspec(dllexport) void mark_as_socket(int fd) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT void mark_as_socket(int fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 1;
 }
-__declspec(dllexport) void clear_as_socket(int fd) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT void clear_as_socket(int fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 0;
 }
-int is_socket(int fd) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int is_socket(int fd) {
   if (fd >= 0 && fd < 8192)
     return g_is_socket[fd];
   return 1; /* Assuming large FDs are sockets */
@@ -389,7 +389,7 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 #include <winsock2.h>
 #endif
 
-extern int is_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
 
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {

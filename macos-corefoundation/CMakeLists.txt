@@ -62,6 +62,7 @@ if(NOT TARGET posix-stdbool)
 endif()
 
 add_library(macos-corefoundation src/macos-corefoundation.c)
+set_target_properties(macos-corefoundation PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-corefoundation PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-corefoundation PUBLIC posix-stdint posix-stdbool)
 
@@ -77,4 +78,8 @@ if(WIN32)
     target_link_libraries(test_macos-corefoundation PRIVATE ws2_32)
 endif()
 add_test(NAME test_macos-corefoundation COMMAND test_macos-corefoundation)
+endif()
+
+if(MSVC)
+    target_compile_options(macos-corefoundation PRIVATE /wd4273 /wd4141)
 endif()

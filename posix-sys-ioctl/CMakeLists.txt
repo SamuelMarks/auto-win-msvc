@@ -91,6 +91,7 @@ endif()
 
 
 add_library(posix-sys-ioctl src/posix-sys-ioctl.c)
+set_target_properties(posix-sys-ioctl PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-sys-ioctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC OR WIN32)
@@ -103,4 +104,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-sys-ioctl ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-ioctl PRIVATE posix-sys-ioctl greatest)
 add_test(NAME test_posix-sys-ioctl COMMAND test_posix-sys-ioctl)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-sys-ioctl PRIVATE /wd4273 /wd4141)
 endif()

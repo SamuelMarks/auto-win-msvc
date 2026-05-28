@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(bsd-malloc-np src/bsd-malloc-np.c)
+set_target_properties(bsd-malloc-np PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-malloc-np PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_bsd-malloc-np PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-malloc-np PRIVATE bsd-malloc-np)
 add_test(NAME test_bsd-malloc-np COMMAND test_bsd-malloc-np)
+endif()
+
+if(MSVC)
+    target_compile_options(bsd-malloc-np PRIVATE /wd4273 /wd4141)
 endif()

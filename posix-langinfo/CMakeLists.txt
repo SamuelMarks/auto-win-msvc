@@ -34,6 +34,7 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 add_library(posix-langinfo src/posix-langinfo.c)
+set_target_properties(posix-langinfo PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_compile_options(posix-langinfo PRIVATE ${STRICT_C_FLAGS})
 target_include_directories(posix-langinfo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 

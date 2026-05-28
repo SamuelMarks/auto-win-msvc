@@ -34,6 +34,7 @@ endif()
 
 
 add_library(macos-availabilitymacros src/macos-availabilitymacros.c)
+set_target_properties(macos-availabilitymacros PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-availabilitymacros PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-availabilitymacros PUBLIC posix-stdint posix-stdbool)
 
@@ -43,4 +44,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-availabilitymacros ${TEST_SOURCES})
 target_link_libraries(test_macos-availabilitymacros PRIVATE macos-availabilitymacros greatest)
 add_test(NAME test_macos-availabilitymacros COMMAND test_macos-availabilitymacros)
+endif()
+
+if(MSVC)
+    target_compile_options(macos-availabilitymacros PRIVATE /wd4273 /wd4141)
 endif()

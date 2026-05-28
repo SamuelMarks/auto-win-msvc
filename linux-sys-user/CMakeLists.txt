@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(linux-sys-user src/linux-sys-user.c)
+set_target_properties(linux-sys-user PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-user PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_linux-sys-user PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_linux-sys-user PRIVATE linux-sys-user)
 add_test(NAME test_linux-sys-user COMMAND test_linux-sys-user)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-sys-user PRIVATE /wd4273 /wd4141)
 endif()

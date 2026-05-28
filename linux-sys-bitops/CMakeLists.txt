@@ -16,6 +16,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(linux-sys-bitops src/linux-sys-bitops.c)
+set_target_properties(linux-sys-bitops PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-bitops PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -32,3 +33,7 @@ target_include_directories(test_linux-sys-bitops PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_linux-sys-bitops PRIVATE linux-sys-bitops)
 
 add_test(NAME test_linux-sys-bitops COMMAND test_linux-sys-bitops)
+
+if(MSVC)
+    target_compile_options(linux-sys-bitops PRIVATE /wd4273 /wd4141)
+endif()

@@ -1,6 +1,7 @@
 /* posix-unwind/include/unwind.h - Strict C89 Implementation */
 #ifndef POSIX_UNWIND_H
 #define POSIX_UNWIND_H
+#include "auto_win_msvc_export.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
@@ -40,7 +41,7 @@ typedef _Unwind_Reason_Code (*_Unwind_Trace_Fn)(struct _Unwind_Context *,
  * @param context The unwind context
  * @return The instruction pointer
  */
-size_t _Unwind_GetIP(struct _Unwind_Context *context);
+AUTO_WIN_MSVC_EXPORT size_t _Unwind_GetIP(struct _Unwind_Context *context);
 
 /**
  * @brief Backtrace the stack
@@ -48,8 +49,8 @@ size_t _Unwind_GetIP(struct _Unwind_Context *context);
  * @param trace_argument The trace argument
  * @return The reason code
  */
-_Unwind_Reason_Code _Unwind_Backtrace(_Unwind_Trace_Fn trace,
-                                      void *trace_argument);
+AUTO_WIN_MSVC_EXPORT _Unwind_Reason_Code AUTO_WIN_MSVC_EXPORT
+_Unwind_Backtrace(_Unwind_Trace_Fn trace, void *trace_argument);
 
 #endif /* __GNUC__ || __clang__ */
 

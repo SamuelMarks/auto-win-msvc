@@ -16,6 +16,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-unwind src/posix-unwind.c)
+set_target_properties(posix-unwind PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-unwind PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -32,3 +33,7 @@ target_include_directories(test_posix-unwind PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-unwind PRIVATE posix-unwind)
 
 add_test(NAME test_posix-unwind COMMAND test_posix-unwind)
+
+if(MSVC)
+    target_compile_options(posix-unwind PRIVATE /wd4273 /wd4141)
+endif()

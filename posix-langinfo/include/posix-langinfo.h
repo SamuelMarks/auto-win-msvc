@@ -6,6 +6,7 @@ extern "C" {
 /* posix-langinfo.h */
 #ifndef POSIX_LANGINFO_H
 #define POSIX_LANGINFO_H
+#include "auto_win_msvc_export.h"
 
 /* Prototype for nl_langinfo */
 

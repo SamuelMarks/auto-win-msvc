@@ -9,6 +9,7 @@ extern "C" {
  */
 #ifndef POSIX_UTSNAME_H
 #define POSIX_UTSNAME_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @def _UTSNAME_LENGTH
@@ -47,7 +48,7 @@ struct utsname {
  * @param name Pointer to a utsname structure to be filled.
  * @return 0 on success, or -1 on error (with errno set appropriately).
  */
-int uname(struct utsname *name);
+AUTO_WIN_MSVC_EXPORT int uname(struct utsname *name);
 
 #ifdef __cplusplus
 }

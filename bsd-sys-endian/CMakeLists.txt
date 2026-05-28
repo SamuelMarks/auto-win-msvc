@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(bsd-sys-endian src/bsd-sys-endian.c)
+set_target_properties(bsd-sys-endian PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-sys-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_bsd-sys-endian PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-endian PRIVATE bsd-sys-endian)
 add_test(NAME test_bsd-sys-endian COMMAND test_bsd-sys-endian)
+endif()
+
+if(MSVC)
+    target_compile_options(bsd-sys-endian PRIVATE /wd4273 /wd4141)
 endif()

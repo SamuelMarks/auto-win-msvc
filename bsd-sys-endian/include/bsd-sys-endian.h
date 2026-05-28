@@ -1,5 +1,6 @@
 #ifndef BSD_SYS_ENDIAN_H
 #define BSD_SYS_ENDIAN_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <sys/endian.h> */
 

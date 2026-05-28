@@ -34,6 +34,7 @@ endif()
 
 
 add_library(linux-magic src/linux-magic.c)
+set_target_properties(linux-magic PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-magic PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(linux-magic PUBLIC posix-stdint posix-stdbool)
 
@@ -43,4 +44,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-magic ${TEST_SOURCES})
 target_link_libraries(test_linux-magic PRIVATE linux-magic greatest)
 add_test(NAME test_linux-magic COMMAND test_linux-magic)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-magic PRIVATE /wd4273 /wd4141)
 endif()

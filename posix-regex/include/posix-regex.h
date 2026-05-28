@@ -1,5 +1,6 @@
 #ifndef POSIX_REGEX_H
 #define POSIX_REGEX_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
     defined(__MSDOS__) || defined(__WATCOMC__)
@@ -57,15 +58,15 @@ typedef struct {
 #define REG_ENOSYS 18
 
 /** \brief regcomp function. */
-int regcomp(regex_t *preg, const char *pattern, int cflags);
+AUTO_WIN_MSVC_EXPORT int regcomp(regex_t *preg, const char *pattern, int cflags);
 /** \brief regexec function. */
-int regexec(const regex_t *preg, const char *string, size_t nmatch,
+AUTO_WIN_MSVC_EXPORT int regexec(const regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags);
 /** \brief regerror function. */
-size_t regerror(int errcode, const regex_t *preg, char *errbuf,
+AUTO_WIN_MSVC_EXPORT size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size);
 /** \brief regfree function. */
-void regfree(regex_t *preg);
+AUTO_WIN_MSVC_EXPORT void regfree(regex_t *preg);
 
 #else
 #include <regex.h>

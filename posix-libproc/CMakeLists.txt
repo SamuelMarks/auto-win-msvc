@@ -17,6 +17,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-libproc src/posix-libproc.c)
+set_target_properties(posix-libproc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-libproc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -35,3 +36,7 @@ target_link_libraries(test_posix-libproc PRIVATE posix-libproc)
 target_include_directories(test_posix-libproc PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-libproc COMMAND test_posix-libproc)
+
+if(MSVC)
+    target_compile_options(posix-libproc PRIVATE /wd4273 /wd4141)
+endif()

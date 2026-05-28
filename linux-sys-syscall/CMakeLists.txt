@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(linux-sys-syscall src/linux-sys-syscall.c)
+set_target_properties(linux-sys-syscall PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-syscall PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_linux-sys-syscall PRIVATE ${greatest_source_dir}
 
 target_link_libraries(test_linux-sys-syscall PRIVATE linux-sys-syscall)
 add_test(NAME test_linux-sys-syscall COMMAND test_linux-sys-syscall)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-sys-syscall PRIVATE /wd4273 /wd4141)
 endif()

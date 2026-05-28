@@ -5,6 +5,7 @@ extern "C" {
 
 #ifndef LINUX_SYS_STATFS_H
 #define LINUX_SYS_STATFS_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER)
 
@@ -24,9 +25,9 @@ struct statfs {
 };
 
 /** \brief statfs function. */
-int statfs(const char *path, struct statfs *buf);
+AUTO_WIN_MSVC_EXPORT int statfs(const char *path, struct statfs *buf);
 /** \brief fstatfs function. */
-int fstatfs(int fd, struct statfs *buf);
+AUTO_WIN_MSVC_EXPORT int fstatfs(int fd, struct statfs *buf);
 
 #endif /* _MSC_VER */
 

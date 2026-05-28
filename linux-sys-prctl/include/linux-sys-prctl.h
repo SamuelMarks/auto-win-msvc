@@ -5,6 +5,7 @@ extern "C" {
 
 #ifndef LINUX_SYS_PRCTL_H
 #define LINUX_SYS_PRCTL_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) && !defined(__clang__)
 
@@ -26,7 +27,7 @@ extern "C" {
  * \param ... Variable arguments based on the option.
  * \return 0 on success, or -1 on error with errno set.
  */
-int prctl(int option, ...);
+AUTO_WIN_MSVC_EXPORT int prctl(int option, ...);
 #endif
 
 #ifdef __cplusplus

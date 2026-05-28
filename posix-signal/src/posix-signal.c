@@ -267,8 +267,9 @@ int posix_signal_sigsuspend(const sigset_t *mask) {
 }
 
 /** \brief posix_signal_sigaction function. */
-int posix_signal_sigaction(int signum, const struct sigaction *act,
-                           struct sigaction *oldact) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int
+posix_signal_sigaction(int signum, const struct sigaction *act,
+                       struct sigaction *oldact) {
   void (*prev_handler)(int);
 
   if (signum < 1 || signum > 31) {

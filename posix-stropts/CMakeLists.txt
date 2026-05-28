@@ -91,6 +91,7 @@ endif()
 
 
 add_library(posix-stropts src/posix-stropts.c)
+set_target_properties(posix-stropts PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stropts PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -99,4 +100,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-stropts ${TEST_SOURCES})
 target_link_libraries(test_posix-stropts PRIVATE posix-stropts greatest)
 add_test(NAME test_posix-stropts COMMAND test_posix-stropts)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-stropts PRIVATE /wd4273 /wd4141)
 endif()

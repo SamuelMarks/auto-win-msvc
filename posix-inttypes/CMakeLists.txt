@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-inttypes src/posix-inttypes.c)
+set_target_properties(posix-inttypes PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-inttypes PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_posix-inttypes PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-inttypes PRIVATE posix-inttypes)
 add_test(NAME test_posix-inttypes COMMAND test_posix-inttypes)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-inttypes PRIVATE /wd4273 /wd4141)
 endif()

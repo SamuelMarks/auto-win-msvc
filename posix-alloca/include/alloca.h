@@ -1,6 +1,7 @@
 /* alloca.h - Strict C89 Implementation */
 #ifndef POSIX_ALLOCA_H
 #define POSIX_ALLOCA_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MSDOS__) ||         \
     defined(__MINGW32__)

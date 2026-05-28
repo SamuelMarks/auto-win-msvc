@@ -1,6 +1,7 @@
 /* posix-signal.h - Strict C89 Implementation */
 #ifndef POSIX_SIGNAL_H
 #define POSIX_SIGNAL_H
+#include "auto_win_msvc_export.h"
 
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -61,26 +62,29 @@ struct sigaction {
 };
 
 /** \brief posix_signal_sigemptyset function. */
-int posix_signal_sigemptyset(sigset_t *set);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigemptyset(sigset_t *set);
 /** \brief posix_signal_sigfillset function. */
-int posix_signal_sigfillset(sigset_t *set);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigfillset(sigset_t *set);
 /** \brief posix_signal_sigaddset function. */
-int posix_signal_sigaddset(sigset_t *set, int signum);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigaddset(sigset_t *set, int signum);
 /** \brief posix_signal_sigaction function. */
-int posix_signal_sigaction(int signum, const struct sigaction *act,
-                           struct sigaction *oldact);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigaction(int signum,
+                                                const struct sigaction *act,
+                                                struct sigaction *oldact);
 /** \brief posix_signal_sigdelset function. */
-int posix_signal_sigdelset(sigset_t *set, int signum);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigdelset(sigset_t *set, int signum);
 /** \brief posix_signal_sigismember function. */
-int posix_signal_sigismember(const sigset_t *set, int signum);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigismember(const sigset_t *set,
+                                                  int signum);
 /** \brief posix_signal_sigprocmask function. */
-int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigprocmask(int how, const sigset_t *set,
+                                                  sigset_t *oldset);
 /** \brief posix_signal_sigpending function. */
-int posix_signal_sigpending(sigset_t *set);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigpending(sigset_t *set);
 /** \brief posix_signal_sigsuspend function. */
-int posix_signal_sigsuspend(const sigset_t *mask);
+AUTO_WIN_MSVC_EXPORT int posix_signal_sigsuspend(const sigset_t *mask);
 /** \brief posix_signal_kill function. */
-int posix_signal_kill(pid_t pid, int sig);
+AUTO_WIN_MSVC_EXPORT int posix_signal_kill(pid_t pid, int sig);
 
 #ifndef SIG_BLOCK
 #define SIG_BLOCK 0

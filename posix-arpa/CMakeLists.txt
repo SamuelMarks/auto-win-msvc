@@ -91,6 +91,7 @@ endif()
 
 
 add_library(posix-arpa src/posix-arpa-inet.c)
+set_target_properties(posix-arpa PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-arpa PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 # Requires ws2_32.lib on Windows
@@ -104,4 +105,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-arpa ${TEST_SOURCES})
 target_link_libraries(test_posix-arpa PRIVATE posix-arpa greatest)
 add_test(NAME test_posix-arpa COMMAND test_posix-arpa)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-arpa PRIVATE /wd4273 /wd4141)
 endif()

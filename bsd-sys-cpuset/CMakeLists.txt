@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(bsd-sys-cpuset src/bsd-sys-cpuset.c)
+set_target_properties(bsd-sys-cpuset PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-sys-cpuset PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -93,3 +94,7 @@ target_include_directories(test_bsd-sys-cpuset PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_bsd-sys-cpuset PRIVATE bsd-sys-cpuset)
 add_test(NAME test_bsd-sys-cpuset COMMAND test_bsd-sys-cpuset)
+
+if(MSVC)
+    target_compile_options(bsd-sys-cpuset PRIVATE /wd4273 /wd4141)
+endif()

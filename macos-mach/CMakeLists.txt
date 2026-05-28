@@ -62,6 +62,7 @@ if(NOT TARGET posix-stdbool)
 endif()
 
 add_library(macos-mach src/macos-mach.c)
+set_target_properties(macos-mach PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-mach PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-mach PUBLIC posix-stdint posix-stdbool)
 
@@ -74,3 +75,7 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-mach ${TEST_SOURCES})
 target_link_libraries(test_macos-mach PRIVATE macos-mach greatest)
 add_test(NAME test_macos-mach COMMAND test_macos-mach)
+
+if(MSVC)
+    target_compile_options(macos-mach PRIVATE /wd4273 /wd4141)
+endif()

@@ -1,6 +1,7 @@
 /* posix-sched.h - Strict C89 Header */
 #ifndef POSIX_SCHED_H
 #define POSIX_SCHED_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-sched.h
@@ -88,7 +89,7 @@ typedef struct cpu_set {
  *
  * @return 0 on success.
  */
-int posix_sched_yield(void);
+AUTO_WIN_MSVC_EXPORT int posix_sched_yield(void);
 
 /**
  * @brief Set a process's CPU affinity mask.
@@ -98,7 +99,8 @@ int posix_sched_yield(void);
  * @param mask Pointer to the new cpu_set_t mask.
  * @return 0 on success, -1 on error.
  */
-int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask);
+AUTO_WIN_MSVC_EXPORT int posix_sched_setaffinity(int pid, size_t cpusetsize,
+                                                 const cpu_set_t *mask);
 
 /**
  * @brief Get a process's CPU affinity mask.
@@ -108,7 +110,8 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask);
  * @param mask Pointer to the cpu_set_t mask to be populated.
  * @return 0 on success, -1 on error.
  */
-int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
+AUTO_WIN_MSVC_EXPORT int posix_sched_getaffinity(int pid, size_t cpusetsize,
+                                                 cpu_set_t *mask);
 
 #ifndef sched_yield
 #define sched_yield posix_sched_yield

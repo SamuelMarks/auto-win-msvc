@@ -1,6 +1,7 @@
 /* posix-sys-resource.h - Strict C89 Header */
 #ifndef POSIX_SYS_RESOURCE_H
 #define POSIX_SYS_RESOURCE_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-sys-resource.h
@@ -90,7 +91,7 @@ struct rlimit {
  * @param usage A pointer to the rusage struct to populate.
  * @return 0 on success, -1 on error.
  */
-int posix_getrusage(int who, struct rusage *usage);
+AUTO_WIN_MSVC_EXPORT int posix_getrusage(int who, struct rusage *usage);
 
 /**
  * @brief Gets resource limits.
@@ -99,7 +100,7 @@ int posix_getrusage(int who, struct rusage *usage);
  * @param rlp The rlimit struct to populate.
  * @return 0 on success, -1 on error.
  */
-int posix_getrlimit(int resource, struct rlimit *rlp);
+AUTO_WIN_MSVC_EXPORT int posix_getrlimit(int resource, struct rlimit *rlp);
 
 /**
  * @brief Sets resource limits.
@@ -108,7 +109,8 @@ int posix_getrlimit(int resource, struct rlimit *rlp);
  * @param rlp The new limits to apply.
  * @return 0 on success, -1 on error.
  */
-int posix_setrlimit(int resource, const struct rlimit *rlp);
+AUTO_WIN_MSVC_EXPORT int posix_setrlimit(int resource,
+                                         const struct rlimit *rlp);
 
 #ifndef getrusage
 #define getrusage posix_getrusage

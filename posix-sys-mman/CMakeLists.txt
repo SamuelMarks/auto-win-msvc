@@ -1,8 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
-project(posix-sys-mman C)
-
-set(CMAKE_C_STANDARD 90)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-
-add_library(posix-sys-mman INTERFACE)
-target_include_directories(posix-sys-mman INTERFACE include)
+cmake_minimum_required(VERSION 3.14)
+project(greatest)
+add_library(greatest INTERFACE)
+set_target_properties(greatest PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+target_include_directories(greatest INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")

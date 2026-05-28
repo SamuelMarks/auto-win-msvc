@@ -5,6 +5,7 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(macos-malloc STATIC src/macos-malloc.c)
+set_target_properties(macos-malloc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-malloc PUBLIC include)
 
 if(MSVC)
@@ -17,4 +18,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-malloc ${TEST_SOURCES})
 target_link_libraries(test_macos-malloc macos-malloc)
 add_test(NAME macos-malloc_test COMMAND test_macos-malloc)
+endif()
+
+if(MSVC)
+    target_compile_options(macos-malloc PRIVATE /wd4273 /wd4141)
 endif()

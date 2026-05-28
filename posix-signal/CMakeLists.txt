@@ -18,6 +18,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-signal src/posix-signal.c)
+set_target_properties(posix-signal PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-signal PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -36,3 +37,7 @@ target_link_libraries(test_posix-signal PRIVATE posix-signal)
 target_include_directories(test_posix-signal PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-signal COMMAND test_posix-signal)
+
+if(MSVC)
+    target_compile_options(posix-signal PRIVATE /wd4273 /wd4141)
+endif()

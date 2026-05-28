@@ -91,6 +91,7 @@ endif()
 
 
 add_library(linux-execinfo src/linux-execinfo.c)
+set_target_properties(linux-execinfo PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-execinfo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 if(MSVC)
     target_link_libraries(linux-execinfo PUBLIC dbghelp)
@@ -102,4 +103,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-execinfo ${TEST_SOURCES})
 target_link_libraries(test_linux-execinfo PRIVATE linux-execinfo greatest)
 add_test(NAME test_linux-execinfo COMMAND test_linux-execinfo)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-execinfo PRIVATE /wd4273 /wd4141)
 endif()

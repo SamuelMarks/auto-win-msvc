@@ -1,6 +1,7 @@
 /* bsd-sys-param.h - Strict C89 Header */
 #ifndef BSD_SYS_PARAM_H
 #define BSD_SYS_PARAM_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file bsd-sys-param.h

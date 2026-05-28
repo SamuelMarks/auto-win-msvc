@@ -81,6 +81,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-dirent src/posix-dirent.c)
+set_target_properties(posix-dirent PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-dirent PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -90,4 +91,8 @@ add_executable(test_posix-dirent ${TEST_SOURCES})
 target_include_directories(test_posix-dirent PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-dirent PRIVATE posix-dirent)
 add_test(NAME test_posix-dirent COMMAND test_posix-dirent)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-dirent PRIVATE /wd4273 /wd4141)
 endif()

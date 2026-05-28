@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-pwdgrp src/posix-pwdgrp.c)
+set_target_properties(posix-pwdgrp PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-pwdgrp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(WIN32 OR MINGW)
@@ -98,4 +99,8 @@ target_include_directories(test_posix-pwdgrp PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-pwdgrp PRIVATE posix-pwdgrp)
 add_test(NAME test_posix-pwdgrp COMMAND test_posix-pwdgrp)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-pwdgrp PRIVATE /wd4273 /wd4141)
 endif()

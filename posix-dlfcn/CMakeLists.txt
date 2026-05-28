@@ -76,6 +76,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-dlfcn src/posix-dlfcn.c)
+set_target_properties(posix-dlfcn PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-dlfcn PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -93,3 +94,7 @@ target_link_libraries(test_posix-dlfcn PRIVATE posix-dlfcn)
 target_include_directories(test_posix-dlfcn PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-dlfcn COMMAND test_posix-dlfcn)
+
+if(MSVC)
+    target_compile_options(posix-dlfcn PRIVATE /wd4273 /wd4141)
+endif()

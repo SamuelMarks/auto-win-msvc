@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(linux-backtrace src/linux-backtrace.c)
+set_target_properties(linux-backtrace PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-backtrace PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_linux-backtrace PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_linux-backtrace PRIVATE linux-backtrace)
 add_test(NAME test_linux-backtrace COMMAND test_linux-backtrace)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-backtrace PRIVATE /wd4273 /wd4141)
 endif()

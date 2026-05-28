@@ -34,6 +34,7 @@ endif()
 
 
 add_library(macos-dyld src/macos-dyld.c)
+set_target_properties(macos-dyld PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-dyld PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(macos-dyld PUBLIC posix-stdint posix-stdbool)
 
@@ -43,4 +44,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-dyld ${TEST_SOURCES})
 target_link_libraries(test_macos-dyld PRIVATE macos-dyld greatest)
 add_test(NAME test_macos-dyld COMMAND test_macos-dyld)
+endif()
+
+if(MSVC)
+    target_compile_options(macos-dyld PRIVATE /wd4273 /wd4141)
 endif()

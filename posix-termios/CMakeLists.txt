@@ -76,6 +76,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-termios src/posix-termios.c)
+set_target_properties(posix-termios PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-termios PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -90,3 +91,7 @@ add_executable(test_posix-termios ${TEST_SOURCES})
 target_include_directories(test_posix-termios PRIVATE "${greatest_SOURCE_DIR}")
 target_link_libraries(test_posix-termios PRIVATE posix-termios)
 add_test(NAME test_posix-termios COMMAND test_posix-termios)
+
+if(MSVC)
+    target_compile_options(posix-termios PRIVATE /wd4273 /wd4141)
+endif()

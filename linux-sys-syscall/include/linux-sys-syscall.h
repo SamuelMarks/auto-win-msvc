@@ -5,11 +5,12 @@ extern "C" {
 
 #ifndef LINUX_SYS_SYSCALL_H
 #define LINUX_SYS_SYSCALL_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SYS_gettid 178
 /** \brief syscall function. */
-long syscall(long number, ...);
+AUTO_WIN_MSVC_EXPORT long syscall(long number, ...);
 #endif
 
 #ifdef __cplusplus

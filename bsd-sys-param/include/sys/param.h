@@ -1,3 +1,4 @@
+#include "auto_win_msvc_export.h"
 /* clang-format off */
 #include "bsd-sys-param.h"
 /* clang-format on */

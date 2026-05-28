@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-stdatomic src/posix-stdatomic.c)
+set_target_properties(posix-stdatomic PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stdatomic PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_posix-stdatomic PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_posix-stdatomic PRIVATE posix-stdatomic)
 add_test(NAME test_posix-stdatomic COMMAND test_posix-stdatomic)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-stdatomic PRIVATE /wd4273 /wd4141)
 endif()

@@ -91,6 +91,7 @@ endif()
 
 
 add_library(posix-sys-resource src/posix-sys-resource.c)
+set_target_properties(posix-sys-resource PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-sys-resource PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC OR WIN32)
@@ -103,4 +104,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-sys-resource ${TEST_SOURCES})
 target_link_libraries(test_posix-sys-resource PRIVATE posix-sys-resource greatest)
 add_test(NAME test_posix-sys-resource COMMAND test_posix-sys-resource)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-sys-resource PRIVATE /wd4273 /wd4141)
 endif()

@@ -6,6 +6,7 @@ extern "C" {
 /* posix-poll.h */
 #ifndef POSIX_POLL_H
 #define POSIX_POLL_H
+#include "auto_win_msvc_export.h"
 
 /* Prototype for poll */
 

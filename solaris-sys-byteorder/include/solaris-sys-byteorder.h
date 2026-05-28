@@ -1,5 +1,6 @@
 #ifndef SOLARIS_SYS_BYTEORDER_H
 #define SOLARIS_SYS_BYTEORDER_H
+#include "auto_win_msvc_export.h"
 
 /* Polyfill for <sys/byteorder.h> */
 

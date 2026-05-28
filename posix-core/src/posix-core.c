@@ -281,13 +281,13 @@ static unsigned long get_current_rid(int is_group) {
 #define O_NONBLOCK 0x4000
 #endif
 
-extern void set_nonblock(SOCKET s, int nb);
-extern int get_nonblock(SOCKET s);
-extern void clear_nonblock(SOCKET s);
-extern void copy_nonblock(SOCKET src, SOCKET dst);
-extern void mark_as_socket(int fd);
-extern void clear_as_socket(int fd);
-extern int is_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT void set_nonblock(SOCKET s, int nb);
+extern AUTO_WIN_MSVC_EXPORT int get_nonblock(SOCKET s);
+extern AUTO_WIN_MSVC_EXPORT void clear_nonblock(SOCKET s);
+extern AUTO_WIN_MSVC_EXPORT void copy_nonblock(SOCKET src, SOCKET dst);
+extern AUTO_WIN_MSVC_EXPORT void mark_as_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT void clear_as_socket(int fd);
+extern AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
 
 __declspec(dllimport) void __stdcall ExitProcess(unsigned int uExitCode);
 void my_exit_hook(int status) { ExitProcess((unsigned int)status); }

@@ -6,6 +6,7 @@ extern "C" {
 /* linux/magic.h - Strict C89 Header */
 #ifndef LINUX_MAGIC_H
 #define LINUX_MAGIC_H
+#include "auto_win_msvc_export.h"
 
 #define TMPFS_MAGIC 0x01021994
 

@@ -34,6 +34,7 @@ endif()
 
 
 add_library(linux-rdma src/linux-rdma.c)
+set_target_properties(linux-rdma PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-rdma PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(linux-rdma PUBLIC posix-stdint posix-stdbool)
 
@@ -43,4 +44,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-rdma ${TEST_SOURCES})
 target_link_libraries(test_linux-rdma PRIVATE linux-rdma greatest)
 add_test(NAME test_linux-rdma COMMAND test_linux-rdma)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-rdma PRIVATE /wd4273 /wd4141)
 endif()

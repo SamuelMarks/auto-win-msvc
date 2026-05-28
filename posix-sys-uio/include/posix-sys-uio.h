@@ -1,6 +1,7 @@
 /* posix-sys-uio.h - Strict C89 Header */
 #ifndef POSIX_SYS_UIO_H
 #define POSIX_SYS_UIO_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-sys-uio.h
@@ -46,7 +47,8 @@ struct iovec {
  * @return On success, the total bytes read. On error, -1 with errno set
  * appropriately.
  */
-long posix_readv(int fd, const struct iovec *iov, int iovcnt);
+AUTO_WIN_MSVC_EXPORT long posix_readv(int fd, const struct iovec *iov,
+                                      int iovcnt);
 
 /**
  * @brief Writes data from multiple buffers.
@@ -57,7 +59,8 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt);
  * @return On success, the total bytes written. On error, -1 with errno set
  * appropriately.
  */
-long posix_writev(int fd, const struct iovec *iov, int iovcnt);
+AUTO_WIN_MSVC_EXPORT long posix_writev(int fd, const struct iovec *iov,
+                                       int iovcnt);
 
 #ifndef readv
 #define readv posix_readv

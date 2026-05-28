@@ -73,6 +73,7 @@ endif()
 
 add_library(posix-core src/posix-core.c
     src/posix_read_write.c)
+set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -100,4 +101,8 @@ add_test(NAME test_posix-core COMMAND test_posix-core)
 if(WIN32)
     # Ensure test can find its dependency DLLs (posix-sockets, posix-sys-uio)
     set_property(TEST test_posix-core PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sockets>\\;$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
+endif()
+
+if(MSVC)
+    target_compile_options(posix-core PRIVATE /wd4273 /wd4141)
 endif()

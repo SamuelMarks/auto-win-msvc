@@ -76,6 +76,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-pthread src/posix-pthread.c)
+set_target_properties(posix-pthread PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-pthread PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 
@@ -92,3 +93,7 @@ add_executable(test_posix-pthread ${TEST_SOURCES})
 target_link_libraries(test_posix-pthread PRIVATE posix-pthread)
 target_include_directories(test_posix-pthread PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-pthread COMMAND test_posix-pthread)
+
+if(MSVC)
+    target_compile_options(posix-pthread PRIVATE /wd4273 /wd4141)
+endif()

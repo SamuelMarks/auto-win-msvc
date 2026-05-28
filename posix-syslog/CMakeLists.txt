@@ -76,6 +76,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-syslog src/posix-syslog.c)
+set_target_properties(posix-syslog PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-syslog PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC OR WIN32)
@@ -96,3 +97,7 @@ add_executable(test_posix-syslog ${TEST_SOURCES})
 target_include_directories(test_posix-syslog PRIVATE "${greatest_SOURCE_DIR}")
 target_link_libraries(test_posix-syslog PRIVATE posix-syslog)
 add_test(NAME test_posix-syslog COMMAND test_posix-syslog)
+
+if(MSVC)
+    target_compile_options(posix-syslog PRIVATE /wd4273 /wd4141)
+endif()

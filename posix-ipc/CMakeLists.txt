@@ -80,6 +80,7 @@ endif()
 
 
 add_library(posix-ipc src/posix-ipc.c)
+set_target_properties(posix-ipc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-ipc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -89,4 +90,8 @@ add_executable(test_posix-ipc ${TEST_SOURCES})
 target_include_directories(test_posix-ipc PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-ipc PRIVATE posix-ipc)
 add_test(NAME test_posix-ipc COMMAND test_posix-ipc)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-ipc PRIVATE /wd4273 /wd4141)
 endif()

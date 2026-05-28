@@ -1,6 +1,7 @@
 /* posix-signal-ext.h - Strict C89 Implementation */
 #ifndef POSIX_SIGNAL_EXT_H
 #define POSIX_SIGNAL_EXT_H
+#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include "posix-signal.h"

@@ -686,18 +686,20 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
 }
 
 /** \brief posix_spawn function. */
-int posix_spawn(pid_t *pid, const char *path,
-                const posix_spawn_file_actions_t *file_actions,
-                const posix_spawnattr_t *attrp, char *const argv[],
-                char *const envp[]) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int
+posix_spawn(pid_t *pid, const char *path,
+            const posix_spawn_file_actions_t *file_actions,
+            const posix_spawnattr_t *attrp, char *const argv[],
+            char *const envp[]) {
   return internal_posix_spawn(pid, path, file_actions, attrp, argv, envp, 0);
 }
 
 /** \brief posix_spawnp function. */
-int posix_spawnp(pid_t *pid, const char *file,
-                 const posix_spawn_file_actions_t *file_actions,
-                 const posix_spawnattr_t *attrp, char *const argv[],
-                 char *const envp[]) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int
+posix_spawnp(pid_t *pid, const char *file,
+             const posix_spawn_file_actions_t *file_actions,
+             const posix_spawnattr_t *attrp, char *const argv[],
+             char *const envp[]) {
   return internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
 }
 
@@ -707,10 +709,11 @@ int posix_spawnp(pid_t *pid, const char *file,
 #define ENOSYS 38
 #endif
 
-int posix_spawn(pid_t *pid, const char *path,
-                const posix_spawn_file_actions_t *file_actions,
-                const posix_spawnattr_t *attrp, char *const argv[],
-                char *const envp[]) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int
+posix_spawn(pid_t *pid, const char *path,
+            const posix_spawn_file_actions_t *file_actions,
+            const posix_spawnattr_t *attrp, char *const argv[],
+            char *const envp[]) {
   (void)pid;
   (void)path;
   (void)file_actions;
@@ -720,10 +723,11 @@ int posix_spawn(pid_t *pid, const char *path,
   return ENOSYS;
 }
 
-int posix_spawnp(pid_t *pid, const char *file,
-                 const posix_spawn_file_actions_t *file_actions,
-                 const posix_spawnattr_t *attrp, char *const argv[],
-                 char *const envp[]) {
+AUTO_WIN_MSVC_EXPORT AUTO_WIN_MSVC_EXPORT int
+posix_spawnp(pid_t *pid, const char *file,
+             const posix_spawn_file_actions_t *file_actions,
+             const posix_spawnattr_t *attrp, char *const argv[],
+             char *const envp[]) {
   (void)pid;
   (void)file;
   (void)file_actions;

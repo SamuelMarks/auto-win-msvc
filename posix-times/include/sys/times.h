@@ -1,6 +1,7 @@
 /* posix-times.h - Strict C89 Implementation */
 #ifndef POSIX_TIMES_H
 #define POSIX_TIMES_H
+#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <time.h>
@@ -25,7 +26,7 @@ struct tms {
   clock_t tms_cstime; /* system time of children */
 };
 
-clock_t posix_times(struct tms *buf);
+AUTO_WIN_MSVC_EXPORT clock_t posix_times(struct tms *buf);
 
 #ifndef times
 #define times posix_times

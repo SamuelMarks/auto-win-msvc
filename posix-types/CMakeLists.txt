@@ -81,6 +81,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-types src/posix-types.c)
+set_target_properties(posix-types PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-types PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 
@@ -98,3 +99,7 @@ add_executable(test_posix-types ${TEST_SOURCES})
 target_include_directories(test_posix-types PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-types PRIVATE posix-types)
 add_test(NAME test_posix-types COMMAND test_posix-types)
+
+if(MSVC)
+    target_compile_options(posix-types PRIVATE /wd4273 /wd4141)
+endif()

@@ -85,6 +85,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-mman src/posix-mman.c)
+set_target_properties(posix-mman PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-mman PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -106,3 +107,7 @@ if(MSVC)
 endif()
 
 add_test(NAME test_posix-mman COMMAND test_posix-mman)
+
+if(MSVC)
+    target_compile_options(posix-mman PRIVATE /wd4273 /wd4141)
+endif()

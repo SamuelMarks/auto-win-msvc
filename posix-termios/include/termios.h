@@ -1,3 +1,4 @@
+#include "auto_win_msvc_export.h"
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif

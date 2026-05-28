@@ -91,6 +91,7 @@ endif()
 
 
 add_library(posix-netinet src/posix-netinet.c)
+set_target_properties(posix-netinet PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-netinet PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC OR WIN32)
@@ -103,4 +104,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-netinet ${TEST_SOURCES})
 target_link_libraries(test_posix-netinet PRIVATE posix-netinet greatest)
 add_test(NAME test_posix-netinet COMMAND test_posix-netinet)
+endif()
+
+if(MSVC)
+    target_compile_options(posix-netinet PRIVATE /wd4273 /wd4141)
 endif()

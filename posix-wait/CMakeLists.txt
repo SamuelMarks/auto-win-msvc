@@ -77,6 +77,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-wait src/posix-wait.c)
+set_target_properties(posix-wait PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-wait PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 
@@ -94,3 +95,7 @@ add_executable(test_posix-wait ${TEST_SOURCES})
 target_link_libraries(test_posix-wait PRIVATE posix-wait)
 target_include_directories(test_posix-wait PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-wait COMMAND test_posix-wait)
+
+if(MSVC)
+    target_compile_options(posix-wait PRIVATE /wd4273 /wd4141)
+endif()

@@ -1,6 +1,7 @@
 /* linux-sys-bitops/include/linux-sys-bitops.h - Strict C89 Implementation */
 #ifndef LINUX_SYS_BITOPS_H
 #define LINUX_SYS_BITOPS_H
+#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER)
 

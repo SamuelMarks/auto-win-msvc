@@ -1,6 +1,7 @@
 /* posix-sys-ioctl.h - Strict C89 Header */
 #ifndef POSIX_SYS_IOCTL_H
 #define POSIX_SYS_IOCTL_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-sys-ioctl.h
@@ -61,7 +62,7 @@ struct winsize {
  * @param ... Additional arguments.
  * @return 0 on success, -1 on error with errno set appropriately.
  */
-int posix_ioctl(int fd, unsigned long request, ...);
+AUTO_WIN_MSVC_EXPORT int posix_ioctl(int fd, unsigned long request, ...);
 
 #ifndef ioctl
 #define ioctl posix_ioctl

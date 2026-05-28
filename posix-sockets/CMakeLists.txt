@@ -79,6 +79,7 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 add_library(posix-sockets src/posix-sockets.c)
+set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(WIN32 OR MSVC)
@@ -112,4 +113,8 @@ add_executable(test_posix-sockets ${TEST_SOURCES})
     if(WIN32)
         set_property(TEST test_posix-sockets PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
     endif()
+endif()
+
+if(MSVC)
+    target_compile_options(posix-sockets PRIVATE /wd4273 /wd4141)
 endif()

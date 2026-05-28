@@ -6,6 +6,7 @@ extern "C" {
 /* posix-sys-select.h */
 #ifndef POSIX_SYS_SELECT_H
 #define POSIX_SYS_SELECT_H
+#include "auto_win_msvc_export.h"
 
 /* Prototype for select */
 

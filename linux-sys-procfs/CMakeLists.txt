@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(linux-sys-procfs src/linux-sys-procfs.c)
+set_target_properties(linux-sys-procfs PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-procfs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -94,4 +95,8 @@ target_include_directories(test_linux-sys-procfs PRIVATE ${greatest_source_dir})
 
 target_link_libraries(test_linux-sys-procfs PRIVATE linux-sys-procfs)
 add_test(NAME test_linux-sys-procfs COMMAND test_linux-sys-procfs)
+endif()
+
+if(MSVC)
+    target_compile_options(linux-sys-procfs PRIVATE /wd4273 /wd4141)
 endif()

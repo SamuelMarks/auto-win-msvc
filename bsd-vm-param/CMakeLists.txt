@@ -34,6 +34,7 @@ endif()
 
 
 add_library(bsd-vm-param src/bsd-vm-param.c)
+set_target_properties(bsd-vm-param PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-vm-param PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(bsd-vm-param PUBLIC posix-stdint posix-stdbool)
 
@@ -43,4 +44,8 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_bsd-vm-param ${TEST_SOURCES})
 target_link_libraries(test_bsd-vm-param PRIVATE bsd-vm-param greatest)
 add_test(NAME test_bsd-vm-param COMMAND test_bsd-vm-param)
+endif()
+
+if(MSVC)
+    target_compile_options(bsd-vm-param PRIVATE /wd4273 /wd4141)
 endif()

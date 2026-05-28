@@ -17,6 +17,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-times src/posix-times.c)
+set_target_properties(posix-times PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-times PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -35,3 +36,7 @@ target_link_libraries(test_posix-times PRIVATE posix-times)
 target_include_directories(test_posix-times PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-times COMMAND test_posix-times)
+
+if(MSVC)
+    target_compile_options(posix-times PRIVATE /wd4273 /wd4141)
+endif()

@@ -82,6 +82,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(bsd-sys-sysctl src/bsd-sys-sysctl.c)
+set_target_properties(bsd-sys-sysctl PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-sys-sysctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 enable_testing()
@@ -92,3 +93,7 @@ target_include_directories(test_bsd-sys-sysctl PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_bsd-sys-sysctl PRIVATE bsd-sys-sysctl)
 
 add_test(NAME test_bsd-sys-sysctl COMMAND test_bsd-sys-sysctl)
+
+if(MSVC)
+    target_compile_options(bsd-sys-sysctl PRIVATE /wd4273 /wd4141)
+endif()

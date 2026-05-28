@@ -1,6 +1,7 @@
 /* posix-dlfcn.h - Strict C89 Header */
 #ifndef POSIX_DLFCN_H
 #define POSIX_DLFCN_H
+#include "auto_win_msvc_export.h"
 
 #if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) ||         \
     defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) ||     \
@@ -72,7 +73,7 @@ typedef struct {
  * (Ignored on Windows).
  * @return A handle to the loaded library, or NULL on error.
  */
-void *dlopen(const char *file, int mode);
+AUTO_WIN_MSVC_EXPORT void *dlopen(const char *file, int mode);
 
 /**
  * @brief Obtains the address of a symbol within a dynamic library.
@@ -85,7 +86,7 @@ void *dlopen(const char *file, int mode);
  * @param name The name of the symbol to find.
  * @return The address of the symbol, or NULL on error.
  */
-void *dlsym(void *handle, const char *name);
+AUTO_WIN_MSVC_EXPORT void *dlsym(void *handle, const char *name);
 
 /**
  * @brief Closes a dynamic library handle.
@@ -95,7 +96,7 @@ void *dlsym(void *handle, const char *name);
  * @param handle The library handle to close.
  * @return 0 on success, or a non-zero value on error.
  */
-int dlclose(void *handle);
+AUTO_WIN_MSVC_EXPORT int dlclose(void *handle);
 
 /**
  * @brief Returns a human-readable string describing the most recent error.
@@ -106,7 +107,7 @@ int dlclose(void *handle);
  * @return A string describing the error, or NULL if no error has occurred
  *         since the last call to dlerror.
  */
-char *dlerror(void);
+AUTO_WIN_MSVC_EXPORT char *dlerror(void);
 
 /**
  * @brief Translates an address to symbol information.
@@ -119,7 +120,7 @@ char *dlerror(void);
  * @param info A pointer to a Dl_info struct to populate.
  * @return Non-zero on success, or 0 on error.
  */
-int dladdr(const void *addr, Dl_info *info);
+AUTO_WIN_MSVC_EXPORT int dladdr(const void *addr, Dl_info *info);
 
 #endif
 

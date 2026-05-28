@@ -1,6 +1,7 @@
 /* posix-arpa-inet.h - Strict C89 Header */
 #ifndef POSIX_ARPA_INET_H
 #define POSIX_ARPA_INET_H
+#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-arpa-inet.h
@@ -46,7 +47,7 @@ extern "C" {
  * @param inp Pointer to a struct in_addr where the result will be stored.
  * @return 1 if the address is valid, 0 if not.
  */
-int posix_inet_aton(const char *cp, struct in_addr *inp);
+AUTO_WIN_MSVC_EXPORT int posix_inet_aton(const char *cp, struct in_addr *inp);
 
 #ifndef inet_aton
 #define inet_aton posix_inet_aton

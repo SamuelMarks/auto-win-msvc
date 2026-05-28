@@ -1,6 +1,7 @@
 /* posix-glob.h - Strict C89 Header */
 #ifndef POSIX_GLOB_H
 #define POSIX_GLOB_H
+#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <stddef.h>
@@ -50,7 +51,8 @@ extern "C" {
  * @return 0 if the string matches the pattern, FNM_NOMATCH if there is no
  * match, or another non-zero value if there is an error.
  */
-int fnmatch(const char *pattern, const char *string, int flags);
+AUTO_WIN_MSVC_EXPORT int fnmatch(const char *pattern, const char *string,
+                                 int flags);
 
 /* ------------------------------------------------------------------------- */
 /* glob */
@@ -96,15 +98,16 @@ typedef struct {
  * @param pglob Pointer to a glob_t structure to store the results.
  * @return 0 on success, or one of the GLOB_* error codes on failure.
  */
-int glob(const char *pattern, int flags,
-         int (*errfunc)(const char *epath, int eerrno), glob_t *pglob);
+AUTO_WIN_MSVC_EXPORT int glob(const char *pattern, int flags,
+                              int (*errfunc)(const char *epath, int eerrno),
+                              glob_t *pglob);
 
 /**
  * @brief Free memory allocated by glob.
  *
  * @param pglob Pointer to a glob_t structure previously passed to glob.
  */
-void globfree(glob_t *pglob);
+AUTO_WIN_MSVC_EXPORT void globfree(glob_t *pglob);
 
 /* ------------------------------------------------------------------------- */
 /* wordexp */
@@ -150,7 +153,8 @@ typedef struct {
  * @param flags Flags modifying the expansion behavior.
  * @return 0 on success, or one of the WRDE_* error codes on failure.
  */
-int wordexp(const char *words, wordexp_t *pwordexp, int flags);
+AUTO_WIN_MSVC_EXPORT int wordexp(const char *words, wordexp_t *pwordexp,
+                                 int flags);
 
 /**
  * @brief Free memory allocated by wordexp.
@@ -158,7 +162,7 @@ int wordexp(const char *words, wordexp_t *pwordexp, int flags);
  * @param pwordexp Pointer to a wordexp_t structure previously passed to
  * wordexp.
  */
-void wordfree(wordexp_t *pwordexp);
+AUTO_WIN_MSVC_EXPORT void wordfree(wordexp_t *pwordexp);
 
 #ifdef __cplusplus
 }
