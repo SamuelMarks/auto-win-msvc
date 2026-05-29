@@ -6,7 +6,6 @@ extern "C" {
 /* haiku-os.h */
 #ifndef HAIKU_OS_H
 #define HAIKU_OS_H
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 }

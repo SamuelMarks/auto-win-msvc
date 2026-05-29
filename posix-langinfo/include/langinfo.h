@@ -1,7 +1,6 @@
 /* posix-langinfo/include/langinfo.h - Strict C89 Implementation */
 #ifndef POSIX_LANGINFO_H
 #define POSIX_LANGINFO_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define POSIX_LANGINFO_MSVC 1
@@ -130,7 +129,7 @@ typedef int nl_item;
  * \param item The language information item to retrieve.
  * \return A pointer to a string containing the requested information.
  */
-AUTO_WIN_MSVC_EXPORT char *posix_langinfo(nl_item item);
+char *posix_langinfo(nl_item item);
 
 #ifndef nl_langinfo
 #define nl_langinfo posix_langinfo

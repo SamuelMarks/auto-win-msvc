@@ -5,7 +5,6 @@ extern "C" {
 
 #ifndef BSD_SYS_EVENT_H
 #define BSD_SYS_EVENT_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) && !defined(__clang__)
 struct kevent {
@@ -17,12 +16,12 @@ struct kevent {
   void *udata;
 };
 /** \brief kqueue function. */
-AUTO_WIN_MSVC_EXPORT int kqueue(void);
+int kqueue(void);
 struct timespec;
 /** \brief kevent function. */
-AUTO_WIN_MSVC_EXPORT int kevent(int kq, const struct kevent *changelist,
-                                int nchanges, struct kevent *eventlist,
-                                int nevents, const struct timespec *timeout);
+int kevent(int kq, const struct kevent *changelist, int nchanges,
+           struct kevent *eventlist, int nevents,
+           const struct timespec *timeout);
 #endif
 
 #ifdef __cplusplus

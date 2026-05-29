@@ -1,6 +1,5 @@
 #ifndef POSIX_STDATOMIC_H
 #define POSIX_STDATOMIC_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <stdatomic.h> */
 

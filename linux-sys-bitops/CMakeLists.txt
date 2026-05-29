@@ -15,7 +15,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
-add_library(linux-sys-bitops src/linux-sys-bitops.c)
+add_library(linux-sys-bitops STATIC src/linux-sys-bitops.c)
 set_target_properties(linux-sys-bitops PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-bitops PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 

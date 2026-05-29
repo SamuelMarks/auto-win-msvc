@@ -12,7 +12,6 @@ extern "C" {
  */
 #ifndef POSIX_TERMIOS_H
 #define POSIX_TERMIOS_H
-#include "auto_win_msvc_export.h"
 
 /**
  * @brief Terminal flag type.
@@ -164,14 +163,14 @@ struct termios {
  * @param termios_p Pointer to termios structure.
  * @return Input speed.
  */
-AUTO_WIN_MSVC_EXPORT speed_t cfgetispeed(const struct termios *termios_p);
+speed_t cfgetispeed(const struct termios *termios_p);
 
 /**
  * @brief Get output baud rate.
  * @param termios_p Pointer to termios structure.
  * @return Output speed.
  */
-AUTO_WIN_MSVC_EXPORT speed_t cfgetospeed(const struct termios *termios_p);
+speed_t cfgetospeed(const struct termios *termios_p);
 
 /**
  * @brief Set input baud rate.
@@ -179,7 +178,7 @@ AUTO_WIN_MSVC_EXPORT speed_t cfgetospeed(const struct termios *termios_p);
  * @param speed Speed to set.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int cfsetispeed(struct termios *termios_p, speed_t speed);
+int cfsetispeed(struct termios *termios_p, speed_t speed);
 
 /**
  * @brief Set output baud rate.
@@ -187,14 +186,14 @@ AUTO_WIN_MSVC_EXPORT int cfsetispeed(struct termios *termios_p, speed_t speed);
  * @param speed Speed to set.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int cfsetospeed(struct termios *termios_p, speed_t speed);
+int cfsetospeed(struct termios *termios_p, speed_t speed);
 
 /**
  * @brief Wait for all output to be transmitted.
  * @param fd File descriptor.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcdrain(int fd);
+int tcdrain(int fd);
 
 /**
  * @brief Suspend or restart transmission.
@@ -202,7 +201,7 @@ AUTO_WIN_MSVC_EXPORT int tcdrain(int fd);
  * @param action Action to perform.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcflow(int fd, int action);
+int tcflow(int fd, int action);
 
 /**
  * @brief Discard non-transmitted output data, non-read input data, or both.
@@ -210,7 +209,7 @@ AUTO_WIN_MSVC_EXPORT int tcflow(int fd, int action);
  * @param queue_selector Queue to flush.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcflush(int fd, int queue_selector);
+int tcflush(int fd, int queue_selector);
 
 /**
  * @brief Get parameters associated with the terminal.
@@ -218,14 +217,14 @@ AUTO_WIN_MSVC_EXPORT int tcflush(int fd, int queue_selector);
  * @param termios_p Pointer to termios structure.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcgetattr(int fd, struct termios *termios_p);
+int tcgetattr(int fd, struct termios *termios_p);
 
 /**
  * @brief Get process group ID of the session leader.
  * @param fd File descriptor.
  * @return Process group ID on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT pid_t tcgetsid(int fd);
+pid_t tcgetsid(int fd);
 
 /**
  * @brief Send a break for a specific duration.
@@ -233,7 +232,7 @@ AUTO_WIN_MSVC_EXPORT pid_t tcgetsid(int fd);
  * @param duration Duration of the break.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcsendbreak(int fd, int duration);
+int tcsendbreak(int fd, int duration);
 
 /**
  * @brief Set parameters associated with the terminal.
@@ -242,8 +241,7 @@ AUTO_WIN_MSVC_EXPORT int tcsendbreak(int fd, int duration);
  * @param termios_p Pointer to termios structure.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int tcsetattr(int fd, int optional_actions,
-                                   const struct termios *termios_p);
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
 
 #ifdef __cplusplus
 }

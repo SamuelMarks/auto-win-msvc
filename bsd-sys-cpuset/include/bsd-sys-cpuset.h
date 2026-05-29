@@ -1,6 +1,5 @@
 #ifndef BSD_SYS_CPUSET_H
 #define BSD_SYS_CPUSET_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 /* clang-format off */
@@ -94,9 +93,8 @@ typedef int id_t;
  * @param mask Pointer to cpuset_t
  * @return 0 on success, -1 on failure
  */
-AUTO_WIN_MSVC_EXPORT int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which,
-                                            id_t id, size_t setsize,
-                                            cpuset_t *mask);
+int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                       size_t setsize, cpuset_t *mask);
 
 /**
  * @brief Set CPU affinity mask
@@ -107,9 +105,8 @@ AUTO_WIN_MSVC_EXPORT int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which,
  * @param mask Pointer to cpuset_t
  * @return 0 on success, -1 on failure
  */
-AUTO_WIN_MSVC_EXPORT int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which,
-                                            id_t id, size_t setsize,
-                                            const cpuset_t *mask);
+int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                       size_t setsize, const cpuset_t *mask);
 
 #endif /* _MSC_VER || __MINGW32__ */
 

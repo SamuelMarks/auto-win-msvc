@@ -1,12 +1,8 @@
 #ifndef LINUX_BACKTRACE_H
 #define LINUX_BACKTRACE_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <backtrace.h> */
-
-#if defined(_MSC_VER)
-
-#if _MSC_VER < 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
 /* clang-format off */
 #include <stddef.h>
 #ifndef _UINTPTR_T_DEFINED
@@ -19,12 +15,11 @@ typedef unsigned int uintptr_t;
 #endif
 #else
 #include <stdint.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
 #endif
 
 /* Dummy state structure */
@@ -36,7 +31,7 @@ typedef int (*backtrace_full_callback)(void *data, uintptr_t pc,
                                        const char *filename, int lineno,
                                        const char *function);
 
-static __inline struct backtrace_state *AUTO_WIN_MSVC_EXPORT
+static __inline struct backtrace_state *
 backtrace_create_state(const char *filename, int threaded,
                        backtrace_error_callback error_callback, void *data) {
   (void)filename;
@@ -59,8 +54,6 @@ static __inline int backtrace_pcinfo(struct backtrace_state *state,
   (void)data;
   return 0;
 }
-
-#endif /* _MSC_VER */
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,6 @@
 /* Strict C89 pwd.h wrapper */
 #ifndef POSIX_PWDGRP_PWD_H
 #define POSIX_PWDGRP_PWD_H
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,14 +20,13 @@ struct passwd {
 
 struct passwd *getpwnam(const char *name);
 struct passwd *getpwuid(uid_t uid);
-AUTO_WIN_MSVC_EXPORT int getpwnam_r(const char *name, struct passwd *pwd,
-                                    char *buffer, size_t bufsize,
-                                    struct passwd **result);
-AUTO_WIN_MSVC_EXPORT int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer,
-                                    size_t bufsize, struct passwd **result);
-AUTO_WIN_MSVC_EXPORT void endpwent(void);
+int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
+               size_t bufsize, struct passwd **result);
+int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
+               struct passwd **result);
+void endpwent(void);
 struct passwd *getpwent(void);
-AUTO_WIN_MSVC_EXPORT void setpwent(void);
+void setpwent(void);
 
 #ifdef __cplusplus
 }

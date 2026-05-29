@@ -81,7 +81,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
-add_library(posix-stdbool src/posix-stdbool.c)
+add_library(posix-stdbool STATIC src/posix-stdbool.c)
 set_target_properties(posix-stdbool PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stdbool PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 

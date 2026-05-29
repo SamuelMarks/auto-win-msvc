@@ -8,7 +8,6 @@
  */
 #ifndef POSIX_IPC_H
 #define POSIX_IPC_H
-#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <stddef.h>
@@ -171,7 +170,7 @@ struct sembuf {
  * @param id The project identifier.
  * @return The generated IPC key, or (key_t)-1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT key_t ftok(const char *path, int id);
+key_t ftok(const char *path, int id);
 
 /**
  * @brief Performs control operations on a message queue.
@@ -180,7 +179,7 @@ AUTO_WIN_MSVC_EXPORT key_t ftok(const char *path, int id);
  * @param buf Pointer to a msqid_ds structure for status or set operations.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int msgctl(int msqid, int cmd, struct msqid_ds *buf);
+int msgctl(int msqid, int cmd, struct msqid_ds *buf);
 
 /**
  * @brief Gets a System V message queue identifier.
@@ -188,7 +187,7 @@ AUTO_WIN_MSVC_EXPORT int msgctl(int msqid, int cmd, struct msqid_ds *buf);
  * @param msgflg Message flags and permissions.
  * @return A valid message queue identifier on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int msgget(key_t key, int msgflg);
+int msgget(key_t key, int msgflg);
 
 /**
  * @brief Receives a message from a System V message queue.
@@ -199,8 +198,7 @@ AUTO_WIN_MSVC_EXPORT int msgget(key_t key, int msgflg);
  * @param msgflg Operation flags (e.g., IPC_NOWAIT).
  * @return The number of bytes copied into the message buffer, or -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT ssize_t msgrcv(int msqid, void *msgp, size_t msgsz,
-                                    long msgtyp, int msgflg);
+ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg);
 
 /**
  * @brief Sends a message to a System V message queue.
@@ -210,8 +208,7 @@ AUTO_WIN_MSVC_EXPORT ssize_t msgrcv(int msqid, void *msgp, size_t msgsz,
  * @param msgflg Operation flags (e.g., IPC_NOWAIT).
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int msgsnd(int msqid, const void *msgp, size_t msgsz,
-                                int msgflg);
+int msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg);
 
 /**
  * @brief Performs control operations on a System V semaphore set.
@@ -221,7 +218,7 @@ AUTO_WIN_MSVC_EXPORT int msgsnd(int msqid, const void *msgp, size_t msgsz,
  * @param ... Optional fourth argument (union semun) depending on cmd.
  * @return A non-negative value on success (depending on cmd), -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int semctl(int semid, int semnum, int cmd, ...);
+int semctl(int semid, int semnum, int cmd, ...);
 
 /**
  * @brief Gets a System V semaphore set identifier.
@@ -230,7 +227,7 @@ AUTO_WIN_MSVC_EXPORT int semctl(int semid, int semnum, int cmd, ...);
  * @param semflg Semaphore flags and permissions.
  * @return A valid semaphore set identifier on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int semget(key_t key, int nsems, int semflg);
+int semget(key_t key, int nsems, int semflg);
 
 /**
  * @brief Performs operations on selected System V semaphores.
@@ -239,7 +236,7 @@ AUTO_WIN_MSVC_EXPORT int semget(key_t key, int nsems, int semflg);
  * @param nsops Number of operations in the array.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int semop(int semid, struct sembuf *sops, size_t nsops);
+int semop(int semid, struct sembuf *sops, size_t nsops);
 
 /**
  * @brief Attaches a System V shared memory segment to the calling process.
@@ -249,7 +246,7 @@ AUTO_WIN_MSVC_EXPORT int semop(int semid, struct sembuf *sops, size_t nsops);
  * @return A pointer to the attached segment on success, or (void*)-1 on
  * failure.
  */
-AUTO_WIN_MSVC_EXPORT void *shmat(int shmid, const void *shmaddr, int shmflg);
+void *shmat(int shmid, const void *shmaddr, int shmflg);
 
 /**
  * @brief Performs control operations on a System V shared memory segment.
@@ -258,14 +255,14 @@ AUTO_WIN_MSVC_EXPORT void *shmat(int shmid, const void *shmaddr, int shmflg);
  * @param buf Pointer to a shmid_ds structure for status or set operations.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int shmctl(int shmid, int cmd, struct shmid_ds *buf);
+int shmctl(int shmid, int cmd, struct shmid_ds *buf);
 
 /**
  * @brief Detaches a System V shared memory segment from the calling process.
  * @param shmaddr The address of the attached segment.
  * @return 0 on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int shmdt(const void *shmaddr);
+int shmdt(const void *shmaddr);
 
 /**
  * @brief Gets a System V shared memory segment identifier.
@@ -274,7 +271,7 @@ AUTO_WIN_MSVC_EXPORT int shmdt(const void *shmaddr);
  * @param shmflg Shared memory flags and permissions.
  * @return A valid shared memory segment identifier on success, -1 on failure.
  */
-AUTO_WIN_MSVC_EXPORT int shmget(key_t key, size_t size, int shmflg);
+int shmget(key_t key, size_t size, int shmflg);
 
 #endif /* _WIN32 */
 

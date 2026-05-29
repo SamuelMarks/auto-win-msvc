@@ -1,6 +1,5 @@
 #ifndef POSIX_INTTYPES_H
 #define POSIX_INTTYPES_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <inttypes.h> */
 

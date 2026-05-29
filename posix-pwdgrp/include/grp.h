@@ -1,7 +1,6 @@
 /* Strict C89 grp.h wrapper */
 #ifndef POSIX_PWDGRP_GRP_H
 #define POSIX_PWDGRP_GRP_H
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,14 +17,13 @@ struct group {
 
 struct group *getgrnam(const char *name);
 struct group *getgrgid(gid_t gid);
-AUTO_WIN_MSVC_EXPORT int getgrnam_r(const char *name, struct group *grp,
-                                    char *buffer, size_t bufsize,
-                                    struct group **result);
-AUTO_WIN_MSVC_EXPORT int getgrgid_r(gid_t gid, struct group *grp, char *buffer,
-                                    size_t bufsize, struct group **result);
-AUTO_WIN_MSVC_EXPORT void endgrent(void);
+int getgrnam_r(const char *name, struct group *grp, char *buffer,
+               size_t bufsize, struct group **result);
+int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
+               struct group **result);
+void endgrent(void);
 struct group *getgrent(void);
-AUTO_WIN_MSVC_EXPORT void setgrent(void);
+void setgrent(void);
 
 #ifdef __cplusplus
 }

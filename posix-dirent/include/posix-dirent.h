@@ -4,7 +4,6 @@
 /* posix-dirent.h - Strict C89 Header */
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
-#include "auto_win_msvc_export.h"
 
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
@@ -64,7 +63,7 @@ typedef struct DIR DIR;
  * @param name The name of the directory to open.
  * @return A pointer to the directory stream, or NULL if an error occurred.
  */
-AUTO_WIN_MSVC_EXPORT DIR *opendir(const char *name);
+DIR *opendir(const char *name);
 
 /**
  * @brief Reads a directory entry from the given directory stream.
@@ -79,28 +78,28 @@ struct dirent *readdir(DIR *dirp);
  * @param dirp The directory stream.
  * @return 0 on success, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int closedir(DIR *dirp);
+int closedir(DIR *dirp);
 
 /**
  * @brief Resets the position of the directory stream to the beginning of the
  * directory.
  * @param dirp The directory stream.
  */
-AUTO_WIN_MSVC_EXPORT void rewinddir(DIR *dirp);
+void rewinddir(DIR *dirp);
 
 /**
  * @brief Sets the position of the next readdir() call in the directory stream.
  * @param dirp The directory stream.
  * @param loc The position to seek to.
  */
-AUTO_WIN_MSVC_EXPORT void seekdir(DIR *dirp, long loc);
+void seekdir(DIR *dirp, long loc);
 
 /**
  * @brief Returns the current location associated with the directory stream.
  * @param dirp The directory stream.
  * @return The current location.
  */
-AUTO_WIN_MSVC_EXPORT long telldir(DIR *dirp);
+long telldir(DIR *dirp);
 
 /**
  * @brief Scans a directory for entries.
@@ -110,10 +109,9 @@ AUTO_WIN_MSVC_EXPORT long telldir(DIR *dirp);
  * @param compar A function pointer to a comparison function.
  * @return The number of entries selected, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int scandir(const char *dirp, struct dirent ***namelist,
-                                 int (*filter)(const struct dirent *),
-                                 int (*compar)(const struct dirent **,
-                                               const struct dirent **));
+int scandir(const char *dirp, struct dirent ***namelist,
+            int (*filter)(const struct dirent *),
+            int (*compar)(const struct dirent **, const struct dirent **));
 
 /**
  * @brief Compares two directory entries for sorting alphabetically.
@@ -122,8 +120,7 @@ AUTO_WIN_MSVC_EXPORT int scandir(const char *dirp, struct dirent ***namelist,
  * @return An integer less than, equal to, or greater than zero if the first
  * string is less than, equal to, or greater than the second string.
  */
-AUTO_WIN_MSVC_EXPORT int alphasort(const struct dirent **a,
-                                   const struct dirent **b);
+int alphasort(const struct dirent **a, const struct dirent **b);
 
 #endif /* _WIN32 */
 

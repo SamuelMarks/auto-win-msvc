@@ -1,6 +1,5 @@
 #ifndef BSD_SYS_SYSCTL_H
 #define BSD_SYS_SYSCTL_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_WIN32)
 /* clang-format off */
@@ -78,9 +77,8 @@ extern "C" {
  * \param newlen Size of newp buffer.
  * \return 0 on success, or -1 on error with errno set.
  */
-AUTO_WIN_MSVC_EXPORT int sysctl(const int *name, unsigned int namelen,
-                                void *oldp, size_t *oldlenp, const void *newp,
-                                size_t newlen);
+int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
+           const void *newp, size_t newlen);
 
 /** \brief sysctlbyname function.
  *
@@ -93,9 +91,8 @@ AUTO_WIN_MSVC_EXPORT int sysctl(const int *name, unsigned int namelen,
  * \param newlen Size of newp buffer.
  * \return 0 on success, or -1 on error with errno set.
  */
-AUTO_WIN_MSVC_EXPORT int sysctlbyname(const char *name, void *oldp,
-                                      size_t *oldlenp, const void *newp,
-                                      size_t newlen);
+int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
+                 const void *newp, size_t newlen);
 
 #endif /* _WIN32 */
 

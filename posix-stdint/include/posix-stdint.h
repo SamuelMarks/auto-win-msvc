@@ -1,6 +1,5 @@
 #ifndef POSIX_STDINT_H
 #define POSIX_STDINT_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <stdint.h> */
 

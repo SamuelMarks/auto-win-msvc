@@ -9,7 +9,9 @@ include(CTest)
 
 # --- NEW OPTIONS FOR AUTO-WIN-MSVC ---
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-# set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON) removed
+if(BUILD_SHARED_LIBS)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 option(AUTO_WIN_MSVC_UNICODE "Build with UNICODE and _UNICODE defined" OFF)
 if(AUTO_WIN_MSVC_UNICODE)
@@ -67,12 +69,7 @@ endif()
 
 
 
-include(GenerateExportHeader)
-add_library(auto_win_msvc_export_lib SHARED empty.c)
-set_target_properties(auto_win_msvc_export_lib PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-generate_export_header(auto_win_msvc_export_lib EXPORT_MACRO_NAME AUTO_WIN_MSVC_EXPORT EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/auto_win_msvc_export.h)
-include_directories(${CMAKE_BINARY_DIR})
-
+# Removed GenerateExportHeader
 enable_testing() # Enable testing at the root so ctest finds all tests
 
 include(FetchContent)
@@ -569,7 +566,7 @@ list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-resource/includ
 add_library(auto-win-msvc ${MEGA_SOURCES})
 set_target_properties(auto-win-msvc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 set_target_properties(auto-win-msvc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
+target_compile_definitions(auto-win-msvc PUBLIC AUTO_WIN_MSVC_EXPORT_LIB_STATIC_DEFINE PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
     if(MSVC)
         target_compile_options(auto-win-msvc PRIVATE /wd4273 /wd4141)
     endif()

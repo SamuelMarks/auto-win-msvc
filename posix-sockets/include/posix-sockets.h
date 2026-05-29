@@ -1,7 +1,6 @@
 /* posix-sockets.h - Strict C89 Header */
 #ifndef POSIX_SOCKETS_H
 #define POSIX_SOCKETS_H
-#include "auto_win_msvc_export.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -198,40 +197,38 @@ struct timespec;
  * @brief POSIX endhostent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_endhostent(void);
+void posix_endhostent(void);
 /**
  * @brief POSIX endnetent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_endnetent(void);
+void posix_endnetent(void);
 /**
  * @brief POSIX endprotoent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_endprotoent(void);
+void posix_endprotoent(void);
 /**
  * @brief POSIX endservent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_endservent(void);
+void posix_endservent(void);
 /**
  * @brief POSIX freeaddrinfo stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_freeaddrinfo(struct addrinfo *ai);
+void posix_freeaddrinfo(struct addrinfo *ai);
 /**
  * @brief POSIX gai_strerror stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT const char *posix_gai_strerror(int ecode);
+const char *posix_gai_strerror(int ecode);
 /**
  * @brief POSIX getaddrinfo stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_getaddrinfo(const char *nodename,
-                                           const char *servname,
-                                           const struct addrinfo *hints,
-                                           struct addrinfo **res);
+int posix_getaddrinfo(const char *nodename, const char *servname,
+                      const struct addrinfo *hints, struct addrinfo **res);
 /**
  * @brief POSIX gethostbyaddr stub
  * @return mapped value or -1 with errno EINVAL
@@ -252,10 +249,9 @@ struct hostent *posix_gethostent(void);
  * @brief POSIX getnameinfo stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int AUTO_WIN_MSVC_EXPORT
-posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen, char *node,
-                  posix_socklen_t nodelen, char *service,
-                  posix_socklen_t servicelen, int flags);
+int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
+                      char *node, posix_socklen_t nodelen, char *service,
+                      posix_socklen_t servicelen, int flags);
 /**
  * @brief POSIX getnetbyaddr stub
  * @return mapped value or -1 with errno EINVAL
@@ -305,22 +301,22 @@ struct servent *posix_getservent(void);
  * @brief POSIX sethostent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_sethostent(int stayopen);
+void posix_sethostent(int stayopen);
 /**
  * @brief POSIX setnetent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_setnetent(int stayopen);
+void posix_setnetent(int stayopen);
 /**
  * @brief POSIX setprotoent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_setprotoent(int stayopen);
+void posix_setprotoent(int stayopen);
 /**
  * @brief POSIX setservent stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT void posix_setservent(int stayopen);
+void posix_setservent(int stayopen);
 /**
  * @brief POSIX poll implementation
  * @param fds Array of pollfd structures
@@ -328,8 +324,7 @@ AUTO_WIN_MSVC_EXPORT void posix_setservent(int stayopen);
  * @param timeout Timeout in milliseconds
  * @return Number of ready file descriptors, or -1 on error
  */
-AUTO_WIN_MSVC_EXPORT int posix_poll(struct pollfd *fds, posix_nfds_t nfds,
-                                    int timeout);
+int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout);
 /**
  * @brief POSIX pselect implementation
  * @param nfds Highest file descriptor plus one (ignored on Windows)
@@ -340,125 +335,112 @@ AUTO_WIN_MSVC_EXPORT int posix_poll(struct pollfd *fds, posix_nfds_t nfds,
  * @param sigmask Signal mask (ignored on Windows)
  * @return Number of ready file descriptors, or -1 on error
  */
-AUTO_WIN_MSVC_EXPORT int posix_pselect(int nfds, fd_set *readfds,
-                                       fd_set *writefds, fd_set *errorfds,
-                                       const struct timespec *timeout,
-                                       const void *sigmask);
+int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+                  const struct timespec *timeout, const void *sigmask);
 /**
  * @brief POSIX select stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_select(int nfds, fd_set *readfds,
-                                      fd_set *writefds, fd_set *errorfds,
-                                      struct timeval *timeout);
+int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+                 struct timeval *timeout);
 /**
  * @brief POSIX accept stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_accept(int socket, struct sockaddr *address,
-                                      posix_socklen_t *address_len);
+int posix_accept(int socket, struct sockaddr *address,
+                 posix_socklen_t *address_len);
 /**
  * @brief POSIX bind stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_bind(int socket, const struct sockaddr *address,
-                                    posix_socklen_t address_len);
+int posix_bind(int socket, const struct sockaddr *address,
+               posix_socklen_t address_len);
 /**
  * @brief POSIX connect stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_connect(int socket,
-                                       const struct sockaddr *address,
-                                       posix_socklen_t address_len);
+int posix_connect(int socket, const struct sockaddr *address,
+                  posix_socklen_t address_len);
 /**
  * @brief POSIX getpeername stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_getpeername(int socket, struct sockaddr *address,
-                                           posix_socklen_t *address_len);
+int posix_getpeername(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockname stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_getsockname(int socket, struct sockaddr *address,
-                                           posix_socklen_t *address_len);
+int posix_getsockname(int socket, struct sockaddr *address,
+                      posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockopt stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_getsockopt(int socket, int level,
-                                          int option_name, void *option_value,
-                                          posix_socklen_t *option_len);
+int posix_getsockopt(int socket, int level, int option_name, void *option_value,
+                     posix_socklen_t *option_len);
 /**
  * @brief POSIX listen stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_listen(int socket, int backlog);
+int posix_listen(int socket, int backlog);
 /**
  * @brief POSIX recv stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t posix_recv(int socket, void *buffer,
-                                              size_t length, int flags);
+posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags);
 /**
  * @brief POSIX recvfrom stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t posix_recvfrom(int socket, void *buffer,
-                                                  size_t length, int flags,
-                                                  struct sockaddr *address,
-                                                  posix_socklen_t *address_len);
+posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
+                             struct sockaddr *address,
+                             posix_socklen_t *address_len);
 /**
  * @brief POSIX recvmsg stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t posix_recvmsg(int socket,
-                                                 struct msghdr *message,
-                                                 int flags);
+posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags);
 /**
  * @brief POSIX send stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t posix_send(int socket, const void *message,
-                                              size_t length, int flags);
+posix_ssize_t posix_send(int socket, const void *message, size_t length,
+                         int flags);
 /**
  * @brief POSIX sendmsg stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t posix_sendmsg(int socket,
-                                                 const struct msghdr *message,
-                                                 int flags);
+posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
+                            int flags);
 /**
  * @brief POSIX sendto stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT posix_ssize_t AUTO_WIN_MSVC_EXPORT
-posix_sendto(int socket, const void *message, size_t length, int flags,
-             const struct sockaddr *dest_addr, posix_socklen_t dest_len);
+posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
+                           int flags, const struct sockaddr *dest_addr,
+                           posix_socklen_t dest_len);
 /**
  * @brief POSIX setsockopt stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_setsockopt(int socket, int level,
-                                          int option_name,
-                                          const void *option_value,
-                                          posix_socklen_t option_len);
+int posix_setsockopt(int socket, int level, int option_name,
+                     const void *option_value, posix_socklen_t option_len);
 /**
  * @brief POSIX shutdown stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_shutdown(int socket, int how);
+int posix_shutdown(int socket, int how);
 /**
  * @brief POSIX socket stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_socket(int domain, int type, int protocol);
+int posix_socket(int domain, int type, int protocol);
 /**
  * @brief POSIX socketpair stub
  * @return mapped value or -1 with errno EINVAL
  */
-AUTO_WIN_MSVC_EXPORT int posix_socketpair(int domain, int type, int protocol,
-                                          int socket_vector[2]);
+int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 
 #ifdef _WIN32
 /* Map POSIX names to our posix_ prefixes */

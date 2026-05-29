@@ -1,3 +1,12 @@
+/* clang-format off */
+#include "linux-epoll.h"
+#undef epoll_create
+#undef epoll_create1
+#undef epoll_ctl
+#undef epoll_wait
+#undef epoll_close
+/* clang-format on */
+
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)
 /* clang-format off */

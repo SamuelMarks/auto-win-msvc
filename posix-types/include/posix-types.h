@@ -1,7 +1,6 @@
 /* posix-types.h - Strict C89 Header */
 #ifndef POSIX_TYPES_H
 #define POSIX_TYPES_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 

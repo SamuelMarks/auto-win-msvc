@@ -5,7 +5,6 @@ extern "C" {
 
 #ifndef POSIX_TIMES_H
 #define POSIX_TIMES_H
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 }

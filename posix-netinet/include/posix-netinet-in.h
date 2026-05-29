@@ -1,7 +1,6 @@
 /* posix-netinet-in.h - Strict C89 Header */
 #ifndef POSIX_NETINET_IN_H
 #define POSIX_NETINET_IN_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN

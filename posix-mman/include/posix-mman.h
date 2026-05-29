@@ -1,7 +1,6 @@
 /* posix-mman.h - Strict C89 Header */
 #ifndef POSIX_MMAN_H
 #define POSIX_MMAN_H
-#include "auto_win_msvc_export.h"
 
 #if !defined(_WIN32) && !defined(_WIN64) && !defined(__MSDOS__) &&             \
     !defined(__WATCOMC__)
@@ -19,9 +18,9 @@
 #endif
 
 /** \brief mlockall function. */
-AUTO_WIN_MSVC_EXPORT int mlockall(int flags);
+int mlockall(int flags);
 /** \brief munlockall function. */
-AUTO_WIN_MSVC_EXPORT int munlockall(void);
+int munlockall(void);
 #endif
 
 #else
@@ -126,7 +125,7 @@ typedef unsigned short mode_t;
  * Returns 0 on success, -1 on failure.
  */
 /** \brief madvise function. */
-AUTO_WIN_MSVC_EXPORT int madvise(void *addr, size_t length, int advice);
+int madvise(void *addr, size_t length, int advice);
 
 /*
  * mlock - lock a range of process address space
@@ -135,7 +134,7 @@ AUTO_WIN_MSVC_EXPORT int madvise(void *addr, size_t length, int advice);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief mlock function. */
-AUTO_WIN_MSVC_EXPORT int mlock(const void *addr, size_t len);
+int mlock(const void *addr, size_t len);
 
 /*
  * mlockall - lock all process address space
@@ -143,7 +142,7 @@ AUTO_WIN_MSVC_EXPORT int mlock(const void *addr, size_t len);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief mlockall function. */
-AUTO_WIN_MSVC_EXPORT int mlockall(int flags);
+int mlockall(int flags);
 
 /*
  * mmap - map files or devices into memory
@@ -156,8 +155,8 @@ AUTO_WIN_MSVC_EXPORT int mlockall(int flags);
  * Returns mapped address on success, MAP_FAILED on failure.
  */
 /** \brief mmap function. */
-AUTO_WIN_MSVC_EXPORT void *mmap(void *addr, size_t length, int prot, int flags,
-                                int fd, off_t offset);
+void *mmap(void *addr, size_t length, int prot, int flags, int fd,
+           off_t offset);
 
 /*
  * mprotect - set protection on a region of memory
@@ -167,7 +166,7 @@ AUTO_WIN_MSVC_EXPORT void *mmap(void *addr, size_t length, int prot, int flags,
  * Returns 0 on success, -1 on failure.
  */
 /** \brief mprotect function. */
-AUTO_WIN_MSVC_EXPORT int mprotect(void *addr, size_t len, int prot);
+int mprotect(void *addr, size_t len, int prot);
 
 /*
  * msync - synchronize a file with a memory map
@@ -177,7 +176,7 @@ AUTO_WIN_MSVC_EXPORT int mprotect(void *addr, size_t len, int prot);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief msync function. */
-AUTO_WIN_MSVC_EXPORT int msync(void *addr, size_t length, int flags);
+int msync(void *addr, size_t length, int flags);
 
 /*
  * munlock - unlock a range of process address space
@@ -186,14 +185,14 @@ AUTO_WIN_MSVC_EXPORT int msync(void *addr, size_t length, int flags);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief munlock function. */
-AUTO_WIN_MSVC_EXPORT int munlock(const void *addr, size_t len);
+int munlock(const void *addr, size_t len);
 
 /*
  * munlockall - unlock all process address space
  * Returns 0 on success, -1 on failure.
  */
 /** \brief munlockall function. */
-AUTO_WIN_MSVC_EXPORT int munlockall(void);
+int munlockall(void);
 
 /*
  * munmap - unmap files or devices
@@ -202,7 +201,7 @@ AUTO_WIN_MSVC_EXPORT int munlockall(void);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief munmap function. */
-AUTO_WIN_MSVC_EXPORT int munmap(void *addr, size_t length);
+int munmap(void *addr, size_t length);
 
 /*
  * shm_open - open a shared memory object
@@ -212,7 +211,7 @@ AUTO_WIN_MSVC_EXPORT int munmap(void *addr, size_t length);
  * Returns file descriptor on success, -1 on failure.
  */
 /** \brief shm_open function. */
-AUTO_WIN_MSVC_EXPORT int shm_open(const char *name, int oflag, mode_t mode);
+int shm_open(const char *name, int oflag, mode_t mode);
 
 /*
  * shm_unlink - remove a shared memory object
@@ -220,7 +219,7 @@ AUTO_WIN_MSVC_EXPORT int shm_open(const char *name, int oflag, mode_t mode);
  * Returns 0 on success, -1 on failure.
  */
 /** \brief shm_unlink function. */
-AUTO_WIN_MSVC_EXPORT int shm_unlink(const char *name);
+int shm_unlink(const char *name);
 
 #endif /* _WIN32 */
 

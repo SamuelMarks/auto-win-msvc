@@ -1,6 +1,5 @@
 #ifndef POSIX_NETDB_H
 #define POSIX_NETDB_H
-#include "auto_win_msvc_export.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -16,14 +15,12 @@ extern "C" {
 #endif
 
 /** \brief posix_getaddrinfo function. */
-AUTO_WIN_MSVC_EXPORT int posix_getaddrinfo(const char *nodename,
-                                           const char *servname,
-                                           const struct addrinfo *hints,
-                                           struct addrinfo **res);
+int posix_getaddrinfo(const char *nodename, const char *servname,
+                      const struct addrinfo *hints, struct addrinfo **res);
 /** \brief posix_freeaddrinfo function. */
-AUTO_WIN_MSVC_EXPORT void posix_freeaddrinfo(struct addrinfo *ai);
+void posix_freeaddrinfo(struct addrinfo *ai);
 /** \brief posix_gai_strerror function. */
-AUTO_WIN_MSVC_EXPORT const char *posix_gai_strerror(int ecode);
+const char *posix_gai_strerror(int ecode);
 
 #undef getaddrinfo
 #undef freeaddrinfo

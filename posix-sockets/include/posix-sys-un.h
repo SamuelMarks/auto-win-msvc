@@ -1,7 +1,6 @@
 /* posix-sys-un.h - Strict C89 Header */
 #ifndef POSIX_SYS_UN_H
 #define POSIX_SYS_UN_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER) || defined(_WIN32)
 

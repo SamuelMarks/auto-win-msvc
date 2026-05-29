@@ -172,7 +172,7 @@ int posix_open(const char *pathname, int flags, ...) {
   return fd;
 }
 
-extern AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
+extern int is_socket(int fd);
 ssize_t posix_read(int fd, void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
@@ -182,7 +182,7 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
 #endif
     intptr_t osfh = _get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
-      int rret = _read(fd, buf, count);
+      int rret = _read(fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif
@@ -194,13 +194,13 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = recv((SOCKET)(unsigned int)fd, buf, count, 0);
+  ret = recv((SOCKET)(unsigned int)fd, buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = recv((SOCKET)(unsigned int)fd, buf, count, 0);
+      ret = recv((SOCKET)(unsigned int)fd, buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -208,7 +208,8 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
       DWORD bytes_read = 0;
-      if (ReadFile((HANDLE)(intptr_t)fd, buf, count, &bytes_read, NULL)) {
+      if (ReadFile((HANDLE)(intptr_t)fd, buf, (DWORD)count, &bytes_read,
+                   NULL)) {
         return (int)bytes_read;
       }
       errno = EBADF;
@@ -241,7 +242,7 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
   return ret;
 }
 
-extern AUTO_WIN_MSVC_EXPORT int is_socket(int fd);
+extern int is_socket(int fd);
 ssize_t posix_write(int fd, const void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
@@ -251,7 +252,7 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 #endif
     intptr_t osfh = _get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
-      int wret = _write(fd, buf, count);
+      int wret = _write(fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif
@@ -263,13 +264,13 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = send((SOCKET)(unsigned int)fd, buf, count, 0);
+  ret = send((SOCKET)(unsigned int)fd, buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = send((SOCKET)(unsigned int)fd, buf, count, 0);
+      ret = send((SOCKET)(unsigned int)fd, buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -281,7 +282,7 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
         err == WSANOTINITIALISED) {
       DWORD written = 0;
       OVERLAPPED ov = {0};
-      if (WriteFile((HANDLE)(intptr_t)fd, buf, count, &written, &ov)) {
+      if (WriteFile((HANDLE)(intptr_t)fd, buf, (DWORD)count, &written, &ov)) {
         /* If WriteFile completes synchronously, we get the result. */
         return (int)written;
       } else {
@@ -327,8 +328,8 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 
 #undef close
 
-extern AUTO_WIN_MSVC_EXPORT void clear_nonblock(SOCKET s);
-extern AUTO_WIN_MSVC_EXPORT void clear_as_socket(int fd);
+extern void clear_nonblock(SOCKET s);
+extern void clear_as_socket(int fd);
 int posix_close(int fd) {
   SOCKET s;
   int ret;
@@ -361,9 +362,9 @@ int posix_close(int fd) {
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
-    extern AUTO_WIN_MSVC_EXPORT int is_socket(int);
-    extern AUTO_WIN_MSVC_EXPORT void mark_as_socket(int);
-    extern AUTO_WIN_MSVC_EXPORT void clear_as_socket(int);
+    extern int is_socket(int);
+    extern void mark_as_socket(int);
+    extern void clear_as_socket(int);
     if (is_socket(oldfd))
       mark_as_socket(newfd);
     else

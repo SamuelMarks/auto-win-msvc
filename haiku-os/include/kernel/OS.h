@@ -1,7 +1,6 @@
 /* haiku-os/include/kernel/OS.h - Strict C89 Implementation */
 #ifndef HAIKU_KERNEL_OS_H
 #define HAIKU_KERNEL_OS_H
-#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include "../OS.h"

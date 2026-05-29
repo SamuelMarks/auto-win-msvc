@@ -1,6 +1,5 @@
 #ifndef LINUX_ENDIAN_H
 #define LINUX_ENDIAN_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER)
 /* clang-format off */

@@ -5,7 +5,6 @@ extern "C" {
 
 #ifndef LINUX_FEATURES_H
 #define LINUX_FEATURES_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <features.h> */
 

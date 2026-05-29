@@ -1,7 +1,6 @@
 /* posix-stat.h - Strict C89 Header */
 #ifndef POSIX_STAT_H
 #define POSIX_STAT_H
-#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <sys/stat.h>
@@ -169,26 +168,23 @@ struct timespec {
 
 /* Functions requiring polyfill */
 /** \brief fchmod function. */
-AUTO_WIN_MSVC_EXPORT int fchmod(int fd, mode_t mode);
+int fchmod(int fd, mode_t mode);
 /** \brief fchmodat function. */
-AUTO_WIN_MSVC_EXPORT int fchmodat(int dirfd, const char *pathname, mode_t mode,
-                                  int flags);
+int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
 /** \brief fstatat function. */
-AUTO_WIN_MSVC_EXPORT int fstatat(int dirfd, const char *pathname,
-                                 struct _stat64 *statbuf, int flags);
+int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
+            int flags);
 /** \brief futimens function. */
-AUTO_WIN_MSVC_EXPORT int futimens(int fd, const struct timespec times[2]);
+int futimens(int fd, const struct timespec times[2]);
 /** \brief lstat function. */
-AUTO_WIN_MSVC_EXPORT int lstat(const char *pathname, struct _stat64 *statbuf);
+int lstat(const char *pathname, struct _stat64 *statbuf);
 /** \brief mknod function. */
-AUTO_WIN_MSVC_EXPORT int mknod(const char *pathname, mode_t mode,
-                               unsigned int dev);
+int mknod(const char *pathname, mode_t mode, unsigned int dev);
 /** \brief mknodat function. */
-AUTO_WIN_MSVC_EXPORT int mknodat(int dirfd, const char *pathname, mode_t mode,
-                                 unsigned int dev);
+int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
 /** \brief utimensat function. */
-AUTO_WIN_MSVC_EXPORT int utimensat(int dirfd, const char *pathname,
-                                   const struct timespec times[2], int flags);
+int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
+              int flags);
 #endif /* _WIN32 */
 
 #ifdef __cplusplus

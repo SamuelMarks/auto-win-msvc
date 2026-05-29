@@ -6,7 +6,6 @@ extern "C" {
 /* posix-libgen.h - Strict C89 Header */
 #ifndef POSIX_LIBGEN_H
 #define POSIX_LIBGEN_H
-#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-libgen.h
@@ -31,7 +30,7 @@ extern "C" {
  * @param path The pathname to parse. This string may be modified.
  * @return A pointer to the final component of the path.
  */
-AUTO_WIN_MSVC_EXPORT char *basename(char *path);
+char *basename(char *path);
 
 /**
  * @brief Returns the directory name of a pathname.
@@ -48,7 +47,7 @@ AUTO_WIN_MSVC_EXPORT char *basename(char *path);
  * @param path The pathname to parse. This string may be modified.
  * @return A pointer to the parent directory of the path.
  */
-AUTO_WIN_MSVC_EXPORT char *dirname(char *path);
+char *dirname(char *path);
 
 #ifdef __cplusplus
 }

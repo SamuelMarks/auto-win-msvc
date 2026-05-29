@@ -1,4 +1,3 @@
-#include "auto_win_msvc_export.h"
 /* clang-format off */
 #include "linux-getopt.h"
 /* clang-format on */

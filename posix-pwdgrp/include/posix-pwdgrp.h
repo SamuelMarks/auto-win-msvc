@@ -1,7 +1,6 @@
 /* posix-pwdgrp.h - Strict C89 Header */
 #ifndef POSIX_PWDGRP_H
 #define POSIX_PWDGRP_H
-#include "auto_win_msvc_export.h"
 
 /**
  * @file posix-pwdgrp.h
@@ -57,7 +56,7 @@ struct group {
 /**
  * @brief Closes the group database.
  */
-AUTO_WIN_MSVC_EXPORT void endgrent(void);
+void endgrent(void);
 
 /**
  * @brief Reads the next entry from the group database.
@@ -82,7 +81,7 @@ struct group *getgrgid(gid_t gid);
  * @param result Pointer to the returned group pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-AUTO_WIN_MSVC_EXPORT int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
+int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
                struct group **result);
 
 /**
@@ -101,18 +100,18 @@ struct group *getgrnam(const char *name);
  * @param result Pointer to the returned group pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-AUTO_WIN_MSVC_EXPORT int getgrnam_r(const char *name, struct group *grp, char *buffer,
+int getgrnam_r(const char *name, struct group *grp, char *buffer,
                size_t bufsize, struct group **result);
 
 /**
  * @brief Rewinds the group database to the beginning.
  */
-AUTO_WIN_MSVC_EXPORT void setgrent(void);
+void setgrent(void);
 
 /**
  * @brief Closes the user database.
  */
-AUTO_WIN_MSVC_EXPORT void endpwent(void);
+void endpwent(void);
 
 /**
  * @brief Reads the next entry from the user database.
@@ -137,7 +136,7 @@ struct passwd *getpwnam(const char *name);
  * @param result Pointer to the returned passwd pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-AUTO_WIN_MSVC_EXPORT int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
+int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
                size_t bufsize, struct passwd **result);
 
 /**
@@ -156,13 +155,13 @@ struct passwd *getpwuid(uid_t uid);
  * @param result Pointer to the returned passwd pointer (NULL on error).
  * @return 0 on success, or an error number on failure.
  */
-AUTO_WIN_MSVC_EXPORT int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
+int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
                struct passwd **result);
 
 /**
  * @brief Rewinds the user database to the beginning.
  */
-AUTO_WIN_MSVC_EXPORT void setpwent(void);
+void setpwent(void);
 
 #else /* _WIN32 */
 

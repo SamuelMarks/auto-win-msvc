@@ -6,7 +6,6 @@ extern "C" {
 /* macos-malloc.h */
 #ifndef MACOS_MALLOC_H
 #define MACOS_MALLOC_H
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 }

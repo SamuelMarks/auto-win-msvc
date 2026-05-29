@@ -5,7 +5,6 @@ extern "C" {
 
 #ifndef LINUX_GETOPT_H
 #define LINUX_GETOPT_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_MSC_VER)
 
@@ -26,13 +25,10 @@ struct option {
 #define optional_argument 2
 
 /** \brief getopt function. */
-AUTO_WIN_MSVC_EXPORT int getopt(int argc, char *const argv[],
-                                const char *optstring);
+int getopt(int argc, char *const argv[], const char *optstring);
 /** \brief getopt_long function. */
-AUTO_WIN_MSVC_EXPORT int getopt_long(int argc, char *const argv[],
-                                     const char *optstring,
-                                     const struct option *longopts,
-                                     int *longindex);
+int getopt_long(int argc, char *const argv[], const char *optstring,
+                const struct option *longopts, int *longindex);
 
 #endif /* _MSC_VER */
 

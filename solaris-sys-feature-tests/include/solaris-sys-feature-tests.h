@@ -5,7 +5,6 @@ extern "C" {
 
 #ifndef SOLARIS_SYS_FEATURE_TESTS_H
 #define SOLARIS_SYS_FEATURE_TESTS_H
-#include "auto_win_msvc_export.h"
 
 /* Polyfill for <sys/feature_tests.h> */
 

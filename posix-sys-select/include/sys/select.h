@@ -1,4 +1,3 @@
-#include "auto_win_msvc_export.h"
 /* posix-sys-select/include/sys/select.h - Strict C89 Implementation */
 #ifndef POSIX_SYS_SELECT_STUB
 #define POSIX_SYS_SELECT_STUB

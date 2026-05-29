@@ -1,4 +1,3 @@
-#include "auto_win_msvc_export.h"
 
 #ifdef __cplusplus
 extern "C" {

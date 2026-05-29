@@ -1,7 +1,6 @@
 /* posix-time.h - Strict C89 Header */
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
-#include "auto_win_msvc_export.h"
 
 /* clang-format off */
 #include <time.h>
@@ -108,7 +107,7 @@ struct itimerval {
  * @param value A pointer to an itimerval structure to store the value.
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int getitimer(int which, struct itimerval *value);
+int getitimer(int which, struct itimerval *value);
 
 /**
  * @brief Gets the current time of day.
@@ -117,7 +116,7 @@ AUTO_WIN_MSVC_EXPORT int getitimer(int which, struct itimerval *value);
  * usually NULL).
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int gettimeofday(struct timeval *tv, struct timezone *tz);
+int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 /**
  * @brief Sets the value of an interval timer.
@@ -127,7 +126,7 @@ AUTO_WIN_MSVC_EXPORT int gettimeofday(struct timeval *tv, struct timezone *tz);
  * (optional).
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int setitimer(int which, const struct itimerval *value,
+int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue);
 
 /**
@@ -138,7 +137,7 @@ AUTO_WIN_MSVC_EXPORT int setitimer(int which, const struct itimerval *value,
  * time). If NULL, times are set to current time.
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int utimes(const char *filename, const struct timeval times[2]);
+int utimes(const char *filename, const struct timeval times[2]);
 
 /**
  * @brief Get the current time of the specified clock.
@@ -146,7 +145,7 @@ AUTO_WIN_MSVC_EXPORT int utimes(const char *filename, const struct timeval times
  * @param tp A pointer to a timespec structure to store the time.
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int clock_gettime(int clk_id, struct timespec *tp);
+int clock_gettime(int clk_id, struct timespec *tp);
 
 /**
  * @brief High-resolution sleep with nanosecond precision.
@@ -154,7 +153,7 @@ AUTO_WIN_MSVC_EXPORT int clock_gettime(int clk_id, struct timespec *tp);
  * @param rem The remaining time if interrupted (optional).
  * @return 0 on success, -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int nanosleep(const struct timespec *req, struct timespec *rem);
+int nanosleep(const struct timespec *req, struct timespec *rem);
 
 /**
  * @brief Thread-safe version of localtime.

@@ -1,7 +1,6 @@
 /* posix-wait.h - Strict C89 Header */
 #ifndef POSIX_WAIT_H
 #define POSIX_WAIT_H
-#include "auto_win_msvc_export.h"
 
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 
@@ -66,7 +65,7 @@ typedef struct {
  * @param stat_loc Pointer to an integer where status information is stored.
  * @return The process ID of the terminated child, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT pid_t wait(int *stat_loc);
+pid_t wait(int *stat_loc);
 
 /**
  * @brief Waits for a specific process or process group to terminate.
@@ -77,7 +76,7 @@ AUTO_WIN_MSVC_EXPORT pid_t wait(int *stat_loc);
  * @return The process ID of the terminated child, 0 if WNOHANG and child
  * running, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT pid_t waitpid(pid_t pid, int *stat_loc, int options);
+pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 /**
  * @brief Waits for a child process to change state.
@@ -89,8 +88,7 @@ AUTO_WIN_MSVC_EXPORT pid_t waitpid(pid_t pid, int *stat_loc, int options);
  * @param options Options modifying wait behavior.
  * @return 0 on success, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int waitid(idtype_t idtype, id_t id, siginfo_t *infop,
-                                int options);
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 
 /**
  * @brief Non-standard Microsoft-compatible cwait.
@@ -163,8 +161,7 @@ typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
  * @param options Options modifying wait behavior.
  * @return 0 on success, or -1 on error.
  */
-AUTO_WIN_MSVC_EXPORT int waitid(idtype_t idtype, id_t id, siginfo_t *infop,
-                                int options);
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 #endif
 
 /**
