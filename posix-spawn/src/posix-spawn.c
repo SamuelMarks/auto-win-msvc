@@ -7,6 +7,16 @@
 
 #include "posix-spawn.h"
 
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
+
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <fcntl.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -88,19 +98,16 @@ typedef struct _PROCESS_INFORMATION {
 
 __declspec(dllimport) HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
-__declspec(dllimport) HANDLE WINAPI
-    CreateFileA(const char *lpFileName, DWORD dwDesiredAccess,
-                DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-                DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
-                HANDLE hTemplateFile);
-__declspec(dllimport) BOOL WINAPI
-    CreateProcessA(const char *lpApplicationName, char *lpCommandLine,
-                   LPSECURITY_ATTRIBUTES lpProcessAttributes,
-                   LPSECURITY_ATTRIBUTES lpThreadAttributes,
-                   BOOL bInheritHandles, DWORD dwCreationFlags,
-                   LPVOID lpEnvironment, const char *lpCurrentDirectory,
-                   LPSTARTUPINFOA lpStartupInfo,
-                   LPPROCESS_INFORMATION lpProcessInformation);
+__declspec(dllimport) HANDLE WINAPI CreateFileA(
+    const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+__declspec(dllimport) BOOL WINAPI CreateProcessA(
+    const char *lpApplicationName, char *lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
+    DWORD dwCreationFlags, LPVOID lpEnvironment, const char *lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 
 #endif
 
@@ -638,7 +645,7 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
         else if (action->fd == 2)
           src = si.hStdError;
         else
-          src = (HANDLE)(size_t)_get_osfhandle(action->fd);
+          src = (HANDLE)(size_t)safe_get_osfhandle(action->fd);
 
         if (action->new_fd == 0)
           si.hStdInput = src;

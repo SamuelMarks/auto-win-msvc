@@ -28,8 +28,8 @@
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 /* helper to append to glob_t */
 static int glob_append(glob_t *pglob, const char *path) {
@@ -206,7 +206,11 @@ int glob(const char *pattern, int flags,
         sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
                   fileinfo.name);
 #else
+#if defined(_MSC_VER)
+        sprintf_s(full_path, MAX_PATH, "%s%s", dir_prefix, fileinfo.name);
+#else
         sprintf(full_path, "%s%s", dir_prefix, fileinfo.name);
+#endif
 #endif
       } else {
 #if defined(_MSC_VER)
@@ -305,7 +309,11 @@ int glob(const char *pattern, int flags,
       if (fnmatch(file_pattern, ent->d_name, 0) == 0) {
         char full_path[2048];
         if (prefix_len > 0) {
+#if defined(_MSC_VER)
+          sprintf_s(full_path, MAX_PATH, "%s%s", dir_prefix, ent->d_name);
+#else
           sprintf(full_path, "%s%s", dir_prefix, ent->d_name);
+#endif
         } else {
           strcpy(full_path, ent->d_name);
         }

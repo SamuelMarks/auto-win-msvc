@@ -14,9 +14,12 @@ endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
+include(FetchContent)
+FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_MakeAvailable(greatest)
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-libunwind ${TEST_SOURCES})
-target_link_libraries(test_posix-libunwind posix-libunwind)
+target_link_libraries(test_posix-libunwind posix-libunwind greatest)
 add_test(NAME posix-libunwind_test COMMAND test_posix-libunwind)
 endif()
 

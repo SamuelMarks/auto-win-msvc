@@ -1,6 +1,16 @@
 /* clang-format off */
 #include <linux-sys-statfs.h>
 
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
+
 #if defined(_MSC_VER)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -12,7 +22,8 @@
 #else
 #include <io.h>
 #endif
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 /* clang-format on */
 
 /** \brief statfs function. */
@@ -65,7 +76,7 @@ int fstatfs(int fd, struct statfs *buf) {
     return -1;
   }
 
-  hFile = (HANDLE)(size_t)_get_osfhandle(fd);
+  hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;

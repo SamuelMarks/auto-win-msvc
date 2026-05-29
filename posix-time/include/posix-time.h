@@ -95,11 +95,7 @@ struct itimerval {
 /**
  * @brief Format string for 64-bit integers, accommodating different compilers.
  */
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%lld"
-#endif
+
 
 /**
  * @brief Gets the value of an interval timer.

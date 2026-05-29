@@ -1,8 +1,8 @@
 #ifndef BSD_SYS_CPUSET_H
 #define BSD_SYS_CPUSET_H
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
 /* clang-format off */
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #include <stddef.h>
 /* clang-format on */
 

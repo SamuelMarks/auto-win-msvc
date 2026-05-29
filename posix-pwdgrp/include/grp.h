@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
+/* clang-format off */
 #include <posix-types.h>
+/* clang-format on */
 
 struct group {
   char *gr_name;

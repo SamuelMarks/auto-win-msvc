@@ -10,17 +10,14 @@
  * codebase; to prevent errors. */
 #if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MSDOS__)
 #include <sys/param.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
+#endif
 /* clang-format on */
-#endif
 
-/* For printf formatting things you can #define NUM_FORMAT and use the right one
- * later guarded for msvc and c89 etc. */
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%lld"
-#endif
+/* For printf formatting things you can  * later guarded for msvc and c89 etc.
+ */
 
 #ifndef _MAX_PATH
 #define _MAX_PATH 260

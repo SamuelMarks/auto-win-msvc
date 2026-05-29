@@ -1,8 +1,8 @@
 #ifndef LINUX_ENDIAN_H
 #define LINUX_ENDIAN_H
 
-#if defined(_MSC_VER)
 /* clang-format off */
+#if defined(_MSC_VER)
 #include <stdlib.h>
 /* clang-format on */
 

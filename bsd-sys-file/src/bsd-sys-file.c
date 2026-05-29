@@ -11,8 +11,8 @@
 #include <io.h>
 #endif
 #include <winsock2.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 int posix_flock(int fd, int operation) {
   (void)fd;

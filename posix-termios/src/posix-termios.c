@@ -10,6 +10,33 @@
 #include <string.h>
 #include <errno.h>
 
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
+
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 #ifdef _WIN32
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -31,11 +58,11 @@ typedef int BOOL;
 /** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief STD_INPUT_HANDLE macro. */
-#define STD_INPUT_HANDLE ((DWORD)-10)
+#define STD_INPUT_HANDLE ((DWORD) - 10)
 /** \brief STD_OUTPUT_HANDLE macro. */
-#define STD_OUTPUT_HANDLE ((DWORD)-11)
+#define STD_OUTPUT_HANDLE ((DWORD) - 11)
 /** \brief STD_ERROR_HANDLE macro. */
-#define STD_ERROR_HANDLE ((DWORD)-12)
+#define STD_ERROR_HANDLE ((DWORD) - 12)
 
 #define ENABLE_PROCESSED_INPUT 0x0001
 #define ENABLE_LINE_INPUT 0x0002
@@ -48,15 +75,15 @@ extern "C" {
 
 __declspec(dllimport) HANDLE __stdcall GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL __stdcall FlushFileBuffers(HANDLE hFile);
-__declspec(dllimport) BOOL
-    __stdcall FlushConsoleInputBuffer(HANDLE hConsoleInput);
-__declspec(dllimport) BOOL
-    __stdcall GetConsoleMode(HANDLE hConsoleHandle, DWORD *lpMode);
-__declspec(dllimport) BOOL
-    __stdcall SetConsoleMode(HANDLE hConsoleHandle, DWORD dwMode);
+__declspec(dllimport)
+BOOL __stdcall FlushConsoleInputBuffer(HANDLE hConsoleInput);
+__declspec(dllimport) BOOL __stdcall GetConsoleMode(HANDLE hConsoleHandle,
+                                                    DWORD *lpMode);
+__declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle,
+                                                    DWORD dwMode);
 __declspec(dllimport) DWORD __stdcall GetFileType(HANDLE hFile);
-__declspec(dllimport) BOOL
-    __stdcall EscapeCommFunction(HANDLE hFile, DWORD dwFunc);
+__declspec(dllimport) BOOL __stdcall EscapeCommFunction(HANDLE hFile,
+                                                        DWORD dwFunc);
 __declspec(dllimport) BOOL __stdcall SetCommBreak(HANDLE hFile);
 __declspec(dllimport) BOOL __stdcall ClearCommBreak(HANDLE hFile);
 __declspec(dllimport) void __stdcall Sleep(DWORD dwMilliseconds);
@@ -77,9 +104,7 @@ __declspec(dllimport) void __stdcall Sleep(DWORD dwMilliseconds);
 #endif
 
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-#define NUM_FORMAT "%d"
 #else
-#define NUM_FORMAT "%d"
 #endif
 
 #ifdef _WIN32
@@ -90,9 +115,9 @@ static int format_error_msg(char *buffer, size_t size, int errcode) {
   if (!buffer || size == 0)
     return 1;
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-  sprintf_s(buffer, size, "Error code: " NUM_FORMAT, errcode);
+  sprintf_s(buffer, size, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
 #else
-  sprintf(buffer, "Error code: " NUM_FORMAT, errcode);
+  sprintf(buffer, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
 #endif
   return 0;
 }
@@ -133,7 +158,7 @@ static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
 #endif
 
   if (fd >= 0) {
-    h = (HANDLE)(size_t)_get_osfhandle(fd);
+    h = (HANDLE)(size_t)safe_get_osfhandle(fd);
   }
 
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)

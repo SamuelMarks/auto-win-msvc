@@ -83,7 +83,7 @@ endif()
 
 add_library(posix-pwdgrp src/posix-pwdgrp.c)
 set_target_properties(posix-pwdgrp PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-pwdgrp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-pwdgrp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-types/include>)
 
 if(WIN32 OR MINGW)
     target_link_libraries(posix-pwdgrp PUBLIC netapi32 advapi32 userenv ole32)

@@ -3,9 +3,13 @@
 
 /* Polyfill for <stdatomic.h> */
 
+/* clang-format off */
+#if defined(__GNUC__) || defined(__clang__)
+#include_next <stdatomic.h>
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 
-/* clang-format off */
 #include <intrin.h>
 /* clang-format on */
 

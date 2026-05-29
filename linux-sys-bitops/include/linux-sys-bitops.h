@@ -8,7 +8,9 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 /* clang-format off */
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <intrin.h>
 /* clang-format on */
 

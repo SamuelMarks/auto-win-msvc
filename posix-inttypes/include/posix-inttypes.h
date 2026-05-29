@@ -7,6 +7,10 @@
 
 #if _MSC_VER < 1800
 
+/* clang-format off */
+#include <posix-stdint.h>
+#include <stdlib.h>
+
 #ifndef PRId8
 #define PRId8 "d"
 #endif
@@ -85,8 +89,10 @@
 #define PRIX64 "I64X"
 #endif
 
+#define strtoimax _strtoi64
+#define strtoumax _strtoui64
+
 #else /* _MSC_VER >= 1800 */
-/* clang-format off */
 #include <inttypes.h>
 #endif /* _MSC_VER < 1800 */
 
@@ -98,10 +104,6 @@
 extern "C" {
 #endif
 
-#endif
-
-#ifndef NUM_FORMAT
-#define NUM_FORMAT "%" PRId64
 #endif
 
 #ifdef __cplusplus

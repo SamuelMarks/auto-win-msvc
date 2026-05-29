@@ -8,7 +8,10 @@
 /* clang-format on */
 
 TEST test_sys_select(void) {
-  if (select(0, NULL, NULL, NULL, NULL) == -1)
+  struct timeval tv;
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+  if (select(0, NULL, NULL, NULL, &tv) == -1)
     SKIP();
   PASS();
 }

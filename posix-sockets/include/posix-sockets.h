@@ -107,7 +107,9 @@
 #if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER < 1600
 typedef unsigned __int32 uint32_t;
 #else
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 
 #ifndef _POSIX_SSIZE_T_DEFINED

@@ -6,10 +6,12 @@
 #include "mach/mach.h"
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <psapi.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 /** \brief Polyfill for mach_absolute_time
  * \return Absolute time in nanoseconds, or 0 on error.

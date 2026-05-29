@@ -6,9 +6,11 @@
 #include "posix-sockets.h"
 
 #ifndef _WIN32
+#if !defined(_MSC_VER)
 #include <unistd.h>
-/* clang-format on */
 #endif
+#endif
+/* clang-format on */
 
 TEST test_sockets(void) {
   int s = socket(AF_INET, SOCK_STREAM, 0);

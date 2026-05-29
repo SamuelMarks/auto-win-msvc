@@ -10,9 +10,9 @@
  * using Windows process APIs.
  */
 
+/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef _TIMEVAL_DEFINED
-/* clang-format off */
 #include <winsock2.h>
 #endif
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
@@ -26,8 +26,8 @@ struct timeval {
 /* DOS has no sys/resource.h */
 #else /* Not MSVC/Windows */
 #include <sys/resource.h>
-/* clang-format on */
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

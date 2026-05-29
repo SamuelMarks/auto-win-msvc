@@ -1,8 +1,18 @@
 /* posix-mman.c - Strict C89 Implementation */
 
-#if defined(_WIN32) || defined(_WIN64)
 /* clang-format off */
+#if defined(_WIN32) || defined(_WIN64)
 #include <fcntl.h>
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -354,9 +364,9 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
       return MAP_FAILED;
     }
 #if defined(_MSC_VER)
-    hFile = (WIN_HANDLE)(ptrdiff_t)_get_osfhandle(fd);
+    hFile = (WIN_HANDLE)(ptrdiff_t)safe_get_osfhandle(fd);
 #else
-    hFile = (WIN_HANDLE)(ptrdiff_t)_get_osfhandle(fd);
+    hFile = (WIN_HANDLE)(ptrdiff_t)safe_get_osfhandle(fd);
 #endif
     if (hFile == WIN_INVALID_HANDLE_VALUE) {
       errno = EBADF;

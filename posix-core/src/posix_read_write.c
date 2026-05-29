@@ -1,10 +1,20 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
 /* clang-format off */
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include "posix-core.h"
 #include <errno.h>
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -180,7 +190,7 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
 #endif
-    intptr_t osfh = _get_osfhandle(fd);
+    intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
       int rret = _read(fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -194,13 +204,13 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = recv((SOCKET)(unsigned int)fd, buf, (int)count, 0);
+  ret = recv((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = recv((SOCKET)(unsigned int)fd, buf, (int)count, 0);
+      ret = recv((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -250,7 +260,7 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
 #endif
-    intptr_t osfh = _get_osfhandle(fd);
+    intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
       int wret = _write(fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -264,13 +274,13 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = send((SOCKET)(unsigned int)fd, buf, (int)count, 0);
+  ret = send((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = send((SOCKET)(unsigned int)fd, buf, (int)count, 0);
+      ret = send((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -334,8 +344,10 @@ int posix_close(int fd) {
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
+    extern int posix_epoll_close(int);
+    return posix_epoll_close(fd);
   }
-  s = (SOCKET)(unsigned int)fd;
+  s = (SOCKET)safe_get_osfhandle(fd);
   clear_nonblock(s);
   clear_as_socket(fd);
   ret = closesocket(s);
@@ -347,7 +359,9 @@ int posix_close(int fd) {
       _invalid_parameter_handler old =
           _set_invalid_parameter_handler(my_invalid_parameter_handler);
 #endif
-      int cret = _close(fd);
+      int cret = -1;
+      if (fd >= 0)
+        cret = _close(fd);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif
@@ -359,12 +373,13 @@ int posix_close(int fd) {
   return ret;
 }
 
+extern int is_socket(int);
+extern void mark_as_socket(int);
+extern void clear_as_socket(int);
+
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
-    extern int is_socket(int);
-    extern void mark_as_socket(int);
-    extern void clear_as_socket(int);
     if (is_socket(oldfd))
       mark_as_socket(newfd);
     else

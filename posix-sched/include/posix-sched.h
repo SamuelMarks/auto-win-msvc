@@ -16,8 +16,8 @@
 #include <stddef.h> /* size_t */
 #else
 #include <sched.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,6 +2,23 @@
 /* clang-format off */
 #include "posix-dirent.h"
 
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <errno.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -14,7 +31,9 @@
 #include <sys/types.h>
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1400
 /* MSVC 2005+ */
 #include <stddef.h>
@@ -28,11 +47,6 @@ typedef long intptr_t;
 
 /* Provide NUM_FORMAT for C89 / MSVC variations, though not strictly needed here
  * for standard strings */
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%lld"
-#endif
 
 struct DIR {
   intptr_t handle;

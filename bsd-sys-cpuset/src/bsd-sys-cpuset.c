@@ -6,8 +6,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 /* clang-format on */
+
 #endif
 
 #if defined(_MSC_VER) || defined(__MINGW32__)

@@ -2,6 +2,16 @@
 #include "posix-sys-ioctl.h"
 #include <errno.h>
 #include <stdarg.h>
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
 #if defined(_MSC_VER) || defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -11,8 +21,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 /* clang-format on */
+
 #endif
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -136,14 +148,15 @@ int posix_ioctl(int fd, unsigned long request, ...) {
   va_end(args);
 
   /* Try as a socket first */
-  ret = ioctlsocket((SOCKET)_get_osfhandle(fd), (long)request, (u_long *)argp);
+  ret = ioctlsocket((SOCKET)safe_get_osfhandle(fd), (long)request,
+                    (u_long *)argp);
   if (ret != SOCKET_ERROR) {
     return 0;
   } else {
     int wsaErr = WSAGetLastError();
     if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
       /* Not a socket. Try as a file/console handle. */
-      h = (HANDLE)(size_t)_get_osfhandle(fd);
+      h = (HANDLE)(size_t)safe_get_osfhandle(fd);
       if (h == INVALID_HANDLE_VALUE) {
         errno = EBADF;
         return -1;

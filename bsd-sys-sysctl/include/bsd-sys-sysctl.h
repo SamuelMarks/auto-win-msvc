@@ -1,8 +1,8 @@
 #ifndef BSD_SYS_SYSCTL_H
 #define BSD_SYS_SYSCTL_H
 
-#if defined(_WIN32)
 /* clang-format off */
+#if defined(_WIN32)
 #include <stddef.h>
 /* clang-format on */
 

@@ -1,5 +1,7 @@
 /* clang-format off */
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 /* clang-format on */
+
 
 int main(void) { return 0; }

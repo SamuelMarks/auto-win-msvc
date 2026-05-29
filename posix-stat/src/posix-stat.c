@@ -15,6 +15,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
+
 #ifdef _WIN32
 #include <direct.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -36,7 +46,7 @@ typedef char *LPSTR;
 /** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 /** \brief INVALID_FILE_ATTRIBUTES macro. */
-#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
 #define FILE_ATTRIBUTE_READONLY 1
 #define FILE_ATTRIBUTE_NORMAL 128
 #define FILE_ATTRIBUTE_REPARSE_POINT 1024
@@ -85,27 +95,25 @@ extern "C" {
 #endif
 
 __declspec(dllimport) HMODULE WINAPI GetModuleHandleA(const char *lpModuleName);
-__declspec(dllimport) void *WINAPI
-    GetProcAddress(HMODULE hModule, const char *lpProcName);
+__declspec(dllimport) void *WINAPI GetProcAddress(HMODULE hModule,
+                                                  const char *lpProcName);
 __declspec(dllimport) DWORD WINAPI GetFileAttributesA(const char *lpFileName);
-__declspec(dllimport) BOOL WINAPI
-    SetFileAttributesA(const char *lpFileName, DWORD dwFileAttributes);
-__declspec(dllimport) BOOL WINAPI
-    GetFileAttributesExA(const char *lpFileName,
-                         GET_FILEEX_INFO_LEVELS fInfoLevelId,
-                         void *lpFileInformation);
+__declspec(dllimport) BOOL WINAPI SetFileAttributesA(const char *lpFileName,
+                                                     DWORD dwFileAttributes);
+__declspec(dllimport) BOOL WINAPI GetFileAttributesExA(
+    const char *lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
+    void *lpFileInformation);
 __declspec(dllimport) void WINAPI GetSystemTime(SYSTEMTIME *lpSystemTime);
 __declspec(dllimport) BOOL WINAPI
-    SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
-__declspec(dllimport) BOOL WINAPI
-    SetFileTime(HANDLE hFile, const FILETIME *lpCreationTime,
-                const FILETIME *lpLastAccessTime,
-                const FILETIME *lpLastWriteTime);
+SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
+__declspec(dllimport) BOOL WINAPI SetFileTime(HANDLE hFile,
+                                              const FILETIME *lpCreationTime,
+                                              const FILETIME *lpLastAccessTime,
+                                              const FILETIME *lpLastWriteTime);
 __declspec(dllimport) HANDLE WINAPI
-    CreateFileA(const char *lpFileName, DWORD dwDesiredAccess,
-                DWORD dwShareMode, void *lpSecurityAttributes,
-                DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes,
-                HANDLE hTemplateFile);
+CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
+            void *lpSecurityAttributes, DWORD dwCreationDisposition,
+            DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 __declspec(dllimport) DWORD WINAPI GetLastError(void);
 
@@ -138,7 +146,7 @@ static int posix_stat_resolve_at_path(int dirfd, const char *pathname,
     return 0;
   }
 
-  hFile = (HANDLE)(size_t)_get_osfhandle(dirfd);
+  hFile = (HANDLE)(size_t)safe_get_osfhandle(dirfd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -196,7 +204,7 @@ int fchmod(int fd, mode_t mode) {
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
 
-  hFile = (HANDLE)(size_t)_get_osfhandle(fd);
+  hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -293,7 +301,7 @@ static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
 
 /** \brief futimens function. */
 int futimens(int fd, const struct timespec times[2]) {
-  HANDLE hFile = (HANDLE)(size_t)_get_osfhandle(fd);
+  HANDLE hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
   FILETIME atime, mtime;
   FILETIME *pAtime = NULL, *pMtime = NULL;
   int omit_a = 0, omit_m = 0;

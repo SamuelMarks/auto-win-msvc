@@ -10,6 +10,22 @@
 #include <string.h>
 /* clang-format on */
 
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 #ifndef EFAULT
 #define EFAULT 14
 #endif
@@ -209,10 +225,21 @@ int uname(struct utsname *name) {
   sprintf_s(name->version, _UTSNAME_LENGTH, UTS_NUM_FORMAT,
             (unsigned long)osvi.dwBuildNumber);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(
+      name->release, sizeof(name->release), UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
+      (unsigned long)osvi.dwMajorVersion, (unsigned long)osvi.dwMinorVersion);
+#else
   sprintf(name->release, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
           (unsigned long)osvi.dwMajorVersion,
           (unsigned long)osvi.dwMinorVersion);
+#endif
+#if defined(_MSC_VER)
+  sprintf_s(name->version, sizeof(name->version), UTS_NUM_FORMAT,
+            (unsigned long)osvi.dwBuildNumber);
+#else
   sprintf(name->version, UTS_NUM_FORMAT, (unsigned long)osvi.dwBuildNumber);
+#endif
 #endif
 
   GetSystemInfo(&si);

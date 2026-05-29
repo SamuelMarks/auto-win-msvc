@@ -1845,14 +1845,14 @@ typedef unsigned long long posix_sem_uint64_t;
 #endif
 
 #if defined(_WIN32)
-__declspec(dllimport) void *WINAPI
-    OpenSemaphoreA(unsigned long, int, const char *);
+__declspec(dllimport) void *WINAPI OpenSemaphoreA(unsigned long, int,
+                                                  const char *);
 struct posix_sem_FILETIME {
   unsigned long dwLowDateTime;
   unsigned long dwHighDateTime;
 };
 __declspec(dllimport) void WINAPI
-    GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
+GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
 #define POSIX_SEMAPHORE_ALL_ACCESS 0x1F0003
 #define POSIX_ERROR_ALREADY_EXISTS 183UL
 #endif

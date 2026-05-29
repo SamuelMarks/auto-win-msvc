@@ -44,7 +44,6 @@ extern "C" {
 #if GREATEST_USE_TIME
 #include <time.h>
 #endif
-/* clang-format on */
 
 /* 1.5.0 */
 #define GREATEST_VERSION_MAJOR 1
@@ -65,6 +64,7 @@ extern "C" {
 #if 0
 
 #include "greatest.h"
+/* clang-format on */
 
 TEST foo_should_foo(void) {
     PASS();

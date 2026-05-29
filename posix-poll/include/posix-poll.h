@@ -1,16 +1,35 @@
+#ifndef POSIX_POLL_H
+#define POSIX_POLL_H
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+/* clang-format off */
+#include <winsock2.h>
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* posix-poll.h */
-#ifndef POSIX_POLL_H
-#define POSIX_POLL_H
+/* Fallback if struct pollfd isn't defined by older winsock2.h */
+#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+struct pollfd {
+  SOCKET fd;
+  short events;
+  short revents;
+};
+#endif
 
-/* Prototype for poll */
+int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
+
+#undef poll
+#define poll posix_poll
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+#endif /* _WIN32 */
 
 #endif /* POSIX_POLL_H */

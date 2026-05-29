@@ -11,11 +11,6 @@ extern "C" {
 #endif
 
 /* Format specifier macro as requested */
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%d"
-#else
-#define NUM_FORMAT "%d"
-#endif
 
 /* Priorities */
 #define LOG_EMERG 0   /* system is unusable */

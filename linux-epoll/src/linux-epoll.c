@@ -1,22 +1,32 @@
 /* clang-format off */
 #include "linux-epoll.h"
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
 #undef epoll_create
 #undef epoll_create1
 #undef epoll_ctl
 #undef epoll_wait
 #undef epoll_close
-/* clang-format on */
 
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)
-/* clang-format off */
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
 #include <io.h>
 #endif
 #include <wepoll.h>
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #endif
 
 #if (defined(_MSC_VER) && _MSC_VER < 1600) ||                                  \
@@ -24,8 +34,8 @@
     (defined(_WIN32) && !defined(_MSC_VER) && !defined(__MINGW32__) &&         \
      !defined(__MINGW64__))
 #include <errno.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)
@@ -54,7 +64,12 @@ int posix_epoll_create1(int flags) {
 
 int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
   HANDLE hephnd = epoll_handles[epfd];
-  SOCKET s = (SOCKET)(unsigned int)fd;
+  SOCKET s;
+  if (fd < 0) {
+    errno = 9;
+    return -1;
+  }
+  s = (SOCKET)safe_get_osfhandle(fd);
   return epoll_ctl(hephnd, op, s, event);
 }
 

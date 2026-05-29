@@ -1,8 +1,8 @@
 #ifndef LINUX_EXECINFO_H
 #define LINUX_EXECINFO_H
 
-#if defined(_MSC_VER)
 /* clang-format off */
+#if defined(_MSC_VER)
 #include <stddef.h>
 /* clang-format on */
 

@@ -8,6 +8,23 @@
 #include <errno.h>
 #include <stdio.h>
 
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -120,13 +137,17 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <share.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -310,13 +331,7 @@ struct flock {
 #endif
 
 /* NUM_FORMAT macro for cross-platform printf of 64-bit integers */
-#ifndef NUM_FORMAT
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%lld"
-#endif
-#endif
+
 
 /* Functions */
 /** @brief open */
@@ -550,7 +565,8 @@ static __inline int posix_core_usleep(unsigned int usec) {
 /** @brief isatty */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef isatty
-#define isatty _isatty
+#define isatty posix_isatty
+extern int posix_isatty(int fd);
 #endif
 #else
 /* isatty */

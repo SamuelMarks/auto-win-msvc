@@ -2,8 +2,8 @@
 #define LINUX_BACKTRACE_H
 
 /* Polyfill for <backtrace.h> */
-#if defined(_MSC_VER) && _MSC_VER < 1600
 /* clang-format off */
+#if defined(_MSC_VER) && _MSC_VER < 1600
 #include <stddef.h>
 #ifndef _UINTPTR_T_DEFINED
 #ifdef _WIN64
@@ -14,7 +14,9 @@ typedef unsigned int uintptr_t;
 #define _UINTPTR_T_DEFINED
 #endif
 #else
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 /* clang-format on */
 

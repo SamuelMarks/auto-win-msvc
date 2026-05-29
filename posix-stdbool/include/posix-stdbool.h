@@ -15,13 +15,17 @@
 #else
 /* For newer MSVC */
 /* clang-format off */
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdbool.h>
+#endif
 #endif
 
 #else /* !_MSC_VER */
 /* For GCC/Clang */
 #ifndef __cplusplus
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdbool.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus

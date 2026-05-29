@@ -20,8 +20,8 @@
 /* DOS has no sys/ioctl.h */
 #else
 #include <sys/ioctl.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

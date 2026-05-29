@@ -7,6 +7,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 #if defined(_WIN32) || defined(__WIN32__) || defined(_WIN64) ||                \
     defined(__WIN64__)
 
@@ -25,25 +42,29 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4201 4214)
 #endif /* _MSC_VER */
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif /* _MSC_VER */
 #else
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <errhandlingapi.h>
 #include <libloaderapi.h>
 #include <memoryapi.h>
 #include <minwindef.h>
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 
 #endif
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-#define NUM_FORMAT "%lu"
 #else
-#define NUM_FORMAT "%lu"
 #endif
 
 /* TLS storage for thread-local error message and module name buffer */
@@ -77,10 +98,10 @@ static int set_dlerror(DWORD err_code) {
 /* Fallback if FormatMessage fails */
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
     sprintf_s(thread_dlerror_msg, sizeof(thread_dlerror_msg),
-              "Unknown error code: " NUM_FORMAT, (unsigned long)err_code);
+              "Unknown error code: " NUM_FORMAT, (NUM_FORMAT_CAST)err_code);
 #else
     sprintf(thread_dlerror_msg, "Unknown error code: " NUM_FORMAT,
-            (unsigned long)err_code);
+            (NUM_FORMAT_CAST)err_code);
 #endif
   } else {
     /* Strip trailing newlines added by FormatMessage */

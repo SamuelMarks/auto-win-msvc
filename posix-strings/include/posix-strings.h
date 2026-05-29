@@ -1,9 +1,13 @@
 #ifndef POSIX_STRINGS_H
 #define POSIX_STRINGS_H
 
+/* clang-format off */
+#if !defined(_MSC_VER) || defined(__clang__)
+#include <strings.h>
+#endif
+
 #if defined(_MSC_VER)
 
-/* clang-format off */
 #include <string.h>
 /* clang-format on */
 

@@ -296,7 +296,9 @@ typedef long blkcnt_t;
 
 #include <sys/types.h>
 #include <time.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 #ifdef __MINGW32__
 #include <winsock2.h>

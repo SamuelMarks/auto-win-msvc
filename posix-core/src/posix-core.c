@@ -2,10 +2,20 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
 /* clang-format off */
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <direct.h>
 #include <process.h>
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#include <stddef.h>
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#else
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
+#endif
+#endif
 #endif
 #include <errno.h>
 #include <signal.h>
@@ -314,12 +324,12 @@ int fcntl(int fd, int cmd, ...) {
   }
   if (cmd == F_GETFL) {
     va_end(ap);
-    return get_nonblock((SOCKET)(unsigned int)fd);
+    return get_nonblock((SOCKET)safe_get_osfhandle(fd));
   }
   if (cmd == F_SETFL) {
     int flags = va_arg(ap, int);
     unsigned long mode = (flags & O_NONBLOCK) ? 1 : 0;
-    SOCKET s = (SOCKET)(unsigned int)fd;
+    SOCKET s = (SOCKET)safe_get_osfhandle(fd);
     ioctlsocket(s, FIONBIO, &mode);
     set_nonblock(s, mode);
     va_end(ap);
@@ -340,7 +350,7 @@ int fcntl(int fd, int cmd, ...) {
       return -1;
     }
 
-    handle = (void *)_get_osfhandle(fd);
+    handle = (void *)safe_get_osfhandle(fd);
     if (handle == (void *)(intptr_t)-1) {
       errno = EBADF;
       return -1;
@@ -491,7 +501,7 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     unsigned long res;
     GetFinalPathNameByHandleA_Func pGetFinalPathNameByHandleA;
 
-    hFile = (void *)(intptr_t)_get_osfhandle(dirfd);
+    hFile = (void *)(intptr_t)safe_get_osfhandle(dirfd);
     if (hFile == (void *)(intptr_t)-1) {
       free(buf);
       errno = EBADF;
@@ -572,7 +582,7 @@ __declspec(dllimport) int __stdcall UnmapViewOfFile(const void *lpBaseAddress);
 
 /** \brief posix_fadvise function. */
 int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
-  intptr_t handle = _get_osfhandle(fd);
+  intptr_t handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     return EBADF;
   }
@@ -659,7 +669,7 @@ int posix_fallocate(int fd, off_t offset, off_t len) {
     return EINVAL;
   }
 
-  handle = _get_osfhandle(fd);
+  handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     return EBADF;
   }
@@ -965,7 +975,7 @@ int fchown(int fd, uid_t owner, gid_t group) {
     errno = EBADF;
     return -1;
   }
-  handle = _get_osfhandle(fd);
+  handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     errno = EBADF;
     return -1;
@@ -1053,7 +1063,7 @@ int fexecve(int fd, char *const argv[], char *const envp[]) {
     return -1;
   }
 
-  handle = _get_osfhandle(fd);
+  handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     errno = EBADF;
     return -1;
@@ -1615,7 +1625,7 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
     return -1;
   }
 
-  handle = _get_osfhandle(fd);
+  handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     errno = EBADF;
     return -1;
@@ -1653,7 +1663,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
     return -1;
   }
 
-  handle = _get_osfhandle(fd);
+  handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     errno = EBADF;
     return -1;

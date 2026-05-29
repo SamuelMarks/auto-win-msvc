@@ -14,14 +14,6 @@ extern "C" {
 /* Cross-Platform Printf Formatting */
 /* ------------------------------------------------------------------------- */
 
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%Iu"
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#define NUM_FORMAT "%zu"
-#else
-#define NUM_FORMAT "%lu"
-#endif
-
 /* ------------------------------------------------------------------------- */
 /* fnmatch */
 /* ------------------------------------------------------------------------- */

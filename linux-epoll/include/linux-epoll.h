@@ -8,8 +8,8 @@
 #include <wepoll.h>
 #elif defined(__linux__)
 #include <sys/epoll.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

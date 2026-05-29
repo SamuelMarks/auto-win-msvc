@@ -18,7 +18,9 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 struct in_addr {
     uint32_t s_addr;
 };
@@ -28,8 +30,8 @@ struct in_addr {
 #endif
 #else
 #include <arpa/inet.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

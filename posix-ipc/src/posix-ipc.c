@@ -20,7 +20,26 @@
 #endif                          /* _MSC_VER */
 #endif
 /* clang-format off */
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -58,10 +77,8 @@ key_t ftok(const char *path, int id) {
 }
 
 #ifdef _MSC_VER
-#define NUM_FORMAT "%d"
 #define LU_FORMAT "%lu"
 #else
-#define NUM_FORMAT "%d"
 #define LU_FORMAT "%lu"
 #endif
 
@@ -121,18 +138,20 @@ int shmget(key_t key, size_t size, int shmflg) {
   if (key == IPC_PRIVATE) {
     static int priv_count = 0;
 #ifdef _MSC_VER
-    sprintf_s(name, sizeof(name),
-              "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
-              (unsigned long)GetCurrentProcessId(), priv_count++);
+    sprintf_s(
+        name, sizeof(name), "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
+        (unsigned long)GetCurrentProcessId(), (NUM_FORMAT_CAST)priv_count++);
 #else
     sprintf(name, "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
-            (unsigned long)GetCurrentProcessId(), priv_count++);
+            (unsigned long)GetCurrentProcessId(),
+            (NUM_FORMAT_CAST)priv_count++);
 #endif
   } else {
 #ifdef _MSC_VER
-    sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT, (int)key);
+    sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
+              (NUM_FORMAT_CAST)key);
 #else
-    sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (int)key);
+    sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (NUM_FORMAT_CAST)key);
 #endif
   }
 
