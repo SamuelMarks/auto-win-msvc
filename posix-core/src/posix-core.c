@@ -11,6 +11,11 @@
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
@@ -2194,3 +2199,11 @@ int posix_mkstemp(char *tmpl) {
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_core;
+
+int posix_isatty(int fd) {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  return _isatty(fd);
+#else
+  return isatty(fd);
+#endif
+}

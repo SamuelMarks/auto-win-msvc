@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-stdatomic ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_posix-stdatomic PRIVATE ${greatest_source_dir})
+target_include_directories(test_posix-stdatomic PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_posix-stdatomic PRIVATE posix-stdatomic)
 add_test(NAME test_posix-stdatomic COMMAND test_posix-stdatomic)

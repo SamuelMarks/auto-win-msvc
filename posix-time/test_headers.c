@@ -3,5 +3,4 @@
 #include <ws2tcpip.h>
 /* clang-format on */
 
-
 int main(void) { return 0; }

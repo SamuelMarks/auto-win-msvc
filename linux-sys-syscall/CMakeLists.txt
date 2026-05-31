@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-sys-syscall ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_linux-sys-syscall PRIVATE ${greatest_source_dir})
+target_include_directories(test_linux-sys-syscall PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_linux-sys-syscall PRIVATE linux-sys-syscall)
 add_test(NAME test_linux-sys-syscall COMMAND test_linux-sys-syscall)

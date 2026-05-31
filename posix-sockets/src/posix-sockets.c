@@ -10,6 +10,11 @@
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
@@ -370,16 +375,7 @@ void posix_setservent(int stayopen) {
   return;
 }
 
-int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout) {
-  (void)fds;
-  (void)nfds;
-  (void)timeout;
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
-  errno = EINVAL;
-  return -1;
-}
+
 
 /** \brief posix_pselect function. */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,

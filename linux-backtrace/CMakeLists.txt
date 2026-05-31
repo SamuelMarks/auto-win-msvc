@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-backtrace ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_linux-backtrace PRIVATE ${greatest_source_dir})
+target_include_directories(test_linux-backtrace PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_linux-backtrace PRIVATE linux-backtrace)
 add_test(NAME test_linux-backtrace COMMAND test_linux-backtrace)

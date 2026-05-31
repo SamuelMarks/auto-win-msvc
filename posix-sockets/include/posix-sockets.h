@@ -2,6 +2,11 @@
 #ifndef POSIX_SOCKETS_H
 #define POSIX_SOCKETS_H
 
+#ifndef NAMESPACE_WIN_SHIM_H
+#define NAMESPACE_WIN_SHIM_H
+#endif
+#include <posix-sys-ioctl.h>
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

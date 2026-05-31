@@ -89,10 +89,7 @@ if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
         URL "https://github.com/piscisaureus/wepoll/archive/refs/tags/v1.5.8.zip"
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
-    FetchContent_GetProperties(wepoll)
-    if(NOT wepoll_POPULATED)
         FetchContent_MakeAvailable(wepoll)
-    endif()
     add_library(wepoll STATIC ${wepoll_SOURCE_DIR}/wepoll.c)
 set_target_properties(wepoll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
     set_target_properties(wepoll PROPERTIES C_STANDARD 99)
@@ -102,7 +99,6 @@ endif()
 
 if(NOT TARGET greatest)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
-FetchContent_GetProperties(greatest)
 FetchContent_MakeAvailable(greatest)
 
 endif()

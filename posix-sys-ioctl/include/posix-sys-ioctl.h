@@ -63,9 +63,7 @@ struct winsize {
  */
 int posix_ioctl(int fd, unsigned long request, ...);
 
-#ifndef ioctl
 #define ioctl posix_ioctl
-#endif
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

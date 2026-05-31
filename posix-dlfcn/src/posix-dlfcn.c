@@ -137,20 +137,31 @@ void *dlopen(const char *file, int mode) {
 #endif
   {
     char fixed_file[MAX_PATH];
+    char *lib_prefix;
+    char *dot;
+    char *p;
+
     strncpy(fixed_file, file, sizeof(fixed_file) - 1);
     fixed_file[sizeof(fixed_file) - 1] = '\0';
-    {
-      char *lib_prefix = strstr(fixed_file, "libvalkeylua");
-      if (lib_prefix) {
-        memmove(lib_prefix, lib_prefix + 3, strlen(lib_prefix + 3) + 1);
-      }
+
+    lib_prefix = strstr(fixed_file, "libvalkeylua");
+    if (lib_prefix) {
+      memmove(lib_prefix, lib_prefix + 3, strlen(lib_prefix + 3) + 1);
     }
-    {
-      char *dot = strrchr(fixed_file, '.');
-      if (dot && (strcmp(dot, ".dylib") == 0 || strcmp(dot, ".so") == 0)) {
-        strcpy(dot, ".dll");
-      }
+
+    dot = strrchr(fixed_file, '.');
+    if (dot && (strcmp(dot, ".dylib") == 0 || strcmp(dot, ".so") == 0)) {
+      strcpy(dot, ".dll");
     }
+
+    p = fixed_file;
+    while (*p) {
+      if (*p == '/') {
+        *p = '\\';
+      }
+      p++;
+    }
+
     handle = LoadLibraryA(fixed_file);
   }
 #if defined(_MSC_VER)

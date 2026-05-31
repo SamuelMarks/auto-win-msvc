@@ -6,6 +6,11 @@
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
@@ -33,15 +38,16 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
   FD_ZERO(&except_fds);
 
   for (i = 0; i < nfds; ++i) {
-    if (((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)) == (SOCKET)-1)
+    if (((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)) == (SOCKET)-1)
       continue;
-    if (fds[i].events & (1 | 2)) /* POLLIN | POLLPRI */
-      FD_SET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)), &read_fds);
-    if (fds[i].events & 4) /* POLLOUT */
-      FD_SET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)), &write_fds);
-    FD_SET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)), &except_fds);
-    if ((int)((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)) > max_fd)
-      max_fd = (int)((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd));
+    if (fds[i].events & (POLLIN | POLLPRI)) /* POLLIN | POLLPRI */
+      FD_SET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)), &read_fds);
+    if (fds[i].events & POLLOUT) /* POLLOUT */
+      FD_SET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)),
+             &write_fds);
+    FD_SET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)), &except_fds);
+    if ((int)((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)) > max_fd)
+      max_fd = (int)((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd));
   }
 
   if (timeout >= 0) {
@@ -57,15 +63,15 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
   if (result > 0) {
     for (i = 0; i < nfds; ++i) {
       fds[i].revents = 0;
-      if (((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)) == (SOCKET)-1)
+      if (((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)) == (SOCKET)-1)
         continue;
-      if (FD_ISSET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)),
+      if (FD_ISSET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)),
                    &read_fds))
         fds[i].revents |= (fds[i].events & (1 | 2));
-      if (FD_ISSET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)),
+      if (FD_ISSET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)),
                    &write_fds))
         fds[i].revents |= (fds[i].events & 4);
-      if (FD_ISSET(((SOCKET)safe_get_osfhandle((intptr_t)fds[i].fd)),
+      if (FD_ISSET(((SOCKET)safe_get_osfhandle((int)(intptr_t)fds[i].fd)),
                    &except_fds))
         fds[i].revents |= 8; /* POLLERR */
     }

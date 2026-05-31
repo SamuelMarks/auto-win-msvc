@@ -94,8 +94,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_bsd-pthread-np ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_bsd-pthread-np PRIVATE ${greatest_source_dir})
+target_include_directories(test_bsd-pthread-np PRIVATE ${greatest_SOURCE_DIR})
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
     target_include_directories(test_bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")

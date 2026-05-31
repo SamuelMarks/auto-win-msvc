@@ -10,6 +10,11 @@
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
@@ -340,11 +345,11 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 
 extern void clear_nonblock(SOCKET s);
 extern void clear_as_socket(int fd);
+extern int posix_epoll_close(int);
 int posix_close(int fd) {
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
-    extern int posix_epoll_close(int);
     return posix_epoll_close(fd);
   }
   s = (SOCKET)safe_get_osfhandle(fd);

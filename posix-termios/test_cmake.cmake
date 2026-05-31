@@ -4,8 +4,5 @@ FetchContent_Declare(
     URL https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h
     DOWNLOAD_NO_EXTRACT TRUE
 )
-FetchContent_GetProperties(greatest)
-if(NOT greatest_POPULATED)
-    FetchContent_MakeAvailable(greatest)
-endif()
+FetchContent_MakeAvailable(greatest)
 message(STATUS "greatest_SOURCE_DIR: ${greatest_SOURCE_DIR}")

@@ -93,8 +93,7 @@ file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-stat ${TEST_SOURCES})
 
 # Include the directory where greatest.h was downloaded
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_src)
-target_include_directories(test_posix-stat PRIVATE ${greatest_src})
+target_include_directories(test_posix-stat PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_posix-stat PRIVATE posix-stat)
 add_test(NAME test_posix-stat COMMAND test_posix-stat WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

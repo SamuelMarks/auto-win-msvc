@@ -44,6 +44,9 @@
 #else
 #include <io.h>
 #endif
+#ifndef safe_get_osfhandle
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#endif
 #include <stdlib.h>
 #include <winsock2.h>
 
@@ -72,7 +75,7 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     bufs[i].len = (ULONG)iov[i].iov_len;
   }
 
-  ret = WSASend((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
+  ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
   free(bufs);
 
   if (ret == SOCKET_ERROR) {

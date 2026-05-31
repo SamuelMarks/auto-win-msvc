@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_bsd-sys-endian ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_bsd-sys-endian PRIVATE ${greatest_source_dir})
+target_include_directories(test_bsd-sys-endian PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_bsd-sys-endian PRIVATE bsd-sys-endian)
 add_test(NAME test_bsd-sys-endian COMMAND test_bsd-sys-endian)

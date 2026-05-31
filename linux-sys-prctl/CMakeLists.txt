@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-sys-prctl ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_linux-sys-prctl PRIVATE ${greatest_source_dir})
+target_include_directories(test_linux-sys-prctl PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_linux-sys-prctl PRIVATE linux-sys-prctl)
 add_test(NAME test_linux-sys-prctl COMMAND test_linux-sys-prctl)

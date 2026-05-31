@@ -90,8 +90,7 @@ enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_solaris-sys-feature-tests ${TEST_SOURCES})
 
-FetchContent_GetProperties(greatest SOURCE_DIR greatest_source_dir)
-target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_source_dir})
+target_include_directories(test_solaris-sys-feature-tests PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_solaris-sys-feature-tests PRIVATE solaris-sys-feature-tests)
 add_test(NAME test_solaris-sys-feature-tests COMMAND test_solaris-sys-feature-tests)

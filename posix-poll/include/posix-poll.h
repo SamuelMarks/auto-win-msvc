@@ -22,6 +22,15 @@ struct pollfd {
 };
 #endif
 
+#ifndef POLLIN
+#define POLLIN 0x01
+#define POLLPRI 0x02
+#define POLLOUT 0x04
+#define POLLERR 0x08
+#define POLLHUP 0x10
+#define POLLNVAL 0x20
+#endif
+
 int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
 #undef poll
