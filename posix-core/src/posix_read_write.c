@@ -343,6 +343,20 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 
 #undef close
 
+#if defined(_MSC_VER)
+#pragma comment(linker,                                                        \
+                "/alternatename:posix_epoll_close=posix_epoll_close_stub")
+int posix_epoll_close_stub(int fd) {
+  (void)fd;
+  return -1;
+}
+#elif defined(__GNUC__) || defined(__clang__)
+int __attribute__((weak)) posix_epoll_close(int fd) {
+  (void)fd;
+  return -1;
+}
+#endif
+
 extern void clear_nonblock(SOCKET s);
 extern void clear_as_socket(int fd);
 extern int posix_epoll_close(int);

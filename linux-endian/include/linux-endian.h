@@ -5,10 +5,13 @@
 #if defined(_MSC_VER)
 #include <stdlib.h>
 /* clang-format on */
+#endif /* _MSC_VER */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_MSC_VER)
 
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN 4321

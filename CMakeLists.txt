@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
-    set(CMAKE_TOOLCHAIN_FILE "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE PATH "" FORCE)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE PATH "" FORCE)
+    endif()
 endif()
 project(auto-win-msvc VERSION 0.1.0 LANGUAGES C)
 
@@ -579,7 +581,7 @@ file(MAKE_DIRECTORY "${COMBINED_POSIX_INCLUDES}")
 foreach(D IN LISTS MEGA_INCLUDES)
     file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
 endforeach()
-target_include_directories(auto-win-msvc PUBLIC "${COMBINED_POSIX_INCLUDES}")
+target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_POSIX_INCLUDES}>")
 
 
 if(WIN32 OR CYGWIN OR MSYS OR MINGW)
@@ -587,7 +589,7 @@ if(WIN32 OR CYGWIN OR MSYS OR MINGW)
 endif()
 
 if(TARGET wepoll)
-    target_link_libraries(auto-win-msvc PUBLIC wepoll)
+    target_link_libraries(auto-win-msvc PRIVATE wepoll)
 endif()
 
 if(TARGET pcre2-posix-static)

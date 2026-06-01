@@ -10,11 +10,13 @@
 
 #include <string.h>
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if defined(_MSC_VER)
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 

@@ -3,9 +3,7 @@
 
 /* Polyfill for <stdbool.h> */
 
-#if defined(_MSC_VER)
-
-#if _MSC_VER < 1800
+#if defined(_MSC_VER) && _MSC_VER < 1800
 #ifndef __cplusplus
 #define bool unsigned char
 #define true 1
@@ -13,27 +11,19 @@
 #define __bool_true_false_are_defined 1
 #endif /* !__cplusplus */
 #else
-/* For newer MSVC */
+/* For newer MSVC and GCC/Clang */
 /* clang-format off */
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#include <stdbool.h>
-#endif
-#endif
-
-#else /* !_MSC_VER */
-/* For GCC/Clang */
-#ifndef __cplusplus
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
 #include <stdbool.h>
 #endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#endif
-#endif /* _MSC_VER */
+/* No functions to declare */
 
 #ifdef __cplusplus
 }

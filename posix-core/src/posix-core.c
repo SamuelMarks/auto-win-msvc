@@ -40,7 +40,9 @@
 /** \brief fcntl function. */
 
 #if defined(_MSC_VER) && _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #else
 #include <stddef.h>
 #endif
@@ -1609,6 +1611,7 @@ int pipe2(int pipefd[2], int flags) {
   if (flags & O_CLOEXEC) {
     textmode |= _O_NOINHERIT;
   }
+  (void)textmode;
   if (posix_socketpair(2, 1, 0, pipefd) != 0) {
     return -1;
   }

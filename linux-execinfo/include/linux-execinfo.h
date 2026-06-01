@@ -5,10 +5,13 @@
 #if defined(_MSC_VER)
 #include <stddef.h>
 /* clang-format on */
+#endif /* _MSC_VER */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_MSC_VER)
 
 /** \brief backtrace function. */
 int backtrace(void **buffer, int size);

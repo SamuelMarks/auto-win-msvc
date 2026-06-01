@@ -88,6 +88,6 @@ jobs:
         shell: cmd
         run: |
           cd s2n-tls
-          cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc
+          cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
           cmake --build build --config Release
           ctest --test-dir build -C Release --output-on-failure

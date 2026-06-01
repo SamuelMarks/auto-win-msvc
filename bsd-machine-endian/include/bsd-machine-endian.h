@@ -9,12 +9,13 @@
 /* clang-format off */
 #include <linux-endian.h>
 /* clang-format on */
+#endif /* _MSC_VER */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#endif /* _MSC_VER */
+/* function declarations if any */
 
 #ifdef __cplusplus
 }

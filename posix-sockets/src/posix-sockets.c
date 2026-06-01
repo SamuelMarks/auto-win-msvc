@@ -61,7 +61,13 @@ static int _wsaErrorToErrno(int err) {
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
-static void __cdecl null_invalid_parameter_handler_auto(const wchar_t* a, const wchar_t* b, const wchar_t* c, unsigned int d, uintptr_t e) {}
+static void __cdecl null_invalid_parameter_handler_auto(const wchar_t* a, const wchar_t* b, const wchar_t* c, unsigned int d, uintptr_t e) {
+  (void)a;
+  (void)b;
+  (void)c;
+  (void)d;
+  (void)e;
+}
 
 static void __cdecl __init_winsock_auto(void) {
   WSADATA wsaData;
@@ -412,7 +418,7 @@ extern int is_socket(int fd);
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {
 #if defined(_WIN32)
-  fd_set ws_readfds, ws_writefds, ws_errorfds;
+  fd_set ws_readfds = {0}, ws_writefds = {0}, ws_errorfds = {0};
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
   unsigned int i;
   int ret;

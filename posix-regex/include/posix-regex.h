@@ -66,16 +66,19 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size);
 /** \brief regfree function. */
 void regfree(regex_t *preg);
+/* clang-format on */
 
 #else
+/* clang-format off */
 #include <regex.h>
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#endif /* _MSC_VER */
+/* Any functions to declare here? None */
 
 #ifdef __cplusplus
 }
