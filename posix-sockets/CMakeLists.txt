@@ -81,11 +81,25 @@ endif()
 add_library(posix-sockets src/posix-sockets.c)
 set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_include_directories(posix-sockets PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl/include")
 
 
 if(WIN32 OR MSVC)
     target_link_libraries(posix-sockets PUBLIC ws2_32)
+endif()
+
+if(NOT TARGET posix-sys-ioctl)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl" "posix-sys-ioctl_build" EXCLUDE_FROM_ALL)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            posix-sys-ioctl
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-sys-ioctl"
+        )
+        FetchContent_MakeAvailable(posix-sys-ioctl)
+    endif()
 endif()
 
 if(NOT TARGET posix-sys-uio)
@@ -103,7 +117,7 @@ if(NOT TARGET posix-sys-uio)
     endif()
 endif()
 
-target_link_libraries(posix-sockets PUBLIC posix-sys-uio)
+target_link_libraries(posix-sockets PUBLIC posix-sys-uio posix-sys-ioctl)
 
 enable_testing()
 if(CMAKE_PROJECT_NAME STREQUAL "posix-sockets" OR AUTO_WIN_MSVC_BUILD_ALL)

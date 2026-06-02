@@ -85,7 +85,33 @@ endif()
 
 
 if(NOT TARGET posix-sockets)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets posix-sockets_build EXCLUDE_FROM_ALL)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets/CMakeLists.txt")
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets posix-sockets_build EXCLUDE_FROM_ALL)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            posix-sockets
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-sockets"
+        )
+        FetchContent_MakeAvailable(posix-sockets)
+    endif()
+endif()
+
+if(NOT TARGET linux-epoll)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../linux-epoll/CMakeLists.txt")
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../linux-epoll linux-epoll_build EXCLUDE_FROM_ALL)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            linux-epoll
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "linux-epoll"
+        )
+        FetchContent_MakeAvailable(linux-epoll)
+    endif()
 endif()
 
 file(GLOB TEST_SOURCES "tests/*.c")
