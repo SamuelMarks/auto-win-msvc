@@ -589,7 +589,7 @@ if(WIN32 OR CYGWIN OR MSYS OR MINGW)
 endif()
 
 if(TARGET wepoll)
-    target_link_libraries(auto-win-msvc PRIVATE wepoll)
+    target_link_libraries(auto-win-msvc PUBLIC wepoll)
 endif()
 
 if(TARGET pcre2-posix-static)
