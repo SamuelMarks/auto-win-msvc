@@ -203,7 +203,7 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
-#endif /* NAMESPACE_WIN_SHIM_H */
+
 #undef LoadString
 
 #ifndef __attribute__
@@ -255,6 +255,7 @@ extern "C" {
 #ifndef unsetenv
 #define unsetenv(k) _putenv_s(k, "")
 #endif
+
 #ifndef sysconf
 #define sysconf(x) (x)
 #endif
@@ -266,20 +267,6 @@ extern "C" {
 #define _SC_OPEN_MAX 4
 #endif
 
-#ifndef SIGUSR1
-#define SIGUSR1 10
-#endif
-#ifndef _SC_OPEN_MAX
-#define _SC_OPEN_MAX 4
-#endif
-#ifndef sysconf
-#define sysconf(x) (x)
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif
 #define SIGUSR2 12
 #define SIGHUP 1
 #define SIGALRM 14
@@ -318,3 +305,9 @@ typedef int gid_t;
 typedef int pid_t;
 #define _PID_T_DEFINED
 #endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* NAMESPACE_WIN_SHIM_H */
