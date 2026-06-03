@@ -338,7 +338,7 @@ struct flock {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
-  intptr_t fd = -1;
+  int fd = -1;
   int pmode = 0;
   oflag |= _O_BINARY;
   if (oflag & _O_CREAT) {
@@ -583,7 +583,7 @@ extern int posix_isatty(intptr_t fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef creat
 static __inline int posix_core_creat(const char *filename, int pmode) {
-  intptr_t fd = -1;
+  int fd = -1;
 #if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
     _MSC_VER >= 1400
   if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO,

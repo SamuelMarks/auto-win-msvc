@@ -9,12 +9,13 @@
 /* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
+/* clang-format on */
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
+/* clang-format off */
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #endif
-#endif
+/* clang-format on */
 #ifndef IPPROTO_IP
 #define IPPROTO_IP 0
 #endif
@@ -25,14 +26,14 @@
 #define IPPROTO_UDP 17
 #endif
 #else
+/* clang-format off */
 #include <netinet/in.h>
 /* clang-format on */
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #ifdef __cplusplus
 }

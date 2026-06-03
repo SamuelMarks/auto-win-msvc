@@ -61,8 +61,6 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     tvp = NULL;
   }
 
-  printf("DEBUG: max_fd=%d, fds[0]=%lld, s=%lld\n", max_fd,
-         (long long)fds[0].fd, (long long)GET_SOCKET((intptr_t)fds[0].fd));
   result = select(max_fd + 1, &read_fds, &write_fds, &except_fds, tvp);
 
   if (result > 0) {
