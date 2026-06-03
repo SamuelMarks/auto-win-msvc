@@ -5,6 +5,7 @@
 #ifndef NAMESPACE_WIN_SHIM_H
 #define NAMESPACE_WIN_SHIM_H
 #endif
+#include <posix-poll.h>
 #include <posix-sys-ioctl.h>
 
 #ifdef _WIN32
@@ -333,7 +334,7 @@ void posix_setservent(int stayopen);
  * @param timeout Timeout in milliseconds
  * @return Number of ready file descriptors, or -1 on error
  */
-int posix_poll(struct pollfd *fds, posix_nfds_t nfds, int timeout);
+int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
 /**
  * @brief POSIX pselect implementation
  * @param nfds Highest file descriptor plus one (ignored on Windows)
@@ -356,90 +357,91 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
  * @brief POSIX accept stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_accept(int socket, struct sockaddr *address,
+int posix_accept(intptr_t socket, struct sockaddr *address,
                  posix_socklen_t *address_len);
 /**
  * @brief POSIX bind stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_bind(int socket, const struct sockaddr *address,
+int posix_bind(intptr_t socket, const struct sockaddr *address,
                posix_socklen_t address_len);
 /**
  * @brief POSIX connect stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_connect(int socket, const struct sockaddr *address,
+int posix_connect(intptr_t socket, const struct sockaddr *address,
                   posix_socklen_t address_len);
 /**
  * @brief POSIX getpeername stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_getpeername(int socket, struct sockaddr *address,
+int posix_getpeername(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockname stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_getsockname(int socket, struct sockaddr *address,
+int posix_getsockname(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len);
 /**
  * @brief POSIX getsockopt stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_getsockopt(int socket, int level, int option_name, void *option_value,
-                     posix_socklen_t *option_len);
+int posix_getsockopt(intptr_t socket, int level, int option_name,
+                     void *option_value, posix_socklen_t *option_len);
 /**
  * @brief POSIX listen stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_listen(int socket, int backlog);
+int posix_listen(intptr_t socket, int backlog);
 /**
  * @brief POSIX recv stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags);
+posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
+                         int flags);
 /**
  * @brief POSIX recvfrom stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
-                             struct sockaddr *address,
+posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length,
+                             int flags, struct sockaddr *address,
                              posix_socklen_t *address_len);
 /**
  * @brief POSIX recvmsg stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags);
+posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags);
 /**
  * @brief POSIX send stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_send(int socket, const void *message, size_t length,
+posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
                          int flags);
 /**
  * @brief POSIX sendmsg stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
+posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
                             int flags);
 /**
  * @brief POSIX sendto stub
  * @return mapped value or -1 with errno EINVAL
  */
-posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
+posix_ssize_t posix_sendto(intptr_t socket, const void *message, size_t length,
                            int flags, const struct sockaddr *dest_addr,
                            posix_socklen_t dest_len);
 /**
  * @brief POSIX setsockopt stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_setsockopt(int socket, int level, int option_name,
+int posix_setsockopt(intptr_t socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len);
 /**
  * @brief POSIX shutdown stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_shutdown(int socket, int how);
+int posix_shutdown(intptr_t socket, int how);
 /**
  * @brief POSIX socket stub
  * @return mapped value or -1 with errno EINVAL
@@ -449,7 +451,8 @@ int posix_socket(int domain, int type, int protocol);
  * @brief POSIX socketpair stub
  * @return mapped value or -1 with errno EINVAL
  */
-int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
+int posix_socketpair(int domain, int type, int protocol,
+                     intptr_t socket_vector[2]);
 
 #ifdef _WIN32
 /* Map POSIX names to our posix_ prefixes */

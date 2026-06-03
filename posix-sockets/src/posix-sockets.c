@@ -21,6 +21,8 @@
 #endif
 #endif
 
+#define GET_SOCKET(fd) ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd) : (SOCKET)safe_get_osfhandle(fd))
+
 #ifdef _WIN32
 
 
@@ -139,15 +141,15 @@ void copy_nonblock(SOCKET src, SOCKET dst) {
 }
 
 static unsigned char g_is_socket[8192] = {0};
-void mark_as_socket(int fd) {
+void mark_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 1;
 }
-void clear_as_socket(int fd) {
+void clear_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 0;
 }
-int is_socket(int fd) {
+int is_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     return g_is_socket[fd];
   return 1; /* Assuming large FDs are sockets */
@@ -413,7 +415,7 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 #include <winsock2.h>
 #endif
 
-extern int is_socket(int fd);
+extern int is_socket(intptr_t fd);
 
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {
@@ -427,9 +429,10 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   if (readfds) {
     FD_ZERO(&ws_readfds);
     for (i = 0; i < readfds->fd_count; i++) {
-      int fd = (int)readfds->fd_array[i];
+      intptr_t fd = (intptr_t)readfds->fd_array[i];
       if (is_socket(fd)) {
-        SOCKET s = (SOCKET)safe_get_osfhandle(fd);
+        intptr_t handle = safe_get_osfhandle(fd);
+        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET)
           FD_SET(s, &ws_readfds);
       } else {
@@ -442,9 +445,10 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   if (writefds) {
     FD_ZERO(&ws_writefds);
     for (i = 0; i < writefds->fd_count; i++) {
-      int fd = (int)writefds->fd_array[i];
+      intptr_t fd = (intptr_t)writefds->fd_array[i];
       if (is_socket(fd)) {
-        SOCKET s = (SOCKET)safe_get_osfhandle(fd);
+        intptr_t handle = safe_get_osfhandle(fd);
+        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET)
           FD_SET(s, &ws_writefds);
       } else {
@@ -457,9 +461,10 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   if (errorfds) {
     FD_ZERO(&ws_errorfds);
     for (i = 0; i < errorfds->fd_count; i++) {
-      int fd = (int)errorfds->fd_array[i];
+      intptr_t fd = (intptr_t)errorfds->fd_array[i];
       if (is_socket(fd)) {
-        SOCKET s = (SOCKET)safe_get_osfhandle(fd);
+        intptr_t handle = safe_get_osfhandle(fd);
+        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET)
           FD_SET(s, &ws_errorfds);
       } else {
@@ -478,49 +483,40 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   }
 
   if (readfds) {
-
+    fd_set orig = *readfds;
     FD_ZERO(readfds);
-    for (i = 0; i < ws_readfds.fd_count; i++) {
-      SOCKET s = ws_readfds.fd_array[i];
-      /* Find matching fd */
-      int j;
-      for (j = 0; j < 8192; j++) {
-        if (is_socket(j) && (SOCKET)safe_get_osfhandle(j) == s) {
-          FD_SET((SOCKET)j, readfds);
-          break;
-        }
+    for (i = 0; i < orig.fd_count; i++) {
+      intptr_t fd = (intptr_t)orig.fd_array[i];
+      intptr_t handle = safe_get_osfhandle(fd);
+      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
+      if (FD_ISSET(s, &ws_readfds)) {
+        FD_SET((SOCKET)fd, readfds);
       }
     }
   }
 
   if (writefds) {
-  int orig_count = writefds->fd_count;
-  (void)orig_count;
-  FD_ZERO(writefds);
-    for (i = 0; i < ws_writefds.fd_count; i++) {
-      SOCKET s = ws_writefds.fd_array[i];
-      int j;
-      for (j = 0; j < 8192; j++) {
-        if (is_socket(j) && (SOCKET)safe_get_osfhandle(j) == s) {
-          FD_SET((SOCKET)j, writefds);
-          break;
-        }
+    fd_set orig = *writefds;
+    FD_ZERO(writefds);
+    for (i = 0; i < orig.fd_count; i++) {
+      intptr_t fd = (intptr_t)orig.fd_array[i];
+      intptr_t handle = safe_get_osfhandle(fd);
+      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
+      if (FD_ISSET(s, &ws_writefds)) {
+        FD_SET((SOCKET)fd, writefds);
       }
     }
   }
 
   if (errorfds) {
-  int orig_count = errorfds->fd_count;
-  (void)orig_count;
-  FD_ZERO(errorfds);
-    for (i = 0; i < ws_errorfds.fd_count; i++) {
-      SOCKET s = ws_errorfds.fd_array[i];
-      int j;
-      for (j = 0; j < 8192; j++) {
-        if (is_socket(j) && (SOCKET)safe_get_osfhandle(j) == s) {
-          FD_SET((SOCKET)j, errorfds);
-          break;
-        }
+    fd_set orig = *errorfds;
+    FD_ZERO(errorfds);
+    for (i = 0; i < orig.fd_count; i++) {
+      intptr_t fd = (intptr_t)orig.fd_array[i];
+      intptr_t handle = safe_get_osfhandle(fd);
+      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
+      if (FD_ISSET(s, &ws_errorfds)) {
+        FD_SET((SOCKET)fd, errorfds);
       }
     }
   }
@@ -537,11 +533,11 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 #endif
 }
 
-int posix_accept(int socket, struct sockaddr *address,
+int posix_accept(intptr_t socket, struct sockaddr *address,
                  posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef accept
-  SOCKET ret = accept((SOCKET)safe_get_osfhandle(socket), address, address_len);
+  SOCKET ret = accept(GET_SOCKET(socket), address, address_len);
   if (ret == INVALID_SOCKET) {
     int err = WSAGetLastError();
     if (err == WSAEWOULDBLOCK)
@@ -551,10 +547,10 @@ int posix_accept(int socket, struct sockaddr *address,
     return -1;
   }
 
-  copy_nonblock((SOCKET)safe_get_osfhandle(socket), ret);
+  copy_nonblock(GET_SOCKET(socket), ret);
 
   {
-    int fd = _open_osfhandle((intptr_t)ret, 0);
+    intptr_t fd = _open_osfhandle((intptr_t)ret, 0);
     if (fd == -1) {
       closesocket(ret);
       return -1;
@@ -571,7 +567,7 @@ int posix_accept(int socket, struct sockaddr *address,
 #endif
 }
 
-int posix_bind(int socket, const struct sockaddr *address,
+int posix_bind(intptr_t socket, const struct sockaddr *address,
                posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef bind
@@ -583,7 +579,7 @@ int posix_bind(int socket, const struct sockaddr *address,
     fake_addr.sin_family = AF_INET;
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     fake_addr.sin_port = 0;
-    ret = bind((SOCKET)safe_get_osfhandle(socket),
+    ret = bind(GET_SOCKET(socket),
                (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
     if (ret == SOCKET_ERROR) {
       errno = _wsaErrorToErrno(WSAGetLastError());
@@ -591,7 +587,7 @@ int posix_bind(int socket, const struct sockaddr *address,
     }
     return 0;
   }
-  ret = bind((SOCKET)safe_get_osfhandle(socket), address, address_len);
+  ret = bind(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -606,11 +602,11 @@ int posix_bind(int socket, const struct sockaddr *address,
 #endif
 }
 
-int posix_connect(int socket, const struct sockaddr *address,
+int posix_connect(intptr_t socket, const struct sockaddr *address,
                   posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef connect
-  int ret = connect((SOCKET)safe_get_osfhandle(socket), address, address_len);
+  int ret = connect(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY)
@@ -631,11 +627,11 @@ int posix_connect(int socket, const struct sockaddr *address,
 #endif
 }
 
-int posix_getpeername(int socket, struct sockaddr *address,
+int posix_getpeername(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getpeername
-  int ret = getpeername((SOCKET)safe_get_osfhandle(socket), address, address_len);
+  int ret = getpeername(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -650,11 +646,11 @@ int posix_getpeername(int socket, struct sockaddr *address,
 #endif
 }
 
-int posix_getsockname(int socket, struct sockaddr *address,
+int posix_getsockname(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
 #undef getsockname
-  int ret = getsockname((SOCKET)safe_get_osfhandle(socket), address, address_len);
+  int ret = getsockname(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -669,7 +665,7 @@ int posix_getsockname(int socket, struct sockaddr *address,
 #endif
 }
 
-int posix_getsockopt(int socket, int level, int option_name, void *option_value,
+int posix_getsockopt(intptr_t socket, int level, int option_name, void *option_value,
                      posix_socklen_t *option_len) {
 #ifdef _WIN32
 #undef getsockopt
@@ -679,7 +675,7 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
     if (option_len && *option_len == sizeof(struct timeval)) {
       DWORD ms = 0;
       int ms_len = sizeof(DWORD);
-      ret = getsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+      ret = getsockopt(GET_SOCKET(socket), level, option_name,
                        (char *)&ms, &ms_len);
       if (ret == 0) {
         struct timeval *tv = (struct timeval *)((size_t)option_value);
@@ -687,11 +683,11 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
         tv->tv_usec = (ms % 1000) * 1000;
       }
     } else {
-      ret = getsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+      ret = getsockopt(GET_SOCKET(socket), level, option_name,
                        (char *)option_value, option_len);
     }
   } else {
-    ret = getsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+    ret = getsockopt(GET_SOCKET(socket), level, option_name,
                      (char *)option_value, option_len);
   }
   if (ret == SOCKET_ERROR) {
@@ -710,10 +706,10 @@ int posix_getsockopt(int socket, int level, int option_name, void *option_value,
 #endif
 }
 
-int posix_listen(int socket, int backlog) {
+int posix_listen(intptr_t socket, int backlog) {
 #ifdef _WIN32
 #undef listen
-  int ret = listen((SOCKET)safe_get_osfhandle(socket), backlog);
+  int ret = listen(GET_SOCKET(socket), backlog);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -727,11 +723,11 @@ int posix_listen(int socket, int backlog) {
 #endif
 }
 
-posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
+posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length, int flags) {
 #ifdef _WIN32
 #undef recv
   int ret =
-      recv((SOCKET)safe_get_osfhandle(socket), (char *)buffer, (int)length, flags);
+      recv(GET_SOCKET(socket), (char *)buffer, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -748,7 +744,7 @@ posix_ssize_t posix_recv(int socket, void *buffer, size_t length, int flags) {
 }
 
 /** \brief posix_recvfrom function. */
-posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
+posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length, int flags,
                              struct sockaddr *address,
                              posix_socklen_t *address_len) {
   (void)socket;
@@ -765,7 +761,7 @@ posix_ssize_t posix_recvfrom(int socket, void *buffer, size_t length, int flags,
 }
 
 /** \brief posix_recvmsg function. */
-posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags) {
+posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags) {
   (void)socket;
   (void)message;
   (void)flags;
@@ -776,11 +772,11 @@ posix_ssize_t posix_recvmsg(int socket, struct msghdr *message, int flags) {
   return -1;
 }
 
-posix_ssize_t posix_send(int socket, const void *message, size_t length,
+posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
                          int flags) {
 #ifdef _WIN32
 #undef send
-  int ret = send((SOCKET)safe_get_osfhandle(socket), (const char *)message,
+  int ret = send(GET_SOCKET(socket), (const char *)message,
                  (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
@@ -798,7 +794,7 @@ posix_ssize_t posix_send(int socket, const void *message, size_t length,
 }
 
 /** \brief posix_sendmsg function. */
-posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
+posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
                             int flags) {
   (void)socket;
   (void)message;
@@ -811,7 +807,7 @@ posix_ssize_t posix_sendmsg(int socket, const struct msghdr *message,
 }
 
 /** \brief posix_sendto function. */
-posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
+posix_ssize_t posix_sendto(intptr_t socket, const void *message, size_t length,
                            int flags, const struct sockaddr *dest_addr,
                            posix_socklen_t dest_len) {
   (void)socket;
@@ -827,7 +823,7 @@ posix_ssize_t posix_sendto(int socket, const void *message, size_t length,
   return -1;
 }
 
-int posix_setsockopt(int socket, int level, int option_name,
+int posix_setsockopt(intptr_t socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
 #undef setsockopt
@@ -840,14 +836,14 @@ int posix_setsockopt(int socket, int level, int option_name,
     if (option_len == sizeof(struct timeval)) {
       struct timeval *tv = (struct timeval *)((size_t)option_value);
       DWORD ms = (DWORD)(tv->tv_sec * 1000 + tv->tv_usec / 1000);
-      ret = setsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+      ret = setsockopt(GET_SOCKET(socket), level, option_name,
                        (const char *)&ms, sizeof(DWORD));
     } else {
-      ret = setsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+      ret = setsockopt(GET_SOCKET(socket), level, option_name,
                        (const char *)option_value, option_len);
     }
   } else {
-    ret = setsockopt((SOCKET)safe_get_osfhandle(socket), level, option_name,
+    ret = setsockopt(GET_SOCKET(socket), level, option_name,
                      (const char *)option_value, option_len);
   }
   if (ret == SOCKET_ERROR) {
@@ -866,10 +862,10 @@ int posix_setsockopt(int socket, int level, int option_name,
 #endif
 }
 
-int posix_shutdown(int socket, int how) {
+int posix_shutdown(intptr_t socket, int how) {
 #ifdef _WIN32
 #undef shutdown
-  int ret = shutdown((SOCKET)safe_get_osfhandle(socket), how);
+  int ret = shutdown(GET_SOCKET(socket), how);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -896,7 +892,7 @@ int posix_socket(int domain, int type, int protocol) {
   }
 
   {
-    int fd = _open_osfhandle((intptr_t)s, 0);
+    intptr_t fd = _open_osfhandle((intptr_t)s, 0);
     if (fd == -1) {
       closesocket(s);
       return -1;
@@ -929,7 +925,8 @@ int posix_socket(int domain, int type, int protocol) {
 #endif
 /* clang-format on */
 
-int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
+int posix_socketpair(int domain, int type, int protocol,
+                     intptr_t socket_vector[2]) {
 #if defined(_WIN32)
   SOCKET listener, client, server;
   struct sockaddr_in addr;
@@ -980,8 +977,8 @@ int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]) {
   closesocket(listener);
 
   {
-    int fd_server = _open_osfhandle((intptr_t)server, 0);
-    int fd_client = _open_osfhandle((intptr_t)client, 0);
+    intptr_t fd_server = _open_osfhandle((intptr_t)server, 0);
+    intptr_t fd_client = _open_osfhandle((intptr_t)client, 0);
     if (fd_server == -1 || fd_client == -1) {
       if (fd_server != -1)
         _close(fd_server);

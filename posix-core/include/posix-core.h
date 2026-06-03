@@ -338,7 +338,7 @@ struct flock {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
-  int fd = -1;
+  intptr_t fd = -1;
   int pmode = 0;
   oflag |= _O_BINARY;
   if (oflag & _O_CREAT) {
@@ -378,7 +378,7 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /** @brief close */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef close
-int posix_close(int fd);
+int posix_close(intptr_t fd);
 #define close posix_close
 #endif
 #else
@@ -386,7 +386,7 @@ int posix_close(int fd);
 #endif
 /** @brief read */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-ssize_t posix_read(int fd, void *buf, size_t count);
+ssize_t posix_read(intptr_t fd, void *buf, size_t count);
 #ifndef read
 #define read posix_read
 #endif
@@ -395,7 +395,7 @@ ssize_t posix_read(int fd, void *buf, size_t count);
 #endif
 /** @brief write */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-ssize_t posix_write(int fd, const void *buf, size_t count);
+ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
 #ifndef write
 #define write posix_write
 #endif
@@ -566,7 +566,7 @@ static __inline int posix_core_usleep(unsigned int usec) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef isatty
 #define isatty posix_isatty
-extern int posix_isatty(int fd);
+extern int posix_isatty(intptr_t fd);
 #endif
 #else
 /* isatty */
@@ -583,7 +583,7 @@ extern int posix_isatty(int fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef creat
 static __inline int posix_core_creat(const char *filename, int pmode) {
-  int fd = -1;
+  intptr_t fd = -1;
 #if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
     _MSC_VER >= 1400
   if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO,
@@ -602,7 +602,7 @@ static __inline int posix_core_creat(const char *filename, int pmode) {
 #endif
 /** @brief fcntl */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int fcntl(int fd, int cmd, ...);
+int fcntl(intptr_t fd, int cmd, ...);
 #else
 /* fcntl */
 #endif
@@ -614,13 +614,13 @@ int openat(int dirfd, const char *pathname, int flags, ...);
 #endif
 /** @brief posix_fadvise */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int posix_fadvise(int fd, off_t offset, off_t len, int advice);
+int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #else
 /* posix_fadvise */
 #endif
 /** @brief posix_fallocate */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int posix_fallocate(int fd, off_t offset, off_t len);
+int posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #else
 /* posix_fallocate */
 #endif
@@ -636,7 +636,7 @@ int posix_fallocate(int fd, off_t offset, off_t len);
 #define SYNC_FILE_RANGE_WAIT_AFTER 4
 #endif
 /** \brief sync_file_range function. */
-int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags);
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes, unsigned int flags);
 #else
 /* sync_file_range */
 #endif
@@ -682,7 +682,7 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags);
 #endif
 /** @brief fchown */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int fchown(int fd, uid_t owner, gid_t group);
+int fchown(intptr_t fd, uid_t owner, gid_t group);
 #else
 /* fchown */
 #endif
@@ -695,13 +695,13 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
 #endif
 /** @brief fdatasync */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int fdatasync(int fd);
+int fdatasync(intptr_t fd);
 #else
 /* fdatasync */
 #endif
 /** @brief fexecve */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int fexecve(int fd, char *const argv[], char *const envp[]);
+int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
 #else
 /* fexecve */
 #endif
@@ -733,7 +733,7 @@ pid_t fork(void);
 
 /** @brief fpathconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-long fpathconf(int fd, int name);
+long fpathconf(intptr_t fd, int name);
 #else
 /* fpathconf */
 #endif
@@ -858,7 +858,7 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
 #endif
 /** @brief lockf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int lockf(int fd, int cmd, off_t len);
+int lockf(intptr_t fd, int cmd, off_t len);
 #else
 /* lockf */
 #endif
@@ -888,13 +888,13 @@ int pipe2(int pipefd[2], int flags);
 #endif
 /** @brief pread */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset);
 #else
 /* pread */
 #endif
 /** @brief pwrite */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset);
 #else
 /* pwrite */
 #endif
@@ -1000,13 +1000,13 @@ long sysconf(int name);
 #endif
 /** @brief tcgetpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-pid_t tcgetpgrp(int fd);
+pid_t tcgetpgrp(intptr_t fd);
 #else
 /* tcgetpgrp */
 #endif
 /** @brief tcsetpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int tcsetpgrp(int fd, pid_t pgrp);
+int tcsetpgrp(intptr_t fd, pid_t pgrp);
 #else
 /* tcsetpgrp */
 #endif
@@ -1018,13 +1018,13 @@ int truncate(const char *path, off_t length);
 #endif
 /** @brief ttyname */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-char *ttyname(int fd);
+char *ttyname(intptr_t fd);
 #else
 /* ttyname */
 #endif
 /** @brief ttyname_r */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-int ttyname_r(int fd, char *buf, size_t buflen);
+int ttyname_r(intptr_t fd, char *buf, size_t buflen);
 #else
 /* ttyname_r */
 #endif

@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(posix-poll STATIC src/posix-poll.c)
 set_target_properties(posix-poll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-poll PUBLIC include)
+target_include_directories(posix-poll PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC)
     target_compile_definitions(posix-poll PRIVATE _CRT_SECURE_NO_WARNINGS)

@@ -35,6 +35,7 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
 #undef poll
 #define poll posix_poll
+#define WSAPoll posix_poll
 
 #ifdef __cplusplus
 }

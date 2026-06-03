@@ -17,6 +17,8 @@
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
 #endif
+
+#undef ioctlsocket
 #if defined(_MSC_VER) || defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -142,26 +144,30 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
 }
 
 /** \brief posix_ioctl function. */
-int posix_ioctl(int fd, unsigned long request, ...) {
+int posix_ioctl(intptr_t fd, unsigned long request, ...) {
   int ret;
   va_list args;
   void *argp;
   HANDLE h;
+  intptr_t handle;
+  SOCKET s;
 
   va_start(args, request);
   argp = va_arg(args, void *);
   va_end(args);
 
   /* Try as a socket first */
-  ret = ioctlsocket((SOCKET)safe_get_osfhandle(fd), (long)request,
-                    (u_long *)argp);
+  handle = safe_get_osfhandle(fd);
+  s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
+
+  ret = ioctlsocket(s, (long)request, (u_long *)argp);
   if (ret != SOCKET_ERROR) {
     return 0;
   } else {
     int wsaErr = WSAGetLastError();
     if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
       /* Not a socket. Try as a file/console handle. */
-      h = (HANDLE)(size_t)safe_get_osfhandle(fd);
+      h = (HANDLE)s;
       if (h == INVALID_HANDLE_VALUE) {
         errno = EBADF;
         return -1;

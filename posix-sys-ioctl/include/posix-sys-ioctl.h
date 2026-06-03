@@ -61,9 +61,11 @@ struct winsize {
  * @param ... Additional arguments.
  * @return 0 on success, -1 on error with errno set appropriately.
  */
-int posix_ioctl(int fd, unsigned long request, ...);
+#include <stdint.h>
+int posix_ioctl(intptr_t fd, unsigned long request, ...);
 
 #define ioctl posix_ioctl
+#define ioctlsocket posix_ioctl
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

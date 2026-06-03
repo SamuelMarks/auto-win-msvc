@@ -304,9 +304,9 @@ extern void set_nonblock(SOCKET s, int nb);
 extern int get_nonblock(SOCKET s);
 extern void clear_nonblock(SOCKET s);
 extern void copy_nonblock(SOCKET src, SOCKET dst);
-extern void mark_as_socket(int fd);
-extern void clear_as_socket(int fd);
-extern int is_socket(int fd);
+extern void mark_as_socket(intptr_t fd);
+extern void clear_as_socket(intptr_t fd);
+extern int is_socket(intptr_t fd);
 
 __declspec(dllimport) void __stdcall ExitProcess(unsigned int uExitCode);
 void my_exit_hook(int status) { ExitProcess((unsigned int)status); }
@@ -321,7 +321,7 @@ void auto_win_exit(int code) {
     tp((void *)(intptr_t)-1, code);
 }
 
-int fcntl(int fd, int cmd, ...) {
+int fcntl(intptr_t fd, int cmd, ...) {
   va_list ap;
   va_start(ap, cmd);
 
@@ -558,7 +558,7 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
 /** \brief openat function. */
 int openat(int dirfd, const char *pathname, int flags, ...) {
   char *buf;
-  int fd;
+  intptr_t fd;
   va_list ap;
   int mode = 0;
 
@@ -588,7 +588,7 @@ __declspec(dllimport) void *__stdcall MapViewOfFile(
 __declspec(dllimport) int __stdcall UnmapViewOfFile(const void *lpBaseAddress);
 
 /** \brief posix_fadvise function. */
-int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
+int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   intptr_t handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     return EBADF;
@@ -663,7 +663,7 @@ int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief posix_fallocate function. */
-int posix_fallocate(int fd, off_t offset, off_t len) {
+int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   intptr_t handle;
   __int64 current_size;
   __int64 target_size;
@@ -713,7 +713,7 @@ int posix_fallocate(int fd, off_t offset, off_t len) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief sync_file_range function. */
-int sync_file_range(int fd, off_t offset, off_t nbytes, unsigned int flags) {
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes, unsigned int flags) {
   (void)offset;
   (void)nbytes;
   (void)flags;
@@ -970,7 +970,7 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fchown function. */
-int fchown(int fd, uid_t owner, gid_t group) {
+int fchown(intptr_t fd, uid_t owner, gid_t group) {
   intptr_t handle;
   void *kernel32;
   GetFinalPathNameByHandleA_Func pGetFinalPathNameByHandleA;
@@ -1044,7 +1044,7 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fdatasync function. */
-int fdatasync(int fd) {
+int fdatasync(intptr_t fd) {
   if (fd < 0) {
     errno = EBADF;
     return -1;
@@ -1058,7 +1058,7 @@ int fdatasync(int fd) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fexecve function. */
-int fexecve(int fd, char *const argv[], char *const envp[]) {
+int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   char *buf = NULL;
   intptr_t handle;
   void *kernel32;
@@ -1285,7 +1285,7 @@ pid_t fork(void) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fpathconf function. */
-long fpathconf(int fd, int name) {
+long fpathconf(intptr_t fd, int name) {
   (void)fd;
   switch (name) {
   case _PC_NAME_MAX:
@@ -1530,7 +1530,7 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
 /** \brief lockf function. */
 #include <sys/locking.h>
 /* clang-format on */
-int lockf(int fd, int cmd, off_t len) {
+int lockf(intptr_t fd, int cmd, off_t len) {
   int mode;
   long nbytes;
 
@@ -1621,7 +1621,7 @@ int pipe2(int pipefd[2], int flags) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pread function. */
-ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
+ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset) {
   local_overlapped ovl = {0};
   unsigned __int64 uoffset;
   intptr_t handle;
@@ -1659,7 +1659,7 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pwrite function. */
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
+ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
   local_overlapped ovl = {0};
   unsigned __int64 uoffset;
   intptr_t handle;
@@ -2041,7 +2041,7 @@ long sysconf(int name) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcgetpgrp function. */
-pid_t tcgetpgrp(int fd) {
+pid_t tcgetpgrp(intptr_t fd) {
   if (_isatty(fd))
     return 0;
   errno = ENOTTY;
@@ -2050,7 +2050,7 @@ pid_t tcgetpgrp(int fd) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcsetpgrp function. */
-int tcsetpgrp(int fd, pid_t pgrp) {
+int tcsetpgrp(intptr_t fd, pid_t pgrp) {
   pgrp = pgrp;
   if (!_isatty(fd)) {
     errno = ENOTTY;
@@ -2062,7 +2062,7 @@ int tcsetpgrp(int fd, pid_t pgrp) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief truncate function. */
 int truncate(const char *path, off_t length) {
-  int fd;
+  intptr_t fd;
   int res;
   if (!path || length < 0) {
     errno = EINVAL;
@@ -2078,7 +2078,7 @@ int truncate(const char *path, off_t length) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-char *ttyname(int fd) {
+char *ttyname(intptr_t fd) {
   if (_isatty(fd)) {
     return "CON";
   }
@@ -2088,7 +2088,7 @@ char *ttyname(int fd) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief ttyname_r function. */
-int ttyname_r(int fd, char *buf, size_t buflen) {
+int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
   if (buf == NULL) {
     return EINVAL;
   }
@@ -2176,7 +2176,7 @@ int posix_rename(const char *oldpath, const char *newpath) {
 /** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
 int posix_mkstemp(char *tmpl) {
   void *hFile;
-  int fd;
+  intptr_t fd;
   if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0)
     return -1;
 
@@ -2203,7 +2203,7 @@ typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_core;
 
-int posix_isatty(int fd) {
+int posix_isatty(intptr_t fd) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
   return _isatty(fd);
 #else

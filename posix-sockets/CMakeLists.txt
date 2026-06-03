@@ -102,6 +102,21 @@ if(NOT TARGET posix-sys-ioctl)
     endif()
 endif()
 
+if(NOT TARGET posix-poll)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll" "posix-poll_build" EXCLUDE_FROM_ALL)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            posix-poll
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-poll"
+        )
+        FetchContent_MakeAvailable(posix-poll)
+    endif()
+endif()
+
 if(NOT TARGET posix-sys-uio)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio/CMakeLists.txt")
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio" "posix-sys-uio_build")
@@ -117,7 +132,7 @@ if(NOT TARGET posix-sys-uio)
     endif()
 endif()
 
-target_link_libraries(posix-sockets PUBLIC posix-sys-uio posix-sys-ioctl)
+target_link_libraries(posix-sockets PUBLIC posix-sys-uio posix-sys-ioctl posix-poll)
 
 enable_testing()
 if(CMAKE_PROJECT_NAME STREQUAL "posix-sockets" OR AUTO_WIN_MSVC_BUILD_ALL)

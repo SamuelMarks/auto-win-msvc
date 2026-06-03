@@ -20,6 +20,9 @@
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
 #endif
+
+#define GET_SOCKET(fd) ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd) : (SOCKET)safe_get_osfhandle(fd))
+
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -56,7 +59,7 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   DWORD dwAccess = 0, dwCreation = OPEN_EXISTING;
   char abs_path[1024];
   HANDLE h;
-  int fd;
+  intptr_t fd;
   FILE *f;
 
   if (strchr(mode, 'r')) {
@@ -125,8 +128,8 @@ int posix_open(const char *pathname, int flags, ...) {
   DWORD dwCreationDisposition = OPEN_EXISTING;
   DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
   HANDLE hFile;
-  int fd_flags;
-  int fd;
+  intptr_t fd_flags;
+  intptr_t fd;
   (void)mode;
 
   if (flags & O_CREAT) {
@@ -187,8 +190,8 @@ int posix_open(const char *pathname, int flags, ...) {
   return fd;
 }
 
-extern int is_socket(int fd);
-ssize_t posix_read(int fd, void *buf, size_t count) {
+extern int is_socket(intptr_t fd);
+ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -209,13 +212,13 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = recv((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
+  ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = recv((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
+      ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -257,8 +260,8 @@ ssize_t posix_read(int fd, void *buf, size_t count) {
   return ret;
 }
 
-extern int is_socket(int fd);
-ssize_t posix_write(int fd, const void *buf, size_t count) {
+extern int is_socket(intptr_t fd);
+ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
   int ret;
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -279,13 +282,13 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
     _set_invalid_parameter_handler(old);
 #endif
   }
-  ret = send((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
+  ret = send(GET_SOCKET(fd), buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      ret = send((SOCKET)safe_get_osfhandle(fd), buf, (int)count, 0);
+      ret = send(GET_SOCKET(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
       err = WSAGetLastError();
@@ -346,27 +349,27 @@ ssize_t posix_write(int fd, const void *buf, size_t count) {
 #if defined(_MSC_VER)
 #pragma comment(linker,                                                        \
                 "/alternatename:posix_epoll_close=posix_epoll_close_stub")
-int posix_epoll_close_stub(int fd) {
+int posix_epoll_close_stub(intptr_t fd) {
   (void)fd;
   return -1;
 }
 #elif defined(__GNUC__) || defined(__clang__)
-int __attribute__((weak)) posix_epoll_close(int fd) {
+int __attribute__((weak)) posix_epoll_close(intptr_t fd) {
   (void)fd;
   return -1;
 }
 #endif
 
 extern void clear_nonblock(SOCKET s);
-extern void clear_as_socket(int fd);
-extern int posix_epoll_close(int);
-int posix_close(int fd) {
+extern void clear_as_socket(intptr_t fd);
+extern int posix_epoll_close(intptr_t);
+int posix_close(intptr_t fd) {
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
     return posix_epoll_close(fd);
   }
-  s = (SOCKET)safe_get_osfhandle(fd);
+  s = GET_SOCKET(fd);
   clear_nonblock(s);
   clear_as_socket(fd);
   ret = closesocket(s);
@@ -392,9 +395,9 @@ int posix_close(int fd) {
   return ret;
 }
 
-extern int is_socket(int);
-extern void mark_as_socket(int);
-extern void clear_as_socket(int);
+extern int is_socket(intptr_t);
+extern void mark_as_socket(intptr_t);
+extern void clear_as_socket(intptr_t);
 
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
