@@ -613,8 +613,6 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
       errno = EINPROGRESS;
     else
       errno = _wsaErrorToErrno(err);
-    if (err != WSAEWOULDBLOCK)
-      printf("DEBUG: posix_connect err=%d\n", err);
     return -1;
   }
   return 0;
@@ -689,6 +687,11 @@ int posix_getsockopt(intptr_t socket, int level, int option_name, void *option_v
   } else {
     ret = getsockopt(GET_SOCKET(socket), level, option_name,
                      (char *)option_value, option_len);
+    if (ret == 0 && level == SOL_SOCKET && option_name == SO_ERROR) {
+      if (*((int *)option_value) != 0) {
+        *((int *)option_value) = _wsaErrorToErrno(*((int *)option_value));
+      }
+    }
   }
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
