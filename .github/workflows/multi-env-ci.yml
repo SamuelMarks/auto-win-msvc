@@ -10,6 +10,7 @@ jobs:
   build:
     name: ${{ matrix.module }} / ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     continue-on-error: true # Prevents one failure from cancelling the matrix; allows us to see full pass/fail state.
 
     strategy:

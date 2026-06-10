@@ -9,6 +9,7 @@ on:
 jobs:
   test-downstream:
     runs-on: windows-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
