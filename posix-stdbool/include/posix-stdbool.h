@@ -4,7 +4,7 @@
 /* Polyfill for <stdbool.h> */
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
-#ifndef __cplusplus
+#if !defined(__cplusplus)
 #define bool unsigned char
 #define true 1
 #define false 0
