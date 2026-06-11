@@ -74,6 +74,13 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_library(posix-utsname src/posix-utsname.c)
+add_executable(uname src/uname_main.c)
+target_link_libraries(uname PRIVATE posix-utsname)
+add_custom_command(TARGET uname POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:uname> ${CMAKE_BINARY_DIR}/Release/uname.exe
+)
+
+
 set_target_properties(posix-utsname PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-utsname PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
