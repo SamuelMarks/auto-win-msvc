@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.24)
+cmake_policy(SET CMP0135 NEW)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
