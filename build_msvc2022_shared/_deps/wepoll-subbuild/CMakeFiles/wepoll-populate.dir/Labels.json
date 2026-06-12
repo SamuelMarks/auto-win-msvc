@@ -1,0 +1,46 @@
+{
+	"sources" :
+	[
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/wepoll-populate"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/96486ba871aee03e4fed23065c65925e/wepoll-populate.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/e4d7e1b99277b08c38bbd777524513ca/wepoll-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/_deps/wepoll-subbuild/CMakeFiles/4d8afde79af0eae9c65ad5a03076b8fa/wepoll-populate-update.rule"
+		}
+	],
+	"target" :
+	{
+		"labels" :
+		[
+			"wepoll-populate"
+		],
+		"name" : "wepoll-populate"
+	}
+}

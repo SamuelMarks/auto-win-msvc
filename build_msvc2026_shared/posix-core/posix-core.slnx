@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="09b9c45f-9a7a-36f3-93a4-5efec11a9a3c" DefaultStartup="true">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="posix-core.vcxproj"/>
+		<BuildDependency Project="test_posix-core.vcxproj"/>
+	</Project>
+	<Project Path="PACKAGE.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4a34f83a-495a-35ba-b645-cdb8126a415c">
+		<BuildDependency Project="ALL_BUILD.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="RUN_TESTS.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="780fca3a-76c8-35ea-a45e-1878b4248667">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="../ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1361d36e-1c98-3d4e-8056-e868d5fbdb72"/>
+	<Project Path="../linux-epoll/linux-epoll.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="63e63703-1102-35e4-875d-21f81b8c04b1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="../linux-epoll/wepoll.vcxproj"/>
+	</Project>
+	<Project Path="posix-core.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="cbf10dd3-f051-3ae9-b865-e80238efb166">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="../linux-epoll/linux-epoll.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-poll_build/posix-poll.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sockets.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-ioctl_build/posix-sys-ioctl.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-uio_build/posix-sys-uio.vcxproj"/>
+		<BuildDependency Project="../linux-epoll/wepoll.vcxproj"/>
+	</Project>
+	<Project Path="posix-sockets_build/posix-poll_build/posix-poll.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a6d6fcca-b15a-3471-a070-620e4525caad">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="posix-sockets_build/posix-sockets.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4a9b4c01-81d7-33cb-b2f0-085fb7c62501">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-poll_build/posix-poll.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-ioctl_build/posix-sys-ioctl.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-uio_build/posix-sys-uio.vcxproj"/>
+	</Project>
+	<Project Path="posix-sockets_build/posix-sys-ioctl_build/posix-sys-ioctl.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6897fbd6-46ca-3892-96ea-6c20223c8fe4">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="posix-sockets_build/posix-sys-uio_build/posix-sys-uio.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="203f00aa-db11-398f-b3c2-50cd480d3b36">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="test_posix-core.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="3dbed879-ce96-313c-aaf8-0fd301f60b34">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="../linux-epoll/linux-epoll.vcxproj"/>
+		<BuildDependency Project="posix-core.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-poll_build/posix-poll.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sockets.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-ioctl_build/posix-sys-ioctl.vcxproj"/>
+		<BuildDependency Project="posix-sockets_build/posix-sys-uio_build/posix-sys-uio.vcxproj"/>
+		<BuildDependency Project="../linux-epoll/wepoll.vcxproj"/>
+	</Project>
+	<Project Path="../linux-epoll/wepoll.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="49ec4789-e93c-3ff0-8247-259dccf73b9c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+</Solution>

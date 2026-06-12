@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-strings/posix-strings.dir/MinSizeRel/posix-strings.obj

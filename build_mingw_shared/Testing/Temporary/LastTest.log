@@ -1,0 +1,637 @@
+Start testing: Jun 12 13:26 New Zealand Standard Time
+----------------------------------------------------------
+1/21 Testing: test_bsd-sys-cpuset
+1/21 Test: test_bsd-sys-cpuset
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/bsd-sys-cpuset/test_bsd-sys-cpuset.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/bsd-sys-cpuset
+"test_bsd-sys-cpuset" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_bsd_sys_cpuset_core:
+sss
+3 tests - 0 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+Total: 3 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 3.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_bsd-sys-cpuset" end time: Jun 12 13:26 New Zealand Standard Time
+"test_bsd-sys-cpuset" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/21 Testing: test_bsd-sys-sysctl
+2/21 Test: test_bsd-sys-sysctl
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/bsd-sys-sysctl/test_bsd-sys-sysctl.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/bsd-sys-sysctl
+"test_bsd-sys-sysctl" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_bsd_sys_sysctl_core:
+sss
+3 tests - 0 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+Total: 3 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 3.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_bsd-sys-sysctl" end time: Jun 12 13:26 New Zealand Standard Time
+"test_bsd-sys-sysctl" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/21 Testing: test_linux-sys-bitops
+3/21 Test: test_linux-sys-bitops
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/linux-sys-bitops/test_linux-sys-bitops.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/linux-sys-bitops
+"test_linux-sys-bitops" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_linux_sys_bitops_core:
+.ss
+3 tests - 1 passed, 0 failed, 2 skipped (0 ticks, 0.000 sec)
+
+Total: 3 tests (0 ticks, 0.000 sec), 8 assertions
+Pass: 1, fail: 0, skip: 2.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_linux-sys-bitops" end time: Jun 12 13:26 New Zealand Standard Time
+"test_linux-sys-bitops" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/21 Testing: test_posix-core
+4/21 Test: test_posix-core
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-core/test_posix-core.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-core
+"test_posix-core" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_core_process:
+.ssss
+5 tests - 1 passed, 0 failed, 4 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_core_posix:
+sssssss
+7 tests - 0 passed, 0 failed, 7 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_core_misc:
+sssssssssssssssssssssssssss
+27 tests - 0 passed, 0 failed, 27 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_core_io:
+ssssssssss
+10 tests - 0 passed, 0 failed, 10 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_core_fs:
+sssssssss
+9 tests - 0 passed, 0 failed, 9 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_core_ugid:
+ssssssssssss
+12 tests - 0 passed, 0 failed, 12 skipped (0 ticks, 0.000 sec)
+
+Total: 70 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 1, fail: 0, skip: 69.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-core" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-core" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/21 Testing: test_posix-dlfcn
+5/21 Test: test_posix-dlfcn
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-dlfcn/test_posix-dlfcn.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-dlfcn
+"test_posix-dlfcn" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_dlfcn_core:
+.sssss
+6 tests - 1 passed, 0 failed, 5 skipped (0 ticks, 0.000 sec)
+
+Total: 6 tests (1 ticks, 0.001 sec), 1 assertion
+Pass: 1, fail: 0, skip: 5.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-dlfcn" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-dlfcn" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/21 Testing: test_posix-langinfo
+6/21 Test: test_posix-langinfo
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-langinfo/test_posix-langinfo.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-langinfo
+"test_posix-langinfo" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_langinfo_core:
+.s
+2 tests - 1 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+Total: 2 tests (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 1.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-langinfo" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-langinfo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/21 Testing: test_posix-libproc
+7/21 Test: test_posix-libproc
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-libproc/test_posix-libproc.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-libproc
+"test_posix-libproc" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_libproc_core:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+Total: 1 test (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 1.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-libproc" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-libproc" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/21 Testing: test_posix-mman
+8/21 Test: test_posix-mman
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-mman/test_posix-mman.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-mman
+"test_posix-mman" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_mman_mman:
+.
+1 test - 1 passed, 0 failed, 0 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_mlockall:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_munlockall:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_madvise:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_mlock:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_mmap:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_mprotect:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_msync:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_munlock:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_munmap:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_mman_shm:
+ss
+2 tests - 0 passed, 0 failed, 2 skipped (0 ticks, 0.000 sec)
+
+Total: 12 tests (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 11.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-mman" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-mman" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/21 Testing: test_posix-pthread
+9/21 Test: test_posix-pthread
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-pthread/test_posix-pthread.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-pthread
+"test_posix-pthread" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_pthread_pthread:
+.sss
+4 tests - 1 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_core:
+ssssssssssssssssssssss
+22 tests - 0 passed, 0 failed, 22 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_attr:
+ssssssssssssssssss
+18 tests - 0 passed, 0 failed, 18 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_barrier:
+sss
+3 tests - 0 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_barrierattr:
+ssss
+4 tests - 0 passed, 0 failed, 4 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_:
+ss
+2 tests - 0 passed, 0 failed, 2 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_cond:
+ssssss
+6 tests - 0 passed, 0 failed, 6 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_condattr:
+ssssss
+6 tests - 0 passed, 0 failed, 6 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_key:
+ss
+2 tests - 0 passed, 0 failed, 2 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_mutex:
+ssssss
+6 tests - 0 passed, 0 failed, 6 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_mutexattr:
+ssssssssss
+10 tests - 0 passed, 0 failed, 10 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_rwlock:
+sssssssss
+9 tests - 0 passed, 0 failed, 9 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_rwlockattr:
+ssss
+4 tests - 0 passed, 0 failed, 4 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_pthread_spin:
+sssss
+5 tests - 0 passed, 0 failed, 5 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_sched:
+ssssssss
+8 tests - 0 passed, 0 failed, 8 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_pthread_sem:
+ssssssssss
+10 tests - 0 passed, 0 failed, 10 skipped (0 ticks, 0.000 sec)
+
+Total: 119 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 1, fail: 0, skip: 118.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-pthread" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-pthread" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/21 Testing: test_posix-regex
+10/21 Test: test_posix-regex
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-regex/test_posix-regex.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-regex
+"test_posix-regex" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_regex_core:
+.sss
+4 tests - 1 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+Total: 4 tests (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 3.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-regex" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-regex" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/21 Testing: test_posix-signal
+11/21 Test: test_posix-signal
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-signal/test_posix-signal.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-signal
+"test_posix-signal" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_signal_signal:
+sssssssssss
+11 tests - 0 passed, 0 failed, 11 skipped (0 ticks, 0.000 sec)
+
+Total: 11 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 11.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-signal" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-signal" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/21 Testing: test_posix-spawn
+12/21 Test: test_posix-spawn
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-spawn/test_posix-spawn.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-spawn
+"test_posix-spawn" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_spawn_spawn:
+sssssss
+7 tests - 0 passed, 0 failed, 7 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_spawn_spawnp:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_spawn_spawnattr:
+ssssssssssssss
+14 tests - 0 passed, 0 failed, 14 skipped (0 ticks, 0.000 sec)
+
+Total: 22 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 22.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-spawn" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-spawn" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/21 Testing: test_posix-syslog
+13/21 Test: test_posix-syslog
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-syslog/test_posix-syslog.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-syslog
+"test_posix-syslog" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_syslog_core:
+.sss
+4 tests - 1 passed, 0 failed, 3 skipped (0 ticks, 0.000 sec)
+
+Total: 4 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 1, fail: 0, skip: 3.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-syslog" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-syslog" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/21 Testing: test_posix-termios
+14/21 Test: test_posix-termios
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-termios/test_posix-termios.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-termios
+"test_posix-termios" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_termios_termios:
+.
+1 test - 1 passed, 0 failed, 0 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_cfgetispeed:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_cfgetospeed:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_cfsetispeed:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_cfsetospeed:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcdrain:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcflow:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcflush:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcgetattr:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcgetsid:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcsendbreak:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+* Suite suite_posix_termios_tcsetattr:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+Total: 12 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 1, fail: 0, skip: 11.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-termios" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-termios" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/21 Testing: test_posix-time
+15/21 Test: test_posix-time
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-time/test_posix-time.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-time
+"test_posix-time" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_time_core:
+.sssssss
+8 tests - 1 passed, 0 failed, 7 skipped (0 ticks, 0.000 sec)
+
+Total: 8 tests (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 7.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-time" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-time" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/21 Testing: test_posix-times
+16/21 Test: test_posix-times
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-times/test_posix-times.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-times
+"test_posix-times" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_times_core:
+s
+1 test - 0 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+Total: 1 test (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 1.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-times" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-times" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/21 Testing: test_posix-types
+17/21 Test: test_posix-types
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-types/test_posix-types.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-types
+"test_posix-types" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_types_core:
+.
+1 test - 1 passed, 0 failed, 0 skipped (0 ticks, 0.000 sec)
+
+Total: 1 test (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 0.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-types" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-types" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/21 Testing: test_posix-utsname
+18/21 Test: test_posix-utsname
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-utsname/test_posix-utsname.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-utsname
+"test_posix-utsname" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_utsname_core:
+.
+1 test - 1 passed, 0 failed, 0 skipped (0 ticks, 0.000 sec)
+
+Total: 1 test (0 ticks, 0.000 sec), 2 assertions
+Pass: 1, fail: 0, skip: 0.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-utsname" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-utsname" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/21 Testing: test_posix-wait
+19/21 Test: test_posix-wait
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-wait/test_posix-wait.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-wait
+"test_posix-wait" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_wait_core:
+.s
+2 tests - 1 passed, 0 failed, 1 skipped (0 ticks, 0.000 sec)
+
+Total: 2 tests (0 ticks, 0.000 sec), 1 assertion
+Pass: 1, fail: 0, skip: 1.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-wait" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-wait" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/21 Testing: test_posix-alloca
+20/21 Test: test_posix-alloca
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-alloca/test_posix-alloca.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-alloca
+"test_posix-alloca" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_alloca_core:
+.
+1 test - 1 passed, 0 failed, 0 skipped (0 ticks, 0.000 sec)
+
+Total: 1 test (0 ticks, 0.000 sec), 3 assertions
+Pass: 1, fail: 0, skip: 0.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-alloca" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-alloca" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/21 Testing: test_posix-unwind
+21/21 Test: test_posix-unwind
+Command: "C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-unwind/test_posix-unwind.exe"
+Directory: C:/Users/samue/repos/auto-win-msvc/build_mingw_shared/posix-unwind
+"test_posix-unwind" start time: Jun 12 13:26 New Zealand Standard Time
+Output:
+----------------------------------------------------------
+
+* Suite suite_posix_unwind_core:
+ssss
+4 tests - 0 passed, 0 failed, 4 skipped (0 ticks, 0.000 sec)
+
+Total: 4 tests (0 ticks, 0.000 sec), 0 assertions
+Pass: 0, fail: 0, skip: 4.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_posix-unwind" end time: Jun 12 13:26 New Zealand Standard Time
+"test_posix-unwind" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 12 13:26 New Zealand Standard Time

@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/bsd-machine-endian/bsd-machine-endian.dir/RelWithDebInfo/bsd-machine-endian.obj

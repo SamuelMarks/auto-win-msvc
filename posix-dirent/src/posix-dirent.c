@@ -96,7 +96,11 @@ DIR *opendir(const char *name) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   strcpy_s(search_path, name_len + 3, name);
 #else
+#if defined(_MSC_VER)
+  strcpy_s(search_path, sizeof(search_path), name);
+#else
   strcpy(search_path, name);
+#endif
 #endif
 
   if (name_len > 0 && search_path[name_len - 1] != '/' &&
@@ -137,7 +141,11 @@ DIR *opendir(const char *name) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   strcpy_s(dirp->name, name_len + 1, name);
 #else
+#if defined(_MSC_VER)
+  strcpy_s(dirp->name, sizeof(dirp->name), name);
+#else
   strcpy(dirp->name, name);
+#endif
 #endif
 
   return dirp;
@@ -216,7 +224,11 @@ void rewinddir(DIR *dirp) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   strcpy_s(search_path, name_len + 3, dirp->name);
 #else
+#if defined(_MSC_VER)
+  strcpy_s(search_path, sizeof(search_path), dirp->name);
+#else
   strcpy(search_path, dirp->name);
+#endif
 #endif
 
   if (name_len > 0 && search_path[name_len - 1] != '/' &&

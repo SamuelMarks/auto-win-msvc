@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/posix-alloca/posix-alloca.dir/Debug/posix-alloca.obj

@@ -1,0 +1,46 @@
+{
+	"sources" :
+	[
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/wepoll-populate"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/6c445dedfb8dae78019e773a2b7ebaea/wepoll-populate.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/c3d3b33110e92edede2dd8cc7e28f136/wepoll-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-update.rule"
+		}
+	],
+	"target" :
+	{
+		"labels" :
+		[
+			"wepoll-populate"
+		],
+		"name" : "wepoll-populate"
+	}
+}

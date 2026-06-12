@@ -1,0 +1,2 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-core/posix-core.dir/MinSizeRel/posix-core.obj
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-core/posix-core.dir/MinSizeRel/posix_read_write.obj

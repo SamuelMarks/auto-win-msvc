@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/posix-termios/posix-termios.dir/Debug/posix-termios.obj

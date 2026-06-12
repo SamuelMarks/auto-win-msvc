@@ -1,0 +1,6 @@
+# CMake generated Testfile for
+# Source directory: C:/Users/samue/repos/auto-win-msvc/linux-rdma
+# Build directory: C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/linux-rdma
+#
+# This file includes the relevant testing commands required for
+# testing this directory and lists subdirectories to be tested as well.

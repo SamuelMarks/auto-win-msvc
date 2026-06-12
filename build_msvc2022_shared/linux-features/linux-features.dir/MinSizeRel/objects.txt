@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/linux-features/linux-features.dir/MinSizeRel/linux-features.obj

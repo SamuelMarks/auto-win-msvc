@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\2188f8f3792ff35aed724b5df05363fb\greatest-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\cc8dcc2bf578cd0c46ec43bb64eac163\greatest-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\89ec0b98c2536ca88d5ccb0abd83eaf9\greatest-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\greatest-subbuild\CMakeFiles\greatest-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CEC9DD87-7FD1-373E-B13C-48082AC21021}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

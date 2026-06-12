@@ -1,0 +1,10 @@
+^C:\USERS\SAMUE\REPOS\AUTO-WIN-MSVC\BUILD_MSVC2022_SHARED\CMAKEFILES\9DE3AA252B79DB31B1F8E0D6F43A1334\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/samue/repos/auto-win-msvc -BC:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/auto-win-msvc.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

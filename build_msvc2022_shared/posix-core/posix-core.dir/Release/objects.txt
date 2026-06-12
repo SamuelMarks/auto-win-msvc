@@ -1,0 +1,2 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-core/posix-core.dir/Release/posix-core.obj
+C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-core/posix-core.dir/Release/posix_read_write.obj

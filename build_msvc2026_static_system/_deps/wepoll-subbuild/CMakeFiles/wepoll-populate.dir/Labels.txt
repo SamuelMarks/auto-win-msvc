@@ -1,0 +1,14 @@
+# Target labels
+ wepoll-populate
+# Source files and their labels
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/wepoll-populate
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/6c445dedfb8dae78019e773a2b7ebaea/wepoll-populate.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/c3d3b33110e92edede2dd8cc7e28f136/wepoll-populate-complete.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-build.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-configure.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-download.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-install.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-mkdir.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-patch.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-test.rule
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/CMakeFiles/3b651760e07a796b4196e271527ffb62/wepoll-populate-update.rule

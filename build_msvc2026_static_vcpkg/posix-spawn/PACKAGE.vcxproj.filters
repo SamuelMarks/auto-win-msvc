@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\CMakeFiles\98ce5bfa7510c4827bba8c6aeb986018\PACKAGE_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4CB39819-AFE5-3ECC-9B51-16DDA03F0C50}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

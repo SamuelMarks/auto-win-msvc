@@ -1,0 +1,1 @@
+C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/solaris-sys-feature-tests/solaris-sys-feature-tests.dir/MinSizeRel/solaris-sys-feature-tests.obj

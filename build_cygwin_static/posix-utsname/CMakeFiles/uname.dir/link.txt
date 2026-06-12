@@ -1,0 +1,1 @@
+/usr/bin/cc -g -Wl,--enable-auto-import CMakeFiles/uname.dir/src/uname_main.c.o -o uname.exe -Wl,--out-implib,libuname.dll.a -Wl,--major-image-version,0,--minor-image-version,0  libposix-utsname.a

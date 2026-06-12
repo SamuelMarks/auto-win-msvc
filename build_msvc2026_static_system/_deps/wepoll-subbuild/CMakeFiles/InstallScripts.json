@@ -1,0 +1,7 @@
+{
+	"InstallScripts" :
+	[
+		"C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_system/_deps/wepoll-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,533 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{09B9C45F-9A7A-36F3-93A4-5EFEC11A9A3C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/samue/repos/auto-win-msvc/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/samue/repos/auto-win-msvc -BC:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared --check-stamp-file C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompilerABI.c;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCompilerIdDetection.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerABI.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerSupport.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindBinUtils.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitIncludeInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseLibraryArchitecture.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystem.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCompilerCommon.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPack.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPackComponent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTest.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestTargets.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestUseLaunchers.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ADSP-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMCC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\AppleClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Borland-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Cray-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CrayClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Diab-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\FujitsuClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GHS-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GNU-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\HP-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IAR-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Intel-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IntelLLVM-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\LCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVHPC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OrangeC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PGI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PathScale-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Renesas-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SCO-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TIClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Tasking-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Watcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XL-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XLClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\zOS-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CompilerId\VS-10.vcxproj.in;C:\Program Files\CMake\share\cmake-4.3\Modules\DartConfiguration.tcl.in;C:\Program Files\CMake\share\cmake-4.3\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeDetermineLinkerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeInspectCLinker.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\FeatureTesting.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Templates\CPackConfig.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Templates\CTestScript.cmake.in;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeRCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/samue/repos/auto-win-msvc/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/samue/repos/auto-win-msvc -BC:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared --check-stamp-file C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompilerABI.c;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCompilerIdDetection.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerABI.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerSupport.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindBinUtils.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitIncludeInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseLibraryArchitecture.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystem.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCompilerCommon.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPack.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPackComponent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTest.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestTargets.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestUseLaunchers.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ADSP-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMCC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\AppleClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Borland-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Cray-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CrayClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Diab-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\FujitsuClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GHS-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GNU-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\HP-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IAR-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Intel-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IntelLLVM-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\LCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVHPC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OrangeC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PGI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PathScale-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Renesas-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SCO-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TIClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Tasking-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Watcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XL-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XLClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\zOS-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CompilerId\VS-10.vcxproj.in;C:\Program Files\CMake\share\cmake-4.3\Modules\DartConfiguration.tcl.in;C:\Program Files\CMake\share\cmake-4.3\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeDetermineLinkerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeInspectCLinker.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\FeatureTesting.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Templates\CPackConfig.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Templates\CTestScript.cmake.in;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeRCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/samue/repos/auto-win-msvc/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/samue/repos/auto-win-msvc -BC:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared --check-stamp-file C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompilerABI.c;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCompilerIdDetection.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerABI.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerSupport.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindBinUtils.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitIncludeInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseLibraryArchitecture.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystem.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCompilerCommon.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPack.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPackComponent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTest.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestTargets.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestUseLaunchers.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ADSP-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMCC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\AppleClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Borland-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Cray-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CrayClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Diab-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\FujitsuClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GHS-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GNU-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\HP-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IAR-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Intel-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IntelLLVM-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\LCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVHPC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OrangeC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PGI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PathScale-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Renesas-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SCO-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TIClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Tasking-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Watcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XL-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XLClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\zOS-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CompilerId\VS-10.vcxproj.in;C:\Program Files\CMake\share\cmake-4.3\Modules\DartConfiguration.tcl.in;C:\Program Files\CMake\share\cmake-4.3\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeDetermineLinkerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeInspectCLinker.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\FeatureTesting.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Templates\CPackConfig.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Templates\CTestScript.cmake.in;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeRCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/samue/repos/auto-win-msvc/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/samue/repos/auto-win-msvc -BC:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared --check-stamp-file C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCCompilerABI.c;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCompilerIdDetection.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerABI.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineCompilerSupport.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDetermineSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindBinUtils.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitIncludeInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeParseLibraryArchitecture.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCCompiler.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystem.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestCompilerCommon.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeTestRCCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPack.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CPackComponent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTest.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestTargets.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CTestUseLaunchers.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CheckCCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ADSP-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMCC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\ARMClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\AppleClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Borland-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Bruce-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Clang-DetermineCompilerInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Compaq-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Cray-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CrayClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Diab-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Embarcadero-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Fujitsu-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\FujitsuClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GHS-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\GNU-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\HP-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IAR-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMCPP-C-DetermineVersionInternal.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IBMClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Intel-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\IntelLLVM-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\LCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVHPC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\NVIDIA-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OpenWatcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\OrangeC-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PGI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\PathScale-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Renesas-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SCO-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SDCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\SunPro-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TI-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TIClang-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Tasking-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\TinyCC-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\VisualAge-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\Watcom-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XL-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\XLClang-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\zOS-C-DetermineCompiler.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CompilerId\VS-10.vcxproj.in;C:\Program Files\CMake\share\cmake-4.3\Modules\DartConfiguration.tcl.in;C:\Program Files\CMake\share\cmake-4.3\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeDetermineLinkerId.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeInspectCLinker.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\FeatureTesting.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Templates\CPackConfig.cmake.in;C:\Program Files\CMake\share\cmake-4.3\Templates\CTestScript.cmake.in;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeRCCompiler.cmake;C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\4.3.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\ZERO_CHECK.vcxproj">
+      <Project>{1361D36E-1C98-3D4E-8056-E868D5FBDB72}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\auto-win-msvc.vcxproj">
+      <Project>{360FCB8A-5FCE-353F-86CB-936D78B9F7E5}</Project>
+      <Name>auto-win-msvc</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-machine-endian\bsd-machine-endian.vcxproj">
+      <Project>{21698B16-E2A5-3F34-86EE-E1D5C014DAFC}</Project>
+      <Name>bsd-machine-endian</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-malloc-np\bsd-malloc-np.vcxproj">
+      <Project>{4F221DE8-25B9-372A-B504-14BDBA3CE28C}</Project>
+      <Name>bsd-malloc-np</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-pthread-np\bsd-pthread-np.vcxproj">
+      <Project>{2E51D1ED-E577-33E0-862C-58CE94AD838C}</Project>
+      <Name>bsd-pthread-np</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-cpuset\bsd-sys-cpuset.vcxproj">
+      <Project>{D2316BC7-1E85-3A81-9EEB-312D6F6F2EAF}</Project>
+      <Name>bsd-sys-cpuset</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-endian\bsd-sys-endian.vcxproj">
+      <Project>{6472B8B0-EFAD-3E84-B659-B0903F926471}</Project>
+      <Name>bsd-sys-endian</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-event\bsd-sys-event.vcxproj">
+      <Project>{DAC1BF89-FA8B-339D-9873-4EF00C24C41F}</Project>
+      <Name>bsd-sys-event</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-file\bsd-sys-file.vcxproj">
+      <Project>{4BE58E50-DF60-38F9-98DB-D091F20BE55A}</Project>
+      <Name>bsd-sys-file</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-param\bsd-sys-param.vcxproj">
+      <Project>{8AE2247C-D46B-33BA-B15F-DE6F41B05B40}</Project>
+      <Name>bsd-sys-param</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-sysctl\bsd-sys-sysctl.vcxproj">
+      <Project>{16F8B2CB-E37A-3FDD-8E2B-88ACF6179393}</Project>
+      <Name>bsd-sys-sysctl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-vm-param\bsd-vm-param.vcxproj">
+      <Project>{58F4242A-DA5E-33DD-8C67-EE47BEC80722}</Project>
+      <Name>bsd-vm-param</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-backtrace\linux-backtrace.vcxproj">
+      <Project>{63D5F9C7-9329-3A29-8D1D-5CB1B345B8A5}</Project>
+      <Name>linux-backtrace</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-endian\linux-endian.vcxproj">
+      <Project>{4FC2FA4A-AA45-352C-B89F-5D47102F8E25}</Project>
+      <Name>linux-endian</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-epoll\linux-epoll.vcxproj">
+      <Project>{63E63703-1102-35E4-875D-21F81B8C04B1}</Project>
+      <Name>linux-epoll</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-execinfo\linux-execinfo.vcxproj">
+      <Project>{ADBEE7CA-9668-3085-8EA1-E286C6E95E0D}</Project>
+      <Name>linux-execinfo</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-features\linux-features.vcxproj">
+      <Project>{3780CBA3-A5E7-33F0-A0C8-F03DF67723EA}</Project>
+      <Name>linux-features</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-getopt\linux-getopt.vcxproj">
+      <Project>{0E0EFF16-61F5-3D05-968F-FD4E5B9274A8}</Project>
+      <Name>linux-getopt</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-hv-hloop\linux-hv-hloop.vcxproj">
+      <Project>{5D768036-4276-32FF-9D63-FB5A1D34B5D7}</Project>
+      <Name>linux-hv-hloop</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-magic\linux-magic.vcxproj">
+      <Project>{9778CBD1-021B-395A-9FE2-647A168AD740}</Project>
+      <Name>linux-magic</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-rdma\linux-rdma.vcxproj">
+      <Project>{DA5F78EA-A2D0-3E8E-AF67-C5D66FD3DAFC}</Project>
+      <Name>linux-rdma</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-bitops\linux-sys-bitops.vcxproj">
+      <Project>{57E3DB21-3EE3-3D17-83BB-38C9BDA42964}</Project>
+      <Name>linux-sys-bitops</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-prctl\linux-sys-prctl.vcxproj">
+      <Project>{FBFAF217-BCE7-3B45-9A5B-ADAA57CF1A4D}</Project>
+      <Name>linux-sys-prctl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-procfs\linux-sys-procfs.vcxproj">
+      <Project>{8C47388A-0F43-35AF-B561-33748A666FB1}</Project>
+      <Name>linux-sys-procfs</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-statfs\linux-sys-statfs.vcxproj">
+      <Project>{7537B1F5-6E2A-3730-A6EB-647292180446}</Project>
+      <Name>linux-sys-statfs</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-syscall\linux-sys-syscall.vcxproj">
+      <Project>{CEC7FED0-7FB6-335F-A607-04C0B62BD82A}</Project>
+      <Name>linux-sys-syscall</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-user\linux-sys-user.vcxproj">
+      <Project>{B23B61B5-6DC5-3F21-A85C-F52543F053E5}</Project>
+      <Name>linux-sys-user</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-systemd\linux-systemd.vcxproj">
+      <Project>{18AAAF3D-2C4F-3ECB-869A-9BF6FB7A3DF9}</Project>
+      <Name>linux-systemd</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-alloca\posix-alloca.vcxproj">
+      <Project>{23D92DF5-250B-35B6-8688-B9F4A809B675}</Project>
+      <Name>posix-alloca</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-arpa\posix-arpa.vcxproj">
+      <Project>{9E2334B2-1F8B-3574-BD34-CA1D028999CB}</Project>
+      <Name>posix-arpa</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-core\posix-core.vcxproj">
+      <Project>{CBF10DD3-F051-3AE9-B865-E80238EFB166}</Project>
+      <Name>posix-core</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-dirent\posix-dirent.vcxproj">
+      <Project>{FA63DB00-54FF-36A0-AAEC-E50D1A34B43C}</Project>
+      <Name>posix-dirent</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-dlfcn\posix-dlfcn.vcxproj">
+      <Project>{56AFF118-5D90-3C7B-B389-5E037B69C4E9}</Project>
+      <Name>posix-dlfcn</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-glob\posix-glob.vcxproj">
+      <Project>{DC5888FC-7DD6-3958-B56B-1AD8BE02C0E0}</Project>
+      <Name>posix-glob</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-inttypes\posix-inttypes.vcxproj">
+      <Project>{C793F6D1-FCA4-36ED-9617-A92778DFEF7D}</Project>
+      <Name>posix-inttypes</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-ipc\posix-ipc.vcxproj">
+      <Project>{54AD65BA-BAFE-35FD-8FB6-505AFB5D7B6F}</Project>
+      <Name>posix-ipc</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-langinfo\posix-langinfo.vcxproj">
+      <Project>{C543E1FE-390C-3712-B4D6-B11A30965DF5}</Project>
+      <Name>posix-langinfo</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-libgen\posix-libgen.vcxproj">
+      <Project>{D65CC196-86D8-3BA7-9A56-4C526A6AB79F}</Project>
+      <Name>posix-libgen</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-libproc\posix-libproc.vcxproj">
+      <Project>{A236A3D3-DEF7-3144-821E-75DB21414397}</Project>
+      <Name>posix-libproc</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-mman\posix-mman.vcxproj">
+      <Project>{8C611D43-EA64-3E29-8BC5-DEC2402CD78D}</Project>
+      <Name>posix-mman</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-netdb\posix-netdb.vcxproj">
+      <Project>{311BE289-9A18-3CA9-8D77-FED4FB301A29}</Project>
+      <Name>posix-netdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-netinet\posix-netinet.vcxproj">
+      <Project>{C01C3519-6D84-3D92-BC99-9A4315002653}</Project>
+      <Name>posix-netinet</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-pthread\posix-pthread.vcxproj">
+      <Project>{B953760C-F2ED-3489-8333-6EBE587D3387}</Project>
+      <Name>posix-pthread</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-pwdgrp\posix-pwdgrp.vcxproj">
+      <Project>{B9FAF7DF-9C5D-31AD-9DDA-11F1D929E5B0}</Project>
+      <Name>posix-pwdgrp</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-regex\posix-regex.vcxproj">
+      <Project>{962BE82B-80F9-35FF-9D69-BBFCABD07B44}</Project>
+      <Name>posix-regex</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-sched\posix-sched.vcxproj">
+      <Project>{688A9991-0E3D-3FBB-A7CB-081283044708}</Project>
+      <Name>posix-sched</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-signal\posix-signal.vcxproj">
+      <Project>{FF7CC16B-C68F-30A6-8217-935CB0FFA228}</Project>
+      <Name>posix-signal</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-spawn\posix-spawn.vcxproj">
+      <Project>{FB6B033C-F699-3B89-9DBA-3C7B7D05010A}</Project>
+      <Name>posix-spawn</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-stat\posix-stat.vcxproj">
+      <Project>{CEC1ACFA-9A87-3289-9166-602E64C0DD2C}</Project>
+      <Name>posix-stat</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-systemd\posix-stdbool_build\posix-stdbool.vcxproj">
+      <Project>{2E2B26B0-45C8-3EB8-BDBB-AE26EF5A7BC4}</Project>
+      <Name>posix-stdbool</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-systemd\posix-stdint_build\posix-stdint.vcxproj">
+      <Project>{647EE332-C86A-3EB2-8884-08F86381712F}</Project>
+      <Name>posix-stdint</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-strings\posix-strings.vcxproj">
+      <Project>{B90EFDF8-1B97-32AF-8307-5E6797FF962E}</Project>
+      <Name>posix-strings</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-stropts\posix-stropts.vcxproj">
+      <Project>{C5BA9F09-DBBA-33F7-BEA3-FBC5330100B0}</Project>
+      <Name>posix-stropts</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-sys-resource\posix-sys-resource.vcxproj">
+      <Project>{50956EBC-6BD9-3812-B227-3D5715693EE4}</Project>
+      <Name>posix-sys-resource</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-syslog\posix-syslog.vcxproj">
+      <Project>{4EECBC1C-7597-3B87-96AB-FC8394CC0A0C}</Project>
+      <Name>posix-syslog</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-termios\posix-termios.vcxproj">
+      <Project>{B8E5EC40-88FE-35FA-8A4B-417CAB33030B}</Project>
+      <Name>posix-termios</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-time\posix-time.vcxproj">
+      <Project>{9940BD1C-16FE-3965-9FEF-D82841926F47}</Project>
+      <Name>posix-time</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-times\posix-times.vcxproj">
+      <Project>{E646910A-DECE-3C15-A78C-2AF05ADA6C88}</Project>
+      <Name>posix-times</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-types\posix-types.vcxproj">
+      <Project>{EA85B4B7-CB2B-35E5-8EC1-DDAEB828406E}</Project>
+      <Name>posix-types</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-ucontext\posix-ucontext.vcxproj">
+      <Project>{1EB2395D-A6C4-366C-9537-FBBC71E8A697}</Project>
+      <Name>posix-ucontext</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-unwind\posix-unwind.vcxproj">
+      <Project>{E2DFD72B-0F9C-3264-B3EA-830F777E6A2A}</Project>
+      <Name>posix-unwind</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-utsname\posix-utsname.vcxproj">
+      <Project>{E552ADFA-CB18-3E19-8844-CAE0D160324C}</Project>
+      <Name>posix-utsname</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-wait\posix-wait.vcxproj">
+      <Project>{9730831C-B47F-368E-9FA3-20214F51075C}</Project>
+      <Name>posix-wait</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\solaris-port\solaris-port.vcxproj">
+      <Project>{D7A4C1CB-7CE4-30AE-B51D-8A43A6808478}</Project>
+      <Name>solaris-port</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\solaris-sys-byteorder\solaris-sys-byteorder.vcxproj">
+      <Project>{081CC29D-3A1D-3F6A-B742-CAB0F839FA2D}</Project>
+      <Name>solaris-sys-byteorder</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\solaris-sys-feature-tests\solaris-sys-feature-tests.vcxproj">
+      <Project>{A33E9680-CEA3-307F-BFDC-3D8F43F288F4}</Project>
+      <Name>solaris-sys-feature-tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-cpuset\test_bsd-sys-cpuset.vcxproj">
+      <Project>{AA58563A-9D25-3BD1-ADCD-FC2A2C98E597}</Project>
+      <Name>test_bsd-sys-cpuset</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\bsd-sys-sysctl\test_bsd-sys-sysctl.vcxproj">
+      <Project>{CC1E9004-8FD3-36B4-9E18-B3FD6EABBAB9}</Project>
+      <Name>test_bsd-sys-sysctl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-sys-bitops\test_linux-sys-bitops.vcxproj">
+      <Project>{22F1EEF3-D80D-3B9E-98AD-3D9E3E6AEF28}</Project>
+      <Name>test_linux-sys-bitops</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-alloca\test_posix-alloca.vcxproj">
+      <Project>{A1C80DF3-420B-38AD-9609-A025DB650580}</Project>
+      <Name>test_posix-alloca</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-core\test_posix-core.vcxproj">
+      <Project>{3DBED879-CE96-313C-AAF8-0FD301F60B34}</Project>
+      <Name>test_posix-core</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-dlfcn\test_posix-dlfcn.vcxproj">
+      <Project>{84A888F8-160B-3196-88E1-88D20EFCBACE}</Project>
+      <Name>test_posix-dlfcn</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-langinfo\test_posix-langinfo.vcxproj">
+      <Project>{F4C4B16F-AEA6-396B-8496-973A89789E05}</Project>
+      <Name>test_posix-langinfo</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-libproc\test_posix-libproc.vcxproj">
+      <Project>{5385E02F-CB80-3E1F-8173-667C4D93C47E}</Project>
+      <Name>test_posix-libproc</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-mman\test_posix-mman.vcxproj">
+      <Project>{0EC13F00-9082-3F9D-A928-94E3DDAD8C2D}</Project>
+      <Name>test_posix-mman</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-pthread\test_posix-pthread.vcxproj">
+      <Project>{66C8E013-B9FE-3793-9CC0-B8CE278C2083}</Project>
+      <Name>test_posix-pthread</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-regex\test_posix-regex.vcxproj">
+      <Project>{F12D134D-0011-39FF-8658-D4B4E3FB6419}</Project>
+      <Name>test_posix-regex</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-signal\test_posix-signal.vcxproj">
+      <Project>{957353A2-0D41-30B8-815C-1E82221A83F7}</Project>
+      <Name>test_posix-signal</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-spawn\test_posix-spawn.vcxproj">
+      <Project>{3FB282E7-C14A-3C17-90F2-0635F10F6E08}</Project>
+      <Name>test_posix-spawn</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-syslog\test_posix-syslog.vcxproj">
+      <Project>{311D7A2B-620B-3B03-AB20-1657B5123DCE}</Project>
+      <Name>test_posix-syslog</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-termios\test_posix-termios.vcxproj">
+      <Project>{CF3B4184-2D30-3FD1-A418-0D65B2703395}</Project>
+      <Name>test_posix-termios</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-time\test_posix-time.vcxproj">
+      <Project>{10E5AEAF-717B-33AE-BDDA-72D84262B95E}</Project>
+      <Name>test_posix-time</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-times\test_posix-times.vcxproj">
+      <Project>{69DA802E-F366-38DA-8CF9-0F9CA5931B0D}</Project>
+      <Name>test_posix-times</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-types\test_posix-types.vcxproj">
+      <Project>{AFEFBD9C-6828-311E-AE4D-FE4F0D2F11C9}</Project>
+      <Name>test_posix-types</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-unwind\test_posix-unwind.vcxproj">
+      <Project>{55CC416F-45A2-3A0A-9655-302DB79C8196}</Project>
+      <Name>test_posix-unwind</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-utsname\test_posix-utsname.vcxproj">
+      <Project>{19429D85-D7A4-32E1-812D-D3F443387097}</Project>
+      <Name>test_posix-utsname</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-wait\test_posix-wait.vcxproj">
+      <Project>{FA90AFA8-A42A-3472-B2BC-7BC729F74E86}</Project>
+      <Name>test_posix-wait</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\posix-utsname\uname.vcxproj">
+      <Project>{380A6141-B957-320D-8C71-4AB40E5AA96D}</Project>
+      <Name>uname</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_shared\linux-epoll\wepoll.vcxproj">
+      <Project>{49EC4789-E93C-3FF0-8247-259DCCF73B9C}</Project>
+      <Name>wepoll</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

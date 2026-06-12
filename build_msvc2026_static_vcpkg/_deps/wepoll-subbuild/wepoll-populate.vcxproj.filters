@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\eff1538d7cc63183ab77bf4a798033ad\wepoll-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\6dc4991438d00fb4f6b8eb4a99f4cf6d\wepoll-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\99c771fe454db380e6cab29abceef47a\wepoll-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\samue\repos\auto-win-msvc\build_msvc2026_static_vcpkg\_deps\wepoll-subbuild\CMakeFiles\wepoll-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{2604C981-A201-3F76-AFC9-D712C70A1C6F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -2096,7 +2096,11 @@ int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
     if (buflen < 4) {
       return ERANGE;
     }
+#if defined(_MSC_VER)
+    strcpy_s(buf, 4, "CON");
+#else
     strcpy(buf, "CON");
+#endif
     return 0;
   }
   return ENOTTY;
