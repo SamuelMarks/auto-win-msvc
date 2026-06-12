@@ -24,3 +24,6 @@ CMakeLists.txt text eol=lf
 
 # Specify linguist attributes if needed
 *.h linguist-language=C
+*.patch
+text
+eol=lf

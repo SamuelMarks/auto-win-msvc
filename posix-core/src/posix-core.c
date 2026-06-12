@@ -16,7 +16,7 @@
 #else
 #include <io.h>
 #endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
@@ -558,7 +558,7 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
 /** \brief openat function. */
 int openat(int dirfd, const char *pathname, int flags, ...) {
   char *buf;
-  intptr_t fd;
+  int fd;
   va_list ap;
   int mode = 0;
 
@@ -2062,7 +2062,7 @@ int tcsetpgrp(intptr_t fd, pid_t pgrp) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief truncate function. */
 int truncate(const char *path, off_t length) {
-  intptr_t fd;
+  int fd;
   int res;
   if (!path || length < 0) {
     errno = EINVAL;
@@ -2176,7 +2176,7 @@ int posix_rename(const char *oldpath, const char *newpath) {
 /** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
 int posix_mkstemp(char *tmpl) {
   void *hFile;
-  intptr_t fd;
+  int fd;
   if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0)
     return -1;
 
