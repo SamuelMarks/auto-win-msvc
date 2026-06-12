@@ -2042,7 +2042,7 @@ long sysconf(int name) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcgetpgrp function. */
 pid_t tcgetpgrp(intptr_t fd) {
-  if (_isatty(fd))
+  if (_isatty((int)fd))
     return 0;
   errno = ENOTTY;
   return -1;
@@ -2052,7 +2052,7 @@ pid_t tcgetpgrp(intptr_t fd) {
 /** \brief tcsetpgrp function. */
 int tcsetpgrp(intptr_t fd, pid_t pgrp) {
   pgrp = pgrp;
-  if (!_isatty(fd)) {
+  if (!_isatty((int)fd)) {
     errno = ENOTTY;
     return -1;
   }
@@ -2079,7 +2079,7 @@ int truncate(const char *path, off_t length) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 char *ttyname(intptr_t fd) {
-  if (_isatty(fd)) {
+  if (_isatty((int)fd)) {
     return "CON";
   }
   errno = ENOTTY;
@@ -2092,7 +2092,7 @@ int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
   if (buf == NULL) {
     return EINVAL;
   }
-  if (_isatty(fd)) {
+  if (_isatty((int)fd)) {
     if (buflen < 4) {
       return ERANGE;
     }
@@ -2209,7 +2209,7 @@ typedef int make_iso_compilers_happy_tu_posix_core;
 
 int posix_isatty(intptr_t fd) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  return _isatty(fd);
+  return _isatty((int)fd);
 #else
   return isatty(fd);
 #endif
