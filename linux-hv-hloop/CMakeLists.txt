@@ -9,7 +9,7 @@ set_target_properties(linux-hv-hloop PROPERTIES DEFINE_SYMBOL "auto_win_msvc_exp
 target_include_directories(linux-hv-hloop PUBLIC include)
 
 if(MSVC)
-    target_compile_definitions(linux-hv-hloop PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(linux-hv-hloop PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -21,5 +21,5 @@ add_test(NAME linux-hv-hloop_test COMMAND test_linux-hv-hloop)
 endif()
 
 if(MSVC)
-    target_compile_options(linux-hv-hloop PRIVATE /wd4273 /wd4141)
+    target_compile_options(linux-hv-hloop PRIVATE )
 endif()

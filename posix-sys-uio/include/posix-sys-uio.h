@@ -10,15 +10,15 @@
  * mapped to WSASend and _write system calls.
  */
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
+/* clang-format off */
 #include <stddef.h> /* size_t */
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <stddef.h> /* size_t */
 #else
 #include <sys/uio.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {

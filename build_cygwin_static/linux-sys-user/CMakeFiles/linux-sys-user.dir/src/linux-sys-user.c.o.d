@@ -1,3 +1,0 @@
-linux-sys-user/CMakeFiles/linux-sys-user.dir/src/linux-sys-user.c.o: \
- /cygdrive/c/Users/samue/repos/auto-win-msvc/linux-sys-user/src/linux-sys-user.c \
- /cygdrive/c/Users/samue/repos/auto-win-msvc/linux-sys-user/include/linux-sys-user.h

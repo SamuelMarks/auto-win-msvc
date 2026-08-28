@@ -3,8 +3,8 @@
 
 /* Polyfill for <sys/byteorder.h> */
 
-/* clang-format off */
 #if defined(_MSC_VER)
+/* clang-format off */
 #include <linux-endian.h>
 /* clang-format on */
 

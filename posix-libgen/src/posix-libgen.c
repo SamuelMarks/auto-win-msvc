@@ -12,9 +12,9 @@
 #include <sys/param.h>
 #if !defined(_MSC_VER)
 #include <unistd.h>
-#endif
-#endif
 /* clang-format on */
+#endif
+#endif
 
 /* For printf formatting things you can  * later guarded for msvc and c89 etc.
  */

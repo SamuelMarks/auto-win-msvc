@@ -1,7 +1,0 @@
-EXPORTS
-	GetCurrentFiber
-	dummy_posix_ucontext
-	getcontext
-	makecontext
-	setcontext
-	swapcontext

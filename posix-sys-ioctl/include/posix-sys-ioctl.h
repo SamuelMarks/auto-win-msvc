@@ -21,7 +21,6 @@
 #else
 #include <sys/ioctl.h>
 #endif
-/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,11 +60,10 @@ struct winsize {
  * @param ... Additional arguments.
  * @return 0 on success, -1 on error with errno set appropriately.
  */
-/* clang-format off */
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
-#endif
 /* clang-format on */
+#endif
 int posix_ioctl(intptr_t fd, unsigned long request, ...);
 
 #define ioctl posix_ioctl

@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc liblinux-rdma.a "CMakeFiles/linux-rdma.dir/src/linux-rdma.c.o"
-/usr/bin/ranlib.exe liblinux-rdma.a

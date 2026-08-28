@@ -397,7 +397,7 @@ typedef enum greatest_test_res {
       }                                                                        \
       greatest_test_post(res);                                                 \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Ignore a test, don't warn about it being unused. */
 #define GREATEST_IGNORE_TEST(TEST) (void)TEST
@@ -413,7 +413,7 @@ typedef enum greatest_test_res {
       }                                                                        \
       greatest_test_post(res);                                                 \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 #ifdef GREATEST_VA_ARGS
 #define GREATEST_RUN_TESTp(TEST, ...)                                          \
@@ -425,7 +425,7 @@ typedef enum greatest_test_res {
       }                                                                        \
       greatest_test_post(res);                                                 \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 #endif
 
 /* Check if the test runner is in verbose mode. */
@@ -483,7 +483,7 @@ typedef enum greatest_test_res {
     if (!(COND)) {                                                             \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if a condition is not true, longjmping out of test. */
 #define GREATEST_ASSERT_OR_LONGJMPm(MSG, COND)                                 \
@@ -492,7 +492,7 @@ typedef enum greatest_test_res {
     if (!(COND)) {                                                             \
       GREATEST_FAIL_WITH_LONGJMPm(MSG);                                        \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if a condition is not false, with message. */
 #define GREATEST_ASSERT_FALSEm(MSG, COND)                                      \
@@ -501,7 +501,7 @@ typedef enum greatest_test_res {
     if ((COND)) {                                                              \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Internal macro for relational assertions */
 #define GREATEST__REL(REL, MSG, EXP, GOT)                                      \
@@ -510,7 +510,7 @@ typedef enum greatest_test_res {
     if (!((EXP)REL(GOT))) {                                                    \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not ==, !=, >, <, >=, or <= to GOT. */
 #define GREATEST_ASSERT_EQm(MSG, E, G) GREATEST__REL(==, MSG, E, G)
@@ -534,7 +534,7 @@ typedef enum greatest_test_res {
       GREATEST_FPRINTF(GREATEST_STDOUT, "\n");                                 \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not equal to GOT, printing enum IDs. */
 #define GREATEST_ASSERT_ENUM_EQm(MSG, EXP, GOT, ENUM_STR)                      \
@@ -549,7 +549,7 @@ typedef enum greatest_test_res {
                        greatest_ENUM_STR(greatest_GOT));                       \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if GOT not in range of EXP +|- TOL. */
 #define GREATEST_ASSERT_IN_RANGEm(MSG, EXP, GOT, TOL)                          \
@@ -569,13 +569,13 @@ typedef enum greatest_test_res {
                        greatest_EXP, greatest_TOL, greatest_GOT);              \
       GREATEST_FAILm(MSG);                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not equal to GOT, according to strcmp. */
 #define GREATEST_ASSERT_STR_EQm(MSG, EXP, GOT)                                 \
   do {                                                                         \
     GREATEST_ASSERT_EQUAL_Tm(MSG, EXP, GOT, &greatest_type_info_string, NULL); \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not equal to GOT, according to strncmp. */
 #define GREATEST_ASSERT_STRN_EQm(MSG, EXP, GOT, SIZE)                          \
@@ -583,7 +583,7 @@ typedef enum greatest_test_res {
     size_t size = SIZE;                                                        \
     GREATEST_ASSERT_EQUAL_Tm(MSG, EXP, GOT, &greatest_type_info_string,        \
                              &size);                                           \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not equal to GOT, according to memcmp. */
 #define GREATEST_ASSERT_MEM_EQm(MSG, EXP, GOT, SIZE)                           \
@@ -594,7 +594,7 @@ typedef enum greatest_test_res {
     env.size = SIZE;                                                           \
     GREATEST_ASSERT_EQUAL_Tm(MSG, env.exp, env.got,                            \
                              &greatest_type_info_memory, &env);                \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail if EXP is not equal to GOT, according to a comparison
  * callback in TYPE_INFO. If they are not equal, optionally use a
@@ -610,14 +610,14 @@ typedef enum greatest_test_res {
         GREATEST_FAILm(MSG);                                                   \
       }                                                                        \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Pass. */
 #define GREATEST_PASSm(MSG)                                                    \
   do {                                                                         \
     greatest_info.msg = MSG;                                                   \
     return GREATEST_TEST_RES_PASS;                                             \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Fail. */
 #define GREATEST_FAILm(MSG)                                                    \
@@ -629,7 +629,7 @@ typedef enum greatest_test_res {
       abort();                                                                 \
     }                                                                          \
     return GREATEST_TEST_RES_FAIL;                                             \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Optional GREATEST_FAILm variant that longjmps. */
 #if GREATEST_USE_LONGJMP
@@ -640,7 +640,7 @@ typedef enum greatest_test_res {
     greatest_info.fail_line = __LINE__;                                        \
     greatest_info.msg = MSG;                                                   \
     longjmp(greatest_info.jump_dest, GREATEST_TEST_RES_FAIL);                  \
-  } while (0)
+  } while ((void)0, 0)
 #endif
 
 /* Skip the current test. */
@@ -648,7 +648,7 @@ typedef enum greatest_test_res {
   do {                                                                         \
     greatest_info.msg = MSG;                                                   \
     return GREATEST_TEST_RES_SKIP;                                             \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Check the result of a subfunction using ASSERT, etc. */
 #define GREATEST_CHECK_CALL(RES)                                               \
@@ -657,7 +657,7 @@ typedef enum greatest_test_res {
     if (greatest_RES != GREATEST_TEST_RES_PASS) {                              \
       return greatest_RES;                                                     \
     }                                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 #if GREATEST_USE_TIME
 #define GREATEST_SET_TIME(NAME)                                                \
@@ -720,7 +720,7 @@ typedef enum greatest_test_res {
       }                                                                        \
     } while (!GREATEST_FAILURE_ABORT());                                       \
     prng->count_run = prng->random_order = prng->initialized = 0;              \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Include several function definitions in the main test file. */
 #define GREATEST_MAIN_DEFS()                                                   \
@@ -1232,14 +1232,14 @@ typedef enum greatest_test_res {
   do {                                                                         \
     GREATEST_INIT();                                                           \
     greatest_parse_options(argc, argv);                                        \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Report results, exit with exit status based on results. */
 #define GREATEST_MAIN_END()                                                    \
   do {                                                                         \
     GREATEST_PRINT_REPORT();                                                   \
     return (greatest_all_passed() ? EXIT_SUCCESS : EXIT_FAILURE);              \
-  } while (0)
+  } while ((void)0, 0)
 
 /* Make abbreviations without the GREATEST_ prefix for the
  * most commonly used symbols. */

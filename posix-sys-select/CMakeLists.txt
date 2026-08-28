@@ -9,7 +9,7 @@ set_target_properties(posix-sys-select PROPERTIES DEFINE_SYMBOL "auto_win_msvc_e
 target_include_directories(posix-sys-select PUBLIC include)
 
 if(MSVC)
-    target_compile_definitions(posix-sys-select PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(posix-sys-select PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -25,5 +25,5 @@ add_test(NAME posix-sys-select_test COMMAND test_posix-sys-select)
 endif()
 
 if(MSVC)
-    target_compile_options(posix-sys-select PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-sys-select PRIVATE )
 endif()

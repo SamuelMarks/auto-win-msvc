@@ -9,7 +9,7 @@ set_target_properties(posix-libunwind PROPERTIES DEFINE_SYMBOL "auto_win_msvc_ex
 target_include_directories(posix-libunwind PUBLIC include)
 
 if(MSVC)
-    target_compile_definitions(posix-libunwind PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(posix-libunwind PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -24,5 +24,5 @@ add_test(NAME posix-libunwind_test COMMAND test_posix-libunwind)
 endif()
 
 if(MSVC)
-    target_compile_options(posix-libunwind PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-libunwind PRIVATE )
 endif()

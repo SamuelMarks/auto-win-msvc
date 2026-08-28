@@ -1,1 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/bsd-sys-endian/bsd-sys-endian.dir/Release/bsd-sys-endian.obj

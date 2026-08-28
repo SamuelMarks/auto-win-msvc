@@ -1,3 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_vcpkg/_deps/wepoll-subbuild/CMakeFiles/wepoll-populate.dir
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_vcpkg/_deps/wepoll-subbuild/CMakeFiles/ALL_BUILD.dir
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_static_vcpkg/_deps/wepoll-subbuild/CMakeFiles/ZERO_CHECK.dir

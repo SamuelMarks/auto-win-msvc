@@ -1,1 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/bsd-sys-sysctl/bsd-sys-sysctl.dir/Release/bsd-sys-sysctl.obj

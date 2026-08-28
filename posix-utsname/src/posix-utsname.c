@@ -181,8 +181,8 @@ int uname(struct utsname *name) {
   hModNtdll = GetModuleHandleA("ntdll.dll");
   pRtlGetVersion = NULL;
   if (hModNtdll) {
-    pRtlGetVersion = (RtlGetVersion_Func)(void (*)(void))GetProcAddress(
-        hModNtdll, "RtlGetVersion");
+    pRtlGetVersion =
+        (RtlGetVersion_Func)(size_t)GetProcAddress(hModNtdll, "RtlGetVersion");
   }
 
   if (pRtlGetVersion) {
@@ -199,14 +199,13 @@ int uname(struct utsname *name) {
 
   if (osvi.dwMajorVersion == 0) {
 #if defined(_MSC_VER)
-#pragma warning(push)
+
 #ifdef _MSC_VER
-#pragma warning(disable : 4996) /* GetVersionEx is deprecated */
-#endif                          /* _MSC_VER */
+#endif /* _MSC_VER */
 #endif
     GetVersionExA(&osvi);
 #if defined(_MSC_VER)
-#pragma warning(pop)
+
 #endif
   }
 

@@ -1,1 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/posix-regex/posix-regex.dir/MinSizeRel/posix-regex.obj

@@ -55,7 +55,7 @@ _Unwind_Reason_Code _Unwind_Backtrace(_Unwind_Trace_Fn trace,
   hNtDll = GetModuleHandleA("ntdll.dll");
   if (hNtDll) {
     pRtlCaptureStackBackTrace =
-        (RtlCaptureStackBackTrace_t)(void *)GetProcAddress(
+        (RtlCaptureStackBackTrace_t)(size_t)GetProcAddress(
             (HMODULE)hNtDll, "RtlCaptureStackBackTrace");
   }
 

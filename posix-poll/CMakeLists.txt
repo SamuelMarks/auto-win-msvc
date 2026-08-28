@@ -9,7 +9,7 @@ set_target_properties(posix-poll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_
 target_include_directories(posix-poll PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(MSVC)
-    target_compile_definitions(posix-poll PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(posix-poll PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -27,5 +27,5 @@ add_test(NAME posix-poll_test COMMAND test_posix-poll)
 endif()
 
 if(MSVC)
-    target_compile_options(posix-poll PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-poll PRIVATE )
 endif()

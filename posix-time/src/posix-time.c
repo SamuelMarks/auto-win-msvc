@@ -46,8 +46,8 @@
 #include <minwindef.h>
 #include <sysinfoapi.h>
 #include <timezoneapi.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifndef FILE_FLAG_BACKUP_SEMANTICS
 #define FILE_FLAG_BACKUP_SEMANTICS 0x02000000

@@ -9,7 +9,7 @@ set_target_properties(posix-netdb PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export
 target_include_directories(posix-netdb PUBLIC include)
 
 if(MSVC)
-    target_compile_definitions(posix-netdb PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(posix-netdb PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -27,5 +27,5 @@ add_test(NAME posix-netdb_test COMMAND test_posix-netdb)
 endif()
 
 if(MSVC)
-    target_compile_options(posix-netdb PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-netdb PRIVATE )
 endif()

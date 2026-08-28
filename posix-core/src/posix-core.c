@@ -1,9 +1,7 @@
 /* posix-core.c - Strict C89 Implementation */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-/* clang-format off */
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/* clang-format off */
 #include <direct.h>
 #include <process.h>
 
@@ -30,9 +28,7 @@
 #include <string.h>
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4100)
 #ifdef _MSC_VER
-#pragma warning(disable : 4996)
 #endif /* _MSC_VER */
 #endif
 
@@ -245,16 +241,16 @@ static unsigned long get_current_rid(int is_group) {
     return 0;
   }
 
-  pOpenProcessToken = (OpenProcessToken_f)(intptr_t)GetProcAddress(
+  pOpenProcessToken = (OpenProcessToken_f)(size_t)GetProcAddress(
       advapi32, "OpenProcessToken");
-  pGetTokenInformation = (GetTokenInformation_f)(intptr_t)GetProcAddress(
+  pGetTokenInformation = (GetTokenInformation_f)(size_t)GetProcAddress(
       advapi32, "GetTokenInformation");
-  pGetSidSubAuthority = (GetSidSubAuthority_f)(intptr_t)GetProcAddress(
+  pGetSidSubAuthority = (GetSidSubAuthority_f)(size_t)GetProcAddress(
       advapi32, "GetSidSubAuthority");
   pGetSidSubAuthorityCount =
-      (GetSidSubAuthorityCount_f)(intptr_t)GetProcAddress(
+      (GetSidSubAuthorityCount_f)(size_t)GetProcAddress(
           advapi32, "GetSidSubAuthorityCount");
-  pIsValidSid = (IsValidSid_f)(intptr_t)GetProcAddress(advapi32, "IsValidSid");
+  pIsValidSid = (IsValidSid_f)(size_t)GetProcAddress(advapi32, "IsValidSid");
 
   if (!pOpenProcessToken || !pGetTokenInformation || !pGetSidSubAuthority ||
       !pGetSidSubAuthorityCount || !pIsValidSid) {
@@ -481,7 +477,11 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
 
   if (pathname[0] == '/' || pathname[0] == '\\' ||
       (pathname[0] && pathname[1] == ':')) {
+    #if defined(_MSC_VER)
+    strncpy_s(buf, bufsiz, pathname, _TRUNCATE);
+#else
     strncpy(buf, pathname, bufsiz - 1);
+#endif
     buf[bufsiz - 1] = '\0';
     *buf_out = buf;
     return 0;
@@ -498,8 +498,16 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
       return -1;
     }
     if (buf[strlen(buf) - 1] != '\\' && buf[strlen(buf) - 1] != '/')
-      strcat(buf, "\\");
+      #if defined(_MSC_VER)
+    strcat_s(buf, bufsiz, "\\");
+#else
+    strcat(buf, "\\");
+#endif
+    #if defined(_MSC_VER)
+    strcat_s(buf, bufsiz, pathname);
+#else
     strcat(buf, pathname);
+#endif
     *buf_out = buf;
     return 0;
   } else {
@@ -522,7 +530,7 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
       return -1;
     }
     pGetFinalPathNameByHandleA =
-        (GetFinalPathNameByHandleA_Func)(intptr_t)GetProcAddress(
+        (GetFinalPathNameByHandleA_Func)(size_t)GetProcAddress(
             kernel32, "GetFinalPathNameByHandleA");
     if (!pGetFinalPathNameByHandleA) {
       free(buf);
@@ -548,8 +556,16 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
       return -1;
     }
     if (buf[res - 1] != '\\' && buf[res - 1] != '/')
-      strcat(buf, "\\");
+      #if defined(_MSC_VER)
+    strcat_s(buf, bufsiz, "\\");
+#else
+    strcat(buf, "\\");
+#endif
+    #if defined(_MSC_VER)
+    strcat_s(buf, bufsiz, pathname);
+#else
     strcat(buf, pathname);
+#endif
     *buf_out = buf;
     return 0;
   }
@@ -571,7 +587,13 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
     va_end(ap);
   }
 
+  #if defined(_MSC_VER)
+  if (_sopen_s(&fd, buf, flags, _SH_DENYNO, mode) != 0) {
+    fd = -1;
+  }
+#else
   fd = _open(buf, flags, mode);
+#endif
   free(buf);
   return fd;
 }
@@ -610,8 +632,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
     if (!kernel32)
       return 0;
     pPrefetchVirtualMemory =
-        (int(__stdcall *)(void *, size_t, void *, unsigned long))(
-            intptr_t)GetProcAddress(kernel32, "PrefetchVirtualMemory");
+        (int(__stdcall *)(void *, size_t, void *, unsigned long))(size_t)GetProcAddress(kernel32, "PrefetchVirtualMemory");
     if (!pPrefetchVirtualMemory)
       return 0;
 
@@ -717,7 +738,7 @@ int sync_file_range(intptr_t fd, off_t offset, off_t nbytes, unsigned int flags)
   (void)offset;
   (void)nbytes;
   (void)flags;
-  if (_commit(fd) == 0) {
+  if (_commit((int)fd) == 0) {
     return 0;
   }
   return -1;
@@ -995,7 +1016,7 @@ int fchown(intptr_t fd, uid_t owner, gid_t group) {
   }
 
   pGetFinalPathNameByHandleA =
-      (GetFinalPathNameByHandleA_Func)(intptr_t)GetProcAddress(
+      (GetFinalPathNameByHandleA_Func)(size_t)GetProcAddress(
           kernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathNameByHandleA) {
     errno = ENOSYS;
@@ -1049,7 +1070,7 @@ int fdatasync(intptr_t fd) {
     errno = EBADF;
     return -1;
   }
-  if (_commit(fd) == -1) {
+  if (_commit((int)fd) == -1) {
     errno = EBADF;
     return -1;
   }
@@ -1083,7 +1104,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   }
 
   pGetFinalPathNameByHandleA =
-      (GetFinalPathNameByHandleA_Func)(intptr_t)GetProcAddress(
+      (GetFinalPathNameByHandleA_Func)(size_t)GetProcAddress(
           kernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathNameByHandleA) {
     errno = ENOSYS;
@@ -1261,7 +1282,7 @@ pid_t fork(void) {
         if (p_exit) {
           unsigned long oldProtect;
           int(__stdcall * vp)(void *, size_t, unsigned long, unsigned long *) =
-              (int(__stdcall *)(void *, size_t, unsigned long, unsigned long *))(intptr_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
+              (int(__stdcall *)(void *, size_t, unsigned long, unsigned long *))(size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
                                              "VirtualProtect");
           if (vp && vp(p_exit, 12, 0x40, &oldProtect)) {
             unsigned char *p = (unsigned char *)p_exit;
@@ -1452,7 +1473,7 @@ int getopt(int argc, char *const argv[], const char *optstring) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getpgid function. */
-pid_t getpgid(pid_t pid) { return 0; }
+pid_t getpgid(pid_t pid) { (void)pid; return 0; }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getpgrp function. */
@@ -1464,7 +1485,7 @@ pid_t getppid(void) { return 0; }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getsid function. */
-pid_t getsid(pid_t pid) { return 0; }
+pid_t getsid(pid_t pid) { (void)pid; return 0; }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getuid function. */
@@ -1552,8 +1573,8 @@ int lockf(intptr_t fd, int cmd, off_t len) {
     break; /* F_TLOCK */
   case 3:  /* F_TEST */
     mode = _LK_NBLCK;
-    if (_locking(fd, mode, nbytes) == 0) {
-      _locking(fd, _LK_UNLCK, nbytes);
+    if (_locking((int)fd, mode, nbytes) == 0) {
+      _locking((int)fd, _LK_UNLCK, nbytes);
       return 0;
     }
     return -1;
@@ -1562,7 +1583,7 @@ int lockf(intptr_t fd, int cmd, off_t len) {
     return -1;
   }
 
-  return _locking(fd, mode, nbytes);
+  return _locking((int)fd, mode, nbytes);
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1583,8 +1604,8 @@ long pathconf(const char *pathname, int name) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) unsigned long __stdcall
-SleepEx(unsigned long dwMilliseconds, int bAlertable);
+__declspec(dllimport) unsigned long __stdcall SleepEx(
+    unsigned long dwMilliseconds, int bAlertable);
 
 /** \brief pause function. */
 int pause(void) {
@@ -1694,17 +1715,16 @@ ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) int __stdcall
-DeviceIoControl(void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
-                unsigned long nInBufferSize, void *lpOutBuffer,
-                unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
-                void *lpOverlapped);
+__declspec(dllimport) int __stdcall DeviceIoControl(
+    void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
+    unsigned long nInBufferSize, void *lpOutBuffer,
+    unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
+    void *lpOverlapped);
 
-__declspec(dllimport) int __stdcall
-WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags,
-                    const wchar_t *lpWideCharStr, int cchWideChar,
-                    char *lpMultiByteStr, int cbMultiByte,
-                    const char *lpDefaultChar, int *lpUsedDefaultChar);
+__declspec(dllimport) int __stdcall WideCharToMultiByte(
+    unsigned int CodePage, unsigned long dwFlags, const wchar_t *lpWideCharStr,
+    int cchWideChar, char *lpMultiByteStr, int cbMultiByte,
+    const char *lpDefaultChar, int *lpUsedDefaultChar);
 #endif
 
 typedef struct _POSIX_REPARSE_DATA_BUFFER {
@@ -1861,7 +1881,11 @@ int setgid(gid_t gid) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setpgid function. */
-int setpgid(pid_t pid, pid_t pgid) { return 0; }
+int setpgid(pid_t pid, pid_t pgid) {
+  (void)pid;
+  (void)pgid;
+  return 0;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setpgrp function. */
@@ -1921,7 +1945,7 @@ int symlink(const char *target, const char *linkpath) {
     errno = ENOSYS;
     return -1;
   }
-  pCreateSymbolicLinkA = (CreateSymbolicLinkA_Func)(intptr_t)GetProcAddress(
+  pCreateSymbolicLinkA = (CreateSymbolicLinkA_Func)(size_t)GetProcAddress(
       kernel32, "CreateSymbolicLinkA");
   if (!pCreateSymbolicLinkA) {
     errno = ENOSYS;
@@ -1963,8 +1987,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpath) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 __declspec(dllimport) unsigned long __stdcall GetLogicalDrives(void);
 __declspec(dllimport) int __stdcall FlushFileBuffers(void *hFile);
-__declspec(dllimport) unsigned int __stdcall
-GetDriveTypeA(const char *lpRootPathName);
+__declspec(dllimport) unsigned int __stdcall GetDriveTypeA(
+    const char *lpRootPathName);
 
 /** \brief sync function. */
 void sync(void) {
@@ -2069,7 +2093,13 @@ int truncate(const char *path, off_t length) {
     errno = EINVAL;
     return -1;
   }
+#if defined(_MSC_VER)
+  if (_sopen_s(&fd, path, _O_RDWR, _SH_DENYNO, 0) != 0) {
+    fd = -1;
+  }
+#else
   fd = _open(path, _O_RDWR);
+#endif
   if (fd == -1) {
     return -1;
   }

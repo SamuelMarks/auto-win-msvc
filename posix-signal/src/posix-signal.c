@@ -5,7 +5,6 @@
 #endif
 /* posix-signal.c - Strict C89 Implementation */
 #ifdef _MSC_VER
-#pragma warning(disable : 4306)
 #endif
 #include "posix-signal.h"
 /* clang-format on */
@@ -77,10 +76,10 @@ static volatile unsigned long g_pending_signals = 0;
 
 static void *g_veh_handle = NULL;
 
-__declspec(dllimport) void *__stdcall
-AddVectoredExceptionHandler(unsigned long First, void *Handler);
-__declspec(dllimport) unsigned long __stdcall
-RemoveVectoredExceptionHandler(void *Handle);
+__declspec(dllimport) void *__stdcall AddVectoredExceptionHandler(
+    unsigned long First, void *Handler);
+__declspec(dllimport) unsigned long __stdcall RemoveVectoredExceptionHandler(
+    void *Handle);
 
 struct _EXCEPTION_RECORD;
 struct _CONTEXT;

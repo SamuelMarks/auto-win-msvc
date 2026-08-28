@@ -1,7 +1,4 @@
 /* posix-stat.c - Strict C89 Implementation */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wlong-long"
@@ -36,8 +33,8 @@
 #include <../ucrt/io.h>
 #else
 #include <io.h>
-#endif
 /* clang-format on */
+#endif
 
 #define WINAPI __stdcall
 typedef void *HANDLE;

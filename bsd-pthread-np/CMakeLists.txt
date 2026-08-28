@@ -75,7 +75,7 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /wd4127 /wd4204 /wd4221 /wd4706 /wd4055 /wd4201 /wd4214 /wd4116 /wd4100 /wd4090 /wd4098 /wd4701 /wd4267 /wd4244 /wd4054 /wd4152)
+    add_compile_options(/W4 )
     add_compile_definitions(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
@@ -105,5 +105,5 @@ add_test(NAME test_bsd-pthread-np COMMAND test_bsd-pthread-np)
 endif()
 
 if(MSVC)
-    target_compile_options(bsd-pthread-np PRIVATE /wd4273 /wd4141)
+    target_compile_options(bsd-pthread-np PRIVATE )
 endif()

@@ -1,1 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2026_shared/posix-stat/posix-stat.dir/Debug/posix-stat.obj

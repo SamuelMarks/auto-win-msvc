@@ -1,3 +1,0 @@
-bsd-vm-param/CMakeFiles/bsd-vm-param.dir/src/bsd-vm-param.c.obj: \
- C:\Users\samue\repos\auto-win-msvc\bsd-vm-param\src\bsd-vm-param.c \
- C:/Users/samue/repos/auto-win-msvc/bsd-vm-param/include/vm/vm_param.h

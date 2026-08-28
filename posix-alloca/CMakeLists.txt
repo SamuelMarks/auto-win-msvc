@@ -28,5 +28,5 @@ enable_testing()
 add_test(NAME test_posix-alloca COMMAND test_posix-alloca)
 
 if(MSVC)
-    target_compile_options(posix-alloca PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-alloca PRIVATE )
 endif()

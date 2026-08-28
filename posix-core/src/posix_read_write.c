@@ -1,8 +1,6 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-/* clang-format off */
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/* clang-format off */
 #include "posix-core.h"
 #include <errno.h>
 
@@ -57,7 +55,7 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 FILE *posix_fopen(const char *pathname, const char *mode) {
   int flags = 0;
   DWORD dwAccess = 0, dwCreation = OPEN_EXISTING;
-  char abs_path[1024];
+  char abs_path[2048];
   HANDLE h;
   intptr_t fd;
   FILE *f;
@@ -87,15 +85,23 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
     char cwd[1024];
     GetCurrentDirectoryA(1024, cwd);
 #if defined(_MSC_VER) && _MSC_VER < 1900
-    _snprintf(abs_path, 1024, "%s\\%s", cwd, pathname);
+#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+    _snprintf_s(abs_path, 2048, _TRUNCATE, "%s\\%s", cwd, pathname);
 #else
-    snprintf(abs_path, 1024, "%s\\%s", cwd, pathname);
+    _snprintf(abs_path, 2048, "%s\\%s", cwd, pathname);
+#endif
+#else
+    snprintf(abs_path, 2048, "%s\\%s", cwd, pathname);
 #endif
   } else {
 #if defined(_MSC_VER) && _MSC_VER < 1900
-    _snprintf(abs_path, 1024, "%s", pathname);
+#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+    _snprintf_s(abs_path, 2048, _TRUNCATE, "%s", pathname);
 #else
-    snprintf(abs_path, 1024, "%s", pathname);
+    _snprintf(abs_path, 2048, "%s", pathname);
+#endif
+#else
+    snprintf(abs_path, 2048, "%s", pathname);
 #endif
   }
 
@@ -111,9 +117,9 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
     CloseHandle(h);
     return NULL;
   }
-  f = _fdopen(fd, mode);
+  f = _fdopen((int)fd, mode);
   if (f == NULL) {
-    _close(fd);
+    _close((int)fd);
     return NULL;
   }
   return f;
@@ -128,7 +134,7 @@ int posix_open(const char *pathname, int flags, ...) {
   DWORD dwCreationDisposition = OPEN_EXISTING;
   DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
   HANDLE hFile;
-  intptr_t fd_flags;
+  int fd_flags;
   intptr_t fd;
   (void)mode;
 
@@ -187,7 +193,7 @@ int posix_open(const char *pathname, int flags, ...) {
     errno = EMFILE;
     return -1;
   }
-  return fd;
+  return (int)fd;
 }
 
 extern int is_socket(intptr_t fd);
@@ -200,7 +206,7 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
-      int rret = _read(fd, buf, (unsigned int)count);
+      int rret = _read((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif
@@ -270,7 +276,7 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
-      int wret = _write(fd, buf, (unsigned int)count);
+      int wret = _write((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif
@@ -367,7 +373,7 @@ int posix_close(intptr_t fd) {
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
-    return posix_epoll_close(fd);
+    return posix_epoll_close((int)fd);
   }
   s = GET_SOCKET(fd);
   clear_nonblock(s);
@@ -383,7 +389,7 @@ int posix_close(intptr_t fd) {
 #endif
       int cret = -1;
       if (fd >= 0)
-        cret = _close(fd);
+        cret = _close((int)fd);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _set_invalid_parameter_handler(old);
 #endif

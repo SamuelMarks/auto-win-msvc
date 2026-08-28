@@ -31,6 +31,9 @@ def setup_repo(repo_name, github_url, branch=None):
         return tmp_dir, True
 
 def main():
+    for k in list(os.environ.keys()):
+        if k.startswith('GIT_CONFIG_'):
+            del os.environ[k]
     current_awm_dir = os.getcwd()
 
     ignore_pats = shutil.ignore_patterns('.git', 'build*', '__pycache__', 'valkey_src', 'Testing', '.vs', 'out')
@@ -46,24 +49,6 @@ def main():
 
     env = os.environ.copy()
     env['PATH'] = f"{dummy_bin_dir};C:\\Windows\\System32;{env.get('PATH', '')}"
-
-    # 1. Valkey Windows
-    valkey_path, valkey_is_tmp = setup_repo('valkey-windows', 'https://github.com/SamuelMarks/valkey-windows.git', branch='release-9.1.0-fix')
-    valkey_awm = os.path.join(valkey_path, 'auto-win-msvc')
-    if os.path.exists(valkey_awm):
-        shutil.rmtree(valkey_awm, ignore_errors=True)
-    shutil.copytree(current_awm_dir, valkey_awm, ignore=ignore_pats, dirs_exist_ok=True)
-    run_cmd(['cmd.exe', '/c', 'release.bat', '9.1.0', '--local-only'], cwd=valkey_path, env=env)
-
-    # 2. Redis Windows
-    redis_path, redis_is_tmp = setup_repo('redis-windows', 'https://github.com/SamuelMarks/redis-windows.git')
-    redis_build_work = os.path.join(redis_path, 'build_work')
-    os.makedirs(redis_build_work, exist_ok=True)
-    redis_awm = os.path.join(redis_build_work, 'auto-win-msvc')
-    if os.path.exists(redis_awm):
-        shutil.rmtree(redis_awm, ignore_errors=True)
-    shutil.copytree(current_awm_dir, redis_awm, ignore=ignore_pats, dirs_exist_ok=True)
-    run_cmd(['cmd.exe', '/c', 'build-and-release.bat', '8.8-rc1', 'redis', '--local-only'], cwd=redis_path, env=env)
 
     # 3. Rsync
     rsync_path, rsync_is_tmp = setup_repo('rsync', 'https://github.com/SamuelMarks/rsync.git', branch='windows')
@@ -85,7 +70,7 @@ def main():
     if not os.path.exists(vcpkg_path):
         print("Skipping rsync downstream test because VCPKG is not set in the environment.")
     else:
-        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
+        cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '--fresh', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
         cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={vcpkg_path}/scripts/buildsystems/vcpkg.cmake")
         run_cmd(cmake_cmd, cwd=rsync_path)
         run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
@@ -104,7 +89,7 @@ def main():
             shutil.copytree(current_awm_dir, s2n_tls_awm, ignore=ignore_pats, dirs_exist_ok=True)
 
     # Configure and build s2n-tls
-    cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
+    cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '--fresh', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
     if os.path.exists(vcpkg_path):
         cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={vcpkg_path}/scripts/buildsystems/vcpkg.cmake")
     run_cmd(cmake_cmd, cwd=s2n_tls_path)

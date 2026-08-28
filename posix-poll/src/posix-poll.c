@@ -2,6 +2,9 @@
 /* clang-format off */
 #include "posix-poll.h"
 
+
+
+
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
@@ -11,7 +14,7 @@
 #else
 #include <io.h>
 #endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
@@ -22,6 +25,42 @@
 #ifdef _WIN32
 #include <stddef.h>
 #include <stdio.h>
+
+#ifdef _MSC_VER
+#undef FD_ZERO
+#define FD_ZERO(set) (((fd_set *)(set))->fd_count = 0)
+#undef FD_SET
+#define FD_SET(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            break; \
+        } \
+    } \
+    if (__i == ((fd_set *)(set))->fd_count) { \
+        if (((fd_set *)(set))->fd_count < FD_SETSIZE) { \
+            ((fd_set *)(set))->fd_array[__i] = (fd); \
+            ((fd_set *)(set))->fd_count++; \
+        } \
+    } \
+} while((void)0, 0)
+#undef FD_CLR
+#define FD_CLR(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            while (__i < ((fd_set *)(set))->fd_count - 1) { \
+                ((fd_set *)(set))->fd_array[__i] = \
+                    ((fd_set *)(set))->fd_array[__i + 1]; \
+                __i++; \
+            } \
+            ((fd_set *)(set))->fd_count--; \
+            break; \
+        } \
+    } \
+} while((void)0, 0)
+#endif
+
 /* clang-format on */
 
 #undef poll

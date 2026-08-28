@@ -28,8 +28,8 @@
 #include <../ucrt/io.h>
 #else
 #include <io.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifndef O_ACCMODE
 /** \brief O_ACCMODE macro. */

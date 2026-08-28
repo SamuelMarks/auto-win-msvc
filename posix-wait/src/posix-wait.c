@@ -40,8 +40,8 @@
 #include <minwindef.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifndef INFINITE
 #define INFINITE 0xFFFFFFFF
@@ -80,8 +80,9 @@ typedef struct tagWIN_PROCESSENTRY32 {
 #ifdef __cplusplus
 extern "C" {
 #endif
-__declspec(dllimport) WIN_HANDLE __stdcall
-CreateToolhelp32Snapshot(WIN_DWORD dwFlags, WIN_DWORD th32ProcessID);
+__declspec(dllimport)
+WIN_HANDLE __stdcall CreateToolhelp32Snapshot(WIN_DWORD dwFlags,
+                                              WIN_DWORD th32ProcessID);
 __declspec(dllimport) int __stdcall Process32First(WIN_HANDLE hSnapshot,
                                                    WIN_PROCESSENTRY32 *lppe);
 __declspec(dllimport) int __stdcall Process32Next(WIN_HANDLE hSnapshot,
@@ -109,7 +110,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     }
 
     /* Wait for any child (-1) */
-    while (1) {
+    for (;;) {
       if (g_posix_child_count == 0) {
         errno = ECHILD;
         return (pid_t)-1;

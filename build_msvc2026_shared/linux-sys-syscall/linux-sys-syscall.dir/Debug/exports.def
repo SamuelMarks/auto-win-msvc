@@ -1,3 +1,0 @@
-EXPORTS
-	dummy_linux_sys_syscall
-	syscall

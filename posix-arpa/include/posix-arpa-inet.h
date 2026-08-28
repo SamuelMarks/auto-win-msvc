@@ -30,8 +30,8 @@ struct in_addr {
 #endif
 #else
 #include <arpa/inet.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,8 +1,8 @@
 #ifndef BSD_SYS_CPUSET_H
 #define BSD_SYS_CPUSET_H
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(__MINGW32__)
+/* clang-format off */
 #include <stddef.h>
 /* clang-format on */
 
@@ -30,7 +30,7 @@ typedef struct {
     size_t _i;                                                                 \
     for (_i = 0; _i < sizeof((set)->__bits) / sizeof(unsigned long); _i++)     \
       (set)->__bits[_i] = 0;                                                   \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Set a CPU in the set
@@ -42,7 +42,7 @@ typedef struct {
     if ((cpu) < CPU_SETSIZE)                                                   \
       (set)->__bits[(cpu) / _CPU_SET_ULONG_BITS] |=                            \
           (1UL << ((cpu) % _CPU_SET_ULONG_BITS));                              \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Clear a CPU from the set
@@ -54,7 +54,7 @@ typedef struct {
     if ((cpu) < CPU_SETSIZE)                                                   \
       (set)->__bits[(cpu) / _CPU_SET_ULONG_BITS] &=                            \
           ~(1UL << ((cpu) % _CPU_SET_ULONG_BITS));                             \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Check if a CPU is in the set

@@ -1,7 +1,0 @@
-{
-	"InstallScripts" :
-	[
-		"/cygdrive/c/Users/samue/repos/auto-win-msvc/build_cygwin_static/_deps/greatest-subbuild/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

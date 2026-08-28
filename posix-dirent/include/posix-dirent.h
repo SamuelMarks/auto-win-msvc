@@ -8,8 +8,8 @@
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
-/* clang-format off */
 #if defined(__WATCOMC__)
+/* clang-format off */
 #include <direct.h>
 #else
 #if defined(__GNUC__) || defined(__clang__)

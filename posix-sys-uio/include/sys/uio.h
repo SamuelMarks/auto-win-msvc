@@ -1,9 +1,9 @@
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif
-/* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+/* clang-format off */
 #include_next <sys/uio.h>
 #else
 #include <sys/uio.h>

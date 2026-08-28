@@ -67,7 +67,7 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 /wd4127 /wd4204 /wd4221 /wd4706 /wd4055 /wd4201 /wd4214 /wd4116 /wd4100 /wd4090 /wd4098 /wd4701 /wd4267 /wd4244 /wd4054 /wd4152 /D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/W4 )
     # Enable AddressSanitizer if supported (VS 2019 16.9+)
     # add_compile_options(/fsanitize=address /Zi)
             add_link_options(/DEBUG) # Uncomment if using modern MSVC
@@ -97,5 +97,5 @@ target_include_directories(test_posix-wait PRIVATE ${greatest_SOURCE_DIR})
 add_test(NAME test_posix-wait COMMAND test_posix-wait)
 
 if(MSVC)
-    target_compile_options(posix-wait PRIVATE /wd4273 /wd4141)
+    target_compile_options(posix-wait PRIVATE )
 endif()

@@ -1,5 +1,0 @@
-EXPORTS
-	dummy_posix_sched
-	posix_sched_getaffinity
-	posix_sched_setaffinity
-	posix_sched_yield

@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libposix-pthread.a "CMakeFiles/posix-pthread.dir/src/posix-pthread.c.o"
-/usr/bin/ranlib.exe libposix-pthread.a

@@ -1,7 +1,7 @@
 /* posix-mman.c - Strict C89 Implementation */
 
-/* clang-format off */
 #if defined(_WIN32) || defined(_WIN64)
+/* clang-format off */
 #include <fcntl.h>
 
 #ifndef SAFE_GET_OSFHANDLE

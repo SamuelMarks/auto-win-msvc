@@ -3,8 +3,8 @@
 
 /* Polyfill for <stdatomic.h> */
 
-/* clang-format off */
 #if defined(__GNUC__) || defined(__clang__)
+/* clang-format off */
 #include_next <stdatomic.h>
 #endif
 
@@ -25,7 +25,7 @@ extern "C" {
 #define atomic_init(obj, value)                                                \
   do {                                                                         \
     *(obj) = (value);                                                          \
-  } while (0)
+  } while ((void)0, 0)
 
 typedef enum memory_order {
   memory_order_relaxed,
@@ -50,12 +50,12 @@ typedef volatile unsigned long atomic_ulong;
 #define atomic_store(obj, val)                                                 \
   do {                                                                         \
     *(obj) = (val);                                                            \
-  } while (0)
+  } while ((void)0, 0)
 /** \brief atomic_store_explicit macro. */
 #define atomic_store_explicit(obj, val, order)                                 \
   do {                                                                         \
     *(obj) = (val);                                                            \
-  } while (0)
+  } while ((void)0, 0)
 
 /** \brief atomic_fetch_add macro. */
 #define atomic_fetch_add(obj, val)                                             \

@@ -1,6 +1,9 @@
 /* posix-sockets.c - Strict C89 Implementation */
 /* clang-format off */
 #include "posix-sockets.h"
+
+
+
 #include <errno.h>
 #if defined(_MSC_VER)
 #include <crtdbg.h>
@@ -556,7 +559,7 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
       return -1;
     }
     mark_as_socket(fd);
-    return fd;
+    return (int)fd;
   }
 #else
   (void)socket;
@@ -901,7 +904,7 @@ int posix_socket(int domain, int type, int protocol) {
       return -1;
     }
     mark_as_socket(fd);
-    return fd;
+    return (int)fd;
   }
 #else
   (void)domain;
@@ -925,8 +928,45 @@ int posix_socket(int domain, int type, int protocol) {
 #include <winsock2.h>
 #endif
 #include <ws2tcpip.h>
+
+#ifdef _MSC_VER
+#undef FD_ZERO
+#define FD_ZERO(set) (((fd_set *)(set))->fd_count = 0)
+#undef FD_SET
+#define FD_SET(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            break; \
+        } \
+    } \
+    if (__i == ((fd_set *)(set))->fd_count) { \
+        if (((fd_set *)(set))->fd_count < FD_SETSIZE) { \
+            ((fd_set *)(set))->fd_array[__i] = (fd); \
+            ((fd_set *)(set))->fd_count++; \
+        } \
+    } \
+} while((void)0, 0)
+#undef FD_CLR
+#define FD_CLR(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            while (__i < ((fd_set *)(set))->fd_count - 1) { \
+                ((fd_set *)(set))->fd_array[__i] = \
+                    ((fd_set *)(set))->fd_array[__i + 1]; \
+                __i++; \
+            } \
+            ((fd_set *)(set))->fd_count--; \
+            break; \
+        } \
+    } \
+} while((void)0, 0)
 #endif
+
 /* clang-format on */
+
+#endif
 
 int posix_socketpair(int domain, int type, int protocol,
                      intptr_t socket_vector[2]) {
@@ -984,17 +1024,17 @@ int posix_socketpair(int domain, int type, int protocol,
     intptr_t fd_client = _open_osfhandle((intptr_t)client, 0);
     if (fd_server == -1 || fd_client == -1) {
       if (fd_server != -1)
-        _close(fd_server);
+        _close((int)fd_server);
       else
         closesocket(server);
       if (fd_client != -1)
-        _close(fd_client);
+        _close((int)fd_client);
       else
         closesocket(client);
       return -1;
     }
-    socket_vector[0] = fd_server;
-    socket_vector[1] = fd_client;
+    socket_vector[0] = (int)fd_server;
+    socket_vector[1] = (int)fd_client;
     mark_as_socket(fd_server);
     mark_as_socket(fd_client);
     return 0;

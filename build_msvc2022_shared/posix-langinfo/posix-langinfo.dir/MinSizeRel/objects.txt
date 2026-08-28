@@ -1,1 +1,0 @@
-C:/Users/samue/repos/auto-win-msvc/build_msvc2022_shared/posix-langinfo/posix-langinfo.dir/MinSizeRel/posix-langinfo.obj

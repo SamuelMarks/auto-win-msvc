@@ -1,3 +1,0 @@
-EXPORTS
-	_Unwind_Backtrace
-	_Unwind_GetIP

@@ -16,8 +16,8 @@
 #include <stddef.h> /* size_t */
 #else
 #include <sched.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +55,7 @@ typedef struct cpu_set {
 #define CPU_ZERO(set)                                                          \
   do {                                                                         \
     (set)->bits = 0;                                                           \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Add CPU cpu to set.
@@ -64,7 +64,7 @@ typedef struct cpu_set {
   do {                                                                         \
     if ((cpu) < 64)                                                            \
       (set)->bits |= (((mask_bit_type)1) << (cpu));                            \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Remove CPU cpu from set.
@@ -73,7 +73,7 @@ typedef struct cpu_set {
   do {                                                                         \
     if ((cpu) < 64)                                                            \
       (set)->bits &= ~(((mask_bit_type)1) << (cpu));                           \
-  } while (0)
+  } while ((void)0, 0)
 
 /**
  * @brief Test to see if CPU cpu is a member of set.

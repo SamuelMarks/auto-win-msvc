@@ -38,16 +38,15 @@
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER <= 1400
-#pragma warning(push)
+
 #ifdef _MSC_VER
-#pragma warning(disable : 4201 4214)
 #endif /* _MSC_VER */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+
 #endif /* _MSC_VER */
 #else
 #include <winsock2.h>
@@ -130,9 +129,8 @@ void *dlopen(const char *file, int mode) {
   }
 
 #if defined(_MSC_VER)
-#pragma warning(push)
+
 #ifdef _MSC_VER
-#pragma warning(disable : 4996)
 #endif /* _MSC_VER */
 #endif
   {
@@ -141,7 +139,11 @@ void *dlopen(const char *file, int mode) {
     char *dot;
     char *p;
 
+#if defined(_MSC_VER)
+    strncpy_s(fixed_file, sizeof(fixed_file), file, _TRUNCATE);
+#else
     strncpy(fixed_file, file, sizeof(fixed_file) - 1);
+#endif
     fixed_file[sizeof(fixed_file) - 1] = '\0';
 
     lib_prefix = strstr(fixed_file, "libvalkeylua");
@@ -151,7 +153,11 @@ void *dlopen(const char *file, int mode) {
 
     dot = strrchr(fixed_file, '.');
     if (dot && (strcmp(dot, ".dylib") == 0 || strcmp(dot, ".so") == 0)) {
+#if defined(_MSC_VER)
+      strcpy_s(dot, sizeof(fixed_file) - (dot - fixed_file), ".dll");
+#else
       strcpy(dot, ".dll");
+#endif
     }
 
     p = fixed_file;
@@ -165,7 +171,7 @@ void *dlopen(const char *file, int mode) {
     handle = LoadLibraryA(fixed_file);
   }
 #if defined(_MSC_VER)
-#pragma warning(pop)
+
 #endif
   if (handle == NULL) {
     set_dlerror(GetLastError());

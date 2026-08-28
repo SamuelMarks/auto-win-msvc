@@ -1,10 +1,10 @@
 #ifndef POSIX_REGEX_H
 #define POSIX_REGEX_H
 
-/* clang-format off */
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
     defined(__MSDOS__) || defined(__WATCOMC__)
 
+/* clang-format off */
 #include <stddef.h>
 
 typedef struct {
@@ -69,8 +69,8 @@ void regfree(regex_t *preg);
 
 #else
 #include <regex.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 extern "C" {

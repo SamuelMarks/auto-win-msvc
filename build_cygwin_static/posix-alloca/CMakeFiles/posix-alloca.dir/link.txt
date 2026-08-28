@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libposix-alloca.a "CMakeFiles/posix-alloca.dir/src/posix-alloca.c.o"
-/usr/bin/ranlib.exe libposix-alloca.a

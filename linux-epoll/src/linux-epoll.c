@@ -1,6 +1,9 @@
 /* clang-format off */
 #include "linux-epoll.h"
 
+
+
+
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
@@ -39,8 +42,44 @@
     (defined(_WIN32) && !defined(_MSC_VER) && !defined(__MINGW32__) &&         \
      !defined(__MINGW64__))
 #include <errno.h>
+
+#ifdef _MSC_VER
+#undef FD_ZERO
+#define FD_ZERO(set) (((fd_set *)(set))->fd_count = 0)
+#undef FD_SET
+#define FD_SET(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            break; \
+        } \
+    } \
+    if (__i == ((fd_set *)(set))->fd_count) { \
+        if (((fd_set *)(set))->fd_count < FD_SETSIZE) { \
+            ((fd_set *)(set))->fd_array[__i] = (fd); \
+            ((fd_set *)(set))->fd_count++; \
+        } \
+    } \
+} while((void)0, 0)
+#undef FD_CLR
+#define FD_CLR(fd, set) do { \
+    u_int __i; \
+    for (__i = 0; __i < ((fd_set *)(set))->fd_count; __i++) { \
+        if (((fd_set *)(set))->fd_array[__i] == (fd)) { \
+            while (__i < ((fd_set *)(set))->fd_count - 1) { \
+                ((fd_set *)(set))->fd_array[__i] = \
+                    ((fd_set *)(set))->fd_array[__i + 1]; \
+                __i++; \
+            } \
+            ((fd_set *)(set))->fd_count--; \
+            break; \
+        } \
+    } \
+} while((void)0, 0)
 #endif
+
 /* clang-format on */
+#endif
 
 #if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
     defined(__MINGW64__)

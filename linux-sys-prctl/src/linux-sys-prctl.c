@@ -108,12 +108,12 @@ __declspec(dllimport) HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName);
 __declspec(dllimport) FARPROC __stdcall GetProcAddress(HMODULE hModule,
                                                        LPCSTR lpProcName);
 __declspec(dllimport) HANDLE __stdcall GetCurrentThread(void);
-__declspec(dllimport) int __stdcall
-MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
-                    int cbMultiByte, wchar_t *lpWideCharStr, int cchWideChar);
-__declspec(dllimport) void __stdcall
-RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags,
-               DWORD nNumberOfArguments, const ULONG_PTR *lpArguments);
+__declspec(dllimport) int __stdcall MultiByteToWideChar(
+    UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
+    wchar_t *lpWideCharStr, int cchWideChar);
+__declspec(dllimport) void __stdcall RaiseException(
+    DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments,
+    const ULONG_PTR *lpArguments);
 
 /** \brief Internal state to track if we already assigned pdeathsig */
 static int g_pdeathsig_assigned = 0;
@@ -142,7 +142,7 @@ int prctl(int option, ...) {
       HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
       if (hKernel32) {
         SetThreadDescription_t pSetThreadDescription =
-            (SetThreadDescription_t)(void *)GetProcAddress(
+            (SetThreadDescription_t)(size_t)GetProcAddress(
                 hKernel32, "SetThreadDescription");
         if (pSetThreadDescription) {
           wchar_t wname[1024];
@@ -160,8 +160,7 @@ int prctl(int option, ...) {
         info.dwThreadID = (DWORD)-1;
         info.dwFlags = 0;
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 6320 6322)
+
 #endif /* _MSC_VER */
         __try {
           RaiseException(0x406D1388, 0, sizeof(info) / sizeof(ULONG_PTR),
@@ -169,7 +168,7 @@ int prctl(int option, ...) {
         } __except (1) {
         }
 #ifdef _MSC_VER
-#pragma warning(pop)
+
 #endif /* _MSC_VER */
       }
 #endif
@@ -224,23 +223,23 @@ int prctl(int option, ...) {
     }
 
     pNtQueryInformationProcess =
-        (NtQueryInformationProcess_t)(void *)GetProcAddress(
+        (NtQueryInformationProcess_t)(size_t)GetProcAddress(
             hNtDll, "NtQueryInformationProcess");
     pOpenProcess =
-        (OpenProcess_t)(void *)GetProcAddress(hKernel32, "OpenProcess");
-    pCreateJobObjectA = (CreateJobObjectA_t)(void *)GetProcAddress(
+        (OpenProcess_t)(size_t)GetProcAddress(hKernel32, "OpenProcess");
+    pCreateJobObjectA = (CreateJobObjectA_t)(size_t)GetProcAddress(
         hKernel32, "CreateJobObjectA");
     pSetInformationJobObject =
-        (SetInformationJobObject_t)(void *)GetProcAddress(
+        (SetInformationJobObject_t)(size_t)GetProcAddress(
             hKernel32, "SetInformationJobObject");
     pAssignProcessToJobObject =
-        (AssignProcessToJobObject_t)(void *)GetProcAddress(
+        (AssignProcessToJobObject_t)(size_t)GetProcAddress(
             hKernel32, "AssignProcessToJobObject");
     pDuplicateHandle =
-        (DuplicateHandle_t)(void *)GetProcAddress(hKernel32, "DuplicateHandle");
+        (DuplicateHandle_t)(size_t)GetProcAddress(hKernel32, "DuplicateHandle");
     pCloseHandle =
-        (CloseHandle_t)(void *)GetProcAddress(hKernel32, "CloseHandle");
-    pGetCurrentProcess = (GetCurrentProcess_t)(void *)GetProcAddress(
+        (CloseHandle_t)(size_t)GetProcAddress(hKernel32, "CloseHandle");
+    pGetCurrentProcess = (GetCurrentProcess_t)(size_t)GetProcAddress(
         hKernel32, "GetCurrentProcess");
 
     if (!pNtQueryInformationProcess || !pOpenProcess || !pCreateJobObjectA ||

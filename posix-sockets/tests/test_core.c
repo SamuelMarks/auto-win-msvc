@@ -1,5 +1,4 @@
 #ifdef _MSC_VER
-#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
@@ -8,9 +7,9 @@
 #ifndef _WIN32
 #if !defined(_MSC_VER)
 #include <unistd.h>
-#endif
-#endif
 /* clang-format on */
+#endif
+#endif
 
 TEST test_sockets(void) {
   int s = socket(AF_INET, SOCK_STREAM, 0);

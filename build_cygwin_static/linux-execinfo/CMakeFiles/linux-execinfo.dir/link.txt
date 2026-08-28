@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc liblinux-execinfo.a "CMakeFiles/linux-execinfo.dir/src/linux-execinfo.c.o"
-/usr/bin/ranlib.exe liblinux-execinfo.a

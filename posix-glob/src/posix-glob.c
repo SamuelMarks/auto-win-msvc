@@ -28,8 +28,8 @@
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
-#endif
 /* clang-format on */
+#endif
 
 /* helper to append to glob_t */
 static int glob_append(glob_t *pglob, const char *path) {

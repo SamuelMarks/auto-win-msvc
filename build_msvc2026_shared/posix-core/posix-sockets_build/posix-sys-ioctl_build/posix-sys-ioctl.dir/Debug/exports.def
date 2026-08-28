@@ -1,3 +1,0 @@
-EXPORTS
-	dummy_posix_sys_ioctl
-	posix_ioctl

@@ -9,7 +9,7 @@ set_target_properties(macos-malloc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_expor
 target_include_directories(macos-malloc PUBLIC include)
 
 if(MSVC)
-    target_compile_definitions(macos-malloc PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(macos-malloc PRIVATE )
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -21,5 +21,5 @@ add_test(NAME macos-malloc_test COMMAND test_macos-malloc)
 endif()
 
 if(MSVC)
-    target_compile_options(macos-malloc PRIVATE /wd4273 /wd4141)
+    target_compile_options(macos-malloc PRIVATE )
 endif()

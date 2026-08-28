@@ -1,3 +1,0 @@
-EXPORTS
-	dummy_bsd_pthread_np
-	pthread_setaffinity_np

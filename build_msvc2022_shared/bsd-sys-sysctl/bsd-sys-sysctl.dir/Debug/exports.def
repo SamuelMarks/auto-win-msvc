@@ -1,4 +1,0 @@
-EXPORTS
-	dummy_bsd_sys_sysctl
-	sysctl
-	sysctlbyname

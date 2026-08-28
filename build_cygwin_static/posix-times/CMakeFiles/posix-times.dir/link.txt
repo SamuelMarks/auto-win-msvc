@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libposix-times.a "CMakeFiles/posix-times.dir/src/posix-times.c.o"
-/usr/bin/ranlib.exe libposix-times.a

@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libbsd-sys-file.a "CMakeFiles/bsd-sys-file.dir/src/bsd-sys-file.c.o"
-/usr/bin/ranlib.exe libbsd-sys-file.a

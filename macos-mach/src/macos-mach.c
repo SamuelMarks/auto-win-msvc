@@ -10,8 +10,8 @@
 #include <ws2tcpip.h>
 
 #include <psapi.h>
-#endif
 /* clang-format on */
+#endif
 
 /** \brief Polyfill for mach_absolute_time
  * \return Absolute time in nanoseconds, or 0 on error.

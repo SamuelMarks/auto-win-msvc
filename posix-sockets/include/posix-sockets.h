@@ -5,6 +5,7 @@
 #ifndef NAMESPACE_WIN_SHIM_H
 #define NAMESPACE_WIN_SHIM_H
 #endif
+/* clang-format off */
 #include <posix-poll.h>
 #include <posix-sys-ioctl.h>
 
@@ -12,7 +13,6 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <errno.h>

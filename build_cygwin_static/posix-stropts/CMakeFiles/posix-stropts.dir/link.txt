@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libposix-stropts.a "CMakeFiles/posix-stropts.dir/src/posix-stropts.c.o"
-/usr/bin/ranlib.exe libposix-stropts.a

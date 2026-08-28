@@ -1,2 +1,0 @@
-/usr/bin/ar.exe qc libposix-termios.a "CMakeFiles/posix-termios.dir/src/posix-termios.c.o"
-/usr/bin/ranlib.exe libposix-termios.a
