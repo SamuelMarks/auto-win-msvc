@@ -1219,7 +1219,7 @@ __declspec(selectany) unsigned long g_posix_child_pids[MAX_POSIX_CHILDREN] = {
 __declspec(selectany) int g_posix_child_count = 0;
 
 /**  rief fork function. */
-pid_t fork(void) {
+int fork(void) {
   void *ntdll;
   RtlCloneUserProcess_f pRtlCloneUserProcess;
   RTL_USER_PROCESS_INFORMATION info;

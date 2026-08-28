@@ -72,10 +72,12 @@ typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
                                                WIN_DWORD);
 
 /* Fallback macro for C89 64-bit int formatting */
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_MSC_VER)
 #define U64_FMT "%I64u"
+#define U64_CAST(x) ((bsd_malloc_u64)(x))
 #else
-#define U64_FMT "%llu"
+#define U64_FMT "%.0f"
+#define U64_CAST(x) ((double)(x))
 #endif
 
 /** \brief je_malloc_stats_print function. */
@@ -87,11 +89,6 @@ void je_malloc_stats_print(void (*write_cb)(void *, const char *),
   WIN_HMODULE hPsapi;
   WIN_HMODULE hKernel32;
   GetProcessMemoryInfo_t pGetProcessMemoryInfo = NULL;
-
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat"
-#endif
 
   (void)opts;
 
@@ -156,21 +153,14 @@ void je_malloc_stats_print(void (*write_cb)(void *, const char *),
               "  AvailPageFile: " U64_FMT "\n"
               "  TotalVirtual: " U64_FMT "\n"
               "  AvailVirtual: " U64_FMT "\n",
-              (unsigned long)memex.dwMemoryLoad,
-              (bsd_malloc_u64)memex.ullTotalPhys,
-              (bsd_malloc_u64)memex.ullAvailPhys,
-              (bsd_malloc_u64)memex.ullTotalPageFile,
-              (bsd_malloc_u64)memex.ullAvailPageFile,
-              (bsd_malloc_u64)memex.ullTotalVirtual,
-              (bsd_malloc_u64)memex.ullAvailVirtual);
+              (unsigned long)memex.dwMemoryLoad, U64_CAST(memex.ullTotalPhys),
+              U64_CAST(memex.ullAvailPhys), U64_CAST(memex.ullTotalPageFile),
+              U64_CAST(memex.ullAvailPageFile), U64_CAST(memex.ullTotalVirtual),
+              U64_CAST(memex.ullAvailVirtual));
     write_cb(cbopaque, buf);
   }
 
   write_cb(cbopaque, "___ End Windows Native Memory Stats ___\n");
-
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
 }
 #endif
 

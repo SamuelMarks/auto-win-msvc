@@ -44,7 +44,6 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 
 #undef _read
 #undef _write
-#define _CRT_SECURE_NO_WARNINGS
 #include <fcntl.h>
 
 #include <stdio.h>

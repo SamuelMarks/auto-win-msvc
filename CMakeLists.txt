@@ -597,4 +597,9 @@ endif()
 
 
 include(CPack)
-include(${CMAKE_CURRENT_SOURCE_DIR}/apply_strict.cmake)
+# Enable strict compilation warnings
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic -Werror -std=c90)
+endif()

@@ -1,12 +1,19 @@
 /* posix-stat.c - Strict C89 Implementation */
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wlong-long"
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
-
 /* clang-format off */
 #include "posix-stat.h"
+/* clang-format on */
+
+#if defined(__GNUC__) || defined(__clang__)
+__extension__ typedef unsigned long long stat_u64;
+
+#elif defined(_MSC_VER) || defined(__WATCOMC__)
+typedef unsigned __int64 stat_u64;
+#define U64_C(x) x##UI64
+#else
+typedef unsigned long long stat_u64;
+
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +28,8 @@
 #else
 #include <io.h>
 #endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#define safe_get_osfhandle(fd)                                                 \
+  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
@@ -293,8 +301,8 @@ static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
     SystemTimeToFileTime(&st, ft);
     *omit = 0;
   } else {
-    unsigned long long t =
-        ((unsigned long long)ts->tv_sec * 10000000ULL) + 116444736000000000ULL;
+    stat_u64 t = ((stat_u64)ts->tv_sec * ((stat_u64)10000000UL)) +
+                 (((stat_u64)116444736UL) * 1000000000UL);
     ft->dwLowDateTime = (DWORD)(t & 0xFFFFFFFF);
     ft->dwHighDateTime = (DWORD)(t >> 32);
     *omit = 0;
@@ -338,7 +346,7 @@ int futimens(int fd, const struct timespec times[2]) {
 /** \brief lstat function. */
 int lstat(const char *pathname, struct _stat64 *statbuf) {
   WIN32_FILE_ATTRIBUTE_DATA info;
-  unsigned long long t;
+  stat_u64 t;
   if (!GetFileAttributesExA(pathname, GetFileExInfoStandard, &info)) {
     errno = ENOENT;
     return -1;
@@ -347,17 +355,23 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
     statbuf->st_mode = S_IFLNK | S_IRWXU | S_IRWXG | S_IRWXO;
     statbuf->st_size = 0;
 
-    t = ((unsigned long long)info.ftLastAccessTime.dwHighDateTime << 32) |
+    t = ((stat_u64)info.ftLastAccessTime.dwHighDateTime << 32) |
         info.ftLastAccessTime.dwLowDateTime;
-    statbuf->st_atime = (time_t)((t - 116444736000000000ULL) / 10000000ULL);
+    statbuf->st_atime =
+        (time_t)((t - (((stat_u64)116444736UL) * 1000000000UL)) /
+                 ((stat_u64)10000000UL));
 
-    t = ((unsigned long long)info.ftLastWriteTime.dwHighDateTime << 32) |
+    t = ((stat_u64)info.ftLastWriteTime.dwHighDateTime << 32) |
         info.ftLastWriteTime.dwLowDateTime;
-    statbuf->st_mtime = (time_t)((t - 116444736000000000ULL) / 10000000ULL);
+    statbuf->st_mtime =
+        (time_t)((t - (((stat_u64)116444736UL) * 1000000000UL)) /
+                 ((stat_u64)10000000UL));
 
-    t = ((unsigned long long)info.ftCreationTime.dwHighDateTime << 32) |
+    t = ((stat_u64)info.ftCreationTime.dwHighDateTime << 32) |
         info.ftCreationTime.dwLowDateTime;
-    statbuf->st_ctime = (time_t)((t - 116444736000000000ULL) / 10000000ULL);
+    statbuf->st_ctime =
+        (time_t)((t - (((stat_u64)116444736UL) * 1000000000UL)) /
+                 ((stat_u64)10000000UL));
 
     statbuf->st_dev = 0;
     statbuf->st_ino = 0;

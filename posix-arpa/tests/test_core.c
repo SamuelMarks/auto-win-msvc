@@ -1,4 +1,3 @@
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #ifdef _MSC_VER
 #endif /* _MSC_VER */
 /* clang-format off */

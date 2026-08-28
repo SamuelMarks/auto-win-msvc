@@ -707,15 +707,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
 #endif
 /** @brief fork */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
-#endif
-pid_t fork(void);
-
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+int fork(void);
 #else
 /* fork */
 #endif
