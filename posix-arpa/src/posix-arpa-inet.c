@@ -74,6 +74,14 @@ int posix_inet_aton(const char *cp, struct in_addr *inp) {
   return 1;
 }
 
+unsigned long posix_inet_addr(const char *cp) {
+  struct in_addr val;
+  if (posix_inet_aton(cp, &val)) {
+    return val.s_addr;
+  }
+  return 0xffffffffUL; /* INADDR_NONE */
+}
+
 #endif
 
 /* Prevent empty translation unit */

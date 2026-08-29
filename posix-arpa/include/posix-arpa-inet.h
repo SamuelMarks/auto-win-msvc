@@ -54,6 +54,19 @@ int posix_inet_aton(const char *cp, struct in_addr *inp);
 #define inet_aton posix_inet_aton
 #endif
 
+/**
+ * @brief Converts the Internet host address cp from IPv4 numbers-and-dots
+ * notation into binary data in network byte order.
+ *
+ * @param cp The input IP address string.
+ * @return The IP address in network byte order, or INADDR_NONE if invalid.
+ */
+unsigned long posix_inet_addr(const char *cp);
+
+#ifndef inet_addr
+#define inet_addr posix_inet_addr
+#endif
+
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #ifdef __cplusplus

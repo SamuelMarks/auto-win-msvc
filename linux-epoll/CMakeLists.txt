@@ -89,8 +89,11 @@ if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
         URL "https://github.com/piscisaureus/wepoll/archive/refs/tags/v1.5.8.zip"
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
-        FetchContent_MakeAvailable(wepoll)
+    FetchContent_MakeAvailable(wepoll)
     add_library(wepoll STATIC ${wepoll_SOURCE_DIR}/wepoll.c)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(wepoll PRIVATE -Wno-pedantic)
+    endif()
 set_target_properties(wepoll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
     set_target_properties(wepoll PROPERTIES C_STANDARD 99)
     target_include_directories(wepoll PUBLIC $<BUILD_INTERFACE:${wepoll_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)

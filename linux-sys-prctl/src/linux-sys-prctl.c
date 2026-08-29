@@ -108,12 +108,12 @@ __declspec(dllimport) HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName);
 __declspec(dllimport) FARPROC __stdcall GetProcAddress(HMODULE hModule,
                                                        LPCSTR lpProcName);
 __declspec(dllimport) HANDLE __stdcall GetCurrentThread(void);
-__declspec(dllimport) int __stdcall MultiByteToWideChar(
-    UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-    wchar_t *lpWideCharStr, int cchWideChar);
-__declspec(dllimport) void __stdcall RaiseException(
-    DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments,
-    const ULONG_PTR *lpArguments);
+__declspec(dllimport) int __stdcall
+MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
+                    int cbMultiByte, wchar_t *lpWideCharStr, int cchWideChar);
+__declspec(dllimport) void __stdcall
+RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags,
+               DWORD nNumberOfArguments, const ULONG_PTR *lpArguments);
 
 /** \brief Internal state to track if we already assigned pdeathsig */
 static int g_pdeathsig_assigned = 0;

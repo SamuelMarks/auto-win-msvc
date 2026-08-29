@@ -39,6 +39,12 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...);
 /** \brief swapcontext function. */
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
+#else
+
+/* clang-format off */
+#include <ucontext.h>
+/* clang-format on */
+
 #endif /* _WIN32 && !__CYGWIN__ */
 
 #ifdef __cplusplus

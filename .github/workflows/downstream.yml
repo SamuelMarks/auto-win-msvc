@@ -53,7 +53,6 @@ jobs:
         run: |
           xcopy /E /I auto-win-msvc valkey-windows\auto-win-msvc
           cd valkey-windows
-          python -c "c = open('release.bat').read().replace('Visual Studio 18 2026', 'Visual Studio 17 2022'); open('release.bat', 'w').write(c)"
           call release.bat 9.1.0 --local-only
 
       - name: Build redis-windows
@@ -63,7 +62,6 @@ jobs:
           mkdir redis-windows\build_work
           xcopy /E /I auto-win-msvc redis-windows\build_work\auto-win-msvc
           cd redis-windows
-          python -c "c = open('build-and-release.bat').read().replace('Visual Studio 18 2026', 'Visual Studio 17 2022'); open('build-and-release.bat', 'w').write(c)"
           call build-and-release.bat 8.8-rc1 redis --local-only
 
       - name: Build rsync
@@ -73,5 +71,5 @@ jobs:
           cd /d "%VCPKG_INSTALLATION_ROOT%" && git fetch --all || true
           cd /d "%GITHUB_WORKSPACE%"
           cd rsync
-          cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
+          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
           cmake --build build --config Release

@@ -20,37 +20,71 @@ repos:
 
   - repo: local
     hooks:
+      - id: cppcheck
+        name: Cppcheck
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" cppcheck
+        language: python
+        pass_filenames: false
+        types_or: [c, c++]
+      - id: build-gcc
+        name: Build (GCC)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" build gcc
+        language: python
+        pass_filenames: false
+      - id: test-gcc
+        name: Test (GCC)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" test gcc
+        language: python
+        pass_filenames: false
+      - id: build-clang
+        name: Build (Clang)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" build clang
+        language: python
+        pass_filenames: false
+      - id: test-clang
+        name: Test (Clang)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" test clang
+        language: python
+        pass_filenames: false
+      - id: build-msvc
+        name: Build (MSVC)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" build msvc
+        language: python
+        pass_filenames: false
+      - id: test-msvc
+        name: Test (MSVC)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" test msvc
+        language: python
+        pass_filenames: false
+      - id: build-mingw
+        name: Build (MinGW)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" build mingw
+        language: python
+        pass_filenames: false
+      - id: test-mingw
+        name: Test (MinGW)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" test mingw
+        language: python
+        pass_filenames: false
+      - id: valgrind
+        name: Valgrind (GCC)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" valgrind gcc
+        language: python
+        pass_filenames: false
+      - id: valgrind-clang
+        name: Valgrind (Clang)
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" valgrind clang
+        language: python
+        pass_filenames: false
       - id: update-shields
-        name: Update Documentation and Shields
-        entry: python scripts/update_shields.py
-        language: system
+        name: Update README Shields
+        entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" shields
+        language: python
+        additional_dependencies: [gcovr]
         pass_filenames: false
-        always_run: true
-
-      - id: cmake-configure
-        name: CMake Configure
-        entry: cmake -B build -DCMAKE_BUILD_TYPE=Release
-        language: system
-        pass_filenames: false
-        always_run: true
-
-      - id: cmake-build
-        name: CMake Build
-        entry: cmake --build build --config Release
-        language: system
-        pass_filenames: false
-        always_run: true
-
-      - id: ctest
-        name: Run Tests (CTest)
-        entry: ctest --test-dir build -C Release --output-on-failure
-        language: system
-        pass_filenames: false
-        always_run: true
-
       - id: test-downstream
         name: Test Downstream Projects
         entry: python scripts/test_downstream.py
-        language: system
+        language: python
         pass_filenames: false
         always_run: true

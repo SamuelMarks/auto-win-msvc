@@ -4,6 +4,7 @@
 /* Polyfill for <stdatomic.h> */
 
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 /* clang-format off */
 #include_next <stdatomic.h>
 #endif

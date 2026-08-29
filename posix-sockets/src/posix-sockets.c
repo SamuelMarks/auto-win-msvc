@@ -1,7 +1,6 @@
 /* posix-sockets.c - Strict C89 Implementation */
 /* clang-format off */
 #if defined(_MSC_VER)
-#pragma warning(disable: 4127) /* conditional expression is constant */
 #endif
 #include "posix-sockets.h"
 
@@ -89,9 +88,14 @@ static void __cdecl __init_winsock_auto(void) {
 
 #if defined(_MSC_VER)
 #pragma section(".CRT$XCU", read)
-__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr_auto)(void) =
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr)(void) =
     __init_winsock_auto;
-#pragma comment(linker, "/include:__init_winsock_ptr_auto")
+
+#if defined(_WIN64)
+#pragma comment(linker, "/include:__init_winsock_ptr")
+#else
+#pragma comment(linker, "/include:___init_winsock_ptr")
+#endif
 #elif defined(__GNUC__) || defined(__clang__)
 __attribute__((constructor)) static void __init_winsock_auto_gcc(void) {
   __init_winsock_auto();
@@ -204,7 +208,11 @@ const char *posix_gai_strerror(int ecode) {
   return gai_strerrorA(ecode);
 #else
   static char buf[64];
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
+#else
   sprintf(buf, "Unknown error %d", (int)ecode);
+#endif
   return buf;
 #endif
 }
@@ -434,12 +442,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
   if (readfds) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
     FD_ZERO(&ws_readfds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
     for (i = 0; i < readfds->fd_count; i++) {
       intptr_t fd = (intptr_t)readfds->fd_array[i];
@@ -448,22 +453,16 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
           FD_SET(s, &ws_readfds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
         }
       } else {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
         FD_SET((SOCKET)fd, &ws_readfds); /* Pass through */
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
       }
     }
@@ -472,12 +471,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
   if (writefds) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
     FD_ZERO(&ws_writefds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
     for (i = 0; i < writefds->fd_count; i++) {
       intptr_t fd = (intptr_t)writefds->fd_array[i];
@@ -486,22 +482,16 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
           FD_SET(s, &ws_writefds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
         }
       } else {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
         FD_SET((SOCKET)fd, &ws_writefds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
       }
     }
@@ -510,12 +500,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
   if (errorfds) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
     FD_ZERO(&ws_errorfds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
     for (i = 0; i < errorfds->fd_count; i++) {
       intptr_t fd = (intptr_t)errorfds->fd_array[i];
@@ -524,22 +511,16 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
         if (s != INVALID_SOCKET) {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
           FD_SET(s, &ws_errorfds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
         }
       } else {
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4127)
 #endif
         FD_SET((SOCKET)fd, &ws_errorfds);
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
       }
     }
@@ -1129,14 +1110,3 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_sockets(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sockets;
-
-#ifdef _MSC_VER
-#pragma section(".CRT$XCU", read)
-static void __cdecl __init_winsock(void) {
-  WSADATA wsaData;
-  WSAStartup(MAKEWORD(2, 2), &wsaData);
-}
-__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_winsock_ptr)(void) =
-    __init_winsock;
-#pragma comment(linker, "/include:__init_winsock_ptr")
-#endif
