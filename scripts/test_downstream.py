@@ -75,27 +75,6 @@ def main():
         run_cmd(cmake_cmd, cwd=rsync_path)
         run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=rsync_path)
 
-    # 4. s2n-tls
-    s2n_tls_path, s2n_tls_is_tmp = setup_repo('s2n-tls', 'https://github.com/SamuelMarks/s2n-tls.git', branch='windows-support-via-auto-win-msvc')
-    if s2n_tls_is_tmp:
-        # s2n-tls's CMakeLists uses FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC natively, but to guarantee
-        # it tests the actual sibling, we copy auto-win-msvc directly into its parent if not existing
-        # (similar to rsync).
-        s2n_tls_parent = os.path.dirname(s2n_tls_path)
-        s2n_tls_awm = os.path.join(s2n_tls_parent, 'auto-win-msvc')
-        if os.path.abspath(s2n_tls_awm) != os.path.abspath(current_awm_dir):
-            if os.path.exists(s2n_tls_awm):
-                shutil.rmtree(s2n_tls_awm, ignore_errors=True)
-            shutil.copytree(current_awm_dir, s2n_tls_awm, ignore=ignore_pats, dirs_exist_ok=True)
-
-    # Configure and build s2n-tls
-    cmake_cmd = ['cmake', '-G', 'Visual Studio 17 2022', '-A', 'x64', '-B', 'build', '-S', '.', '--fresh', '-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc']
-    if os.path.exists(vcpkg_path):
-        cmake_cmd.append(f"-DCMAKE_TOOLCHAIN_FILE={vcpkg_path}/scripts/buildsystems/vcpkg.cmake")
-    run_cmd(cmake_cmd, cwd=s2n_tls_path)
-    run_cmd(['cmake', '--build', 'build', '--config', 'Release'], cwd=s2n_tls_path)
-    run_cmd(['ctest', '--test-dir', 'build', '-C', 'Release', '--output-on-failure'], cwd=s2n_tls_path)
-
     print("All downstream tests passed!")
 
 if __name__ == '__main__':

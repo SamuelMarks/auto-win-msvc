@@ -8,6 +8,13 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 project(auto-win-msvc VERSION 0.1.0 LANGUAGES C)
 
+# Enable strict compilation warnings
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic -Werror -std=c90)
+endif()
+
 include(CTest)
 
 if(MSVC)

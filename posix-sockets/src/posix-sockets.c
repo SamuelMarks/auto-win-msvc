@@ -1,5 +1,8 @@
 /* posix-sockets.c - Strict C89 Implementation */
 /* clang-format off */
+#if defined(_MSC_VER)
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#endif
 #include "posix-sockets.h"
 
 
@@ -430,48 +433,114 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   (void)nfds;
 
   if (readfds) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
     FD_ZERO(&ws_readfds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
     for (i = 0; i < readfds->fd_count; i++) {
       intptr_t fd = (intptr_t)readfds->fd_array[i];
       if (is_socket(fd)) {
         intptr_t handle = safe_get_osfhandle(fd);
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET)
+        if (s != INVALID_SOCKET) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
           FD_SET(s, &ws_readfds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+        }
       } else {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
         FD_SET((SOCKET)fd, &ws_readfds); /* Pass through */
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
       }
     }
     p_ws_readfds = &ws_readfds;
   }
 
   if (writefds) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
     FD_ZERO(&ws_writefds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
     for (i = 0; i < writefds->fd_count; i++) {
       intptr_t fd = (intptr_t)writefds->fd_array[i];
       if (is_socket(fd)) {
         intptr_t handle = safe_get_osfhandle(fd);
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET)
+        if (s != INVALID_SOCKET) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
           FD_SET(s, &ws_writefds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+        }
       } else {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
         FD_SET((SOCKET)fd, &ws_writefds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
       }
     }
     p_ws_writefds = &ws_writefds;
   }
 
   if (errorfds) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
     FD_ZERO(&ws_errorfds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
     for (i = 0; i < errorfds->fd_count; i++) {
       intptr_t fd = (intptr_t)errorfds->fd_array[i];
       if (is_socket(fd)) {
         intptr_t handle = safe_get_osfhandle(fd);
         SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET)
+        if (s != INVALID_SOCKET) {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
           FD_SET(s, &ws_errorfds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+        }
       } else {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
         FD_SET((SOCKET)fd, &ws_errorfds);
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
       }
     }
     p_ws_errorfds = &ws_errorfds;

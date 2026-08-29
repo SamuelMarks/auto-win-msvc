@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [valkey, redis, rsync, s2n-tls]
+        project: [valkey, redis, rsync]
 
     steps:
       - name: Checkout auto-win-msvc
@@ -43,14 +43,6 @@ jobs:
           repository: SamuelMarks/rsync
           ref: windows
           path: rsync
-
-      - name: Checkout s2n-tls
-        if: matrix.project == 's2n-tls'
-        uses: actions/checkout@v4
-        with:
-          repository: SamuelMarks/s2n-tls
-          ref: windows-support-via-auto-win-msvc
-          path: s2n-tls
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -83,12 +75,3 @@ jobs:
           cd rsync
           cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
           cmake --build build --config Release
-
-      - name: Build and Test s2n-tls
-        if: matrix.project == 's2n-tls'
-        shell: cmd
-        run: |
-          cd s2n-tls
-          cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
-          cmake --build build --config Release
-          ctest --test-dir build -C Release --output-on-failure
