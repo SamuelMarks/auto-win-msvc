@@ -11,7 +11,9 @@
 #if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MSDOS__)
 #include <sys/param.h>
 #if !defined(_MSC_VER)
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 /* clang-format on */
 #endif
 #endif

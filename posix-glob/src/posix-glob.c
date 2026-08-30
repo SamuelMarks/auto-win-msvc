@@ -291,12 +291,20 @@ int glob(const char *pattern, int flags,
       strncpy(search_dir, pattern, prefix_len - 1);
       search_dir[prefix_len - 1] = '\0';
     } else {
+#if defined(_MSC_VER)
+      strcpy_s(search_dir, (strlen("/") + 1), "/");
+#else
       strcpy(search_dir, "/");
+#endif
     }
     file_pattern = last_slash + 1;
   } else {
     dir_prefix[0] = '\0';
+#if defined(_MSC_VER)
+    strcpy_s(search_dir, (strlen(".") + 1), ".");
+#else
     strcpy(search_dir, ".");
+#endif
     file_pattern = pattern;
   }
 

@@ -114,7 +114,9 @@
 typedef unsigned __int32 uint32_t;
 #else
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 #endif
 

@@ -37,7 +37,9 @@
 
 #if defined(_MSC_VER) && _MSC_VER >= 1600
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 #else
 #include <stddef.h>
@@ -1604,8 +1606,8 @@ long pathconf(const char *pathname, int name) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) unsigned long __stdcall SleepEx(
-    unsigned long dwMilliseconds, int bAlertable);
+__declspec(dllimport) unsigned long __stdcall
+SleepEx(unsigned long dwMilliseconds, int bAlertable);
 
 /** \brief pause function. */
 int pause(void) {
@@ -1715,16 +1717,17 @@ ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) int __stdcall DeviceIoControl(
-    void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
-    unsigned long nInBufferSize, void *lpOutBuffer,
-    unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
-    void *lpOverlapped);
+__declspec(dllimport) int __stdcall
+DeviceIoControl(void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
+                unsigned long nInBufferSize, void *lpOutBuffer,
+                unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
+                void *lpOverlapped);
 
-__declspec(dllimport) int __stdcall WideCharToMultiByte(
-    unsigned int CodePage, unsigned long dwFlags, const wchar_t *lpWideCharStr,
-    int cchWideChar, char *lpMultiByteStr, int cbMultiByte,
-    const char *lpDefaultChar, int *lpUsedDefaultChar);
+__declspec(dllimport) int __stdcall
+WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags,
+                    const wchar_t *lpWideCharStr, int cchWideChar,
+                    char *lpMultiByteStr, int cbMultiByte,
+                    const char *lpDefaultChar, int *lpUsedDefaultChar);
 #endif
 
 typedef struct _POSIX_REPARSE_DATA_BUFFER {
@@ -1987,8 +1990,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpath) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 __declspec(dllimport) unsigned long __stdcall GetLogicalDrives(void);
 __declspec(dllimport) int __stdcall FlushFileBuffers(void *hFile);
-__declspec(dllimport) unsigned int __stdcall GetDriveTypeA(
-    const char *lpRootPathName);
+__declspec(dllimport) unsigned int __stdcall
+GetDriveTypeA(const char *lpRootPathName);
 
 /** \brief sync function. */
 void sync(void) {

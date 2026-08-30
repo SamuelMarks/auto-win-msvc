@@ -53,15 +53,14 @@ extern "C" {
 #endif
 
 __declspec(dllimport) WIN_HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) int __stdcall GlobalMemoryStatusEx(
-    MEMORYSTATUSEX *lpBuffer);
-__declspec(dllimport)
-WIN_HMODULE __stdcall GetModuleHandleA(WIN_LPCSTR lpModuleName);
-__declspec(dllimport)
-WIN_HMODULE __stdcall LoadLibraryA(WIN_LPCSTR lpLibFileName);
-__declspec(dllimport)
-WIN_FARPROC __stdcall GetProcAddress(WIN_HMODULE hModule,
-                                     WIN_LPCSTR lpProcName);
+__declspec(dllimport) int __stdcall
+GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
+__declspec(dllimport) WIN_HMODULE __stdcall
+GetModuleHandleA(WIN_LPCSTR lpModuleName);
+__declspec(dllimport) WIN_HMODULE __stdcall
+LoadLibraryA(WIN_LPCSTR lpLibFileName);
+__declspec(dllimport) WIN_FARPROC __stdcall
+GetProcAddress(WIN_HMODULE hModule, WIN_LPCSTR lpProcName);
 
 #ifdef __cplusplus
 }

@@ -138,7 +138,9 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <sys/stat.h>
 #include <sys/types.h>
 #if !defined(_MSC_VER)
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #endif
 #else
 #include <fcntl.h>
@@ -146,7 +148,9 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #include <sys/types.h>
 #include <sys/wait.h>
 #if !defined(_MSC_VER)
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #endif
 #endif
 

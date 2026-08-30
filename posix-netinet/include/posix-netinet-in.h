@@ -11,7 +11,9 @@
 #include <ws2tcpip.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 #ifndef IPPROTO_IP
 #define IPPROTO_IP 0

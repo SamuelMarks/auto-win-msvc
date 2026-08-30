@@ -32,7 +32,9 @@
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1400
 /* MSVC 2005+ */

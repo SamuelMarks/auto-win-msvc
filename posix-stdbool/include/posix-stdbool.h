@@ -14,7 +14,9 @@
 /* For newer MSVC and GCC/Clang */
 #if !defined(_MSC_VER) || _MSC_VER >= 1800
 /* clang-format off */
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
 #include <stdbool.h>
+#endif
 /* clang-format on */
 #endif
 #endif
