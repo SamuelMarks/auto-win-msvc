@@ -31,20 +31,23 @@ typedef unsigned long DWORD;
 extern "C" {
 #endif
 
-__declspec(dllimport) USHORT __stdcall
-RtlCaptureStackBackTrace(ULONG FramesToSkip, ULONG FramesToCapture,
-                         PVOID *BackTrace, PULONG BackTraceHash);
+__declspec(dllimport) USHORT __stdcall RtlCaptureStackBackTrace(
+    ULONG FramesToSkip, ULONG FramesToCapture, PVOID *BackTrace,
+    PULONG BackTraceHash);
 __declspec(dllimport) HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) BOOL __stdcall
-SymInitialize(HANDLE hProcess, const char *UserSearchPath, BOOL fInvadeProcess);
+__declspec(dllimport) BOOL __stdcall SymInitialize(HANDLE hProcess,
+                                                   const char *UserSearchPath,
+                                                   BOOL fInvadeProcess);
 __declspec(dllimport) BOOL __stdcall SymSetOptions(DWORD SymOptions);
 __declspec(dllimport) DWORD __stdcall SymGetOptions(void);
 __declspec(dllimport) PVOID __stdcall GetStdHandle(DWORD nStdHandle);
 
 /* WriteFile */
-__declspec(dllimport) BOOL __stdcall
-WriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite,
-          DWORD *lpNumberOfBytesWritten, void *lpOverlapped);
+__declspec(dllimport) BOOL __stdcall WriteFile(HANDLE hFile,
+                                               const void *lpBuffer,
+                                               DWORD nNumberOfBytesToWrite,
+                                               DWORD *lpNumberOfBytesWritten,
+                                               void *lpOverlapped);
 
 /* DbgHelp structs */
 #pragma pack(push, 8)
