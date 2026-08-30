@@ -3,20 +3,11 @@
 #include "posix-sys-select.h"
 
 #ifdef _MSC_VER
-
-
-
-
-
-
 #ifndef _WINSOCK2API_
 #include <winsock2.h>
 #endif
-#undef FD_ZERO
-static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
-#define FD_ZERO(set) posix_fd_zero((fd_set*)set)
-#undef FD_SET
-static void posix_fd_set(SOCKET fd, fd_set *set) {
+
+void auto_win_msvc_fd_set(SOCKET fd, fd_set *set) {
   u_int __i;
   for (__i = 0; __i < set->fd_count; __i++) {
     if (set->fd_array[__i] == fd) {
@@ -30,9 +21,8 @@ static void posix_fd_set(SOCKET fd, fd_set *set) {
     }
   }
 }
-#define FD_SET(fd, set) posix_fd_set((SOCKET)(fd), (fd_set *)(set))
-#undef FD_CLR
-static void posix_fd_clr(SOCKET fd, fd_set *set) {
+
+void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set) {
   u_int __i;
   for (__i = 0; __i < set->fd_count; __i++) {
     if (set->fd_array[__i] == fd) {
@@ -45,9 +35,6 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
     }
   }
 }
-#define FD_CLR(fd, set) posix_fd_clr((SOCKET)(fd), (fd_set *)(set))
-
-
 #endif
 
 /* clang-format on */

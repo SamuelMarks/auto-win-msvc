@@ -20,14 +20,13 @@ typedef void *WIN_PSID;
 #define WIN_EVENTLOG_INFORMATION_TYPE 0x0004
 
 /* Declarations for Advapi32 functions */
-__declspec(dllimport)
-WIN_HANDLE __stdcall RegisterEventSourceA(WIN_LPCSTR lpUNCServerName,
-                                          WIN_LPCSTR lpSourceName);
+__declspec(dllimport) WIN_HANDLE __stdcall
+RegisterEventSourceA(WIN_LPCSTR lpUNCServerName, WIN_LPCSTR lpSourceName);
 __declspec(dllimport) int __stdcall DeregisterEventSource(WIN_HANDLE hEventLog);
-__declspec(dllimport) int __stdcall ReportEventA(
-    WIN_HANDLE hEventLog, WIN_WORD wType, WIN_WORD wCategory,
-    WIN_DWORD dwEventID, WIN_PSID lpUserSid, WIN_WORD wNumStrings,
-    WIN_DWORD dwDataSize, WIN_LPCSTR *lpStrings, void *lpRawData);
+__declspec(dllimport) int __stdcall
+ReportEventA(WIN_HANDLE hEventLog, WIN_WORD wType, WIN_WORD wCategory,
+             WIN_DWORD dwEventID, WIN_PSID lpUserSid, WIN_WORD wNumStrings,
+             WIN_DWORD dwDataSize, WIN_LPCSTR *lpStrings, void *lpRawData);
 #endif
 
 /* Global state */

@@ -1,0 +1,20 @@
+
+$content = Get-Content wepoll.c -Raw
+$content = $content -replace "typedef void\* nt__fn_ptr_cast_t;", "typedef void (*nt__fn_ptr_cast_t)(void);"
+$content = $content -replace "typedef struct tree \{", "struct tree {"
+$content = $content -replace "typedef struct tree_node \{", "struct tree_node {"
+$content = $content -replace "typedef struct ts_tree_node \{", "struct ts_tree_node {"
+$content = $content -replace "typedef struct queue_node \{", "struct queue_node {"
+$content = $content -replace "typedef struct queue \{", "struct queue {"
+$content = $content -replace "typedef struct poll_group \{", "struct poll_group {"
+$content = $content -replace "typedef struct port_state \{", "struct port_state {"
+$content = $content -replace "typedef struct sock_state \{", "struct sock_state {"
+$content = $content -replace "\} tree_t;", "};"
+$content = $content -replace "\} tree_node_t;", "};"
+$content = $content -replace "\} ts_tree_node_t;", "};"
+$content = $content -replace "\} queue_node_t;", "};"
+$content = $content -replace "\} queue_t;", "};"
+$content = $content -replace "\} poll_group_t;", "};"
+$content = $content -replace "\} port_state_t;", "};"
+$content = $content -replace "\} sock_state_t;", "};"
+Set-Content -Path wepoll.c -Value $content -NoNewline
