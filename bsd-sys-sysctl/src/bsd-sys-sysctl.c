@@ -39,8 +39,8 @@ typedef struct _MEMORYSTATUSEX {
 #pragma pack(pop)
 
 __declspec(dllimport) void __stdcall GetSystemInfo(SYSTEM_INFO *lpSystemInfo);
-__declspec(dllimport) BOOL __stdcall
-GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
+__declspec(dllimport)
+BOOL __stdcall GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
 
 int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
            const void *newp, size_t newlen) {

@@ -92,7 +92,7 @@ if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
     FetchContent_MakeAvailable(wepoll)
     add_library(wepoll STATIC ${wepoll_SOURCE_DIR}/wepoll.c)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(wepoll PRIVATE -Wno-pedantic)
+        # target_compile_options removed
     endif()
 set_target_properties(wepoll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
     set_target_properties(wepoll PROPERTIES C_STANDARD 99)
