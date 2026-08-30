@@ -2,7 +2,6 @@
 
 /* clang-format off */
 #include "posix-stat.h"
-/* clang-format on */
 
 #if defined(__GNUC__) || defined(__clang__)
 __extension__ typedef unsigned long long stat_u64;

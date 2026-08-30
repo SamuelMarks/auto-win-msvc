@@ -6,11 +6,11 @@
 extern "C" {
 #endif
 
-/* clang-format off */
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+/* clang-format off */
 #include <winsock2.h>
 /* MSVC uses fd_set from winsock2.h, select is available there */
 #ifdef _MSC_VER
@@ -32,8 +32,8 @@ extern void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set);
 #pragma GCC system_header
 #endif
 #include_next <sys/select.h>
-#endif
 /* clang-format on */
+#endif
 
 #ifdef __cplusplus
 }

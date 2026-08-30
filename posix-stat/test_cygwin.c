@@ -4,8 +4,8 @@
 #if !defined(_MSC_VER)
 #if !defined(_MSC_VER)
 #include <unistd.h>
-#endif
 /* clang-format on */
+#endif
 #endif
 int main() {
   fchmodat(AT_FDCWD, ".", 0, 0);

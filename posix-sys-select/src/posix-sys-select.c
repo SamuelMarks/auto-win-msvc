@@ -5,6 +5,7 @@
 #ifdef _MSC_VER
 #ifndef _WINSOCK2API_
 #include <winsock2.h>
+/* clang-format on */
 #endif
 
 void auto_win_msvc_fd_set(SOCKET fd, fd_set *set) {
@@ -36,7 +37,5 @@ void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set) {
   }
 }
 #endif
-
-/* clang-format on */
 
 typedef int make_iso_compilers_happy_tu_posix_sys_select;

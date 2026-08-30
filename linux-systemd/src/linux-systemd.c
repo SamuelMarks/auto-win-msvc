@@ -34,11 +34,12 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+/* clang-format on */
 
 #ifdef _MSC_VER
 #undef FD_ZERO
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
-#define FD_ZERO(set) posix_fd_zero((fd_set*)set)
+#define FD_ZERO(set) posix_fd_zero((fd_set *)set)
 #undef FD_SET
 static void posix_fd_set(SOCKET fd, fd_set *set) {
   u_int __i;
@@ -72,7 +73,6 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
 #define FD_CLR(fd, set) posix_fd_clr((SOCKET)(fd), (fd_set *)(set))
 #endif
 
-/* clang-format on */
 #ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
 #endif

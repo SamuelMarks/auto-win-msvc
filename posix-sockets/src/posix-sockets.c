@@ -1,7 +1,7 @@
 /* posix-sockets.c - Strict C89 Implementation */
-/* clang-format off */
 #if defined(_MSC_VER)
 #endif
+/* clang-format off */
 #include "posix-sockets.h"
 
 
@@ -1024,7 +1024,6 @@ int posix_socket(int domain, int type, int protocol) {
 #include <winsock2.h>
 #endif
 #include <ws2tcpip.h>
-
 /* clang-format on */
 
 #endif

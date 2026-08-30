@@ -17,8 +17,8 @@ typedef unsigned int uintptr_t;
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
-#endif
 /* clang-format on */
+#endif
 #endif
 #endif
 

@@ -63,8 +63,8 @@ struct winsize {
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
-#endif
 /* clang-format on */
+#endif
 #endif
 int posix_ioctl(intptr_t fd, unsigned long request, ...);
 

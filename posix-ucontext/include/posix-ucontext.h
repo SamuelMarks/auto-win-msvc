@@ -5,7 +5,6 @@
 
 /* clang-format off */
 #include <stddef.h>
-/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +40,6 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
 #else
 
-/* clang-format off */
 #include <ucontext.h>
 /* clang-format on */
 
