@@ -8,9 +8,11 @@
 
 /* Forward declare required Windows structures and functions */
 __declspec(dllimport) void *__stdcall GetCurrentProcess(void);
-__declspec(dllimport) int __stdcall
-GetProcessTimes(void *hProcess, void *lpCreationTime, void *lpExitTime,
-                void *lpKernelTime, void *lpUserTime);
+__declspec(dllimport) int __stdcall GetProcessTimes(void *hProcess,
+                                                    void *lpCreationTime,
+                                                    void *lpExitTime,
+                                                    void *lpKernelTime,
+                                                    void *lpUserTime);
 
 typedef struct _POSIX_TIMES_FILETIME {
   unsigned long dwLowDateTime;

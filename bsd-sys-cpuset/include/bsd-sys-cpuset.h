@@ -1,6 +1,12 @@
 #ifndef BSD_SYS_CPUSET_H
 #define BSD_SYS_CPUSET_H
 
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
+
 #if defined(_MSC_VER) || defined(__MINGW32__)
 /* clang-format off */
 #include <stddef.h>
@@ -93,8 +99,8 @@ typedef int id_t;
  * @param mask Pointer to cpuset_t
  * @return 0 on success, -1 on failure
  */
-int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
-                       size_t setsize, cpuset_t *mask);
+error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, cpuset_t *mask);
 
 /**
  * @brief Set CPU affinity mask
@@ -105,8 +111,8 @@ int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
  * @param mask Pointer to cpuset_t
  * @return 0 on success, -1 on failure
  */
-int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
-                       size_t setsize, const cpuset_t *mask);
+error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, const cpuset_t *mask);
 
 #endif /* _MSC_VER || __MINGW32__ */
 

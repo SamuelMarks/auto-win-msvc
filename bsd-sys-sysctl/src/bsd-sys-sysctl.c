@@ -39,17 +39,18 @@ typedef struct _MEMORYSTATUSEX {
 #pragma pack(pop)
 
 __declspec(dllimport) void __stdcall GetSystemInfo(SYSTEM_INFO *lpSystemInfo);
-__declspec(dllimport) BOOL __stdcall
-GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
+__declspec(dllimport)
+BOOL __stdcall GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
 
-int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
-           const void *newp, size_t newlen) {
-  (void)newp;
-  (void)newlen;
+error_type_t sysctl(const int *name, unsigned int namelen, void *oldp,
+                    size_t *oldlenp, const void *newp, size_t newlen) {
+
+  if (newp || newlen) {
+    /* unused */
+  }
 
   if (!name || namelen == 0) {
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
 
   if (name[0] == CTL_HW) {
@@ -61,15 +62,14 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
           if (*oldlenp >= sizeof(int)) {
             *(int *)oldp = (int)sysinfo.dwNumberOfProcessors;
             *oldlenp = sizeof(int);
-            return 0;
+            return ERR_NONE;
           } else {
-            errno = ENOMEM;
-            return -1;
+            return ENOMEM;
           }
         }
         if (oldlenp)
           *oldlenp = sizeof(int);
-        return 0;
+        return ERR_NONE;
       } else if (name[1] == HW_PAGESIZE) {
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
@@ -77,15 +77,14 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
           if (*oldlenp >= sizeof(int)) {
             *(int *)oldp = (int)sysinfo.dwPageSize;
             *oldlenp = sizeof(int);
-            return 0;
+            return ERR_NONE;
           } else {
-            errno = ENOMEM;
-            return -1;
+            return ENOMEM;
           }
         }
         if (oldlenp)
           *oldlenp = sizeof(int);
-        return 0;
+        return ERR_NONE;
       } else if (name[1] == HW_PHYSMEM || name[1] == HW_REALMEM ||
                  name[1] == HW_USERMEM || name[1] == HW_MEMSIZE) {
         MEMORYSTATUSEX memex;
@@ -95,22 +94,21 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
             if (*oldlenp >= sizeof(ULONGLONG)) {
               *(ULONGLONG *)oldp = memex.ullTotalPhys;
               *oldlenp = sizeof(ULONGLONG);
-              return 0;
+              return ERR_NONE;
             } else if (*oldlenp >= sizeof(unsigned int)) {
               *(unsigned int *)oldp =
                   (unsigned int)(memex.ullTotalPhys > (ULONGLONG)4294967295UL
                                      ? (ULONGLONG)4294967295UL
                                      : memex.ullTotalPhys);
               *oldlenp = sizeof(unsigned int);
-              return 0;
+              return ERR_NONE;
             } else {
-              errno = ENOMEM;
-              return -1;
+              return ENOMEM;
             }
           }
           if (oldlenp)
             *oldlenp = sizeof(ULONGLONG);
-          return 0;
+          return ERR_NONE;
         }
       }
     }
@@ -120,15 +118,14 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
         if (*oldlenp >= sizeof(int)) {
           *(int *)oldp = 0; /* Not overcommitting on Windows by default */
           *oldlenp = sizeof(int);
-          return 0;
+          return ERR_NONE;
         } else {
-          errno = ENOMEM;
-          return -1;
+          return ENOMEM;
         }
       }
       if (oldlenp)
         *oldlenp = sizeof(int);
-      return 0;
+      return ERR_NONE;
     }
   } else if (name[0] == CTL_KERN) {
     if (namelen > 2 && name[1] == KERN_IPC && name[2] == KIPC_SOMAXCONN) {
@@ -136,30 +133,28 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
         if (*oldlenp >= sizeof(int)) {
           *(int *)oldp = 0x7FFFFFFF; /* SOMAXCONN effectively unbounded */
           *oldlenp = sizeof(int);
-          return 0;
+          return ERR_NONE;
         } else {
-          errno = ENOMEM;
-          return -1;
+          return ENOMEM;
         }
       }
       if (oldlenp)
         *oldlenp = sizeof(int);
-      return 0;
+      return ERR_NONE;
     }
   }
 
-  errno = ENOENT;
-  return -1;
+  return ENOENT;
 }
 
-int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
-                 const void *newp, size_t newlen) {
+error_type_t sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
+                          const void *newp, size_t newlen) {
   int mib[4];
   unsigned int namelen = 0;
+  error_type_t rc;
 
   if (!name) {
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
 
   if (strcmp(name, "hw.ncpu") == 0 || strcmp(name, "kern.smp.cpus") == 0) {
@@ -196,11 +191,11 @@ int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
     mib[2] = KIPC_SOMAXCONN;
     namelen = 3;
   } else {
-    errno = ENOENT;
-    return -1;
+    return ENOENT;
   }
 
-  return sysctl(mib, namelen, oldp, oldlenp, newp, newlen);
+  rc = sysctl(mib, namelen, oldp, oldlenp, newp, newlen);
+  return rc;
 }
 
 #endif

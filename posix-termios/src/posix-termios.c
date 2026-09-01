@@ -80,8 +80,8 @@ extern "C" {
 
 __declspec(dllimport) HANDLE __stdcall GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL __stdcall FlushFileBuffers(HANDLE hFile);
-__declspec(dllimport) BOOL __stdcall
-FlushConsoleInputBuffer(HANDLE hConsoleInput);
+__declspec(dllimport)
+BOOL __stdcall FlushConsoleInputBuffer(HANDLE hConsoleInput);
 __declspec(dllimport) BOOL __stdcall GetConsoleMode(HANDLE hConsoleHandle,
                                                     DWORD *lpMode);
 __declspec(dllimport) BOOL __stdcall SetConsoleMode(HANDLE hConsoleHandle,

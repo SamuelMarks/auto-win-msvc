@@ -2,6 +2,12 @@
 #ifndef POSIX_CORE_H
 #define POSIX_CORE_H
 
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
+
 /* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>

@@ -108,12 +108,12 @@ __declspec(dllimport) HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName);
 __declspec(dllimport) FARPROC __stdcall GetProcAddress(HMODULE hModule,
                                                        LPCSTR lpProcName);
 __declspec(dllimport) HANDLE __stdcall GetCurrentThread(void);
-__declspec(dllimport) int __stdcall
-MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
-                    int cbMultiByte, wchar_t *lpWideCharStr, int cchWideChar);
-__declspec(dllimport) void __stdcall
-RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags,
-               DWORD nNumberOfArguments, const ULONG_PTR *lpArguments);
+__declspec(dllimport) int __stdcall MultiByteToWideChar(
+    UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
+    wchar_t *lpWideCharStr, int cchWideChar);
+__declspec(dllimport) void __stdcall RaiseException(
+    DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments,
+    const ULONG_PTR *lpArguments);
 
 /** \brief Internal state to track if we already assigned pdeathsig */
 static int g_pdeathsig_assigned = 0;
@@ -129,7 +129,7 @@ static int g_pdeathsig_signum = 0;
  * \param ... Variable arguments based on the option.
  * \return 0 on success, or -1 on error with errno set.
  */
-int prctl(int option, ...) {
+error_type_t prctl(int option, ...) {
   va_list ap;
 
   if (option == PR_SET_NAME) {
@@ -146,9 +146,14 @@ int prctl(int option, ...) {
                 hKernel32, "SetThreadDescription");
         if (pSetThreadDescription) {
           wchar_t wname[1024];
-          MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, 1024);
-          pSetThreadDescription(GetCurrentThread(), wname);
-          return 0;
+          int mb_res = MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, 1024);
+          if (mb_res == 0) {
+            return EINVAL;
+          }
+          if (pSetThreadDescription(GetCurrentThread(), wname) < 0) {
+            return EINVAL;
+          }
+          return ERR_NONE;
         }
       }
 
@@ -172,10 +177,9 @@ int prctl(int option, ...) {
 #endif /* _MSC_VER */
       }
 #endif
-      return 0;
+      return ERR_NONE;
     }
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
 
   if (option == PR_SET_PDEATHSIG) {
@@ -206,20 +210,19 @@ int prctl(int option, ...) {
     if (sig == 0) {
       /* Linux semantics allow clearing it. Windows Job limit cannot be easily
          revoked once assigned, but we update our local tracking. */
-      return 0;
+      return ERR_NONE;
     }
 
     if (g_pdeathsig_assigned) {
       /* Already assigned to a job for this purpose */
-      return 0;
+      return ERR_NONE;
     }
 
     hNtDll = GetModuleHandleA("ntdll.dll");
     hKernel32 = GetModuleHandleA("kernel32.dll");
 
     if (!hNtDll || !hKernel32) {
-      errno = ENOSYS;
-      return -1;
+      return ENOSYS;
     }
 
     pNtQueryInformationProcess =
@@ -245,30 +248,28 @@ int prctl(int option, ...) {
     if (!pNtQueryInformationProcess || !pOpenProcess || !pCreateJobObjectA ||
         !pSetInformationJobObject || !pAssignProcessToJobObject ||
         !pDuplicateHandle || !pCloseHandle || !pGetCurrentProcess) {
-      errno = ENOSYS;
-      return -1;
+      return ENOSYS;
     }
 
     if (pNtQueryInformationProcess(pGetCurrentProcess(),
                                    0 /* ProcessBasicInformation */, &pbi,
                                    sizeof(pbi), &retLen) != 0) {
-      errno = EINVAL;
-      return -1;
+      return EINVAL;
     }
 
     hParent = pOpenProcess(PROCESS_DUP_HANDLE | SYNCHRONIZE, 0,
                            (DWORD)pbi.InheritedFromUniqueProcessId);
     if (!hParent) {
       /* Parent is already dead or we don't have permission */
-      errno = EINVAL;
-      return -1;
+      return EINVAL;
     }
 
     hJob = pCreateJobObjectA(NULL, NULL);
     if (!hJob) {
-      pCloseHandle(hParent);
-      errno = ENOMEM;
-      return -1;
+      if (!pCloseHandle(hParent)) {
+        /* Ignore secondary */
+      }
+      return ENOMEM;
     }
 
     memset(&jeli, 0, sizeof(jeli));
@@ -276,33 +277,42 @@ int prctl(int option, ...) {
 
     if (!pSetInformationJobObject(hJob, JobObjectExtendedLimitInformation,
                                   &jeli, sizeof(jeli))) {
-      pCloseHandle(hJob);
-      pCloseHandle(hParent);
-      errno = EINVAL;
-      return -1;
+      if (!pCloseHandle(hJob)) { /* Ignore */
+      }
+      if (!pCloseHandle(hParent)) { /* Ignore */
+      }
+      return EINVAL;
     }
 
     if (!pAssignProcessToJobObject(hJob, pGetCurrentProcess())) {
       /* Might fail if process is already in a job on older Windows versions */
-      pCloseHandle(hJob);
-      pCloseHandle(hParent);
-      errno = EINVAL;
-      return -1;
+      if (!pCloseHandle(hJob)) { /* Ignore */
+      }
+      if (!pCloseHandle(hParent)) { /* Ignore */
+      }
+      return EINVAL;
     }
 
     if (!pDuplicateHandle(pGetCurrentProcess(), hJob, hParent, &hDup, 0, 0,
                           DUPLICATE_SAME_ACCESS)) {
-      pCloseHandle(hJob);
-      pCloseHandle(hParent);
-      errno = EINVAL;
-      return -1;
+      if (!pCloseHandle(hJob)) { /* Ignore */
+      }
+      if (!pCloseHandle(hParent)) { /* Ignore */
+      }
+      return EINVAL;
     }
 
-    pCloseHandle(hJob);
-    pCloseHandle(hParent);
+    if (!pCloseHandle(hJob)) {
+      if (!pCloseHandle(hParent)) { /* Ignore */
+      }
+      return EINVAL;
+    }
+    if (!pCloseHandle(hParent)) {
+      return EINVAL;
+    }
 
     g_pdeathsig_assigned = 1;
-    return 0;
+    return ERR_NONE;
   }
 
   if (option == PR_GET_PDEATHSIG) {
@@ -312,16 +322,14 @@ int prctl(int option, ...) {
     va_end(ap);
 
     if (!sig) {
-      errno = EFAULT;
-      return -1;
+      return EFAULT;
     }
 
     *sig = g_pdeathsig_signum;
-    return 0;
+    return ERR_NONE;
   }
 
-  errno = ENOSYS;
-  return -1;
+  return ENOSYS;
 }
 
 #endif

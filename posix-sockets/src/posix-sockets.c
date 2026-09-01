@@ -4,7 +4,11 @@
 /* clang-format off */
 #include "posix-sockets.h"
 
-
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
 
 #include <errno.h>
 #if defined(_MSC_VER)
@@ -144,20 +148,22 @@ int get_nonblock(SOCKET s) {
       return O_NONBLOCK;
   return 0;
 }
-void clear_nonblock(SOCKET s) { set_nonblock(s, 0); }
+error_type_t clear_nonblock(SOCKET s) { set_nonblock(s, 0); return ERR_NONE; }
 void copy_nonblock(SOCKET src, SOCKET dst) {
   if (get_nonblock(src))
     set_nonblock(dst, 1);
 }
 
 static unsigned char g_is_socket[8192] = {0};
-void mark_as_socket(intptr_t fd) {
+error_type_t mark_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 1;
+  return ERR_NONE;
 }
-void clear_as_socket(intptr_t fd) {
+error_type_t clear_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 0;
+  return ERR_NONE;
 }
 int is_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
@@ -654,7 +660,7 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
       closesocket(ret);
       return -1;
     }
-    mark_as_socket(fd);
+    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */ }
     return (int)fd;
   }
 #else
@@ -999,7 +1005,7 @@ int posix_socket(int domain, int type, int protocol) {
       closesocket(s);
       return -1;
     }
-    mark_as_socket(fd);
+    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */ }
     return (int)fd;
   }
 #else
@@ -1095,8 +1101,10 @@ int posix_socketpair(int domain, int type, int protocol,
     }
     socket_vector[0] = (int)fd_server;
     socket_vector[1] = (int)fd_client;
-    mark_as_socket(fd_server);
-    mark_as_socket(fd_client);
+    if (mark_as_socket(fd_server) != ERR_NONE) { /* Ignore */
+    }
+    if (mark_as_socket(fd_client) != ERR_NONE) { /* Ignore */
+    }
     return 0;
   }
 

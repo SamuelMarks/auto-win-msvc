@@ -31,20 +31,23 @@ typedef unsigned long DWORD;
 extern "C" {
 #endif
 
-__declspec(dllimport) USHORT __stdcall
-RtlCaptureStackBackTrace(ULONG FramesToSkip, ULONG FramesToCapture,
-                         PVOID *BackTrace, PULONG BackTraceHash);
+__declspec(dllimport) USHORT __stdcall RtlCaptureStackBackTrace(
+    ULONG FramesToSkip, ULONG FramesToCapture, PVOID *BackTrace,
+    PULONG BackTraceHash);
 __declspec(dllimport) HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) BOOL __stdcall
-SymInitialize(HANDLE hProcess, const char *UserSearchPath, BOOL fInvadeProcess);
+__declspec(dllimport) BOOL __stdcall SymInitialize(HANDLE hProcess,
+                                                   const char *UserSearchPath,
+                                                   BOOL fInvadeProcess);
 __declspec(dllimport) BOOL __stdcall SymSetOptions(DWORD SymOptions);
 __declspec(dllimport) DWORD __stdcall SymGetOptions(void);
 __declspec(dllimport) PVOID __stdcall GetStdHandle(DWORD nStdHandle);
 
 /* WriteFile */
-__declspec(dllimport) BOOL __stdcall
-WriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite,
-          DWORD *lpNumberOfBytesWritten, void *lpOverlapped);
+__declspec(dllimport) BOOL __stdcall WriteFile(HANDLE hFile,
+                                               const void *lpBuffer,
+                                               DWORD nNumberOfBytesToWrite,
+                                               DWORD *lpNumberOfBytesWritten,
+                                               void *lpOverlapped);
 
 /* DbgHelp structs */
 #pragma pack(push, 8)
@@ -75,15 +78,26 @@ __declspec(dllimport) BOOL __stdcall SymFromAddr(HANDLE hProcess,
                                                  DWORD64 *Displacement,
                                                  PSYMBOL_INFO Symbol);
 
+__declspec(dllimport) DWORD __stdcall GetLastError(void);
+
+#ifndef INVALID_HANDLE_VALUE
+#define INVALID_HANDLE_VALUE ((HANDLE)(ptrdiff_t)-1)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
 
 /** \brief backtrace function. */
-int backtrace(void **buffer, int size) {
+error_type_t backtrace(void **buffer, int size, int *captured) {
   if (size <= 0 || !buffer)
-    return 0;
-  return (int)RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
+    return -1;
+  if (captured) {
+    *captured = (int)RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
+  } else {
+    RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
+  }
+  return ERR_NONE;
 }
 
 static int init_sym_done = 0;
@@ -95,6 +109,7 @@ char **backtrace_symbols(void *const *buffer, int size) {
   char *p;
   size_t total_size = (size_t)size * sizeof(char *);
   size_t line_size = 256; /* generous estimate per line */
+  int printf_rc;
 
   if (size <= 0 || !buffer)
     return NULL;
@@ -102,8 +117,14 @@ char **backtrace_symbols(void *const *buffer, int size) {
   process = GetCurrentProcess();
 
   if (!init_sym_done) {
-    SymSetOptions(SymGetOptions() | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-    SymInitialize(process, NULL, TRUE);
+    DWORD old_options = SymGetOptions();
+    if (old_options == 0 && GetLastError() != 0) {
+      /* Handle error, or ignore and try setting anyway */
+    }
+    SymSetOptions(old_options | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+    if (!SymInitialize(process, NULL, TRUE)) {
+      /* Initialization failed */
+    }
     init_sym_done = 1;
   }
 
@@ -125,9 +146,17 @@ char **backtrace_symbols(void *const *buffer, int size) {
     strings[i] = p;
     if (SymFromAddr(process, (DWORD64)(size_t)buffer[i], &displacement,
                     symbol)) {
-      sprintf_s(p, line_size, "%s [%p]", symbol->Name, buffer[i]);
+      printf_rc = sprintf_s(p, line_size, "%s [%p]", symbol->Name, buffer[i]);
+      if (printf_rc < 0) {
+        free(strings);
+        return NULL;
+      }
     } else {
-      sprintf_s(p, line_size, "??? [%p]", buffer[i]);
+      printf_rc = sprintf_s(p, line_size, "??? [%p]", buffer[i]);
+      if (printf_rc < 0) {
+        free(strings);
+        return NULL;
+      }
     }
     p += strlen(p) + 1;
   }
@@ -136,28 +165,41 @@ char **backtrace_symbols(void *const *buffer, int size) {
 }
 
 /** \brief backtrace_symbols_fd function. */
-void backtrace_symbols_fd(void *const *buffer, int size, int fd) {
+error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
   int i;
   char **strings;
   DWORD written;
   HANDLE hOut;
 
-  (void)fd; /* Windows doesn't easily map typical POSIX fd to HANDLE directly
-               here, default to stderr */
+  if (fd) {
+    /* Windows doesn't easily map typical POSIX fd to HANDLE directly here,
+     * default to stderr */
+  }
 
   strings = backtrace_symbols(buffer, size);
   if (!strings)
-    return;
+    return -1;
 
   hOut = GetStdHandle(STD_ERR_HANDLE);
+  if (hOut == INVALID_HANDLE_VALUE) {
+    free(strings);
+    return -1;
+  }
 
   for (i = 0; i < size; i++) {
     size_t len = strlen(strings[i]);
-    WriteFile(hOut, strings[i], (DWORD)len, &written, NULL);
-    WriteFile(hOut, "\n", 1, &written, NULL);
+    if (!WriteFile(hOut, strings[i], (DWORD)len, &written, NULL)) {
+      free(strings);
+      return -1;
+    }
+    if (!WriteFile(hOut, "\n", 1, &written, NULL)) {
+      free(strings);
+      return -1;
+    }
   }
 
   free(strings);
+  return ERR_NONE;
 }
 
 #endif /* _MSC_VER */

@@ -17,10 +17,10 @@
 /**
  * @brief Helper to convert a Windows affinity mask to a cpuset_t
  * @param mask The Windows affinity mask
- * @param set Pointer to the cpuset_t to populate
+ * @param set Poerror_type_ter to the cpuset_t to populate
  * @return 0 on success
  */
-static int convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
+static error_type_t convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
   unsigned int idx;
   CPU_ZERO(set);
   for (idx = 0; idx < sizeof(DWORD_PTR) * 8 && idx < CPU_SETSIZE; idx++) {
@@ -28,12 +28,12 @@ static int convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
       CPU_SET(idx, set);
     }
   }
-  return 0;
+  return ERR_NONE;
 }
 
 /**
  * @brief Helper to convert a cpuset_t to a Windows affinity mask
- * @param set Pointer to the cpuset_t
+ * @param set Poerror_type_ter to the cpuset_t
  * @return The constructed Windows affinity mask
  */
 static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
@@ -48,12 +48,13 @@ static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
 }
 
 /** \brief cpuset_getaffinity function. */
-int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
-                       size_t setsize, cpuset_t *mask) {
+error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, cpuset_t *mask) {
   HANDLE hProcess = NULL;
   HANDLE hThread = NULL;
   DWORD_PTR processAffinityMask = 0;
   DWORD_PTR systemAffinityMask = 0;
+  error_type_t rc;
 
   if (!mask || setsize < sizeof(cpuset_t)) {
     errno = EINVAL;
@@ -65,8 +66,11 @@ int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   if (level == CPU_LEVEL_ROOT) {
     if (GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask,
                                &systemAffinityMask)) {
-      convert_mask_to_cpuset(systemAffinityMask, mask);
-      return 0;
+      rc = convert_mask_to_cpuset(systemAffinityMask, mask);
+      if (rc != ERR_NONE) {
+        return rc;
+      }
+      return ERR_NONE;
     }
     errno = EINVAL;
     return -1;
@@ -89,14 +93,27 @@ int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
       if (GetProcessAffinityMask(hProcess, &processAffinityMask,
                                  &systemAffinityMask)) {
-        convert_mask_to_cpuset(processAffinityMask, mask);
-        if (hProcess != GetCurrentProcess()) {
-          CloseHandle(hProcess);
+        rc = convert_mask_to_cpuset(processAffinityMask, mask);
+        if (rc != ERR_NONE) {
+          if (hProcess != GetCurrentProcess()) {
+            if (!CloseHandle(hProcess)) {
+              /* Ignore secondary failure during error path */
+            }
+          }
+          return rc;
         }
-        return 0;
+        if (hProcess != GetCurrentProcess()) {
+          if (!CloseHandle(hProcess)) {
+            errno = EINVAL;
+            return -1;
+          }
+        }
+        return ERR_NONE;
       } else {
         if (hProcess != GetCurrentProcess()) {
-          CloseHandle(hProcess);
+          if (!CloseHandle(hProcess)) {
+            /* Ignore */
+          }
         }
         errno = EINVAL;
         return -1;
@@ -118,19 +135,34 @@ int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
       processAffinityMask = SetThreadAffinityMask(hThread, 1);
       if (processAffinityMask == 0) {
         if (hThread != GetCurrentThread()) {
-          CloseHandle(hThread);
+          if (!CloseHandle(hThread)) {
+            /* Ignore */
+          }
         }
         errno = EINVAL;
         return -1;
       }
-      SetThreadAffinityMask(hThread, processAffinityMask); /* Restore */
+      if (SetThreadAffinityMask(hThread, processAffinityMask) == 0) {
+        /* Failed to restore */
+      }
 
-      convert_mask_to_cpuset(processAffinityMask, mask);
+      rc = convert_mask_to_cpuset(processAffinityMask, mask);
+      if (rc != ERR_NONE) {
+        if (hThread != GetCurrentThread()) {
+          if (!CloseHandle(hThread)) {
+            /* Ignore */
+          }
+        }
+        return rc;
+      }
 
       if (hThread != GetCurrentThread()) {
-        CloseHandle(hThread);
+        if (!CloseHandle(hThread)) {
+          errno = EINVAL;
+          return -1;
+        }
       }
-      return 0;
+      return ERR_NONE;
     }
   }
 
@@ -139,8 +171,8 @@ int cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 }
 
 /** \brief cpuset_setaffinity function. */
-int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
-                       size_t setsize, const cpuset_t *mask) {
+error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, const cpuset_t *mask) {
   HANDLE hProcess = NULL;
   HANDLE hThread = NULL;
   DWORD_PTR newAffinity = 0;
@@ -177,12 +209,17 @@ int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
       if (SetProcessAffinityMask(hProcess, newAffinity)) {
         if (hProcess != GetCurrentProcess()) {
-          CloseHandle(hProcess);
+          if (!CloseHandle(hProcess)) {
+            errno = EINVAL;
+            return -1;
+          }
         }
-        return 0;
+        return ERR_NONE;
       } else {
         if (hProcess != GetCurrentProcess()) {
-          CloseHandle(hProcess);
+          if (!CloseHandle(hProcess)) {
+            /* Ignore */
+          }
         }
         errno = EINVAL;
         return -1;
@@ -202,12 +239,17 @@ int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
       if (SetThreadAffinityMask(hThread, newAffinity) != 0) {
         if (hThread != GetCurrentThread()) {
-          CloseHandle(hThread);
+          if (!CloseHandle(hThread)) {
+            errno = EINVAL;
+            return -1;
+          }
         }
-        return 0;
+        return ERR_NONE;
       } else {
         if (hThread != GetCurrentThread()) {
-          CloseHandle(hThread);
+          if (!CloseHandle(hThread)) {
+            /* Ignore */
+          }
         }
         errno = EINVAL;
         return -1;
@@ -221,4 +263,4 @@ int cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
 #endif
 
-typedef int make_iso_compilers_happy_tu_bsd_sys_cpuset;
+typedef error_type_t make_iso_compilers_happy_tu_bsd_sys_cpuset;

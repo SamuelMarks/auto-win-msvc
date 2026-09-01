@@ -1,6 +1,12 @@
 #ifndef BSD_SYS_SYSCTL_H
 #define BSD_SYS_SYSCTL_H
 
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
+
 #if defined(_WIN32)
 /* clang-format off */
 #include <stddef.h>
@@ -75,10 +81,10 @@ extern "C" {
  * \param oldlenp Pointer to size of oldp buffer.
  * \param newp Pointer to buffer with new information.
  * \param newlen Size of newp buffer.
- * \return 0 on success, or -1 on error with errno set.
+ * \return ERR_NONE on success, or appropriate error code.
  */
-int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
-           const void *newp, size_t newlen);
+error_type_t sysctl(const int *name, unsigned int namelen, void *oldp,
+                    size_t *oldlenp, const void *newp, size_t newlen);
 
 /** \brief sysctlbyname function.
  *
@@ -89,10 +95,10 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
  * \param oldlenp Pointer to size of oldp buffer.
  * \param newp Pointer to buffer with new information.
  * \param newlen Size of newp buffer.
- * \return 0 on success, or -1 on error with errno set.
+ * \return ERR_NONE on success, or appropriate error code.
  */
-int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
-                 const void *newp, size_t newlen);
+error_type_t sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
+                          const void *newp, size_t newlen);
 
 #endif /* _WIN32 */
 

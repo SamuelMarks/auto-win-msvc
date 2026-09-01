@@ -107,23 +107,37 @@ const char *(*copyDescription)(void *info) = NULL;
  * \return 0 or appropriate
  * default value
  */
-CFRunLoopRef CFRunLoopGetCurrent(void) {
+error_type_t CFRunLoopGetCurrent(CFRunLoopRef *out_ref) {
   if (!current_run_loop) {
     current_run_loop = (__CFRunLoop *)calloc(1, sizeof(__CFRunLoop));
-    if (!current_run_loop)
-      return NULL;
+    if (!current_run_loop) {
+      if (out_ref) {
+        *out_ref = NULL;
+      }
+      return ENOMEM;
+    }
   }
-  return (CFRunLoopRef)current_run_loop;
+  if (out_ref) {
+    *out_ref = (CFRunLoopRef)current_run_loop;
+  }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFRunLoopRun
  * \return 0 or appropriate default
  * value
  */
-void CFRunLoopRun(void) {
-  __CFRunLoop *loop = (__CFRunLoop *)CFRunLoopGetCurrent();
+error_type_t CFRunLoopRun(void) {
+  __CFRunLoop *loop;
+  CFRunLoopRef current_ref;
+  error_type_t err = CFRunLoopGetCurrent(&current_ref);
+  if (err != ERR_NONE) {
+    return err;
+  }
+
+  loop = (__CFRunLoop *)current_ref;
   if (!loop)
-    return;
+    return EINVAL;
   loop->stopped = 0;
 
   while (!loop->stopped) {
@@ -170,6 +184,7 @@ void CFRunLoopRun(void) {
     tv.tv_sec = 0;
     tv.tv_usec = 10000; /* 10ms */
 
+#undef select
     if (select(maxfd + 1, &readfds, &writefds, &exceptfds, &tv) > 0) {
       for (i = 0; i < loop->num_sources; i++) {
         __CFRunLoopSource *src = loop->sources[i];
@@ -214,29 +229,28 @@ void CFRunLoopRun(void) {
       }
     }
   }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFSocketCreateWithNative
  * \return 0 or
  * appropriate default value
  */
-CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
-                                     CFSocketNativeHandle sock,
-                                     CFOptionFlags callBackTypes,
-                                     CFSocketCallBack callout,
-                                     const CFSocketContext *context) {
+error_type_t
+CFSocketCreateWithNative(CFAllocatorRef allocator, CFSocketNativeHandle sock,
+                         CFOptionFlags callBackTypes, CFSocketCallBack callout,
+                         const CFSocketContext *context, CFSocketRef *out_ref) {
   __CFSocket *s;
-  (void)allocator;
+  if (allocator) { /* unused */
+  }
 
   if (sock < 0 || !callout) {
-    errno = EINVAL;
-    return NULL;
+    return EINVAL;
   }
 
   s = (__CFSocket *)malloc(sizeof(__CFSocket));
   if (!s) {
-    errno = ENOMEM;
-    return NULL;
+    return ENOMEM;
   }
 
   s->sock = sock;
@@ -252,95 +266,112 @@ CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
     memset(&s->context, 0, sizeof(CFSocketContext));
   }
 
-  return (CFSocketRef)s;
+  if (out_ref) {
+    *out_ref = (CFSocketRef)s;
+  }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFRunLoopAddSource
  * \return 0 or appropriate
  * default value
  */
-void CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
-                        void *mode) {
+error_type_t CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
+                                void *mode) {
   __CFRunLoop *loop = (__CFRunLoop *)rl;
   __CFRunLoopSource *src = (__CFRunLoopSource *)source;
-  (void)mode;
+  if (mode) { /* unused */
+  }
 
   if (!loop || !src)
-    return;
+    return EINVAL;
 
   if (loop->num_sources >= loop->capacity) {
     int new_capacity = loop->capacity == 0 ? 4 : loop->capacity * 2;
     __CFRunLoopSource **new_sources = (__CFRunLoopSource **)realloc(
         loop->sources, new_capacity * sizeof(__CFRunLoopSource *));
     if (!new_sources)
-      return;
+      return ENOMEM;
     loop->sources = new_sources;
     loop->capacity = new_capacity;
   }
 
   loop->sources[loop->num_sources++] = src;
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFRunLoopStop
  * \return 0 or appropriate
  * default value
  */
-void CFRunLoopStop(CFRunLoopRef rl) {
+error_type_t CFRunLoopStop(CFRunLoopRef rl) {
   __CFRunLoop *loop = (__CFRunLoop *)rl;
   if (loop) {
     loop->stopped = 1;
   }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFSocketCreateRunLoopSource
  * \return 0 or
  * appropriate default value
  */
-CFRunLoopSourceRef CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
-                                               CFSocketRef s, long order) {
+error_type_t CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
+                                         CFSocketRef s, long order,
+                                         CFRunLoopSourceRef *out_ref) {
   __CFRunLoopSource *src;
   __CFSocket *sock = (__CFSocket *)s;
-  (void)allocator;
+  if (allocator) { /* unused */
+  }
 
-  if (!sock)
-    return NULL;
+  if (!sock) {
+    return EINVAL;
+  }
 
   src = (__CFRunLoopSource *)malloc(sizeof(__CFRunLoopSource));
-  if (!src)
-    return NULL;
+  if (!src) {
+    return ENOMEM;
+  }
 
   src->socket = sock;
   src->order = order;
-  return (CFRunLoopSourceRef)src;
+  if (out_ref) {
+    *out_ref = (CFRunLoopSourceRef)src;
+  }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFSocketEnableCallBacks
  * \return 0 or
  * appropriate default value
  */
-void CFSocketEnableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
+error_type_t CFSocketEnableCallBacks(CFSocketRef s,
+                                     CFOptionFlags callBackTypes) {
   __CFSocket *sock = (__CFSocket *)s;
   if (sock) {
     sock->callBackTypes |= callBackTypes;
   }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFSocketDisableCallBacks
  * \return 0 or
  * appropriate default value
  */
-void CFSocketDisableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
+error_type_t CFSocketDisableCallBacks(CFSocketRef s,
+                                      CFOptionFlags callBackTypes) {
   __CFSocket *sock = (__CFSocket *)s;
   if (sock) {
     sock->callBackTypes &= ~callBackTypes;
   }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFSocketInvalidate
  * \return 0 or appropriate
  * default value
  */
-void CFSocketInvalidate(CFSocketRef s) {
+error_type_t CFSocketInvalidate(CFSocketRef s) {
   __CFSocket *sock = (__CFSocket *)s;
   if (sock && sock->valid) {
     sock->valid = 0;
@@ -349,13 +380,14 @@ void CFSocketInvalidate(CFSocketRef s) {
       sock->context.info = NULL;
     }
   }
+  return ERR_NONE;
 }
 
 /** \brief Polyfill for CFRelease
  * \return 0 or appropriate default
  * value
  */
-void CFRelease(void *cf) {
+error_type_t CFRelease(void *cf) {
   /* Extremely naive CFRelease that just frees the memory.
      In a real CF framework, this would decrement a refcount and free if 0.
      For this polyfill, we assume it's freeing the CFSocketRef or
@@ -363,6 +395,7 @@ void CFRelease(void *cf) {
   if (cf) {
     free(cf);
   }
+  return ERR_NONE;
 }
 
 #else
@@ -371,54 +404,95 @@ void *(*retain)(void *info) = NULL;
 void (*release)(void *info) = NULL;
 const char *(*copyDescription)(void *info) = NULL;
 
-void CFRunLoopRun(void) {}
+error_type_t CFRunLoopRun(void) { return ERR_NONE; }
 
-CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
-                                     CFSocketNativeHandle sock,
-                                     CFOptionFlags callBackTypes,
-                                     CFSocketCallBack callout,
-                                     const CFSocketContext *context) {
-  allocator = allocator;
-  sock = sock;
-  callBackTypes = callBackTypes;
-  callout = callout;
-  context = context;
-  errno = ENOSYS;
-  return NULL;
+error_type_t
+CFSocketCreateWithNative(CFAllocatorRef allocator, CFSocketNativeHandle sock,
+                         CFOptionFlags callBackTypes, CFSocketCallBack callout,
+                         const CFSocketContext *context, CFSocketRef *out_ref) {
+  if (allocator) { /* unused */
+  }
+  if (sock) { /* unused */
+  }
+  if (callBackTypes) { /* unused */
+  }
+  if (callout) { /* unused */
+  }
+  if (context) { /* unused */
+  }
+  if (out_ref) {
+    *out_ref = NULL;
+  }
+  return ENOSYS;
 }
 
-void CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
-                        void *mode) {
-  rl = rl;
-  source = source;
-  mode = mode;
+error_type_t CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
+                                void *mode) {
+  if (rl) { /* unused */
+  }
+  if (source) { /* unused */
+  }
+  if (mode) { /* unused */
+  }
+  return ERR_NONE;
 }
 
-CFRunLoopRef CFRunLoopGetCurrent(void) { return NULL; }
-
-void CFRunLoopStop(CFRunLoopRef rl) { rl = rl; }
-
-CFRunLoopSourceRef CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
-                                               CFSocketRef s, long order) {
-  allocator = allocator;
-  s = s;
-  order = order;
-  errno = ENOSYS;
-  return NULL;
+error_type_t CFRunLoopGetCurrent(CFRunLoopRef *out_ref) {
+  if (out_ref) {
+    *out_ref = NULL;
+  }
+  return ERR_NONE;
 }
 
-void CFSocketEnableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
-  s = s;
-  callBackTypes = callBackTypes;
+error_type_t CFRunLoopStop(CFRunLoopRef rl) {
+  if (rl) { /* unused */
+  }
+  return ERR_NONE;
 }
 
-void CFSocketDisableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes) {
-  s = s;
-  callBackTypes = callBackTypes;
+error_type_t CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
+                                         CFSocketRef s, long order,
+                                         CFRunLoopSourceRef *out_ref) {
+  if (allocator) { /* unused */
+  }
+  if (s) { /* unused */
+  }
+  if (order) { /* unused */
+  }
+  if (out_ref) {
+    *out_ref = NULL;
+  }
+  return ENOSYS;
 }
 
-void CFSocketInvalidate(CFSocketRef s) { s = s; }
+error_type_t CFSocketEnableCallBacks(CFSocketRef s,
+                                     CFOptionFlags callBackTypes) {
+  if (s) { /* unused */
+  }
+  if (callBackTypes) { /* unused */
+  }
+  return ERR_NONE;
+}
 
-void CFRelease(void *cf) { cf = cf; }
+error_type_t CFSocketDisableCallBacks(CFSocketRef s,
+                                      CFOptionFlags callBackTypes) {
+  if (s) { /* unused */
+  }
+  if (callBackTypes) { /* unused */
+  }
+  return ERR_NONE;
+}
+
+error_type_t CFSocketInvalidate(CFSocketRef s) {
+  if (s) { /* unused */
+  }
+  return ERR_NONE;
+}
+
+error_type_t CFRelease(void *cf) {
+  if (cf) { /* unused */
+  }
+  return ERR_NONE;
+}
 
 #endif

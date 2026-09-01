@@ -6,6 +6,12 @@ extern "C" {
 #ifndef LINUX_SYS_PRCTL_H
 #define LINUX_SYS_PRCTL_H
 
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 
 /** \brief Option to set the name of the calling thread. */
@@ -24,9 +30,9 @@ extern "C" {
  *
  * \param option The operation to perform.
  * \param ... Variable arguments based on the option.
- * \return 0 on success, or -1 on error with errno set.
+ * \return ERR_NONE on success, or an error code.
  */
-int prctl(int option, ...);
+error_type_t prctl(int option, ...);
 #endif
 
 #ifdef __cplusplus

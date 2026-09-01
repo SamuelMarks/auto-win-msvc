@@ -82,26 +82,47 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
 
   if (pathname[0] != '/' && pathname[0] != '\\' && pathname[1] != ':') {
     char cwd[1024];
-    GetCurrentDirectoryA(1024, cwd);
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
-    _snprintf_s(abs_path, 2048, _TRUNCATE, "%s\\%s", cwd, pathname);
-#else
-    _snprintf(abs_path, 2048, "%s\\%s", cwd, pathname);
-#endif
-#else
-    snprintf(abs_path, 2048, "%s\\%s", cwd, pathname);
-#endif
+    if (GetCurrentDirectoryA(1024, cwd) == 0) {
+      errno = ENOENT;
+      return NULL;
+    }
+  #if defined(_MSC_VER) && _MSC_VER < 1900
+  #if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+    if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s\\%s", cwd, pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #else
+    if (_snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #endif
+  #else
+    if (snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #endif
   } else {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
-    _snprintf_s(abs_path, 2048, _TRUNCATE, "%s", pathname);
-#else
-    _snprintf(abs_path, 2048, "%s", pathname);
-#endif
-#else
-    snprintf(abs_path, 2048, "%s", pathname);
-#endif
+  #if defined(_MSC_VER) && _MSC_VER < 1900
+  #if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+    if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s", pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #else
+    if (_snprintf(abs_path, 2048, "%s", pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #endif
+  #else
+    if (snprintf(abs_path, 2048, "%s", pathname) < 0) {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+  #endif
   }
 
   h = CreateFileA(abs_path, dwAccess,
@@ -202,19 +223,23 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
+    if (old) { /* unused */
+    }
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
       int rret = _read((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      _set_invalid_parameter_handler(old);
+      if (_set_invalid_parameter_handler(old)) { /* Ignore */
+      }
 #endif
       if (rret == -1 && errno == EINVAL)
         errno = EBADF;
       return rret;
     }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    _set_invalid_parameter_handler(old);
+    if (_set_invalid_parameter_handler(old)) { /* Ignore */
+    }
 #endif
   }
   ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
@@ -222,7 +247,9 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
-      WSAStartup(MAKEWORD(2, 2), &wsaData);
+      if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        return -1;
+      }
       ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
@@ -272,19 +299,23 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
+    if (old) { /* unused */
+    }
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
     if (osfh != -1 && osfh != -2) {
       int wret = _write((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      _set_invalid_parameter_handler(old);
+      if (_set_invalid_parameter_handler(old)) { /* Ignore */
+      }
 #endif
       if (wret == -1 && errno == EINVAL)
         errno = EBADF;
       return wret;
     }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    _set_invalid_parameter_handler(old);
+    if (_set_invalid_parameter_handler(old)) { /* Ignore */
+    }
 #endif
   }
   ret = send(GET_SOCKET(fd), buf, (int)count, 0);
@@ -292,7 +323,9 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
     int err = WSAGetLastError();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
-      WSAStartup(MAKEWORD(2, 2), &wsaData);
+      if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        return -1;
+      }
       ret = send(GET_SOCKET(fd), buf, (int)count, 0);
       if (ret != SOCKET_ERROR)
         return ret;
@@ -365,8 +398,8 @@ int __attribute__((weak)) posix_epoll_close(intptr_t fd) {
 }
 #endif
 
-extern void clear_nonblock(SOCKET s);
-extern void clear_as_socket(intptr_t fd);
+extern error_type_t clear_nonblock(SOCKET s);
+extern error_type_t clear_as_socket(intptr_t fd);
 extern int posix_epoll_close(intptr_t);
 int posix_close(intptr_t fd) {
   SOCKET s;
@@ -375,8 +408,10 @@ int posix_close(intptr_t fd) {
     return posix_epoll_close((int)fd);
   }
   s = GET_SOCKET(fd);
-  clear_nonblock(s);
-  clear_as_socket(fd);
+  if (clear_nonblock(s) != ERR_NONE) { /* Ignore */
+  }
+  if (clear_as_socket(fd) != ERR_NONE) { /* Ignore */
+  }
   ret = closesocket(s);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
@@ -385,12 +420,15 @@ int posix_close(intptr_t fd) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _invalid_parameter_handler old =
           _set_invalid_parameter_handler(my_invalid_parameter_handler);
+      if (old) { /* unused */
+      }
 #endif
       int cret = -1;
       if (fd >= 0)
         cret = _close((int)fd);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      _set_invalid_parameter_handler(old);
+      if (_set_invalid_parameter_handler(old)) { /* Ignore */
+      }
 #endif
       return cret;
     }
@@ -401,16 +439,19 @@ int posix_close(intptr_t fd) {
 }
 
 extern int is_socket(intptr_t);
-extern void mark_as_socket(intptr_t);
-extern void clear_as_socket(intptr_t);
+extern error_type_t mark_as_socket(intptr_t);
+extern error_type_t clear_as_socket(intptr_t);
 
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
-    if (is_socket(oldfd))
-      mark_as_socket(newfd);
-    else
-      clear_as_socket(newfd);
+    if (is_socket(oldfd)) {
+      if (mark_as_socket(newfd) != ERR_NONE) { /* Ignore */
+      }
+    } else {
+      if (clear_as_socket(newfd) != ERR_NONE) { /* Ignore */
+      }
+    }
   }
   return ret;
 }

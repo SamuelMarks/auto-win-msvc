@@ -263,7 +263,9 @@ static unsigned long get_current_rid(int is_group) {
                         &hToken)) {
     unsigned long dwLength = 0;
     int token_class = is_group ? 2 /* TokenPrimaryGroup */ : 1 /* TokenUser */;
-    pGetTokenInformation(hToken, token_class, NULL, 0, &dwLength);
+    if (!pGetTokenInformation(hToken, token_class, NULL, 0, &dwLength)) {
+      /* Expected to fail with ERROR_INSUFFICIENT_BUFFER to get length */
+    }
     if (dwLength > 0) {
       void *pInfo = malloc(dwLength);
       if (pInfo) {
@@ -335,7 +337,11 @@ int fcntl(intptr_t fd, int cmd, ...) {
     int flags = va_arg(ap, int);
     unsigned long mode = (flags & O_NONBLOCK) ? 1 : 0;
     SOCKET s = (SOCKET)safe_get_osfhandle(fd);
-    ioctlsocket(s, FIONBIO, &mode);
+    if (ioctlsocket(s, FIONBIO, &mode) != 0) {
+      va_end(ap);
+      errno = EINVAL;
+      return -1;
+    }
     set_nonblock(s, mode);
     va_end(ap);
     return 0;
@@ -499,14 +505,23 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
       errno = ENAMETOOLONG;
       return -1;
     }
-    if (buf[strlen(buf) - 1] != '\\' && buf[strlen(buf) - 1] != '/')
+    if (buf[strlen(buf) - 1] != '\\' && buf[strlen(buf) - 1] != '/') {
       #if defined(_MSC_VER)
-    strcat_s(buf, bufsiz, "\\");
+      if (strcat_s(buf, bufsiz, "\\") != 0) {
+        free(buf);
+        errno = ENAMETOOLONG;
+        return -1;
+      }
 #else
-    strcat(buf, "\\");
+      strcat(buf, "\\");
 #endif
-    #if defined(_MSC_VER)
-    strcat_s(buf, bufsiz, pathname);
+    }
+#if defined(_MSC_VER)
+    if (strcat_s(buf, bufsiz, pathname) != 0) {
+        free(buf);
+        errno = ENAMETOOLONG;
+        return -1;
+    }
 #else
     strcat(buf, pathname);
 #endif
@@ -557,14 +572,23 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
       errno = ENAMETOOLONG;
       return -1;
     }
-    if (buf[res - 1] != '\\' && buf[res - 1] != '/')
+    if (buf[res - 1] != '\\' && buf[res - 1] != '/') {
       #if defined(_MSC_VER)
-    strcat_s(buf, bufsiz, "\\");
+      if (strcat_s(buf, bufsiz, "\\") != 0) {
+        free(buf);
+        errno = ENAMETOOLONG;
+        return -1;
+      }
 #else
-    strcat(buf, "\\");
+      strcat(buf, "\\");
 #endif
-    #if defined(_MSC_VER)
-    strcat_s(buf, bufsiz, pathname);
+    }
+#if defined(_MSC_VER)
+    if (strcat_s(buf, bufsiz, pathname) != 0) {
+        free(buf);
+        errno = ENAMETOOLONG;
+        return -1;
+    }
 #else
     strcat(buf, pathname);
 #endif
@@ -723,12 +747,14 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
     }
 
     if (!SetEndOfFile((void *)handle)) {
-      SetFilePointerEx((void *)handle, old_ptr, NULL, 0);
+      if (!SetFilePointerEx((void *)handle, old_ptr, NULL, 0)) { /* Ignore */ }
       return ENOSPC;
     }
 
     /* Restore pointer */
-    SetFilePointerEx((void *)handle, old_ptr, NULL, 0);
+    if (!SetFilePointerEx((void *)handle, old_ptr, NULL, 0)) {
+      return EINVAL;
+    }
   }
 
   return 0;
@@ -756,7 +782,7 @@ static void __stdcall alarm_timer_callback(void *lpParameter,
   (void)lpParameter;
   (void)TimerOrWaitFired;
   /* SIGALRM = 14 */
-  raise(14);
+  if (raise(14) != 0) { /* Ignore */ }
 }
 
 /** \brief alarm function. */
@@ -872,25 +898,35 @@ char *crypt(const char *key, const char *salt) {
   }
 
   if (!CryptCreateHash(hProv, 0x00008003 /* CALG_MD5 */, 0, 0, &hHash)) {
-    CryptReleaseContext(hProv, 0);
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
     errno = ENOSYS;
     return NULL;
   }
 
-  CryptHashData(hHash, (const unsigned char *)key, (unsigned long)strlen(key),
-                0);
-  CryptHashData(hHash, (const unsigned char *)salt, (unsigned long)strlen(salt),
-                0);
+  if (!CryptHashData(hHash, (const unsigned char *)key, (unsigned long)strlen(key),
+                0)) {
+     if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+     if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+     errno = ENOSYS;
+     return NULL;
+  }
+  if (!CryptHashData(hHash, (const unsigned char *)salt, (unsigned long)strlen(salt),
+                0)) {
+     if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+     if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+     errno = ENOSYS;
+     return NULL;
+  }
 
   if (!CryptGetHashParam(hHash, 0x0002 /* HP_HASHVAL */, hash, &hashLen, 0)) {
-    CryptDestroyHash(hHash);
-    CryptReleaseContext(hProv, 0);
+    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
     errno = ENOSYS;
     return NULL;
   }
 
-  CryptDestroyHash(hHash);
-  CryptReleaseContext(hProv, 0);
+  if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
 
   p = result;
   *p++ = '$';
@@ -940,16 +976,21 @@ void encrypt(char block[64], int edflag) {
   }
 
   if (!CryptCreateHash(hProv, 0x00008003 /* CALG_MD5 */, 0, 0, &hHash)) {
-    CryptReleaseContext(hProv, 0);
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
     errno = ENOSYS;
     return;
   }
 
-  CryptHashData(hHash, (const unsigned char *)"POSIX_ENCRYPT_KEY", 17, 0);
+  if (!CryptHashData(hHash, (const unsigned char *)"POSIX_ENCRYPT_KEY", 17, 0)) {
+    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+    errno = ENOSYS;
+    return;
+  }
 
   if (!CryptDeriveKey(hProv, 0x00006601 /* CALG_DES */, hHash, 0, &hKey)) {
-    CryptDestroyHash(hHash);
-    CryptReleaseContext(hProv, 0);
+    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
     errno = ENOSYS;
     return;
   }
@@ -973,9 +1014,9 @@ void encrypt(char block[64], int edflag) {
     block[i] = (packed[i >> 3] & (1 << (7 - (i & 7)))) ? 1 : 0;
   }
 
-  CryptDestroyKey(hKey);
-  CryptDestroyHash(hHash);
-  CryptReleaseContext(hProv, 0);
+  if (!CryptDestroyKey(hKey)) { /* Ignore */ }
+  if (!CryptDestroyHash(hHash)) { /* Ignore */ }
+  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1133,7 +1174,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
     buf[res] = '\0';
   }
 
-  _execve(buf, (const char *const *)argv, (const char *const *)envp);
+  if (_execve(buf, (const char *const *)argv, (const char *const *)envp) == -1) { /* Failed */ }
   free(buf);
   return -1;
 }
@@ -1246,7 +1287,10 @@ int fork(void) {
 
   posix_pthread_atfork_prepare();
 
-  GetCurrentDirectoryA(260, parent_cwd);
+  if (GetCurrentDirectoryA(260, parent_cwd) == 0) {
+    errno = ENOSYS;
+    return -1;
+  }
 
   status = pRtlCloneUserProcess(RTL_CLONE_PROCESS_FLAGS_INHERIT_HANDLES, NULL,
                                 NULL, NULL, &info);
@@ -1266,12 +1310,12 @@ int fork(void) {
     return (pid_t)(size_t)info.ClientId.UniqueProcess;
   } else if (status == STATUS_PROCESS_CLONED) {
     void *ucrt;
-    SetCurrentDirectoryA(parent_cwd);
+    if (SetCurrentDirectoryA(parent_cwd) == 0) { /* Ignore */ }
     posix_pthread_atfork_child();
     printf("CHILD CLONED\n");
-    fflush(stdout);
+    if (fflush(stdout) != 0) { /* Ignore */ }
     /* Child */
-    _set_errno(0);
+    if (_set_errno(0) != 0) { /* Ignore */ }
 
     ucrt = GetModuleHandleA("ucrtbase.dll");
     if (ucrt) {
@@ -1294,7 +1338,7 @@ int fork(void) {
             memcpy(p + 2, &target, 8);
             p[10] = 0xFF;
             p[11] = 0xE0;
-            vp(p_exit, 12, oldProtect, &oldProtect);
+            if (!vp(p_exit, 12, oldProtect, &oldProtect)) { /* Ignore */ }
           }
         }
       }
@@ -1576,7 +1620,8 @@ int lockf(intptr_t fd, int cmd, off_t len) {
   case 3:  /* F_TEST */
     mode = _LK_NBLCK;
     if (_locking((int)fd, mode, nbytes) == 0) {
-      _locking((int)fd, _LK_UNLCK, nbytes);
+      if (_locking((int)fd, _LK_UNLCK, nbytes) != 0) { /* Ignore */
+      }
       return 0;
     }
     return -1;
@@ -1606,12 +1651,13 @@ long pathconf(const char *pathname, int name) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) unsigned long __stdcall
-SleepEx(unsigned long dwMilliseconds, int bAlertable);
+__declspec(dllimport) unsigned long __stdcall SleepEx(
+    unsigned long dwMilliseconds, int bAlertable);
 
 /** \brief pause function. */
 int pause(void) {
-  SleepEx(0xFFFFFFFFUL, 1); /* Sleep infinitely, alertable to wake on APCs */
+  if (SleepEx(0xFFFFFFFFUL, 1) != 0) { /* Handled */
+  } /* Sleep infinitely, alertable to wake on APCs */
   errno = EINTR;
   return -1;
 }
@@ -1717,17 +1763,16 @@ ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) int __stdcall
-DeviceIoControl(void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
-                unsigned long nInBufferSize, void *lpOutBuffer,
-                unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
-                void *lpOverlapped);
+__declspec(dllimport) int __stdcall DeviceIoControl(
+    void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
+    unsigned long nInBufferSize, void *lpOutBuffer,
+    unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
+    void *lpOverlapped);
 
-__declspec(dllimport) int __stdcall
-WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags,
-                    const wchar_t *lpWideCharStr, int cchWideChar,
-                    char *lpMultiByteStr, int cbMultiByte,
-                    const char *lpDefaultChar, int *lpUsedDefaultChar);
+__declspec(dllimport) int __stdcall WideCharToMultiByte(
+    unsigned int CodePage, unsigned long dwFlags, const wchar_t *lpWideCharStr,
+    int cchWideChar, char *lpMultiByteStr, int cbMultiByte,
+    const char *lpDefaultChar, int *lpUsedDefaultChar);
 #endif
 
 typedef struct _POSIX_REPARSE_DATA_BUFFER {
@@ -1990,8 +2035,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpath) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 __declspec(dllimport) unsigned long __stdcall GetLogicalDrives(void);
 __declspec(dllimport) int __stdcall FlushFileBuffers(void *hFile);
-__declspec(dllimport) unsigned int __stdcall
-GetDriveTypeA(const char *lpRootPathName);
+__declspec(dllimport) unsigned int __stdcall GetDriveTypeA(
+    const char *lpRootPathName);
 
 /** \brief sync function. */
 void sync(void) {
@@ -2011,7 +2056,8 @@ void sync(void) {
                             1 | 2 /* FILE_SHARE_READ | FILE_SHARE_WRITE */,
                             NULL, 3 /* OPEN_EXISTING */, 0, NULL);
         if (hFile != (void *)(intptr_t)-1) {
-          FlushFileBuffers(hFile);
+          if (FlushFileBuffers(hFile) == 0) { /* Ignore */
+          }
           CloseHandle(hFile);
         }
       }
@@ -2131,7 +2177,9 @@ int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
       return ERANGE;
     }
 #if defined(_MSC_VER)
-    strcpy_s(buf, 4, "CON");
+    if (strcpy_s(buf, 4, "CON") != 0) {
+      return EINVAL;
+    }
 #else
     strcpy(buf, "CON");
 #endif
@@ -2150,7 +2198,8 @@ static void __stdcall ualarm_timer_callback(void *lpParameter,
   (void)lpParameter;
   (void)TimerOrWaitFired;
   /* SIGALRM = 14 */
-  raise(14);
+  if (raise(14) != 0) { /* Ignore */
+  }
 }
 
 /** \brief ualarm function. */
@@ -2196,14 +2245,18 @@ int posix_rename(const char *oldpath, const char *newpath) {
     return 0;
 
   if (CopyFileA(oldpath, newpath, 0)) {
-    _unlink(oldpath);
+    if (_unlink(oldpath) != 0) { /* Ignore */
+    }
     return 0;
   }
 
-  _chmod(newpath, 00200 /* _S_IWRITE */);
-  _unlink(newpath);
+  if (_chmod(newpath, 00200 /* _S_IWRITE */) != 0) { /* Ignore */
+  }
+  if (_unlink(newpath) != 0) { /* Ignore */
+  }
   if (CopyFileA(oldpath, newpath, 0)) {
-    _unlink(oldpath);
+    if (_unlink(oldpath) != 0) { /* Ignore */
+    }
     return 0;
   }
 

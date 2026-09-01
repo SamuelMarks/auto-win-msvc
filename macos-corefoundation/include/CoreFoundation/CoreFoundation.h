@@ -10,6 +10,12 @@
 extern "C" {
 #endif
 
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+typedef int error_type_t;
+#define ERR_NONE 0
+#endif
+
 typedef void *CFRunLoopRef;
 typedef void *CFSocketRef;
 typedef void *CFDataRef;
@@ -36,21 +42,24 @@ enum {
 };
 typedef int CFSocketCallBackType;
 
-void CFRunLoopRun(void);
-CFSocketRef CFSocketCreateWithNative(CFAllocatorRef allocator,
-                                     CFSocketNativeHandle sock,
-                                     CFOptionFlags callBackTypes,
-                                     CFSocketCallBack callout,
-                                     const CFSocketContext *context);
-void CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source, void *mode);
-CFRunLoopRef CFRunLoopGetCurrent(void);
-void CFRunLoopStop(CFRunLoopRef rl);
-CFRunLoopSourceRef CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
-                                               CFSocketRef s, long order);
-void CFSocketEnableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes);
-void CFSocketDisableCallBacks(CFSocketRef s, CFOptionFlags callBackTypes);
-void CFSocketInvalidate(CFSocketRef s);
-void CFRelease(void *cf);
+error_type_t CFRunLoopRun(void);
+error_type_t
+CFSocketCreateWithNative(CFAllocatorRef allocator, CFSocketNativeHandle sock,
+                         CFOptionFlags callBackTypes, CFSocketCallBack callout,
+                         const CFSocketContext *context, CFSocketRef *out_ref);
+error_type_t CFRunLoopAddSource(CFRunLoopRef rl, CFRunLoopSourceRef source,
+                                void *mode);
+error_type_t CFRunLoopGetCurrent(CFRunLoopRef *out_ref);
+error_type_t CFRunLoopStop(CFRunLoopRef rl);
+error_type_t CFSocketCreateRunLoopSource(CFAllocatorRef allocator,
+                                         CFSocketRef s, long order,
+                                         CFRunLoopSourceRef *out_ref);
+error_type_t CFSocketEnableCallBacks(CFSocketRef s,
+                                     CFOptionFlags callBackTypes);
+error_type_t CFSocketDisableCallBacks(CFSocketRef s,
+                                      CFOptionFlags callBackTypes);
+error_type_t CFSocketInvalidate(CFSocketRef s);
+error_type_t CFRelease(void *cf);
 
 #ifdef __cplusplus
 }

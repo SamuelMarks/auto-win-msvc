@@ -53,14 +53,15 @@ extern "C" {
 #endif
 
 __declspec(dllimport) WIN_HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) int __stdcall
-GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer);
-__declspec(dllimport) WIN_HMODULE __stdcall
-GetModuleHandleA(WIN_LPCSTR lpModuleName);
-__declspec(dllimport) WIN_HMODULE __stdcall
-LoadLibraryA(WIN_LPCSTR lpLibFileName);
-__declspec(dllimport) WIN_FARPROC __stdcall
-GetProcAddress(WIN_HMODULE hModule, WIN_LPCSTR lpProcName);
+__declspec(dllimport) int __stdcall GlobalMemoryStatusEx(
+    MEMORYSTATUSEX *lpBuffer);
+__declspec(dllimport)
+WIN_HMODULE __stdcall GetModuleHandleA(WIN_LPCSTR lpModuleName);
+__declspec(dllimport)
+WIN_HMODULE __stdcall LoadLibraryA(WIN_LPCSTR lpLibFileName);
+__declspec(dllimport)
+WIN_FARPROC __stdcall GetProcAddress(WIN_HMODULE hModule,
+                                     WIN_LPCSTR lpProcName);
 
 #ifdef __cplusplus
 }
@@ -80,19 +81,22 @@ typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
 #endif
 
 /** \brief je_malloc_stats_print function. */
-void je_malloc_stats_print(void (*write_cb)(void *, const char *),
-                           void *cbopaque, const char *opts) {
+error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
+                                   void *cbopaque, const char *opts) {
   char buf[1024];
   PROCESS_MEMORY_COUNTERS pmc;
   MEMORYSTATUSEX memex;
   WIN_HMODULE hPsapi;
   WIN_HMODULE hKernel32;
   GetProcessMemoryInfo_t pGetProcessMemoryInfo = NULL;
+  int printf_rc;
 
-  (void)opts;
+  if (opts != NULL) {
+    /* unused */
+  }
 
   if (!write_cb)
-    return;
+    return ERR_NONE;
 
   write_cb(cbopaque, "___ Begin Windows Native Memory Stats ___\n");
 
@@ -118,21 +122,24 @@ void je_malloc_stats_print(void (*write_cb)(void *, const char *),
     pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
     if (pGetProcessMemoryInfo(GetCurrentProcess(), &pmc, pmc.cb)) {
 #if defined(_MSC_VER)
-      sprintf_s(buf, sizeof(buf),
+      printf_rc = sprintf_s(buf, sizeof(buf),
 #else
-      sprintf(buf,
+      printf_rc = sprintf(buf,
 #endif
-                "Process Memory:\n"
-                "  WorkingSetSize: %lu\n"
-                "  PeakWorkingSetSize: %lu\n"
-                "  PagefileUsage: %lu\n"
-                "  PeakPagefileUsage: %lu\n"
-                "  PageFaultCount: %lu\n",
-                (unsigned long)pmc.WorkingSetSize,
-                (unsigned long)pmc.PeakWorkingSetSize,
-                (unsigned long)pmc.PagefileUsage,
-                (unsigned long)pmc.PeakPagefileUsage,
-                (unsigned long)pmc.PageFaultCount);
+                            "Process Memory:\n"
+                            "  WorkingSetSize: %lu\n"
+                            "  PeakWorkingSetSize: %lu\n"
+                            "  PagefileUsage: %lu\n"
+                            "  PeakPagefileUsage: %lu\n"
+                            "  PageFaultCount: %lu\n",
+                            (unsigned long)pmc.WorkingSetSize,
+                            (unsigned long)pmc.PeakWorkingSetSize,
+                            (unsigned long)pmc.PagefileUsage,
+                            (unsigned long)pmc.PeakPagefileUsage,
+                            (unsigned long)pmc.PageFaultCount);
+      if (printf_rc < 0) {
+        return printf_rc;
+      }
       write_cb(cbopaque, buf);
     }
   }
@@ -140,26 +147,32 @@ void je_malloc_stats_print(void (*write_cb)(void *, const char *),
   memex.dwLength = sizeof(memex);
   if (GlobalMemoryStatusEx(&memex)) {
 #if defined(_MSC_VER)
-    sprintf_s(buf, sizeof(buf),
+    printf_rc = sprintf_s(
+        buf, sizeof(buf),
 #else
-    sprintf(buf,
+    printf_rc = sprintf(
+        buf,
 #endif
-              "System Memory:\n"
-              "  MemoryLoad: %lu%%\n"
-              "  TotalPhys: " U64_FMT "\n"
-              "  AvailPhys: " U64_FMT "\n"
-              "  TotalPageFile: " U64_FMT "\n"
-              "  AvailPageFile: " U64_FMT "\n"
-              "  TotalVirtual: " U64_FMT "\n"
-              "  AvailVirtual: " U64_FMT "\n",
-              (unsigned long)memex.dwMemoryLoad, U64_CAST(memex.ullTotalPhys),
-              U64_CAST(memex.ullAvailPhys), U64_CAST(memex.ullTotalPageFile),
-              U64_CAST(memex.ullAvailPageFile), U64_CAST(memex.ullTotalVirtual),
-              U64_CAST(memex.ullAvailVirtual));
+        "System Memory:\n"
+        "  MemoryLoad: %lu%%\n"
+        "  TotalPhys: " U64_FMT "\n"
+        "  AvailPhys: " U64_FMT "\n"
+        "  TotalPageFile: " U64_FMT "\n"
+        "  AvailPageFile: " U64_FMT "\n"
+        "  TotalVirtual: " U64_FMT "\n"
+        "  AvailVirtual: " U64_FMT "\n",
+        (unsigned long)memex.dwMemoryLoad, U64_CAST(memex.ullTotalPhys),
+        U64_CAST(memex.ullAvailPhys), U64_CAST(memex.ullTotalPageFile),
+        U64_CAST(memex.ullAvailPageFile), U64_CAST(memex.ullTotalVirtual),
+        U64_CAST(memex.ullAvailVirtual));
+    if (printf_rc < 0) {
+      return printf_rc;
+    }
     write_cb(cbopaque, buf);
   }
 
   write_cb(cbopaque, "___ End Windows Native Memory Stats ___\n");
+  return ERR_NONE;
 }
 #endif
 
