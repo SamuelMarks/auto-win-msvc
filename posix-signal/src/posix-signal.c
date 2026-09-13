@@ -71,6 +71,14 @@ static void (*g_signal_handlers[32])(int) = {0};
 static void (*g_sigaction_handlers[32])(int, siginfo_t *, void *) = {0};
 static int g_signal_flags[32] = {0};
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+static int is_crt_signal(int signum) {
+  return (signum == SIGINT || signum == SIGILL || signum == SIGFPE ||
+          signum == SIGSEGV || signum == SIGTERM || signum == SIGBREAK ||
+          signum == SIGABRT);
+}
+#endif
+
 static volatile unsigned long g_blocked_signals = 0;
 static volatile unsigned long g_pending_signals = 0;
 
@@ -179,7 +187,13 @@ static void internal_signal_handler(int signum) {
     }
   }
 
-  signal(signum, internal_signal_handler);
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  if (is_crt_signal(signum)) {
+    (signal)(signum, internal_signal_handler);
+  }
+#else
+  (signal)(signum, internal_signal_handler);
+#endif
 }
 
 /** \brief posix_signal_sigprocmask function. */
@@ -281,11 +295,24 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
   }
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  if (signum != SIGINT && signum != SIGILL && signum != SIGFPE &&
-      signum != SIGSEGV && signum != SIGTERM && signum != SIGBREAK &&
-      signum != SIGABRT) {
-    errno = EINVAL;
-    return -1;
+  if (!is_crt_signal(signum)) {
+    if (oldact) {
+      oldact->sa_handler = g_signal_handlers[signum];
+      oldact->sa_sigaction = g_sigaction_handlers[signum];
+      posix_signal_sigemptyset(&oldact->sa_mask);
+      oldact->sa_flags = g_signal_flags[signum];
+    }
+    if (act) {
+      g_signal_flags[signum] = act->sa_flags;
+      if (act->sa_flags & SA_SIGINFO) {
+        g_sigaction_handlers[signum] = act->sa_sigaction;
+        g_signal_handlers[signum] = NULL;
+      } else {
+        g_sigaction_handlers[signum] = NULL;
+        g_signal_handlers[signum] = act->sa_handler;
+      }
+    }
+    return 0;
   }
 #endif
 
@@ -298,15 +325,15 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
     if (act->sa_flags & SA_SIGINFO) {
       g_sigaction_handlers[signum] = act->sa_sigaction;
       g_signal_handlers[signum] = NULL;
-      prev_handler = signal(signum, internal_signal_handler);
+      prev_handler = (signal)(signum, internal_signal_handler);
     } else {
       g_sigaction_handlers[signum] = NULL;
       if (act->sa_handler != SIG_DFL && act->sa_handler != SIG_IGN) {
         g_signal_handlers[signum] = act->sa_handler;
-        prev_handler = signal(signum, internal_signal_handler);
+        prev_handler = (signal)(signum, internal_signal_handler);
       } else {
         g_signal_handlers[signum] = act->sa_handler;
-        prev_handler = signal(signum, act->sa_handler);
+        prev_handler = (signal)(signum, act->sa_handler);
       }
     }
     if (prev_handler == SIG_ERR) {
@@ -324,11 +351,11 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
       oldact->sa_flags = g_signal_flags[signum];
     }
   } else if (oldact) {
-    prev_handler = signal(signum, SIG_IGN);
+    prev_handler = (signal)(signum, SIG_IGN);
     if (prev_handler == SIG_ERR) {
       return -1;
     }
-    signal(signum, prev_handler);
+    (signal)(signum, prev_handler);
     if (prev_handler == internal_signal_handler) {
       oldact->sa_handler = g_signal_handlers[signum];
       oldact->sa_sigaction = g_sigaction_handlers[signum];
@@ -341,6 +368,23 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
   }
 
   return 0;
+}
+
+/** \brief posix_signal_signal function. */
+posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler) {
+  posix_sighandler_t prev;
+  if (signum < 1 || signum > 31) {
+    errno = EINVAL;
+    return SIG_ERR;
+  }
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  if (!is_crt_signal(signum)) {
+    prev = g_signal_handlers[signum];
+    g_signal_handlers[signum] = handler;
+    return prev ? prev : SIG_DFL;
+  }
+#endif
+  return (signal)(signum, handler);
 }
 /** \brief posix_signal_kill function. */
 int posix_signal_kill(pid_t pid, int sig) {

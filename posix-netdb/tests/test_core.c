@@ -15,6 +15,14 @@ TEST test_netdb(void) {
   SKIP();
 }
 
+TEST test_eai_system(void) {
+  const char *err;
+  ASSERT_EQ(11, EAI_SYSTEM);
+  err = gai_strerror(EAI_SYSTEM);
+  ASSERT(err != NULL);
+  PASS();
+}
+
 TEST test_posix_getaddrinfo(void) {
   SKIP(); /* Generated stub for posix_getaddrinfo */
 }
@@ -29,6 +37,7 @@ TEST test_posix_gai_strerror(void) {
 
 SUITE(suite_posix_netdb_core) {
   RUN_TEST(test_netdb);
+  RUN_TEST(test_eai_system);
   RUN_TEST(test_posix_getaddrinfo);
   RUN_TEST(test_posix_freeaddrinfo);
   RUN_TEST(test_posix_gai_strerror);

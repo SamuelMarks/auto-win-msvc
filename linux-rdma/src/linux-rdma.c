@@ -19,8 +19,8 @@ int rdma_create_event_channel(void) { return 0; }
  * default value
  */
 int rdma_bind_addr(struct rdma_cm_id *id, struct sockaddr *addr) {
-  id = id;
-  addr = addr;
+  (void)id;
+  (void)addr;
   errno = ENOSYS;
   return -1;
 }
@@ -31,8 +31,8 @@ int rdma_bind_addr(struct rdma_cm_id *id, struct sockaddr *addr) {
 
  */
 int rdma_listen(struct rdma_cm_id *id, int backlog) {
-  id = id;
-  backlog = backlog;
+  (void)id;
+  (void)backlog;
   errno = ENOSYS;
   return -1;
 }
@@ -43,8 +43,8 @@ int rdma_listen(struct rdma_cm_id *id, int backlog) {
 
  */
 int rdma_accept(struct rdma_cm_id *id, void *conn_param) {
-  id = id;
-  conn_param = conn_param;
+  (void)id;
+  (void)conn_param;
   errno = ENOSYS;
   return -1;
 }

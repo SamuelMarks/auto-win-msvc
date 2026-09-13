@@ -137,11 +137,11 @@ static void __cdecl null_invalid_parameter_handler(
     unsigned int line,
     size_t pReserved /* Changed from uintptr_t to size_t to avoid stdint.h */
 ) {
-  expression = expression;
-  function = function;
-  file = file;
-  line = line;
-  pReserved = pReserved;
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
 
@@ -346,7 +346,7 @@ int tcgetattr(int fd, struct termios *termios_p) {
 
 /** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
-  fd = fd;
+  (void)fd;
   return -1;
 }
 

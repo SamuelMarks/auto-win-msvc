@@ -88,7 +88,7 @@ if(WIN32 AND NOT CYGWIN AND (NOT MSVC OR MSVC_VERSION GREATER_EQUAL 1600))
         wepoll
         URL "https://github.com/piscisaureus/wepoll/archive/refs/tags/v1.5.8.zip"
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        PATCH_COMMAND powershell -NoProfile -ExecutionPolicy Bypass -File "${CMAKE_CURRENT_SOURCE_DIR}/../patch_wepoll.ps1"
+        PATCH_COMMAND ${CMAKE_COMMAND} -DWEPOLL_SOURCE_DIR=<SOURCE_DIR> -P "${CMAKE_CURRENT_SOURCE_DIR}/patch_wepoll.cmake"
     )
     FetchContent_MakeAvailable(wepoll)
     add_library(wepoll STATIC ${wepoll_SOURCE_DIR}/wepoll.c)

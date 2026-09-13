@@ -15,7 +15,7 @@ bool _dyld_present(void) { return false; }
  * appropriate default value
  */
 intptr_t _dyld_get_image_vmaddr_slide(uint32_t image_index) {
-  image_index = image_index;
+  (void)image_index;
   errno = ENOSYS;
   return -1;
 }

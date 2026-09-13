@@ -16,6 +16,13 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) || defined(_WIN32)
+#ifndef strtok_r
+/** \brief Thread-safe strtok_r mapping to strtok_s on Windows/MSVC. */
+#define strtok_r strtok_s
+#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

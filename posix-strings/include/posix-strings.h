@@ -20,6 +20,11 @@ extern "C" {
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 
+#ifndef strtok_r
+/** \brief Thread-safe string tokenizer macro mapping to strtok_s. */
+#define strtok_r strtok_s
+#endif
+
 /** \brief bzero macro. */
 #define bzero(b, len) (memset((b), '\0', (len)), (void)0)
 /** \brief bcopy macro. */

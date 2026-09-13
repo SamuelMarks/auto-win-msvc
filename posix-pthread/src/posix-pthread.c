@@ -856,7 +856,7 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier) {
   barrier->ptr = NULL;
   return 0;
 #else
-  barrier = barrier;
+  (void)barrier;
   return EINVAL;
 #endif
 }
@@ -879,9 +879,9 @@ int pthread_barrier_init(pthread_barrier_t *barrier,
   barrier->ptr = b;
   return 0;
 #else
-  barrier = barrier;
-  attr = attr;
-  count = count;
+  (void)barrier;
+  (void)attr;
+  (void)count;
   return EINVAL;
 #endif
 }
@@ -912,7 +912,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier) {
     return 0;
   }
 #else
-  barrier = barrier;
+  (void)barrier;
   return EINVAL;
 #endif
 }
@@ -953,8 +953,7 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
 
 /** \brief pthread_cancel function. */
 int pthread_cancel(pthread_t thread) {
-  thread = thread;
-
+  (void)thread;
   return 0;
 }
 
@@ -1007,29 +1006,28 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
   dyn_WakeAllConditionVariable(&cond->p);
   return 0;
 #else
-  cond = cond;
+  (void)cond;
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_cond_destroy function. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  cond = cond;
-
+  (void)cond;
   return 0;
 }
 
 /** \brief pthread_cond_init function. */
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 #if defined(_WIN32)
-  attr = attr;
+  (void)attr;
   if (!cond)
     return EINVAL;
   dyn_InitializeConditionVariable(&cond->p);
   return 0;
 #else
-  cond = cond;
-  attr = attr;
+  (void)cond;
+  (void)attr;
   return EINVAL;
 #endif
 }
@@ -1042,7 +1040,7 @@ int pthread_cond_signal(pthread_cond_t *cond) {
   dyn_WakeConditionVariable(&cond->p);
   return 0;
 #else
-  cond = cond;
+  (void)cond;
   return EINVAL;
 #endif
 }
@@ -1060,9 +1058,9 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
              ? 0
              : ETIMEDOUT;
 #else
-  cond = cond;
-  mutex = mutex;
-  abstime = abstime;
+  (void)cond;
+  (void)mutex;
+  (void)abstime;
   return 0;
 #endif
 }
@@ -1076,55 +1074,49 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
              ? 0
              : EINVAL;
 #else
-  cond = cond;
-  mutex = mutex;
+  (void)cond;
+  (void)mutex;
   return 0;
 #endif
 }
 
 /** \brief pthread_condattr_destroy function. */
 int pthread_condattr_destroy(pthread_condattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 int pthread_condattr_getclock(const pthread_condattr_t *attr,
                               clockid_t *clock_id) {
-  attr = attr;
-  clock_id = clock_id;
-
+  (void)attr;
+  (void)clock_id;
   return 0;
 }
 
 /** \brief pthread_condattr_getpshared function. */
 int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
 /** \brief pthread_condattr_init function. */
 int pthread_condattr_init(pthread_condattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 /** \brief pthread_condattr_setclock function. */
 int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
-  attr = attr;
-  clock_id = clock_id;
-
+  (void)attr;
+  (void)clock_id;
   return 0;
 }
 
 /** \brief pthread_condattr_setpshared function. */
 int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
@@ -1179,7 +1171,7 @@ int pthread_detach(pthread_t thread) {
   CloseHandle(thread);
   return 0;
 #else
-  thread = thread;
+  (void)thread;
   return EINVAL;
 #endif
 }
@@ -1214,18 +1206,16 @@ int pthread_getconcurrency(void) { return EINVAL; }
 
 /** \brief pthread_getcpuclockid function. */
 int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id) {
-  thread_id = thread_id;
-  clock_id = clock_id;
-
+  (void)thread_id;
+  (void)clock_id;
   return 0;
 }
 
 int pthread_getschedparam(pthread_t thread, int *policy,
                           struct sched_param *param) {
-  thread = thread;
-  policy = policy;
-  param = param;
-
+  (void)thread;
+  (void)policy;
+  (void)param;
   return 0;
 }
 
@@ -1287,7 +1277,7 @@ int pthread_key_delete(pthread_key_t key) {
 #if defined(_WIN32)
   return TlsFree(key) ? 0 : EINVAL;
 #else
-  key = key;
+  (void)key;
   return 0;
 #endif
 }
@@ -1295,11 +1285,10 @@ int pthread_key_delete(pthread_key_t key) {
 /** \brief pthread_mutex_destroy function. */
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
-  mutex = mutex;
-  /* SRW locks do not need destruction */
+  (void)mutex; /* SRW locks do not need destruction */
   return 0;
 #else
-  mutex = mutex;
+  (void)mutex;
   return EINVAL;
 #endif
 }
@@ -1307,14 +1296,14 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
 #if defined(_WIN32)
-  attr = attr;
+  (void)attr;
   if (!mutex)
     return EINVAL;
   dyn_InitializeSRWLock(&mutex->p);
   return 0;
 #else
-  mutex = mutex;
-  attr = attr;
+  (void)mutex;
+  (void)attr;
   return EINVAL;
 #endif
 }
@@ -1327,16 +1316,15 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   dyn_AcquireSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  mutex = mutex;
+  (void)mutex;
   return EINVAL;
 #endif
 }
 
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
                             const struct timespec *abstime) {
-  mutex = mutex;
-  abstime = abstime;
-
+  (void)mutex;
+  (void)abstime;
   return 0;
 }
 
@@ -1347,7 +1335,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
     return 0;
   return dyn_TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
 #else
-  mutex = mutex;
+  (void)mutex;
   return 0;
 #endif
 }
@@ -1360,114 +1348,102 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   dyn_ReleaseSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  mutex = mutex;
+  (void)mutex;
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_mutexattr_destroy function. */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
                                      int *prioceiling) {
-  attr = attr;
-  prioceiling = prioceiling;
-
+  (void)attr;
+  (void)prioceiling;
   return 0;
 }
 
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
                                   int *protocol) {
-  attr = attr;
-  protocol = protocol;
-
+  (void)attr;
+  (void)protocol;
   return 0;
 }
 
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr,
                                  int *pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
 /** \brief pthread_mutexattr_gettype function. */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) {
-  attr = attr;
-  type = type;
-
+  (void)attr;
+  (void)type;
   return 0;
 }
 
 /** \brief pthread_mutexattr_init function. */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
                                      int prioceiling) {
-  attr = attr;
-  prioceiling = prioceiling;
-
+  (void)attr;
+  (void)prioceiling;
   return 0;
 }
 
 /** \brief pthread_mutexattr_setprotocol function. */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol) {
-  attr = attr;
-  protocol = protocol;
-
+  (void)attr;
+  (void)protocol;
   return 0;
 }
 
 /** \brief pthread_mutexattr_setpshared function. */
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
 /** \brief pthread_mutexattr_settype function. */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
-  attr = attr;
-  type = type;
-
+  (void)attr;
+  (void)type;
   return 0;
 }
 
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
-  once_control = once_control;
-  init_routine = init_routine;
-
+  (void)once_control;
+  (void)init_routine;
   return 0;
 }
 
 /** \brief pthread_rwlock_destroy function. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  rwlock = rwlock;
-
+  (void)rwlock;
   return 0;
 }
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
 #if defined(_WIN32)
-  attr = attr;
+  (void)attr;
   if (!rwlock)
     return EINVAL;
   dyn_InitializeSRWLock(&rwlock->p);
   return 0;
 #else
-  rwlock = rwlock;
-  attr = attr;
+  (void)rwlock;
+  (void)attr;
   return EINVAL;
 #endif
 }
@@ -1480,24 +1456,22 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockShared(&rwlock->p);
   return 0;
 #else
-  rwlock = rwlock;
+  (void)rwlock;
   return EINVAL;
 #endif
 }
 
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  rwlock = rwlock;
-  abstime = abstime;
-
+  (void)rwlock;
+  (void)abstime;
   return 0;
 }
 
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  rwlock = rwlock;
-  abstime = abstime;
-
+  (void)rwlock;
+  (void)abstime;
   return 0;
 }
 
@@ -1508,7 +1482,7 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
     return 0;
   return dyn_TryAcquireSRWLockShared(&rwlock->p) ? 0 : EBUSY;
 #else
-  rwlock = rwlock;
+  (void)rwlock;
   return 0;
 #endif
 }
@@ -1520,7 +1494,7 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
     return 0;
   return dyn_TryAcquireSRWLockExclusive(&rwlock->p) ? 0 : EBUSY;
 #else
-  rwlock = rwlock;
+  (void)rwlock;
   return 0;
 #endif
 }
@@ -1538,7 +1512,7 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
   dyn_ReleaseSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  rwlock = rwlock;
+  (void)rwlock;
   return EINVAL;
 #endif
 }
@@ -1551,38 +1525,34 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  rwlock = rwlock;
+  (void)rwlock;
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_rwlockattr_destroy function. */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
                                   int *pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
 /** \brief pthread_rwlockattr_init function. */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr) {
-  attr = attr;
-
+  (void)attr;
   return 0;
 }
 
 /** \brief pthread_rwlockattr_setpshared function. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared) {
-  attr = attr;
-  pshared = pshared;
-
+  (void)attr;
+  (void)pshared;
   return 0;
 }
 
@@ -1600,41 +1570,36 @@ pthread_t pthread_self(void) {
 
 /** \brief pthread_setcancelstate function. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  state = state;
-  oldstate = oldstate;
-
+  (void)state;
+  (void)oldstate;
   return 0;
 }
 
 /** \brief pthread_setcanceltype function. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  type = type;
-  oldtype = oldtype;
-
+  (void)type;
+  (void)oldtype;
   return 0;
 }
 
 /** \brief pthread_setconcurrency function. */
 int pthread_setconcurrency(int new_level) {
-  new_level = new_level;
-
+  (void)new_level;
   return 0;
 }
 
 int pthread_setschedparam(pthread_t thread, int policy,
                           const struct sched_param *param) {
-  thread = thread;
-  policy = policy;
-  param = param;
-
+  (void)thread;
+  (void)policy;
+  (void)param;
   return 0;
 }
 
 /** \brief pthread_setschedprio function. */
 int pthread_setschedprio(pthread_t thread, int prio) {
-  thread = thread;
-  prio = prio;
-
+  (void)thread;
+  (void)prio;
   return 0;
 }
 
@@ -1680,9 +1645,9 @@ int pthread_setname_np(pthread_t thread, const char *name) {
 
 /** \brief pthread_sigmask function. */
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-  how = how;
-  set = set;
-  oset = oset;
+  (void)how;
+  (void)set;
+  (void)oset;
   return 0;
 }
 
@@ -1691,8 +1656,8 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 #if defined(_WIN32)
   return TlsSetValue(key, (void *)(size_t)value) ? 0 : EINVAL;
 #else
-  key = key;
-  value = value;
+  (void)key;
+  (void)value;
   return 0;
 #endif
 }
@@ -1707,7 +1672,7 @@ int pthread_spin_destroy(pthread_spinlock_t *lock) {
   lock->ptr = 0;
   return 0;
 #else
-  lock = lock;
+  (void)lock;
   return EINVAL;
 #endif
 }
@@ -1716,7 +1681,7 @@ int pthread_spin_destroy(pthread_spinlock_t *lock) {
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 #if defined(_WIN32)
   void *cs;
-  pshared = pshared;
+  (void)pshared;
   if (!lock)
     return EINVAL;
   cs = malloc(48); /* Safe size for CRITICAL_SECTION */
@@ -1726,8 +1691,8 @@ int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
   lock->ptr = cs;
   return 0;
 #else
-  lock = lock;
-  pshared = pshared;
+  (void)lock;
+  (void)pshared;
   return EINVAL;
 #endif
 }
@@ -1740,7 +1705,7 @@ int pthread_spin_lock(pthread_spinlock_t *lock) {
   EnterCriticalSection(lock->ptr);
   return 0;
 #else
-  lock = lock;
+  (void)lock;
   return EINVAL;
 #endif
 }
@@ -1752,7 +1717,7 @@ int pthread_spin_trylock(pthread_spinlock_t *lock) {
     return 0;
   return TryEnterCriticalSection(lock->ptr) ? 0 : EBUSY;
 #else
-  lock = lock;
+  (void)lock;
   return 0;
 #endif
 }
@@ -1765,7 +1730,7 @@ int pthread_spin_unlock(pthread_spinlock_t *lock) {
   LeaveCriticalSection(lock->ptr);
   return 0;
 #else
-  lock = lock;
+  (void)lock;
   return EINVAL;
 #endif
 }
@@ -1775,55 +1740,48 @@ void pthread_testcancel(void) { return; }
 
 /** \brief sched_get_priority_max function. */
 int sched_get_priority_max(int policy) {
-  policy = policy;
-
+  (void)policy;
   return 0;
 }
 
 /** \brief sched_get_priority_min function. */
 int sched_get_priority_min(int policy) {
-  policy = policy;
-
+  (void)policy;
   return 0;
 }
 
 /** \brief sched_getparam function. */
 int sched_getparam(pid_t pid, struct sched_param *param) {
-  pid = pid;
-  param = param;
-
+  (void)pid;
+  (void)param;
   return 0;
 }
 
 /** \brief sched_getscheduler function. */
 int sched_getscheduler(pid_t pid) {
-  pid = pid;
-
+  (void)pid;
   return 0;
 }
 
 /** \brief sched_rr_get_interval function. */
 int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
-  pid = pid;
-  interval = interval;
-
+  (void)pid;
+  (void)interval;
   return 0;
 }
 
 /** \brief sched_setparam function. */
 int sched_setparam(pid_t pid, const struct sched_param *param) {
-  pid = pid;
-  param = param;
-
+  (void)pid;
+  (void)param;
   return 0;
 }
 
 /** \brief sched_setscheduler function. */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
-  pid = pid;
-  policy = policy;
-  param = param;
-
+  (void)pid;
+  (void)policy;
+  (void)param;
   return 0;
 }
 

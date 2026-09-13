@@ -1097,7 +1097,7 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
              int flags) {
   char *buf;
   int res;
-  flags = flags; /* AT_SYMLINK_NOFOLLOW ignored */
+  (void)flags; /* AT_SYMLINK_NOFOLLOW ignored */
   if (posix_resolve_at_path(dirfd, pathname, &buf) == -1) {
     return -1;
   }
@@ -1403,6 +1403,16 @@ int getgroups(int size, gid_t list[]) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** \brief setgroups function. */
+int setgroups(size_t size, const gid_t *list) {
+  if (size > 0 && list == NULL) {
+    errno = EFAULT;
+    return -1;
+  }
+  return 0;
+}
+#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief gethostid function. */
 long gethostid(void) { return 0; }
 #endif
@@ -1541,8 +1551,8 @@ uid_t getuid(void) { return (uid_t)get_current_rid(0); }
 /** \brief lchown function. */
 int lchown(const char *pathname, uid_t owner, gid_t group) {
   unsigned long attr;
-  owner = owner;
-  group = group;
+  (void)owner;
+  (void)group;
   if (!pathname) {
     errno = EINVAL;
     return -1;
@@ -1665,25 +1675,36 @@ int pause(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pipe function. */
 extern int posix_socketpair(int domain, int type, int protocol,
-                            int socket_vector[2]);
+                            intptr_t socket_vector[2]);
 int pipe(int pipefd[2]) {
-  printf("IN POSIX PIPE\n");
-  return posix_socketpair(2, 1, 0, pipefd);
+  intptr_t sv[2];
+  if (!pipefd) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (posix_socketpair(2, 1, 0, sv) != 0) {
+    return -1;
+  }
+  pipefd[0] = (int)sv[0];
+  pipefd[1] = (int)sv[1];
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pipe2 function. */
 
-int posix_socketpair(int domain, int type, int protocol, int socket_vector[2]);
 int pipe2(int pipefd[2], int flags) {
-  int textmode = _O_BINARY;
-  if (flags & O_CLOEXEC) {
-    textmode |= _O_NOINHERIT;
-  }
-  (void)textmode;
-  if (posix_socketpair(2, 1, 0, pipefd) != 0) {
+  intptr_t sv[2];
+  (void)flags;
+  if (!pipefd) {
+    errno = EINVAL;
     return -1;
   }
+  if (posix_socketpair(2, 1, 0, sv) != 0) {
+    return -1;
+  }
+  pipefd[0] = (int)sv[0];
+  pipefd[1] = (int)sv[1];
   return 0;
 }
 
@@ -2125,7 +2146,7 @@ pid_t tcgetpgrp(intptr_t fd) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcsetpgrp function. */
 int tcsetpgrp(intptr_t fd, pid_t pgrp) {
-  pgrp = pgrp;
+  (void)pgrp;
   if (!_isatty((int)fd)) {
     errno = ENOTTY;
     return -1;
@@ -2301,3 +2322,133 @@ int posix_isatty(intptr_t fd) {
   return isatty(fd);
 #endif
 }
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/**
+ * \brief getsubopt function.
+ * Parses suboptions from a comma-separated string.
+ * \param optionp Pointer to address of string to parse.
+ * \param tokens NULL-terminated array of token names.
+ * \param valuep Pointer to store value corresponding to token.
+ * \return Index of matching token, or -1 if token not recognized.
+ */
+int getsubopt(char **optionp, char *const *tokens, char **valuep) {
+  char *end;
+  char *opt;
+  int i;
+
+  if (optionp == NULL || *optionp == NULL || tokens == NULL || valuep == NULL) {
+    return -1;
+  }
+
+  opt = *optionp;
+  while (*opt == ' ' || *opt == '\t') {
+    opt++;
+  }
+
+  if (*opt == '\0') {
+    *optionp = opt;
+    *valuep = NULL;
+    return -1;
+  }
+
+  end = opt;
+  while (*end != '\0' && *end != ',') {
+    end++;
+  }
+
+  if (*end == ',') {
+    *end = '\0';
+    *optionp = end + 1;
+  } else {
+    *optionp = end;
+  }
+
+  *valuep = strchr(opt, '=');
+  if (*valuep != NULL) {
+    *(*valuep) = '\0';
+    (*valuep)++;
+  }
+
+  for (i = 0; tokens[i] != NULL; i++) {
+    if (strcmp(opt, tokens[i]) == 0) {
+      return i;
+    }
+  }
+
+  *valuep = opt;
+  return -1;
+}
+
+/**
+ * \brief getdelim function.
+ * Reads a delimited record from stream into buffer.
+ * \param lineptr Pointer to buffer pointer.
+ * \param n Pointer to buffer size.
+ * \param delim Delimiter character.
+ * \param stream Stream to read from.
+ * \return Number of bytes read or -1 on EOF/error.
+ */
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
+  size_t cur_len;
+  int c;
+  char *new_lineptr;
+  size_t needed;
+  size_t new_size;
+
+  cur_len = 0;
+  if (lineptr == NULL || n == NULL || stream == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (*lineptr == NULL || *n == 0) {
+    *n = 128;
+    *lineptr = (char *)malloc(*n);
+    if (*lineptr == NULL) {
+      errno = ENOMEM;
+      return -1;
+    }
+  }
+
+  while ((c = fgetc(stream)) != EOF) {
+    needed = cur_len + 2;
+    if (needed > *n) {
+      new_size = *n * 2;
+      if (new_size < needed) {
+        new_size = needed;
+      }
+      new_lineptr = (char *)realloc(*lineptr, new_size);
+      if (new_lineptr == NULL) {
+        errno = ENOMEM;
+        return -1;
+      }
+      *lineptr = new_lineptr;
+      *n = new_size;
+    }
+    (*lineptr)[cur_len++] = (char)c;
+    if (c == delim) {
+      break;
+    }
+  }
+
+  if (c == EOF && cur_len == 0) {
+    return -1;
+  }
+
+  (*lineptr)[cur_len] = '\0';
+  return (ssize_t)cur_len;
+}
+
+/**
+ * \brief getline function.
+ * Reads a line delimited by newline from stream into buffer.
+ * \param lineptr Pointer to buffer pointer.
+ * \param n Pointer to buffer size.
+ * \param stream Stream to read from.
+ * \return Number of bytes read or -1 on EOF/error.
+ */
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+  return getdelim(lineptr, n, '\n', stream);
+}
+#endif

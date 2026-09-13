@@ -27,6 +27,10 @@ extern "C" {
 #if defined(_WIN32)
 /* gai_strerror is provided by ws2tcpip.h but sometimes as gai_strerrorA.
    Using the macro from there or redefining it. */
+#ifndef EAI_SYSTEM
+/** \brief System error returned in errno. */
+#define EAI_SYSTEM 11
+#endif
 #endif
 
 #ifdef __cplusplus

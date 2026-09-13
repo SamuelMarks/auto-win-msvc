@@ -91,9 +91,11 @@ typedef int ssize_t;
 typedef int pid_t;
 #endif
 
-#ifndef _MODE_T_DEFINED
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_)
 #define _MODE_T_DEFINED
-typedef unsigned int mode_t;
+#define _MODE_T_DEFINED_
+#define _MODE_T_
+typedef unsigned short mode_t;
 #endif
 
 #ifndef _OFF_T_DEFINED
@@ -380,16 +382,20 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
   return ret;
 #endif
 }
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define open posix_core_open
+#endif
 #endif
 #else
 /* open */
 #endif
 /** @brief close */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef close
 int posix_close(intptr_t fd);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#ifndef close
 #define close posix_close
+#endif
 #endif
 #else
 /* close */
@@ -397,8 +403,10 @@ int posix_close(intptr_t fd);
 /** @brief read */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 ssize_t posix_read(intptr_t fd, void *buf, size_t count);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef read
 #define read posix_read
+#endif
 #endif
 #else
 /* read */
@@ -406,8 +414,10 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count);
 /** @brief write */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef write
 #define write posix_write
+#endif
 #endif
 #else
 /* write */
@@ -763,6 +773,12 @@ int getgroups(int size, gid_t list[]);
 #else
 /* getgroups */
 #endif
+/** @brief setgroups */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+int setgroups(size_t size, const gid_t *list);
+#else
+/* setgroups */
+#endif
 /** @brief gethostid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 long gethostid(void);
@@ -808,6 +824,12 @@ POSIX_CORE_API int getopt(int argc, char *const argv[], const char *optstring);
 #include <getopt.h>
 #else
 /* getopt */
+#endif
+/** @brief getsubopt */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+int getsubopt(char **optionp, char *const *tokens, char **valuep);
+#else
+/* getsubopt */
 #endif
 /** @brief getpgid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1122,8 +1144,28 @@ int posix_mkstemp(char *tmpl);
 /* mkstemp is standard on POSIX */
 #endif
 
+/** @brief getdelim */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
+#else
+/* getdelim */
+#endif
+
+/** @brief getline */
+#if defined(_WIN32) && !defined(__CYGWIN__)
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#else
+/* getline */
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 FILE *posix_fopen(const char *pathname, const char *mode);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#ifndef fopen
 #define fopen posix_fopen
+#endif
+#endif
+#endif
 
 #ifdef __cplusplus
 }

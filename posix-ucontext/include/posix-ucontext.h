@@ -40,6 +40,9 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 
 #else
 
+#if !defined(_WIN32) && !defined(_XOPEN_SOURCE)
+#define _XOPEN_SOURCE 700
+#endif
 #include <ucontext.h>
 /* clang-format on */
 

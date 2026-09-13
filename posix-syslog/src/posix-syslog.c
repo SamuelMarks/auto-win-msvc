@@ -111,9 +111,11 @@ void syslog(int priority, const char *format, ...) {
   written = vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 #elif defined(_MSC_VER)
   written = _vsnprintf(buffer, sizeof(buffer), format, args);
-#else
-  /* Fallback for other platforms */
+#elif defined(_WIN32)
   written = vsprintf(buffer, format, args);
+#else
+  (void)buffer;
+  (void)written;
 #endif
   va_end(args);
 

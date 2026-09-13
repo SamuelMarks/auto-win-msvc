@@ -456,6 +456,7 @@ int posix_socketpair(int domain, int type, int protocol,
 
 #ifdef _WIN32
 /* Map POSIX names to our posix_ prefixes */
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define endhostent posix_endhostent
 #define endnetent posix_endnetent
 #define endprotoent posix_endprotoent
@@ -512,6 +513,7 @@ int posix_socketpair(int domain, int type, int protocol,
 #define shutdown posix_shutdown
 #define socket posix_socket
 #define socketpair posix_socketpair
+#endif /* AUTO_WIN_MSVC_NO_FUNCTION_MACROS */
 
 #endif /* _WIN32 */
 

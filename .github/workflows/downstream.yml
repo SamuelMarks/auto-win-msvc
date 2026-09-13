@@ -13,17 +13,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [valkey, redis, rsync]
+        project: [valkey, redis, rsync, memcached]
 
     steps:
       - name: Checkout auto-win-msvc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: auto-win-msvc
 
       - name: Checkout valkey-windows
         if: matrix.project == 'valkey'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: SamuelMarks/valkey-windows
           ref: release-9.1.0-fix
@@ -31,18 +31,26 @@ jobs:
 
       - name: Checkout redis-windows
         if: matrix.project == 'redis'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: SamuelMarks/redis-windows
           path: redis-windows
 
       - name: Checkout rsync
         if: matrix.project == 'rsync'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: SamuelMarks/rsync
           ref: windows
           path: rsync
+
+      - name: Checkout memcached
+        if: matrix.project == 'memcached'
+        uses: actions/checkout@v7
+        with:
+          repository: SamuelMarks/memcached
+          ref: msvc
+          path: memcached
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -73,3 +81,13 @@ jobs:
           cd rsync
           cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
           cmake --build build --config Release
+
+      - name: Build memcached
+        if: matrix.project == 'memcached'
+        shell: cmd
+        run: |
+          cd memcached
+          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC=../auto-win-msvc
+          cmake --build build --config Release
+          build\Release\memcached.exe -h
+          build\Release\sizes.exe

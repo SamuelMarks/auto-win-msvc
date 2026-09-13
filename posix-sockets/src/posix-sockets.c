@@ -84,10 +84,6 @@ static void __cdecl __init_winsock_auto(void) {
   WSADATA wsaData;
   WSAStartup(MAKEWORD(2, 2), &wsaData);
   _set_invalid_parameter_handler((_invalid_parameter_handler)null_invalid_parameter_handler_auto);
-  #if defined(_MSC_VER)
-  _CrtSetReportMode(_CRT_ASSERT, 0);
-#endif
-
 }
 
 #if defined(_MSC_VER)
@@ -842,12 +838,7 @@ posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length, int flags
   }
   return ret;
 #else
-  (void)socket;
-  (void)buffer;
-  (void)length;
-  (void)flags;
-  errno = EINVAL;
-  return -1;
+  return recv((int)socket, buffer, length, flags);
 #endif
 }
 
@@ -870,14 +861,105 @@ posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length, int f
 
 /** \brief posix_recvmsg function. */
 posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags) {
-  (void)socket;
-  (void)message;
-  (void)flags;
 #ifdef _WIN32
-  /** \brief posix_accept function. */
+  WSABUF stack_bufs[16];
+  WSABUF *bufs;
+  SOCKET s;
+  int optval;
+  int optlen;
+  int i;
+  DWORD bytes_recvd;
+  DWORD dwFlags;
+  int rc;
+
+  if (!message || message->msg_iovlen < 0 ||
+      (message->msg_iovlen > 0 && !message->msg_iov)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (message->msg_iovlen == 0) {
+    message->msg_flags = 0;
+    return 0;
+  }
+
+  bufs = stack_bufs;
+  if (message->msg_iovlen > 16) {
+    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    if (!bufs) {
+      errno = ENOMEM;
+      return -1;
+    }
+  }
+
+  for (i = 0; i < message->msg_iovlen; i++) {
+    bufs[i].buf = (char *)message->msg_iov[i].iov_base;
+    bufs[i].len = (ULONG)message->msg_iov[i].iov_len;
+  }
+
+  s = GET_SOCKET(socket);
+  optlen = sizeof(optval);
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == SOCKET_ERROR &&
+      WSAGetLastError() == WSAENOTSOCK) {
+    posix_ssize_t total = 0;
+    for (i = 0; i < message->msg_iovlen; i++) {
+      int r = _read((int)socket, message->msg_iov[i].iov_base,
+                    (unsigned int)message->msg_iov[i].iov_len);
+      if (r < 0) {
+        if (bufs != stack_bufs) {
+          free(bufs);
+        }
+        return total > 0 ? total : -1;
+      }
+      total += r;
+      if ((size_t)r < message->msg_iov[i].iov_len || r == 0) {
+        break;
+      }
+    }
+    if (bufs != stack_bufs) {
+      free(bufs);
+    }
+    message->msg_flags = 0;
+    return total;
+  }
+
+  bytes_recvd = 0;
+  dwFlags = (DWORD)flags;
+  if (message->msg_name != NULL && message->msg_namelen > 0) {
+    INT fromlen = (INT)message->msg_namelen;
+    rc = WSARecvFrom(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+                     (struct sockaddr *)message->msg_name, &fromlen,
+                     NULL, NULL);
+    if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
+      message->msg_namelen = (posix_socklen_t)fromlen;
+    }
+  } else {
+    rc = WSARecv(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+                 NULL, NULL);
+  }
+
+  if (bufs != stack_bufs) {
+    free(bufs);
+  }
+
+  if (rc == SOCKET_ERROR) {
+    int err = WSAGetLastError();
+    if (err == WSAEMSGSIZE) {
+      message->msg_flags = (int)dwFlags | 0x20;
+      return (posix_ssize_t)bytes_recvd;
+    }
+    errno = _wsaErrorToErrno(err);
+    return -1;
+  }
+  message->msg_flags = (int)dwFlags;
+  return (posix_ssize_t)bytes_recvd;
+#else
+  if (!message) {
+    errno = EINVAL;
+    return -1;
+  }
+  return recvmsg((int)socket, (struct msghdr *)message, flags);
 #endif
-  errno = EINVAL;
-  return -1;
 }
 
 posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
@@ -892,26 +974,98 @@ posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
   }
   return ret;
 #else
-  (void)socket;
-  (void)message;
-  (void)length;
-  (void)flags;
-  errno = EINVAL;
-  return -1;
+  return send((int)socket, message, length, flags);
 #endif
 }
 
 /** \brief posix_sendmsg function. */
 posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
                             int flags) {
-  (void)socket;
-  (void)message;
-  (void)flags;
 #ifdef _WIN32
-  /** \brief posix_accept function. */
+  WSABUF stack_bufs[16];
+  WSABUF *bufs;
+  SOCKET s;
+  int optval;
+  int optlen;
+  int i;
+  DWORD bytes_sent;
+  int rc;
+
+  if (!message || message->msg_iovlen < 0 ||
+      (message->msg_iovlen > 0 && !message->msg_iov)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (message->msg_iovlen == 0) {
+    return 0;
+  }
+
+  bufs = stack_bufs;
+  if (message->msg_iovlen > 16) {
+    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    if (!bufs) {
+      errno = ENOMEM;
+      return -1;
+    }
+  }
+
+  for (i = 0; i < message->msg_iovlen; i++) {
+    bufs[i].buf = (char *)message->msg_iov[i].iov_base;
+    bufs[i].len = (ULONG)message->msg_iov[i].iov_len;
+  }
+
+  s = GET_SOCKET(socket);
+  optlen = sizeof(optval);
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == SOCKET_ERROR &&
+      WSAGetLastError() == WSAENOTSOCK) {
+    posix_ssize_t total = 0;
+    for (i = 0; i < message->msg_iovlen; i++) {
+      int w = _write((int)socket, message->msg_iov[i].iov_base,
+                     (unsigned int)message->msg_iov[i].iov_len);
+      if (w < 0) {
+        if (bufs != stack_bufs) {
+          free(bufs);
+        }
+        return total > 0 ? total : -1;
+      }
+      total += w;
+      if ((size_t)w < message->msg_iov[i].iov_len) {
+        break;
+      }
+    }
+    if (bufs != stack_bufs) {
+      free(bufs);
+    }
+    return total;
+  }
+
+  bytes_sent = 0;
+  if (message->msg_name != NULL && message->msg_namelen > 0) {
+    rc = WSASendTo(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
+                   (const struct sockaddr *)message->msg_name, (int)message->msg_namelen,
+                   NULL, NULL);
+  } else {
+    rc = WSASend(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
+                 NULL, NULL);
+  }
+
+  if (bufs != stack_bufs) {
+    free(bufs);
+  }
+
+  if (rc == SOCKET_ERROR) {
+    errno = _wsaErrorToErrno(WSAGetLastError());
+    return -1;
+  }
+  return (posix_ssize_t)bytes_sent;
+#else
+  if (!message) {
+    errno = EINVAL;
+    return -1;
+  }
+  return sendmsg((int)socket, (const struct msghdr *)message, flags);
 #endif
-  errno = EINVAL;
-  return -1;
 }
 
 /** \brief posix_sendto function. */
@@ -1112,11 +1266,17 @@ err:
   closesocket(listener);
   return -1;
 #else
-  (void)domain;
-  (void)type;
-  (void)protocol;
-  (void)socket_vector;
-  errno = EINVAL;
+  int fds[2];
+  int rc;
+  if (domain == AF_INET || domain == AF_UNSPEC) {
+    domain = AF_UNIX;
+  }
+  rc = socketpair(domain, type, protocol, fds);
+  if (rc == 0) {
+    socket_vector[0] = (intptr_t)fds[0];
+    socket_vector[1] = (intptr_t)fds[1];
+    return 0;
+  }
   return -1;
 #endif
 }

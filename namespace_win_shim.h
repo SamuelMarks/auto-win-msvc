@@ -92,6 +92,7 @@
 
 
 /* POSIX Function Shims via Macros */
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define open _open
 /* #define close _close */
 #define read posix_read
@@ -116,6 +117,7 @@
 #define popen _popen
 #define pclose _pclose
 #define putenv _putenv
+#endif /* AUTO_WIN_MSVC_NO_FUNCTION_MACROS */
 
 /* POSIX Macro Shims */
 #ifndef PATH_MAX
@@ -289,9 +291,12 @@ typedef intptr_t ssize_t;
 typedef unsigned char uchar;
 #define _UCHAR_T_DEFINED
 #endif
-#ifndef _MODE_T_DEFINED
-typedef unsigned short mode_t;
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
+    !defined(_MODE_T_)
 #define _MODE_T_DEFINED
+#define _MODE_T_DEFINED_
+#define _MODE_T_
+typedef unsigned short mode_t;
 #endif
 #ifndef _UID_T_DEFINED
 typedef int uid_t;

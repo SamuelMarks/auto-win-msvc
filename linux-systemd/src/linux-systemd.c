@@ -288,10 +288,9 @@ error_type_t sd_notify(int unset_environment, const char *state,
   }
   return ERR_NONE;
 #else
-  if (unset_environment) { /* unused */
-  }
-  if (state) { /* unused */
-  }
+  (void)unset_environment;
+  (void)state;
+  (void)out_result;
   return ENOSYS;
 #endif
 }

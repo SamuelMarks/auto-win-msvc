@@ -55,7 +55,7 @@ int posix_inet_aton(const char *cp, struct in_addr *inp) {
     return 0;
 
   if (pp == 0) {
-    val = val;
+    (void)val;
   } else if (pp == 1) {
     if (val > 0xffffff || parts[0] > 0xff)
       return 0;

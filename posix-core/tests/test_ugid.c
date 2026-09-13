@@ -3,7 +3,9 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-core.h"
+#if defined(_MSC_VER) || defined(_WIN32)
 #include <process.h> /* For _getpid if needed */
+#endif
 /* clang-format on */
 
 TEST test_getegid(void) { SKIP(); /* Generated stub for getegid */ }

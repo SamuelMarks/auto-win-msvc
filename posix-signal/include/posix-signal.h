@@ -8,6 +8,7 @@
 /* clang-format off */
 #include <signal.h>
 #include <stddef.h>
+#include "posix-signal-ext.h"
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -22,6 +23,9 @@ extern "C" {
     defined(__WATCOMC__)
 
 typedef unsigned long sigset_t;
+
+/** \brief Signal handler function pointer type. */
+typedef void (*posix_sighandler_t)(int);
 
 #ifndef _PID_T_DEFINED
 #define _PID_T_DEFINED
@@ -81,6 +85,8 @@ int posix_signal_sigpending(sigset_t *set);
 int posix_signal_sigsuspend(const sigset_t *mask);
 /** \brief posix_signal_kill function. */
 int posix_signal_kill(pid_t pid, int sig);
+/** \brief posix_signal_signal function. */
+posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler);
 
 #ifndef SIG_BLOCK
 #define SIG_BLOCK 0
@@ -114,6 +120,9 @@ int posix_signal_kill(pid_t pid, int sig);
 #endif
 #ifndef sigaction
 #define sigaction(sig, act, oact) posix_signal_sigaction((sig), (act), (oact))
+#endif
+#ifndef signal
+#define signal(sig, handler) posix_signal_signal((sig), (handler))
 #endif
 #ifndef kill
 #define kill posix_signal_kill

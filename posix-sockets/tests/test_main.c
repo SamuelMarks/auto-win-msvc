@@ -8,6 +8,9 @@ SUITE_EXTERN(suite_posix_sockets_core);
 SUITE_EXTERN(suite_posix_sockets_conn);
 SUITE_EXTERN(suite_posix_sockets_sockopt);
 SUITE_EXTERN(suite_posix_sockets_io);
+SUITE_EXTERN(suite_posix_sockets_sendmsg);
+SUITE_EXTERN(suite_posix_sockets_recvmsg);
+SUITE_EXTERN(suite_posix_sockets_no_macros);
 
 GREATEST_MAIN_DEFS();
 
@@ -17,5 +20,8 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_posix_sockets_conn);
   RUN_SUITE(suite_posix_sockets_sockopt);
   RUN_SUITE(suite_posix_sockets_io);
+  RUN_SUITE(suite_posix_sockets_sendmsg);
+  RUN_SUITE(suite_posix_sockets_recvmsg);
+  RUN_SUITE(suite_posix_sockets_no_macros);
   GREATEST_MAIN_END();
 }

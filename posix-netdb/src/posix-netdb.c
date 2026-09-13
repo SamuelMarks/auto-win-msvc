@@ -1,7 +1,9 @@
 /* posix-netdb.c */
 /* clang-format off */
+#if defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#endif
 #include "posix-netdb.h"
 /* clang-format on */
 
@@ -23,7 +25,14 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
 
 void posix_freeaddrinfo(struct addrinfo *ai) { freeaddrinfo(ai); }
 
-const char *posix_gai_strerror(int ecode) { return gai_strerrorA(ecode); }
+const char *posix_gai_strerror(int ecode) {
+#ifdef EAI_SYSTEM
+  if (ecode == EAI_SYSTEM) {
+    return "System error";
+  }
+#endif
+  return gai_strerrorA(ecode);
+}
 #else
 typedef int make_iso_compilers_happy_tu_posix_netdb;
 #endif

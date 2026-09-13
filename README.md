@@ -1,6 +1,6 @@
 auto-win-msvc
 =============
-![Doc Coverage](https://img.shields.io/badge/doc__coverage-96%25-brightgreen)
+![Doc Coverage](https://img.shields.io/badge/doc__coverage-94%25-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/test__coverage-99%25-brightgreen)
 
 
@@ -144,6 +144,15 @@ If the ports are integrated into your vcpkg registry, you can pull either the me
   ]
 }
 ```
+
+## 🔌 Socket & Pipe Interoperability with Libevent
+
+`auto-win-msvc` provides POSIX file descriptor semantics on top of Windows CRT and Winsock.
+
+- **CRT File Descriptors vs Winsock Sockets:** Functions such as `posix_socket`, `posix_socketpair`, and `pipe` return integer CRT file descriptors wrapping native Winsock `SOCKET` handles (via `_open_osfhandle`).
+- **Transparent Handle Translation:** All socket APIs (`posix_send`, `posix_recv`, `posix_sendmsg`, `posix_recvmsg`, `posix_select`, `posix_bind`, `posix_connect`, etc.) use `safe_get_osfhandle` to automatically accept either integer CRT file descriptors or raw Winsock `SOCKET` handles interchangeably.
+- **Pipe Implementation:** `pipe()` and `pipe2()` construct an internal bidirectional loopback `posix_socketpair(AF_INET, SOCK_STREAM, 0, fds)`. This ensures pipe file descriptors can be multiplexed via `select()`, `WSASend()`, `WSARecv()`, and external event notification loops like Libevent.
+- **Passing Sockets to External Libraries (e.g. Libevent):** If an external library directly expects a native Winsock `SOCKET` (such as `evutil_socket_t`) rather than a CRT integer descriptor, extract the underlying handle using `(SOCKET)_get_osfhandle(fd)`.
 
 ## 🛠 Supported Environments Summary
 

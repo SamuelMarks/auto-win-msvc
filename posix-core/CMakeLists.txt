@@ -124,7 +124,7 @@ if(WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "DOS")
 endif()
 add_test(NAME test_posix-core COMMAND test_posix-core)
 
-if(WIN32)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILING_EMULATOR)
     # Ensure test can find its dependency DLLs (posix-sockets, posix-sys-uio)
     set_property(TEST test_posix-core PROPERTY ENVIRONMENT "PATH=$<TARGET_FILE_DIR:posix-sockets>\\;$<TARGET_FILE_DIR:posix-sys-uio>\\;$ENV{PATH}")
 endif()

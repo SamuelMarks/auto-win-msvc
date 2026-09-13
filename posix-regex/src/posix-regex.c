@@ -8,34 +8,34 @@
 
 /** \brief regcomp function. */
 int regcomp(regex_t *preg, const char *pattern, int cflags) {
-  preg = preg;
-  pattern = pattern;
-  cflags = cflags;
+  (void)preg;
+  (void)pattern;
+  (void)cflags;
   return REG_ENOSYS;
 }
 
 /** \brief regexec function. */
 int regexec(const regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags) {
-  preg = preg;
-  string = string;
-  nmatch = nmatch;
-  pmatch = pmatch;
-  eflags = eflags;
+  (void)preg;
+  (void)string;
+  (void)nmatch;
+  (void)pmatch;
+  (void)eflags;
   return REG_ENOSYS;
 }
 
 /** \brief regerror function. */
 size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size) {
-  errcode = errcode;
-  preg = preg;
-  errbuf = errbuf;
+  (void)errcode;
+  (void)preg;
+  (void)errbuf;
   return errbuf_size;
 }
 
 /** \brief regfree function. */
-void regfree(regex_t *preg) { preg = preg; }
+void regfree(regex_t *preg) { (void)preg; }
 
 #endif /* _MSC_VER */
 

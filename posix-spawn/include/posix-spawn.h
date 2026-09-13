@@ -13,9 +13,11 @@ typedef int pid_t;
 #define _PID_T_DEFINED
 #endif
 
-#if !defined(_MODE_T_DEFINED) && !defined(__WATCOMC__)
-typedef unsigned short mode_t;
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_) && !defined(__WATCOMC__)
 #define _MODE_T_DEFINED
+#define _MODE_T_DEFINED_
+#define _MODE_T_
+typedef unsigned short mode_t;
 #endif
 #ifndef _SIGSET_T_DEFINED
 typedef unsigned int sigset_t;
@@ -46,9 +48,11 @@ typedef int pid_t;
 #define _PID_T_DEFINED
 #endif
 
-#ifndef _MODE_T_DEFINED
-typedef unsigned short mode_t;
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_)
 #define _MODE_T_DEFINED
+#define _MODE_T_DEFINED_
+#define _MODE_T_
+typedef unsigned short mode_t;
 #endif
 
 #ifndef _SIGSET_T_DEFINED

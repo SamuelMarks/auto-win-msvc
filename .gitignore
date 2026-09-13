@@ -166,6 +166,7 @@ results_*
 /*.md
 !/README.md
 !/plan.md
+!/TODO_PLAN.md
 !/cdd-c-expansion.md
 
 # External/Generated

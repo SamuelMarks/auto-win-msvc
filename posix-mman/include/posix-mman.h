@@ -111,9 +111,11 @@ extern "C" {
 #endif
 
 /* Windows mode_t polyfill if needed */
-#if !defined(_MODE_T_) && !defined(__WATCOMC__) && !defined(_MODE_T_DEFINED_)
-#define _MODE_T_
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
+    !defined(_MODE_T_) && !defined(__WATCOMC__)
+#define _MODE_T_DEFINED
 #define _MODE_T_DEFINED_
+#define _MODE_T_
 typedef unsigned short mode_t;
 #endif
 
