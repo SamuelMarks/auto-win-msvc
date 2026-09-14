@@ -6,6 +6,11 @@ import tempfile
 
 def run_cmd(cmd, cwd=None, env=None):
     print(f"Running: {' '.join(cmd)} in {cwd or os.getcwd()}")
+    if env is None:
+        env = os.environ.copy()
+    for k in list(env.keys()):
+        if k.startswith('GIT_'):
+            del env[k]
     result = subprocess.run(cmd, cwd=cwd, env=env)
     if result.returncode != 0:
         print(f"Command failed with exit code {result.returncode}")
@@ -32,7 +37,7 @@ def setup_repo(repo_name, github_url, branch=None):
 
 def main():
     for k in list(os.environ.keys()):
-        if k.startswith('GIT_CONFIG_'):
+        if k.startswith('GIT_'):
             del os.environ[k]
     current_awm_dir = os.getcwd()
 

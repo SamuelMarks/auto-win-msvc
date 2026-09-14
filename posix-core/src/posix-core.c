@@ -323,6 +323,7 @@ void auto_win_exit(int code) {
 
 int fcntl(intptr_t fd, int cmd, ...) {
   va_list ap;
+  SOCKET s;
   va_start(ap, cmd);
 
   if (cmd == F_GETFD || cmd == F_SETFD) {
@@ -331,18 +332,25 @@ int fcntl(intptr_t fd, int cmd, ...) {
   }
   if (cmd == F_GETFL) {
     va_end(ap);
-    return get_nonblock((SOCKET)safe_get_osfhandle(fd));
+    s = (SOCKET)safe_get_osfhandle(fd);
+    if (s == (SOCKET)(intptr_t)-1 || s == 0) {
+      s = (SOCKET)fd;
+    }
+    return get_nonblock(s);
   }
   if (cmd == F_SETFL) {
     int flags = va_arg(ap, int);
     unsigned long mode = (flags & O_NONBLOCK) ? 1 : 0;
-    SOCKET s = (SOCKET)safe_get_osfhandle(fd);
+    s = (SOCKET)safe_get_osfhandle(fd);
+    if (s == (SOCKET)(intptr_t)-1 || s == 0) {
+      s = (SOCKET)fd;
+    }
     if (ioctlsocket(s, FIONBIO, &mode) != 0) {
       va_end(ap);
       errno = EINVAL;
       return -1;
     }
-    set_nonblock(s, mode);
+    set_nonblock(s, (int)mode);
     va_end(ap);
     return 0;
   }
@@ -1924,28 +1932,22 @@ ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setegid function. */
 int setegid(gid_t egid) {
-  if (egid == (gid_t)get_current_rid(1))
-    return 0;
-  errno = EPERM;
-  return -1;
+  (void)egid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief seteuid function. */
 int seteuid(uid_t euid) {
-  if (euid == (uid_t)get_current_rid(0))
-    return 0;
-  errno = EPERM;
-  return -1;
+  (void)euid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setgid function. */
 int setgid(gid_t gid) {
-  if (gid == (gid_t)get_current_rid(1))
-    return 0;
-  errno = EPERM;
-  return -1;
+  (void)gid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1963,25 +1965,17 @@ pid_t setpgrp(void) { return 0; }
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setregid function. */
 int setregid(gid_t rgid, gid_t egid) {
-  gid_t current = (gid_t)get_current_rid(1);
-  if ((rgid == (gid_t)-1 || rgid == current) &&
-      (egid == (gid_t)-1 || egid == current)) {
-    return 0;
-  }
-  errno = EPERM;
-  return -1;
+  (void)rgid;
+  (void)egid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setreuid function. */
 int setreuid(uid_t ruid, uid_t euid) {
-  uid_t current = (uid_t)get_current_rid(0);
-  if ((ruid == (uid_t)-1 || ruid == current) &&
-      (euid == (uid_t)-1 || euid == current)) {
-    return 0;
-  }
-  errno = EPERM;
-  return -1;
+  (void)ruid;
+  (void)euid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1991,10 +1985,8 @@ pid_t setsid(void) { return 0; }
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setuid function. */
 int setuid(uid_t uid) {
-  if (uid == (uid_t)get_current_rid(0))
-    return 0;
-  errno = EPERM;
-  return -1;
+  (void)uid;
+  return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)

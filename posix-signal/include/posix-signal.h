@@ -22,7 +22,35 @@ extern "C" {
 #if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32) || defined(__MSDOS__) ||     \
     defined(__WATCOMC__)
 
+#ifndef _SIGSET_T_DEFINED
+#define _SIGSET_T_DEFINED
 typedef unsigned long sigset_t;
+#endif
+
+#ifndef SIGHUP
+#define SIGHUP 1
+#endif
+#ifndef SIGINT
+#define SIGINT 2
+#endif
+#ifndef SIGQUIT
+#define SIGQUIT 3
+#endif
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
+#ifndef SIGUSR1
+#define SIGUSR1 10
+#endif
+#ifndef SIGUSR2
+#define SIGUSR2 12
+#endif
+#ifndef SIGPIPE
+#define SIGPIPE 13
+#endif
+#ifndef SIGALRM
+#define SIGALRM 14
+#endif
 
 /** \brief Signal handler function pointer type. */
 typedef void (*posix_sighandler_t)(int);

@@ -454,6 +454,49 @@ int posix_socket(int domain, int type, int protocol);
 int posix_socketpair(int domain, int type, int protocol,
                      intptr_t socket_vector[2]);
 
+/**
+ * @brief Native Winsock sendmsg helper operating directly on SOCKET handles.
+ * @param s Native SOCKET handle
+ * @param message Pointer to msghdr structure
+ * @param flags Send flags
+ * @return Bytes sent or -1 on error
+ */
+posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
+                                   int flags);
+
+/**
+ * @brief Native Winsock recvmsg helper operating directly on SOCKET handles.
+ * @param s Native SOCKET handle
+ * @param message Pointer to msghdr structure
+ * @param flags Recv flags
+ * @return Bytes received or -1 on error
+ */
+posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
+                                   int flags);
+
+/**
+ * @brief Connection retry helper for asynchronous socket servers.
+ * @param socket The socket file descriptor or handle.
+ * @param address Target socket address.
+ * @param address_len Target address length.
+ * @param max_retries Maximum number of retries before failing.
+ * @param delay_ms Milliseconds delay between attempts.
+ * @return 0 on success, or -1 on error.
+ */
+int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
+                        posix_socklen_t address_len, int max_retries,
+                        int delay_ms);
+
+/**
+ * @brief Unified close handling both sockets and file descriptors.
+ * @param fd File descriptor or socket handle.
+ * @return 0 on success, or -1 on error.
+ */
+int posix_close(intptr_t fd);
+
+#define win_compat_sendmsg posix_sendmsg_native
+#define win_compat_recvmsg posix_recvmsg_native
+
 #ifdef _WIN32
 /* Map POSIX names to our posix_ prefixes */
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
@@ -493,6 +536,7 @@ int posix_socketpair(int domain, int type, int protocol,
 #define setnetent posix_setnetent
 #define setprotoent posix_setprotoent
 #define setservent posix_setservent
+#ifndef AUTO_WIN_MSVC_NO_SOCKET_MACROS
 #define poll posix_poll
 #define pselect posix_pselect
 #define select posix_select
@@ -513,6 +557,7 @@ int posix_socketpair(int domain, int type, int protocol,
 #define shutdown posix_shutdown
 #define socket posix_socket
 #define socketpair posix_socketpair
+#endif /* AUTO_WIN_MSVC_NO_SOCKET_MACROS */
 #endif /* AUTO_WIN_MSVC_NO_FUNCTION_MACROS */
 
 #endif /* _WIN32 */

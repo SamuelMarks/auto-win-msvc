@@ -86,7 +86,7 @@ struct timespec {
 
 #ifndef _SIGSET_T_DEFINED
 #define _SIGSET_T_DEFINED
-typedef int sigset_t;
+typedef unsigned long sigset_t;
 #endif
 
 #ifndef _PID_T_DEFINED

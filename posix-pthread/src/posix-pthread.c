@@ -296,6 +296,27 @@ __declspec(dllimport) int WINAPI
 __declspec(dllimport) void *WINAPI
     OpenThread(unsigned long, int, unsigned long);
 
+#if defined(_MSC_VER)
+#if _MSC_VER >= 1400
+void *_InterlockedCompareExchangePointer(void *volatile *, void *, void *);
+void *_InterlockedExchangePointer(void *volatile *, void *);
+#pragma intrinsic(_InterlockedCompareExchangePointer)
+#pragma intrinsic(_InterlockedExchangePointer)
+#define POSIX_CAS_PTR(dst, val, cmp) _InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) _InterlockedExchangePointer((void *volatile *)(dst), (val))
+#else
+__declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
+__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
+#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(dst), (val))
+#endif
+#else
+__declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
+__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
+#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(dst), (val))
+#endif
+
 typedef long(WINAPI *PFN_SetThreadDescription)(void *, const wchar_t *);
 /** \brief dyn_SetThreadDescription function. */
 static int WINAPI dyn_SetThreadDescription(void *a0, const wchar_t *a1) {
@@ -1422,9 +1443,37 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
 }
 
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
-  (void)once_control;
-  (void)init_routine;
+#if defined(_WIN32)
+  void *prev;
+  if (!once_control || !init_routine) {
+    return EINVAL;
+  }
+  if (once_control->p == (void *)2) {
+    return 0;
+  }
+  prev = POSIX_CAS_PTR(&once_control->p, (void *)1, (void *)0);
+  if (prev == (void *)0) {
+    init_routine();
+    POSIX_EXCHANGE_PTR(&once_control->p, (void *)2);
+    return 0;
+  } else if (prev == (void *)2) {
+    return 0;
+  } else {
+    while (once_control->p != (void *)2) {
+      Sleep(1);
+    }
+    return 0;
+  }
+#else
+  if (!once_control || !init_routine) {
+    return EINVAL;
+  }
+  if (!once_control->p) {
+    once_control->p = (void *)1;
+    init_routine();
+  }
   return 0;
+#endif
 }
 
 /** \brief pthread_rwlock_destroy function. */

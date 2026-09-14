@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.24)
 cmake_policy(SET CMP0135 NEW)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+# Normalize FetchContent source directory overrides for both hyphen and underscore variants
+if(DEFINED FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC AND NOT DEFINED FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC)
+    set(FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC "${FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC}" CACHE PATH "" FORCE)
+elseif(DEFINED FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC AND NOT DEFINED FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC)
+    set(FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC "${FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC}" CACHE PATH "" FORCE)
+endif()
+
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
         set(CMAKE_TOOLCHAIN_FILE "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE PATH "" FORCE)
@@ -23,6 +31,8 @@ else()
 endif()
 
 include(CTest)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AutoWinMsvcTransform.cmake")
 
 if(MSVC)
 else()
@@ -521,6 +531,7 @@ list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-ioctl/include")
 file(GLOB posix_sys_resource_src "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-resource/src/*.c")
 list(APPEND MEGA_SOURCES ${posix_sys_resource_src})
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-resource/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
 file(GLOB posix_sys_uio_src "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-uio/src/*.c")
 list(APPEND MEGA_SOURCES ${posix_sys_uio_src})
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-uio/include")
@@ -593,14 +604,22 @@ if(AUTO_WIN_MSVC_COVERAGE)
 endif()
 
 add_subdirectory(posix-netdb)
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-mman/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/include")
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-netdb/include")
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-poll/include")
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/bsd-sys-param/include")
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-resource/include")
+list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
 add_library(auto-win-msvc ${MEGA_SOURCES})
+add_library(auto-win-msvc::auto-win-msvc ALIAS auto-win-msvc)
 set_target_properties(auto-win-msvc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-set_target_properties(auto-win-msvc PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_compile_definitions(auto-win-msvc PUBLIC AUTO_WIN_MSVC_EXPORT_LIB_STATIC_DEFINE PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
+target_compile_definitions(auto-win-msvc PUBLIC
+    AUTO_WIN_MSVC_EXPORT_LIB_STATIC_DEFINE
+    $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
+    $<$<C_COMPILER_ID:MSVC>:_WINSOCK_DEPRECATED_NO_WARNINGS>
+    PRIVATE AUTO_WIN_MSVC_MEGA_LIBRARY)
     if(MSVC)
         target_compile_definitions(auto-win-msvc PRIVATE AUTO_WIN_MSVC_BUILD)
         target_compile_options(auto-win-msvc PRIVATE )
@@ -611,7 +630,7 @@ file(MAKE_DIRECTORY "${COMBINED_POSIX_INCLUDES}")
 foreach(D IN LISTS MEGA_INCLUDES)
     file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
 endforeach()
-target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_POSIX_INCLUDES}>")
+target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_POSIX_INCLUDES}>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
 
 if(WIN32 OR CYGWIN OR MSYS OR MINGW)

@@ -120,12 +120,15 @@ test_*
 test.*
 !*/tests/
 !*/tests/*
+!scripts/test_downstream.py
 temp_*
 temp.*
 tmp_*
 tmp.*
 dummy*
 patch*
+!*.cmake
+!linux-epoll/patch_wepoll.cmake
 fix*
 update*
 remove*

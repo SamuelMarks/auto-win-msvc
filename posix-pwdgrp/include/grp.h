@@ -10,12 +10,15 @@ extern "C" {
 #include <posix-types.h>
 /* clang-format on */
 
+#ifndef _STRUCT_GROUP_DEFINED
+#define _STRUCT_GROUP_DEFINED
 struct group {
   char *gr_name;
   char *gr_passwd;
   gid_t gr_gid;
   char **gr_mem;
 };
+#endif
 
 struct group *getgrnam(const char *name);
 struct group *getgrgid(gid_t gid);

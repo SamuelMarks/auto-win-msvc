@@ -1,10 +1,9 @@
-/* posix-sys-un.h - Strict C89 Header */
-#ifndef POSIX_SYS_UN_H
-#define POSIX_SYS_UN_H
-
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif
+/* posix-sys-un.h - Strict C89 Header */
+#ifndef POSIX_SYS_UN_H
+#define POSIX_SYS_UN_H
 
 /* clang-format off */
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -33,6 +32,9 @@ extern "C" {
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+#ifdef DISABLE_UNIX_SOCKET
+/* Unix domain sockets disabled by configuration */
+#else
 #ifndef AF_UNIX
 #define AF_UNIX 1
 #endif
@@ -46,9 +48,10 @@ extern "C" {
 /** \brief UNIX domain socket address structure for Windows. */
 struct sockaddr_un {
   ADDRESS_FAMILY sun_family;
-  char sun_path[UNIX_PATH_MAX];
+  char sun_path[108];
 };
 #endif
+#endif /* DISABLE_UNIX_SOCKET */
 
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 

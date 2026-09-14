@@ -1,7 +1,6 @@
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif
-
 #if !defined(_WIN32) && !defined(_MSC_VER)
 /* clang-format off */
 #if defined(__GNUC__) || defined(__clang__)

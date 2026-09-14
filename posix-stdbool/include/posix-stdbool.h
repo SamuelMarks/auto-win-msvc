@@ -1,31 +1,43 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
+/* posix-stdbool.h - Strict C89 Header */
 #ifndef POSIX_STDBOOL_H
 #define POSIX_STDBOOL_H
 
-/* Polyfill for <stdbool.h> */
+#ifndef _STDBOOL
+#define _STDBOOL
+
+#define __bool_true_false_are_defined 1
+
+#ifndef __cplusplus
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
-#if !defined(__cplusplus)
 #define bool unsigned char
-#define true 1
-#define false 0
-#define __bool_true_false_are_defined 1
-#endif /* !__cplusplus */
-#else
-/* For newer MSVC and GCC/Clang */
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
+#elif defined(_MSC_VER)
+#define bool _Bool
+#elif defined(__GNUC__) || defined(__clang__)
 /* clang-format off */
-#include <stdbool.h>
+#include_next <stdbool.h>
 /* clang-format on */
+#else
+#define bool unsigned char
 #endif
+
+#ifndef true
+#define true 1
 #endif
+#ifndef false
+#define false 0
 #endif
+
+#endif /* !__cplusplus */
+
+#endif /* _STDBOOL */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* No functions to declare */
 
 #ifdef __cplusplus
 }

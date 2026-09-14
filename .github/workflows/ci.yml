@@ -18,6 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
+    - name: Verify PATCH_COMMAND files exist and are tracked
+      run: python scripts/check_patches.py
+
     - name: Setup MSVC Environment
       uses: ilammy/msvc-dev-cmd@v1
 

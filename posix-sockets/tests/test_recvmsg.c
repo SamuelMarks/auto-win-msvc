@@ -76,7 +76,43 @@ TEST test_recvmsg_null_arg(void) {
   PASS();
 }
 
+TEST test_recvmsg_native(void) {
+  intptr_t sv[2];
+  struct iovec iov[1];
+  struct msghdr msg;
+  char buf[32];
+  posix_ssize_t recvd;
+  const char *payload = "RecvmsgNative";
+
+  ASSERT_EQ(0, posix_socketpair(AF_INET, SOCK_STREAM, 0, sv));
+  ASSERT_EQ((posix_ssize_t)strlen(payload),
+            posix_send(sv[0], payload, strlen(payload), 0));
+
+  memset(buf, 0, sizeof(buf));
+  iov[0].iov_base = buf;
+  iov[0].iov_len = sizeof(buf) - 1;
+
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = iov;
+  msg.msg_iovlen = 1;
+
+  recvd = win_compat_recvmsg((uintptr_t)sv[1], &msg, 0);
+  ASSERT_EQ((posix_ssize_t)strlen(payload), recvd);
+  ASSERT_STR_EQ(payload, buf);
+
+#ifdef _WIN32
+  _close((int)sv[0]);
+  _close((int)sv[1]);
+#else
+  close((int)sv[0]);
+  close((int)sv[1]);
+#endif
+
+  PASS();
+}
+
 SUITE(suite_posix_sockets_recvmsg) {
   RUN_TEST(test_recvmsg_scatter_gather);
   RUN_TEST(test_recvmsg_null_arg);
+  RUN_TEST(test_recvmsg_native);
 }

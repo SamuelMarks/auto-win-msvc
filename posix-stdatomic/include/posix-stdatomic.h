@@ -1,10 +1,12 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 #ifndef POSIX_STDATOMIC_H
 #define POSIX_STDATOMIC_H
 
 /* Polyfill for <stdatomic.h> */
 
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 /* clang-format off */
 #include_next <stdatomic.h>
 #endif

@@ -1,7 +1,6 @@
 /* clang-format off */
 #include "posix-sys-uio.h"
 
-
 #if defined(_MSC_VER) || defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -50,8 +49,6 @@
 #include <stdlib.h>
 #include <winsock2.h>
 
-/* Removed EWOULDBLOCK override */
-
 /** \brief posix_writev function. */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
   DWORD bytesSent = 0;
@@ -75,7 +72,10 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     bufs[i].len = (ULONG)iov[i].iov_len;
   }
 
-  ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
+  ret = WSASend((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
+  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
+    ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
+  }
   free(bufs);
 
   if (ret == SOCKET_ERROR) {
@@ -90,6 +90,9 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
           return -1;
         }
         total += written;
+        if ((size_t)written < iov[i].iov_len) {
+          break;
+        }
       }
       return total;
     }
@@ -150,6 +153,9 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
 
   ret =
       WSARecv((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesRecv, &flags, NULL, NULL);
+  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
+    ret = WSARecv((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesRecv, &flags, NULL, NULL);
+  }
   free(bufs);
 
   if (ret == SOCKET_ERROR) {
@@ -202,6 +208,38 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   return bytesRecv;
 }
 
+/** \brief posix_preadv function. */
+long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
+                  posix_uio_off_t offset) {
+  __int64 old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
+  long res;
+  if (old_pos == -1 && errno != 0) {
+    return posix_readv(fd, iov, iovcnt);
+  }
+  if (_lseeki64(fd, offset, 0 /* SEEK_SET */) == -1) {
+    return -1;
+  }
+  res = posix_readv(fd, iov, iovcnt);
+  _lseeki64(fd, old_pos, 0 /* SEEK_SET */);
+  return res;
+}
+
+/** \brief posix_pwritev function. */
+long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
+                   posix_uio_off_t offset) {
+  __int64 old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
+  long res;
+  if (old_pos == -1 && errno != 0) {
+    return posix_writev(fd, iov, iovcnt);
+  }
+  if (_lseeki64(fd, offset, 0 /* SEEK_SET */) == -1) {
+    return -1;
+  }
+  res = posix_writev(fd, iov, iovcnt);
+  _lseeki64(fd, old_pos, 0 /* SEEK_SET */);
+  return res;
+}
+
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #include <errno.h>
@@ -249,6 +287,66 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
   }
   errno = EINVAL;
   return -1;
+}
+
+long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
+                  posix_uio_off_t offset) {
+  if (fd || iov || iovcnt || offset) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
+                   posix_uio_off_t offset) {
+  if (fd || iov || iovcnt || offset) {
+  }
+  errno = EINVAL;
+  return -1;
+}
+
+#else
+
+/* clang-format off */
+#include <unistd.h>
+/* clang-format on */
+
+long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
+  return (long)readv(fd, iov, iovcnt);
+}
+
+long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
+  return (long)writev(fd, iov, iovcnt);
+}
+
+long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
+                  posix_uio_off_t offset) {
+  off_t old_pos = lseek(fd, 0, SEEK_CUR);
+  long res;
+  if (old_pos == (off_t)-1) {
+    return (long)readv(fd, iov, iovcnt);
+  }
+  if (lseek(fd, (off_t)offset, SEEK_SET) == (off_t)-1) {
+    return -1;
+  }
+  res = (long)readv(fd, iov, iovcnt);
+  lseek(fd, old_pos, SEEK_SET);
+  return res;
+}
+
+long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
+                   posix_uio_off_t offset) {
+  off_t old_pos = lseek(fd, 0, SEEK_CUR);
+  long res;
+  if (old_pos == (off_t)-1) {
+    return (long)writev(fd, iov, iovcnt);
+  }
+  if (lseek(fd, (off_t)offset, SEEK_SET) == (off_t)-1) {
+    return -1;
+  }
+  res = (long)writev(fd, iov, iovcnt);
+  lseek(fd, old_pos, SEEK_SET);
+  return res;
 }
 
 #endif

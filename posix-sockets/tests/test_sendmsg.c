@@ -80,7 +80,44 @@ TEST test_sendmsg_null_arg(void) {
   PASS();
 }
 
+TEST test_sendmsg_native(void) {
+  intptr_t sv[2];
+  struct iovec iov[1];
+  struct msghdr msg;
+  char buf[16];
+  posix_ssize_t sent;
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "NativeTest");
+#else
+  strcpy(buf, "NativeTest");
+#endif
+
+  ASSERT_EQ(0, posix_socketpair(AF_INET, SOCK_STREAM, 0, sv));
+
+  iov[0].iov_base = buf;
+  iov[0].iov_len = strlen(buf);
+
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = iov;
+  msg.msg_iovlen = 1;
+
+  sent = win_compat_sendmsg((uintptr_t)sv[0], &msg, 0);
+  ASSERT_EQ((posix_ssize_t)strlen(buf), sent);
+
+#ifdef _WIN32
+  _close((int)sv[0]);
+  _close((int)sv[1]);
+#else
+  close((int)sv[0]);
+  close((int)sv[1]);
+#endif
+
+  PASS();
+}
+
 SUITE(suite_posix_sockets_sendmsg) {
   RUN_TEST(test_sendmsg_scatter_gather);
   RUN_TEST(test_sendmsg_null_arg);
+  RUN_TEST(test_sendmsg_native);
 }

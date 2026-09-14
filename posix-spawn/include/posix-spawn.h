@@ -20,7 +20,7 @@ typedef int pid_t;
 typedef unsigned short mode_t;
 #endif
 #ifndef _SIGSET_T_DEFINED
-typedef unsigned int sigset_t;
+typedef unsigned long sigset_t;
 #define _SIGSET_T_DEFINED
 #endif
 

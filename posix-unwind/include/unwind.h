@@ -1,9 +1,11 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 /* posix-unwind/include/unwind.h - Strict C89 Implementation */
 #ifndef POSIX_UNWIND_H
 #define POSIX_UNWIND_H
 
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 /* clang-format off */
 #include_next <unwind.h>
 #else

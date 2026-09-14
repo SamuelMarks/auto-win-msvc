@@ -91,13 +91,20 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options);
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
 
 /**
- * @brief Non-standard Microsoft-compatible cwait.
+ * @brief Sends a signal to a process using OpenProcess and TerminateProcess.
  *
- * @param termstat Pointer to store exit code.
- * @param pid Process ID to wait for.
- * @param action Unused on Windows (usually WAIT_CHILD).
- * @return The process ID of the terminated child.
+ * @param pid Process ID.
+ * @param sig Signal number to send.
+ * @return 0 on success, or -1 on failure with errno set.
  */
+int posix_wait_kill(pid_t pid, int sig);
+#ifndef _KILL_DECLARED
+#define _KILL_DECLARED
+#ifndef kill
+#define kill posix_wait_kill
+#endif
+#endif
+
 /* cwait removed */
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)

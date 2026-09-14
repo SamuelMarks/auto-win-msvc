@@ -1,3 +1,6 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 /* posix-sys-select/include/sys/select.h - Strict C89 Implementation */
 #ifndef POSIX_SYS_SELECT_STUB
 #define POSIX_SYS_SELECT_STUB
@@ -29,7 +32,6 @@ extern void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set);
 /* DOS has no select.h */
 #else
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 #endif
 #include_next <sys/select.h>
 /* clang-format on */

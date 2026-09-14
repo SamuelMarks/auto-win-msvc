@@ -27,6 +27,8 @@ typedef unsigned int uid_t;
 typedef unsigned int gid_t;
 #endif
 
+#ifndef _STRUCT_PASSWD_DEFINED
+#define _STRUCT_PASSWD_DEFINED
 /**
  * @struct passwd
  * @brief Structure containing user account information.
@@ -41,7 +43,10 @@ struct passwd {
   char *pw_dir;    /**< Initial working directory (user profile path). */
   char *pw_shell;  /**< Program to use as shell. */
 };
+#endif
 
+#ifndef _STRUCT_GROUP_DEFINED
+#define _STRUCT_GROUP_DEFINED
 /**
  * @struct group
  * @brief Structure containing group account information.
@@ -52,6 +57,7 @@ struct group {
   gid_t gr_gid;    /**< Numerical group ID (maps to Windows SID RID). */
   char **gr_mem;   /**< Pointer to a null-terminated array of member names. */
 };
+#endif
 
 /**
  * @brief Closes the group database.

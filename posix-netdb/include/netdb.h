@@ -1,3 +1,6 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 /* posix-netdb/include/netdb.h - Strict C89 Implementation */
 #ifndef POSIX_NETDB_STUB
 #define POSIX_NETDB_STUB
@@ -13,7 +16,6 @@
 /* DOS has no netdb.h by default */
 #else
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 #endif
 #include_next <netdb.h>
 /* clang-format on */

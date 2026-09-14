@@ -236,6 +236,36 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 
+/** \brief posix_wait_kill function. */
+int posix_wait_kill(pid_t pid, int sig) {
+  HANDLE hProcess;
+  if (pid <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (sig == 0) {
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+    if (hProcess) {
+      CloseHandle(hProcess);
+      return 0;
+    }
+    errno = ESRCH;
+    return -1;
+  }
+  hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
+  if (!hProcess) {
+    errno = ESRCH;
+    return -1;
+  }
+  if (!TerminateProcess(hProcess, (UINT)sig)) {
+    CloseHandle(hProcess);
+    errno = EPERM;
+    return -1;
+  }
+  CloseHandle(hProcess);
+  return 0;
+}
+
 #endif /* _WIN32 && !DOS */
 
 #if defined(__MSDOS__) || defined(__WATCOMC__)
@@ -315,6 +345,10 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 #endif /* __CYGWIN__ */
+
+#if !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+int posix_wait_kill(pid_t pid, int sig) { return kill(pid, sig); }
+#endif
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;

@@ -2,10 +2,6 @@
 #ifndef POSIX_SIGNAL_EXT_H
 #define POSIX_SIGNAL_EXT_H
 
-#if defined(__GNUC__)
-#pragma GCC system_header
-#endif
-
 /* clang-format off */
 #include <signal.h>
 /* clang-format on */

@@ -1,3 +1,6 @@
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 /* posix-langinfo/include/langinfo.h - Strict C89 Implementation */
 #ifndef POSIX_LANGINFO_H
 #define POSIX_LANGINFO_H
@@ -137,7 +140,6 @@ char *posix_langinfo(nl_item item);
 
 #else
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 #endif
 /* clang-format off */
 #include_next <langinfo.h>

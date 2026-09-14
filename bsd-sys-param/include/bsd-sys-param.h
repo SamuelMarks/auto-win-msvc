@@ -20,11 +20,17 @@
  * @brief Max length of a file path.
  */
 #ifndef MAXPATHLEN
-#ifdef _MAX_PATH
-#define MAXPATHLEN _MAX_PATH
-#else
-#define MAXPATHLEN 260
+#define MAXPATHLEN 4096
 #endif
+
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN 1234
+#endif
+#ifndef BIG_ENDIAN
+#define BIG_ENDIAN 4321
+#endif
+#ifndef BYTE_ORDER
+#define BYTE_ORDER LITTLE_ENDIAN
 #endif
 
 /**

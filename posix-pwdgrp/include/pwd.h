@@ -10,6 +10,8 @@ extern "C" {
 #include <posix-types.h>
 /* clang-format on */
 
+#ifndef _STRUCT_PASSWD_DEFINED
+#define _STRUCT_PASSWD_DEFINED
 struct passwd {
   char *pw_name;
   char *pw_passwd;
@@ -19,6 +21,7 @@ struct passwd {
   char *pw_dir;
   char *pw_shell;
 };
+#endif
 
 struct passwd *getpwnam(const char *name);
 struct passwd *getpwuid(uid_t uid);
