@@ -2,36 +2,19 @@
 
 /* clang-format off */
 #include "posix-stat.h"
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if defined(__GNUC__) || defined(__clang__)
 __extension__ typedef unsigned long long stat_u64;
-
 #elif defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 stat_u64;
 #define U64_C(x) x##UI64
 #else
 typedef unsigned long long stat_u64;
-
-#endif
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
-#include <stddef.h>
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#define safe_get_osfhandle(fd)                                                 \
-  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
-#else
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
-#endif
 #endif
 
 #ifdef _WIN32
@@ -40,7 +23,20 @@ typedef unsigned long long stat_u64;
 #include <../ucrt/io.h>
 #else
 #include <io.h>
-/* clang-format on */
+#endif
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
+#include <stdlib.h>
+static void null_invalid_param_handler(const wchar_t *expression,
+                                       const wchar_t *function,
+                                       const wchar_t *file, unsigned int line,
+                                       uintptr_t pReserved) {
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
+}
 #endif
 
 #define WINAPI __stdcall
@@ -52,10 +48,8 @@ typedef int BOOL;
 typedef char *LPSTR;
 
 #define MAX_PATH 260
-/** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
-/** \brief INVALID_FILE_ATTRIBUTES macro. */
-#define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #define FILE_ATTRIBUTE_READONLY 1
 #define FILE_ATTRIBUTE_NORMAL 128
 #define FILE_ATTRIBUTE_REPARSE_POINT 1024
@@ -129,55 +123,132 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /* _WIN32 */
 
-#ifdef _WIN32
 #define IS_ABSOLUTE_PATH(p)                                                    \
   ((p)[0] == '\\' || (p)[0] == '/' ||                                          \
    (((p)[0] != '\0') && (p)[1] == ':' && ((p)[2] == '\\' || (p)[2] == '/')))
 
-static int posix_stat_resolve_at_path(int dirfd, const char *pathname,
-                                      char *out_path, size_t out_size) {
+#endif /* _WIN32 */
+/* clang-format on */
+
+/**
+ * @brief Retrieves information on posix-stat module availability and status.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_STAT_SUCCESS on success, or POSIX_STAT_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_stat_error_code posix_stat_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_STAT_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_STAT_SUCCESS;
+}
+
+#ifdef _WIN32
+
+/**
+ * @brief Safely retrieves the OS file handle for a given CRT file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[out] out_handle Pointer to ptrdiff_t receiving the handle or -1.
+ * @return POSIX_STAT_SUCCESS on success, POSIX_STAT_ERROR_NULL_POINTER or
+ * POSIX_STAT_ERROR_INVALID_ARGUMENT on failure.
+ */
+enum posix_stat_error_code
+posix_stat_safe_get_osfhandle(int fd, ptrdiff_t *out_handle) {
+  ptrdiff_t h;
+  if (out_handle == NULL) {
+    return POSIX_STAT_ERROR_NULL_POINTER;
+  }
+  if (fd < 0 || fd >= 2048) {
+    *out_handle = -1;
+    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(null_invalid_param_handler);
+    h = (ptrdiff_t)_get_osfhandle(fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)_get_osfhandle(fd);
+#endif
+  *out_handle = h;
+  if (h == -1) {
+    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+  }
+  return POSIX_STAT_SUCCESS;
+}
+
+/**
+ * @brief Resolves a pathname relative to a directory file descriptor on
+ * Windows.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Relative or absolute path.
+ * @param[out] out_path Output buffer receiving resolved path.
+ * @param[in] out_size Size of output buffer in bytes.
+ * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ */
+enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
+                                                      const char *pathname,
+                                                      char *out_path,
+                                                      size_t out_size) {
   HANDLE hFile;
   HMODULE hKernel32;
   typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
   DWORD len;
+  ptrdiff_t osfh;
+  enum posix_stat_error_code osf_rc;
 
-  if (IS_ABSOLUTE_PATH(pathname) || dirfd == AT_FDCWD || dirfd == -1) {
+  if (pathname == NULL || out_path == NULL || out_size == 0) {
+    errno = EINVAL;
+    return POSIX_STAT_ERROR_NULL_POINTER;
+  }
+
+  if (IS_ABSOLUTE_PATH(pathname) || dirfd == AT_FDCWD) {
 #if defined(_MSC_VER)
     strncpy_s(out_path, out_size, pathname, _TRUNCATE);
 #else
     strncpy(out_path, pathname, out_size - 1);
     out_path[out_size - 1] = '\0';
 #endif
-    return 0;
+    return POSIX_STAT_SUCCESS;
   }
 
-  hFile = (HANDLE)(size_t)safe_get_osfhandle(dirfd);
-  if (hFile == INVALID_HANDLE_VALUE) {
+  if (dirfd < 0) {
     errno = EBADF;
-    return -1;
+    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
   }
+
+  osf_rc = posix_stat_safe_get_osfhandle(dirfd, &osfh);
+  if (osf_rc != POSIX_STAT_SUCCESS ||
+      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
+    errno = EBADF;
+    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+  }
+  hFile = (HANDLE)(size_t)osfh;
 
   hKernel32 = GetModuleHandleA("kernel32.dll");
   if (!hKernel32) {
     errno = EINVAL;
-    return -1;
+    return POSIX_STAT_ERROR_PATH_RESOLUTION;
   }
 
   pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
       hKernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathName) {
     errno = ENOSYS;
-    return -1;
+    return POSIX_STAT_ERROR_NOT_SUPPORTED;
   }
 
   len = pGetFinalPathName(hFile, out_path, (DWORD)out_size, 0);
   if (len == 0 || len >= out_size) {
     errno = EACCES;
-    return -1;
+    return POSIX_STAT_ERROR_PATH_RESOLUTION;
   }
 
   /* Strip \\?\ prefix if present */
@@ -200,10 +271,55 @@ static int posix_stat_resolve_at_path(int dirfd, const char *pathname,
   strncat(out_path, pathname, out_size - len - 1);
 #endif
 
-  return 0;
+  return POSIX_STAT_SUCCESS;
 }
 
-/** \brief fchmod function. */
+/**
+ * @brief Converts timespec structure to Win32 FILETIME.
+ * @param[in] ts Pointer to timespec structure or NULL for current time.
+ * @param[out] out_filetime Pointer to FILETIME buffer (as void *) receiving
+ * converted timestamp.
+ * @param[out] out_omit Pointer to integer receiving 1 if time should be
+ * omitted, 0 otherwise.
+ * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ */
+enum posix_stat_error_code posix_stat_fill_filetime(const struct timespec *ts,
+                                                    void *out_filetime,
+                                                    int *out_omit) {
+  FILETIME *ft;
+  if (out_filetime == NULL || out_omit == NULL) {
+    return POSIX_STAT_ERROR_NULL_POINTER;
+  }
+  ft = (FILETIME *)out_filetime;
+  if (ts == NULL) {
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    SystemTimeToFileTime(&st, ft);
+    *out_omit = 0;
+  } else if (ts->tv_nsec == UTIME_OMIT) {
+    *out_omit = 1;
+  } else if (ts->tv_nsec == UTIME_NOW) {
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    SystemTimeToFileTime(&st, ft);
+    *out_omit = 0;
+  } else {
+    stat_u64 t;
+    t = ((stat_u64)ts->tv_sec * ((stat_u64)10000000UL)) +
+        (((stat_u64)116444736UL) * 1000000000UL);
+    ft->dwLowDateTime = (DWORD)(t & 0xFFFFFFFF);
+    ft->dwHighDateTime = (DWORD)(t >> 32);
+    *out_omit = 0;
+  }
+  return POSIX_STAT_SUCCESS;
+}
+
+/**
+ * @brief Changes permissions of a file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[in] mode Target file mode.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int fchmod(int fd, mode_t mode) {
   HANDLE hFile;
   HMODULE hKernel32;
@@ -212,12 +328,16 @@ int fchmod(int fd, mode_t mode) {
   typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
+  ptrdiff_t osfh;
+  enum posix_stat_error_code osf_rc;
 
-  hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
-  if (hFile == INVALID_HANDLE_VALUE) {
+  osf_rc = posix_stat_safe_get_osfhandle(fd, &osfh);
+  if (osf_rc != POSIX_STAT_SUCCESS ||
+      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
+  hFile = (HANDLE)(size_t)osfh;
 
   hKernel32 = GetModuleHandleA("kernel32.dll");
   if (!hKernel32) {
@@ -257,26 +377,43 @@ int fchmod(int fd, mode_t mode) {
   return 0;
 }
 
-/** \brief fchmodat function. */
+/**
+ * @brief Changes permissions of a file relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to file.
+ * @param[in] mode Target file mode.
+ * @param[in] flags Bitwise flags controlling behavior.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   char fullpath[MAX_PATH];
-  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
-      0) {
+  enum posix_stat_error_code rc;
+
+  rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
+  if (rc != POSIX_STAT_SUCCESS) {
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
-    /* _chmod doesn't natively follow symlinks in older Windows,
-       but we do the best we can here. */
+    /* _chmod does not follow symlinks natively on older Windows */
   }
   return _chmod(fullpath, mode);
 }
 
-/** \brief fstatat function. */
+/**
+ * @brief Obtains file status relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to file.
+ * @param[out] statbuf Structure receiving file status.
+ * @param[in] flags Flags (e.g. AT_SYMLINK_NOFOLLOW).
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
             int flags) {
   char fullpath[MAX_PATH];
-  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
-      0) {
+  enum posix_stat_error_code rc;
+
+  rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
+  if (rc != POSIX_STAT_SUCCESS) {
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
@@ -285,48 +422,50 @@ int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
   return _stat64(fullpath, statbuf);
 }
 
-/** \brief fill_filetime function. */
-static void fill_filetime(const struct timespec *ts, FILETIME *ft, int *omit) {
-  if (ts == NULL) {
-    SYSTEMTIME st;
-    GetSystemTime(&st);
-    SystemTimeToFileTime(&st, ft);
-    *omit = 0;
-  } else if (ts->tv_nsec == UTIME_OMIT) {
-    *omit = 1;
-  } else if (ts->tv_nsec == UTIME_NOW) {
-    SYSTEMTIME st;
-    GetSystemTime(&st);
-    SystemTimeToFileTime(&st, ft);
-    *omit = 0;
-  } else {
-    stat_u64 t = ((stat_u64)ts->tv_sec * ((stat_u64)10000000UL)) +
-                 (((stat_u64)116444736UL) * 1000000000UL);
-    ft->dwLowDateTime = (DWORD)(t & 0xFFFFFFFF);
-    ft->dwHighDateTime = (DWORD)(t >> 32);
-    *omit = 0;
-  }
-}
-
-/** \brief futimens function. */
+/**
+ * @brief Sets file access and modification times by file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[in] times Array of two timespec structures.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int futimens(int fd, const struct timespec times[2]) {
-  HANDLE hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
+  HANDLE hFile;
   FILETIME atime, mtime;
-  FILETIME *pAtime = NULL, *pMtime = NULL;
-  int omit_a = 0, omit_m = 0;
+  FILETIME *pAtime;
+  FILETIME *pMtime;
+  int omit_a;
+  int omit_m;
+  ptrdiff_t osfh;
+  enum posix_stat_error_code rc;
 
-  if (hFile == INVALID_HANDLE_VALUE) {
+  pAtime = NULL;
+  pMtime = NULL;
+  omit_a = 0;
+  omit_m = 0;
+
+  rc = posix_stat_safe_get_osfhandle(fd, &osfh);
+  if (rc != POSIX_STAT_SUCCESS ||
+      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
+  hFile = (HANDLE)(size_t)osfh;
 
   if (times != NULL) {
-    fill_filetime(&times[0], &atime, &omit_a);
-    if (!omit_a)
+    rc = posix_stat_fill_filetime(&times[0], &atime, &omit_a);
+    if (rc != POSIX_STAT_SUCCESS) {
+      return -1;
+    }
+    if (!omit_a) {
       pAtime = &atime;
-    fill_filetime(&times[1], &mtime, &omit_m);
-    if (!omit_m)
+    }
+    rc = posix_stat_fill_filetime(&times[1], &mtime, &omit_m);
+    if (rc != POSIX_STAT_SUCCESS) {
+      return -1;
+    }
+    if (!omit_m) {
       pMtime = &mtime;
+    }
   } else {
     SYSTEMTIME st;
     GetSystemTime(&st);
@@ -342,10 +481,21 @@ int futimens(int fd, const struct timespec times[2]) {
   return 0;
 }
 
-/** \brief lstat function. */
+/**
+ * @brief Obtains file status without following symbolic links.
+ * @param[in] pathname Path to file.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int lstat(const char *pathname, struct _stat64 *statbuf) {
   WIN32_FILE_ATTRIBUTE_DATA info;
   stat_u64 t;
+
+  if (pathname == NULL || statbuf == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (!GetFileAttributesExA(pathname, GetFileExInfoStandard, &info)) {
     errno = ENOENT;
     return -1;
@@ -383,10 +533,21 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
   return _stat64(pathname, statbuf);
 }
 
-/** \brief mknod function. */
+/**
+ * @brief Creates a filesystem node.
+ * @param[in] pathname Path to create.
+ * @param[in] mode Mode specifying type and permissions.
+ * @param[in] dev Device identifier.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int mknod(const char *pathname, mode_t mode, unsigned int dev) {
   HANDLE hFile;
   (void)dev;
+
+  if (pathname == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   if (S_ISDIR(mode)) {
     return _mkdir(pathname);
   }
@@ -408,28 +569,53 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
   return 0;
 }
 
-/** \brief mknodat function. */
+/**
+ * @brief Creates a filesystem node relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to create.
+ * @param[in] mode Mode specifying type and permissions.
+ * @param[in] dev Device identifier.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
   char fullpath[MAX_PATH];
-  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
-      0) {
+  enum posix_stat_error_code rc;
+
+  rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
+  if (rc != POSIX_STAT_SUCCESS) {
     return -1;
   }
   return mknod(fullpath, mode, dev);
 }
 
-/** \brief utimensat function. */
+/**
+ * @brief Sets file timestamps relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to file.
+ * @param[in] times Array of two timespec structures.
+ * @param[in] flags Flags (e.g. AT_SYMLINK_NOFOLLOW).
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
               int flags) {
   HANDLE hFile;
-  DWORD attrs = FILE_FLAG_BACKUP_SEMANTICS;
+  DWORD attrs;
   FILETIME atime, mtime;
-  FILETIME *pAtime = NULL, *pMtime = NULL;
-  int omit_a = 0, omit_m = 0;
+  FILETIME *pAtime;
+  FILETIME *pMtime;
+  int omit_a;
+  int omit_m;
   char fullpath[MAX_PATH];
+  enum posix_stat_error_code rc;
 
-  if (posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath)) !=
-      0) {
+  attrs = FILE_FLAG_BACKUP_SEMANTICS;
+  pAtime = NULL;
+  pMtime = NULL;
+  omit_a = 0;
+  omit_m = 0;
+
+  rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
+  if (rc != POSIX_STAT_SUCCESS) {
     return -1;
   }
 
@@ -446,12 +632,22 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   }
 
   if (times != NULL) {
-    fill_filetime(&times[0], &atime, &omit_a);
-    if (!omit_a)
+    rc = posix_stat_fill_filetime(&times[0], &atime, &omit_a);
+    if (rc != POSIX_STAT_SUCCESS) {
+      CloseHandle(hFile);
+      return -1;
+    }
+    if (!omit_a) {
       pAtime = &atime;
-    fill_filetime(&times[1], &mtime, &omit_m);
-    if (!omit_m)
+    }
+    rc = posix_stat_fill_filetime(&times[1], &mtime, &omit_m);
+    if (rc != POSIX_STAT_SUCCESS) {
+      CloseHandle(hFile);
+      return -1;
+    }
+    if (!omit_m) {
       pMtime = &mtime;
+    }
   } else {
     SYSTEMTIME st;
     GetSystemTime(&st);
@@ -469,9 +665,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   CloseHandle(hFile);
   return 0;
 }
-#endif
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
+#endif /* _WIN32 */
 
+/* Prevent empty translation unit on ISO C compilers */
 typedef int make_iso_compilers_happy_tu_posix_stat;

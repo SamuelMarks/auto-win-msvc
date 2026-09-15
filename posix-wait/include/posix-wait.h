@@ -1,6 +1,47 @@
-/* posix-wait.h - Strict C89 Header */
 #ifndef POSIX_WAIT_H
 #define POSIX_WAIT_H
+
+/**
+ * @file posix-wait.h
+ * @brief POSIX sys/wait.h implementation and compatibility layer.
+ */
+
+/* clang-format off */
+#include <stddef.h>
+#if !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#endif
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Error codes returned by posix-wait functions.
+ */
+enum posix_wait_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_WAIT_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_WAIT_ERROR_NULL_POINTER = 1,
+  /** @brief No child processes available or wait condition failed. */
+  POSIX_WAIT_ERROR_CHILD = 2
+};
+
+/**
+ * @brief Retrieves information on posix-wait polyfill availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_WAIT_SUCCESS on success, or POSIX_WAIT_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_wait_error_code posix_wait_get_info(int *out_available);
 
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 
@@ -31,11 +72,11 @@ typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
 #ifndef _SIGINFO_T_DEFINED
 #define _SIGINFO_T_DEFINED
 typedef struct {
-  int si_signo;  /* Signal number */
-  int si_code;   /* Signal code */
-  int si_pid;    /* Sending process ID */
-  int si_uid;    /* Real user ID of sending process */
-  int si_status; /* Exit value or signal */
+  int si_signo;  /**< Signal number */
+  int si_code;   /**< Signal code */
+  int si_pid;    /**< Sending process ID */
+  int si_uid;    /**< Real user ID of sending process */
+  int si_status; /**< Exit value or signal */
 } siginfo_t;
 #endif
 
@@ -56,7 +97,6 @@ typedef struct {
   (((status) & 0x7F) != 0 && ((status) & 0x7F) != 0x7F)
 #define WTERMSIG(status) ((status) & 0x7F)
 #define WIFSTOPPED(status) (((status) & 0xFF) == 0x7F)
-/** \brief WSTOPSIG macro. */
 #define WSTOPSIG(status) (((status) & 0xFF00) >> 8)
 
 /**
@@ -98,6 +138,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
  * @return 0 on success, or -1 on failure with errno set.
  */
 int posix_wait_kill(pid_t pid, int sig);
+
 #ifndef _KILL_DECLARED
 #define _KILL_DECLARED
 #ifndef kill
@@ -105,83 +146,17 @@ int posix_wait_kill(pid_t pid, int sig);
 #endif
 #endif
 
-/* cwait removed */
-
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
-
-/* DOS has no sys/wait.h */
-#ifndef WNOHANG
-#define WNOHANG 1
-#endif
-#ifndef WUNTRACED
-#define WUNTRACED 2
-#endif
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(w) (((w) >> 8) & 0xff)
-#endif
-#ifndef WIFEXITED
-#define WIFEXITED(w) (((w) & 0xff) == 0)
-#endif
-
-#else /* _WIN32 */
-
-/* For non-Windows environments (like Darwin/Linux testing), include native
- * headers */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-#endif
-/* clang-format off */
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __CYGWIN__
-#ifndef _IDTYPE_T_DEFINED
-#define _IDTYPE_T_DEFINED
-typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
-#endif
-
-#ifndef WEXITED
-#define WEXITED 4
-#endif
-#ifndef WSTOPPED
-#define WSTOPPED 2
-#endif
-#ifndef WNOWAIT
-#define WNOWAIT 0x01000000
-#endif
-#endif /* __CYGWIN__ */
-
-#ifdef __CYGWIN__
-/**
- * @brief Waits for a child process to change state (Cygwin polyfill).
- *
- * @param idtype The type of ID (P_ALL, P_PID, P_PGID).
- * @param id The ID to wait for.
- * @param infop Pointer to a siginfo_t structure where status information is
- * stored.
- * @param options Options modifying wait behavior.
- * @return 0 on success, or -1 on error.
- */
-int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
-#endif
+#else /* !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__) */
 
 /**
- * @brief Non-standard Microsoft-compatible cwait.
- *
- * @param termstat Pointer to store exit code.
- * @param pid Process ID to wait for.
- * @param action Unused on Windows (usually WAIT_CHILD).
- * @return The process ID of the terminated child.
+ * @brief Sends a signal to a process using native kill.
+ * @param pid Process ID.
+ * @param sig Signal number.
+ * @return 0 on success, or -1 on failure.
  */
-/* cwait removed */
+int posix_wait_kill(pid_t pid, int sig);
 
-#endif /* _WIN32 */
+#endif /* defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__) */
 
 #ifdef __cplusplus
 }

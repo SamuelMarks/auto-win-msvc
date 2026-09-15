@@ -2,15 +2,15 @@
 /* clang-format off */
 #include "bsd-sys-cpuset.h"
 #include <errno.h>
+#include <stddef.h>
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
-/* clang-format on */
-
 #endif
+/* clang-format on */
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
@@ -261,6 +261,81 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   return -1;
 }
 
+#else
+
+/**
+ * @brief Helper to convert a cpuset_t to a mask
+ * @param set Pointer to cpuset_t
+ * @return The affinity mask
+ */
+static unsigned long convert_cpuset_to_mask(const cpuset_t *set) {
+  unsigned long newAffinity = 0;
+  unsigned int idx;
+  for (idx = 0; idx < sizeof(unsigned long) * 8 && idx < CPU_SETSIZE; idx++) {
+    if (CPU_ISSET(idx, set)) {
+      newAffinity |= ((unsigned long)1 << idx);
+    }
+  }
+  return newAffinity;
+}
+
+/** \brief cpuset_getaffinity fallback function. */
+error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, cpuset_t *mask) {
+  (void)which;
+  (void)id;
+  if (!mask || setsize < sizeof(cpuset_t)) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (level == CPU_LEVEL_ROOT || level == CPU_LEVEL_CPUSET ||
+      level == CPU_LEVEL_WHICH) {
+    CPU_ZERO(mask);
+    CPU_SET(0, mask);
+    return ERR_NONE;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+/** \brief cpuset_setaffinity fallback function. */
+error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                                size_t setsize, const cpuset_t *mask) {
+  (void)which;
+  (void)id;
+  if (!mask || setsize < sizeof(cpuset_t)) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (convert_cpuset_to_mask(mask) == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (level == CPU_LEVEL_ROOT) {
+    errno = EPERM;
+    return -1;
+  }
+  if (level == CPU_LEVEL_CPUSET || level == CPU_LEVEL_WHICH) {
+    return ERR_NONE;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
 #endif
+
+/**
+ * @brief Initializes and validates the bsd-sys-cpuset module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return BSD_SYS_CPUSET_SUCCESS on success, or an error code on failure.
+ */
+enum bsd_sys_cpuset_error_code bsd_sys_cpuset_init(int *out_status) {
+  if (out_status == NULL) {
+    return BSD_SYS_CPUSET_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return BSD_SYS_CPUSET_SUCCESS;
+}
 
 typedef error_type_t make_iso_compilers_happy_tu_bsd_sys_cpuset;

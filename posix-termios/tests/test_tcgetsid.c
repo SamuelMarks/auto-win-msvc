@@ -5,6 +5,10 @@
 #include "posix-termios.h"
 /* clang-format on */
 
-TEST test_tcgetsid(void) { SKIP(); /* Generated stub for tcgetsid */ }
+TEST test_tcgetsid(void) {
+  ASSERT_EQ((pid_t)-1, tcgetsid(0));
+  ASSERT_EQ((pid_t)-1, tcgetsid(-1));
+  PASS();
+}
 
 SUITE(suite_posix_termios_tcgetsid) { RUN_TEST(test_tcgetsid); }

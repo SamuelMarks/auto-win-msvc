@@ -1,18 +1,19 @@
+#ifndef POSIX_CORE_SYSEXITS_H
+#define POSIX_CORE_SYSEXITS_H
+
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif
-#if !defined(_WIN32) && !defined(_MSC_VER)
+
 /* clang-format off */
+#if !defined(_WIN32) && !defined(_MSC_VER)
 #if defined(__GNUC__) || defined(__clang__)
 #include_next <sysexits.h>
 #else
 #include <sysexits.h>
 #endif
+#endif
 /* clang-format on */
-#else
-
-#ifndef POSIX_SYSEXITS_H
-#define POSIX_SYSEXITS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,8 @@ extern "C" {
  * @file sysexits.h
  * @brief Standard BSD exit codes.
  */
+
+#if defined(_WIN32) || defined(_MSC_VER)
 
 /** \brief Successful termination. */
 #ifndef EX_OK
@@ -33,8 +36,7 @@ extern "C" {
 #define EX__BASE 64
 #endif
 
-/** \brief The command was used incorrectly, e.g. with the wrong number of
- * arguments, a bad flag, bad syntax in a parameter, or whatever. */
+/** \brief The command was used incorrectly. */
 #ifndef EX_USAGE
 #define EX_USAGE 64
 #endif
@@ -44,8 +46,7 @@ extern "C" {
 #define EX_DATAERR 65
 #endif
 
-/** \brief An input file (not a system file) did not exist or was not readable.
- */
+/** \brief An input file did not exist or was not readable. */
 #ifndef EX_NOINPUT
 #define EX_NOINPUT 66
 #endif
@@ -75,13 +76,12 @@ extern "C" {
 #define EX_OSERR 71
 #endif
 
-/** \brief Some system file (e.g., /etc/passwd, /var/run/utmp, etc.) does not
- * exist, cannot be opened, or has some sort of error. */
+/** \brief Some system file does not exist, cannot be opened, or has error. */
 #ifndef EX_OSFILE
 #define EX_OSFILE 72
 #endif
 
-/** \brief A (user specified) output file cannot be created. */
+/** \brief An output file cannot be created. */
 #ifndef EX_CANTCREAT
 #define EX_CANTCREAT 73
 #endif
@@ -91,14 +91,12 @@ extern "C" {
 #define EX_IOERR 74
 #endif
 
-/** \brief Temporary failure, indicating something that is not really an error.
- */
+/** \brief Temporary failure, indicating something not really an error. */
 #ifndef EX_TEMPFAIL
 #define EX_TEMPFAIL 75
 #endif
 
-/** \brief The remote system returned something that was "not conceivable"
- * during a protocol exchange. */
+/** \brief Remote system returned something not conceivable. */
 #ifndef EX_PROTOCOL
 #define EX_PROTOCOL 76
 #endif
@@ -118,10 +116,10 @@ extern "C" {
 #define EX__MAX 78
 #endif
 
+#endif /* defined(_WIN32) || defined(_MSC_VER) */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* POSIX_SYSEXITS_H */
-
-#endif /* !defined(_WIN32) && !defined(_MSC_VER) */
+#endif /* POSIX_CORE_SYSEXITS_H */

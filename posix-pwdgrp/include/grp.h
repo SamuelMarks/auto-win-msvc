@@ -1,37 +1,32 @@
-/* Strict C89 grp.h wrapper */
 #ifndef POSIX_PWDGRP_GRP_H
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 #define POSIX_PWDGRP_GRP_H
+
+/**
+ * @file grp.h
+ * @brief POSIX grp.h redirection header.
+ */
+
+/* clang-format off */
+#if !defined(_WIN32)
+#if defined(__GNUC__) || defined(__clang__)
+#include_next <grp.h>
+#else
+#include <grp.h>
+#endif
+#else
+#include "posix-pwdgrp.h"
+#endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* clang-format off */
-#include <posix-types.h>
-/* clang-format on */
-
-#ifndef _STRUCT_GROUP_DEFINED
-#define _STRUCT_GROUP_DEFINED
-struct group {
-  char *gr_name;
-  char *gr_passwd;
-  gid_t gr_gid;
-  char **gr_mem;
-};
-#endif
-
-struct group *getgrnam(const char *name);
-struct group *getgrgid(gid_t gid);
-int getgrnam_r(const char *name, struct group *grp, char *buffer,
-               size_t bufsize, struct group **result);
-int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
-               struct group **result);
-void endgrent(void);
-struct group *getgrent(void);
-void setgrent(void);
-
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* POSIX_PWDGRP_GRP_H */

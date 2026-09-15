@@ -10,6 +10,27 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Error codes returned by posix-glob module functions.
+ */
+enum posix_glob_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_GLOB_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_GLOB_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_GLOB_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-glob module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_GLOB_SUCCESS on success, or POSIX_GLOB_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_glob_error_code posix_glob_get_info(int *out_available);
+
 /* ------------------------------------------------------------------------- */
 /* Cross-Platform Printf Formatting */
 /* ------------------------------------------------------------------------- */

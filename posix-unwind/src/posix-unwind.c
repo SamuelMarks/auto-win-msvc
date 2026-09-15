@@ -1,69 +1,69 @@
-/* posix-unwind.c - Strict C89 Implementation */
+/**
+ * @file posix-unwind.c
+ * @brief Implementation of posix-unwind polyfills.
+ */
 
 /* clang-format off */
-#include "unwind.h"
-
-#if defined(_MSC_VER)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include "posix-unwind.h"
+#include <stddef.h>
 /* clang-format on */
 
-#endif
-
 #if defined(_MSC_VER)
 
-/** \brief Context struct for MSVC */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void *WIN_HMODULE;
+typedef int(__stdcall *WIN_FARPROC)(void);
+
+__declspec(dllimport)
+WIN_HMODULE __stdcall GetModuleHandleA(const char *lpModuleName);
+__declspec(dllimport)
+WIN_FARPROC __stdcall GetProcAddress(WIN_HMODULE hModule,
+                                     const char *lpProcName);
+
+#ifdef __cplusplus
+}
+#endif
+
 struct _Unwind_Context {
   void *ip;
 };
 
-/**
- * @brief Get the instruction pointer from the context
- * @param context The unwind context
- * @return The instruction pointer
- */
 size_t _Unwind_GetIP(struct _Unwind_Context *context) {
-  if (context) {
+  if (context != NULL) {
     return (size_t)context->ip;
   }
   return 0;
 }
 
-/**
- * @brief Backtrace the stack
- * @param trace The trace function
- * @param trace_argument The trace argument
- * @return The reason code
- */
 _Unwind_Reason_Code _Unwind_Backtrace(_Unwind_Trace_Fn trace,
                                       void *trace_argument) {
   void *frames[64];
   unsigned short count;
   unsigned short i;
-  void *hNtDll;
+  WIN_HMODULE hNtDll;
   typedef unsigned short(__stdcall * RtlCaptureStackBackTrace_t)(
       unsigned long, unsigned long, void **, unsigned long *);
   RtlCaptureStackBackTrace_t pRtlCaptureStackBackTrace = NULL;
 
-  if (!trace) {
+  if (trace == NULL) {
     return _URC_FATAL_PHASE1_ERROR;
   }
 
   hNtDll = GetModuleHandleA("ntdll.dll");
-  if (hNtDll) {
+  if (hNtDll != NULL) {
     pRtlCaptureStackBackTrace =
         (RtlCaptureStackBackTrace_t)(size_t)GetProcAddress(
-            (HMODULE)hNtDll, "RtlCaptureStackBackTrace");
+            hNtDll, "RtlCaptureStackBackTrace");
   }
 
-  if (!pRtlCaptureStackBackTrace) {
-    return _URC_END_OF_STACK; /* Fallback if not available */
+  if (pRtlCaptureStackBackTrace == NULL) {
+    return _URC_END_OF_STACK;
   }
 
-  count = pRtlCaptureStackBackTrace(1, 64, frames, NULL);
+  count = pRtlCaptureStackBackTrace(0, 64, frames, NULL);
   for (i = 0; i < count; i++) {
     struct _Unwind_Context ctx;
     ctx.ip = frames[i];
@@ -76,5 +76,15 @@ _Unwind_Reason_Code _Unwind_Backtrace(_Unwind_Trace_Fn trace,
 
 #endif /* _MSC_VER */
 
-/* Prevent empty translation unit */
+/**
+ * @brief Retrieves information on posix-unwind availability.
+ */
+enum posix_unwind_error_code posix_unwind_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_UNWIND_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_UNWIND_SUCCESS;
+}
+
 typedef int make_iso_compilers_happy_tu_posix_unwind;

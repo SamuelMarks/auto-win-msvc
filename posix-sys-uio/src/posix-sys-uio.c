@@ -351,6 +351,17 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 
 #endif
 
+/**
+ * @brief Retrieves information on posix-sys-uio module availability.
+ */
+enum posix_sys_uio_error_code posix_sys_uio_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_SYS_UIO_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_SYS_UIO_SUCCESS;
+}
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 

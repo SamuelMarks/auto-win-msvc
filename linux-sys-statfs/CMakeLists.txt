@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(linux-sys-statfs VERSION 0.1.0 LANGUAGES C)
 
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -69,37 +65,34 @@ endif()
 # ----------------------------------------------------
 
 
-# Warnings and ASan
-if(MSVC)
-    if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-    endif()
-    add_compile_options(/WX )
-elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
-endif()
-
+# Fetch greatest.h
 if(NOT TARGET greatest)
 include(FetchContent)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
 FetchContent_MakeAvailable(greatest)
-
 endif()
 
+
+# Warnings and ASan
+if(MSVC)
+    add_compile_options(/W4 )
+    add_compile_definitions(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1)
+elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
+endif()
 
 add_library(linux-sys-statfs src/linux-sys-statfs.c)
 set_target_properties(linux-sys-statfs PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-statfs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-sys-statfs ${TEST_SOURCES})
+
+target_include_directories(test_linux-sys-statfs PRIVATE ${greatest_SOURCE_DIR})
+
 target_link_libraries(test_linux-sys-statfs PRIVATE linux-sys-statfs greatest)
 add_test(NAME test_linux-sys-statfs COMMAND test_linux-sys-statfs)
-endif()
 
 if(MSVC)
     target_compile_options(linux-sys-statfs PRIVATE )

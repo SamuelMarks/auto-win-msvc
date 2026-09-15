@@ -5,6 +5,11 @@
 #include "posix-ipc.h"
 /* clang-format on */
 
-TEST test_shmdt(void) { SKIP(); /* Generated stub for shmdt */ }
+TEST test_shmdt(void) {
+  int res;
+  res = shmdt(NULL);
+  ASSERT_EQ(-1, res);
+  PASS();
+}
 
 SUITE(suite_posix_ipc_shmdt) { RUN_TEST(test_shmdt); }

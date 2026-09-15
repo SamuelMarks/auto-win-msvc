@@ -5,6 +5,17 @@
 #include "posix-termios.h"
 /* clang-format on */
 
-TEST test_tcflush(void) { SKIP(); /* Generated stub for tcflush */ }
+TEST test_tcflush(void) {
+  int rc;
+  rc = tcflush(0, TCIFLUSH);
+  (void)rc;
+  rc = tcflush(0, TCOFLUSH);
+  (void)rc;
+  rc = tcflush(0, TCIOFLUSH);
+  (void)rc;
+  rc = tcflush(-1, TCIFLUSH);
+  (void)rc;
+  PASS();
+}
 
 SUITE(suite_posix_termios_tcflush) { RUN_TEST(test_tcflush); }

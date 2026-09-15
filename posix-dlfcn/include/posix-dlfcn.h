@@ -2,12 +2,15 @@
 #ifndef POSIX_DLFCN_H
 #define POSIX_DLFCN_H
 
-#if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) ||         \
-    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) ||     \
-    defined(__sun) || defined(__QNX__)
+/**
+ * @file posix-dlfcn.h
+ * @brief Strict C89 POSIX dlfcn.h implementation and error codes for MSVC.
+ */
+
 /* clang-format off */
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
 #include <dlfcn.h>
-#else
+#endif
 #include <stddef.h>
 /* clang-format on */
 
@@ -16,12 +19,27 @@ extern "C" {
 #endif
 
 /**
- * @file posix-dlfcn.h
- * @brief Strict C89 POSIX dlfcn.h implementation for MSVC
- *
- * This header provides the standard POSIX dynamic linking interface
- * implemented over native Windows APIs (LoadLibrary, GetProcAddress, etc.).
+ * @brief Error codes returned by posix-dlfcn functions.
  */
+enum posix_dlfcn_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_DLFCN_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_DLFCN_ERROR_NULL_POINTER = 1
+};
+
+/**
+ * @brief Retrieves information on posix-dlfcn availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_DLFCN_SUCCESS on success, or POSIX_DLFCN_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_dlfcn_error_code posix_dlfcn_get_info(int *out_available);
+
+#if !defined(__linux__) && !defined(__CYGWIN__) && !defined(__APPLE__) &&      \
+    !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) &&  \
+    !defined(__sun) && !defined(__QNX__)
 
 /** @brief Resolve symbol when the first reference is made to it. */
 #define RTLD_LAZY 1

@@ -93,13 +93,11 @@ add_library(linux-getopt src/linux-getopt.c)
 set_target_properties(linux-getopt PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-getopt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-getopt ${TEST_SOURCES})
 target_link_libraries(test_linux-getopt PRIVATE linux-getopt greatest)
 add_test(NAME test_linux-getopt COMMAND test_linux-getopt)
-endif()
 
 if(MSVC)
     target_compile_options(linux-getopt PRIVATE )

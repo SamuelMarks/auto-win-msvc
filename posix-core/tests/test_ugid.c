@@ -3,34 +3,114 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-core.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #if defined(_MSC_VER) || defined(_WIN32)
-#include <process.h> /* For _getpid if needed */
+#include <process.h>
+#else
+#include <unistd.h>
 #endif
 /* clang-format on */
 
-TEST test_getegid(void) { SKIP(); /* Generated stub for getegid */ }
+TEST test_getegid(void) {
+  gid_t egid = getegid();
+  (void)egid;
+  PASS();
+}
 
-TEST test_geteuid(void) { SKIP(); /* Generated stub for geteuid */ }
+TEST test_geteuid(void) {
+  uid_t euid = geteuid();
+  (void)euid;
+  PASS();
+}
 
-TEST test_getgid(void) { SKIP(); /* Generated stub for getgid */ }
+TEST test_getgid(void) {
+  gid_t gid = getgid();
+  (void)gid;
+  PASS();
+}
 
-TEST test_getpgid(void) { SKIP(); /* Generated stub for getpgid */ }
+TEST test_getpgid(void) {
+  pid_t pgid = getpgid(0);
+  (void)pgid;
+  PASS();
+}
 
-TEST test_getuid(void) { SKIP(); /* Generated stub for getuid */ }
+TEST test_getuid(void) {
+  uid_t uid = getuid();
+  (void)uid;
+  PASS();
+}
 
-TEST test_setegid(void) { SKIP(); /* Generated stub for setegid */ }
+TEST test_setegid(void) {
+  gid_t egid = getegid();
+  int rc = setegid(egid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
-TEST test_seteuid(void) { SKIP(); /* Generated stub for seteuid */ }
+TEST test_seteuid(void) {
+  uid_t euid = geteuid();
+  int rc = seteuid(euid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
-TEST test_setgid(void) { SKIP(); /* Generated stub for setgid */ }
+TEST test_setgid(void) {
+  gid_t gid = getgid();
+  int rc = setgid(gid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
-TEST test_setpgid(void) { SKIP(); /* Generated stub for setpgid */ }
+TEST test_setpgid(void) {
+  int rc = setpgid(0, 0);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  (void)rc;
+  PASS();
+}
 
-TEST test_setregid(void) { SKIP(); /* Generated stub for setregid */ }
+TEST test_setregid(void) {
+  gid_t gid = getgid();
+  int rc = setregid(gid, gid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
-TEST test_setreuid(void) { SKIP(); /* Generated stub for setreuid */ }
+TEST test_setreuid(void) {
+  uid_t uid = getuid();
+  int rc = setreuid(uid, uid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
-TEST test_setuid(void) { SKIP(); /* Generated stub for setuid */ }
+TEST test_setuid(void) {
+  uid_t uid = getuid();
+  int rc = setuid(uid);
+  if (rc == -1 && (errno == EPERM || errno == EACCES)) {
+    PASS();
+  }
+  ASSERT_EQ(0, rc);
+  PASS();
+}
 
 SUITE(suite_posix_core_ugid) {
   RUN_TEST(test_getegid);

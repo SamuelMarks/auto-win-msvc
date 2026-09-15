@@ -1,10 +1,18 @@
-/* posix-times.c - Strict C89 Implementation */
+/**
+ * @file posix-times.c
+ * @brief Implementation of posix-times polyfills.
+ */
+
 /* clang-format off */
-#include "sys/times.h"
+#include "posix-times.h"
 #include <stddef.h>
 /* clang-format on */
 
-#if defined(POSIX_TIMES_MSVC)
+#if defined(_MSC_VER) || defined(_WIN32)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Forward declare required Windows structures and functions */
 __declspec(dllimport) void *__stdcall GetCurrentProcess(void);
@@ -14,12 +22,18 @@ __declspec(dllimport) int __stdcall GetProcessTimes(void *hProcess,
                                                     void *lpKernelTime,
                                                     void *lpUserTime);
 
+#ifdef __cplusplus
+}
+#endif
+
 typedef struct _POSIX_TIMES_FILETIME {
   unsigned long dwLowDateTime;
   unsigned long dwHighDateTime;
 } POSIX_TIMES_FILETIME;
 
-/** \brief posix_times function. */
+/**
+ * @brief Retrieves process and child execution times.
+ */
 clock_t posix_times(struct tms *buf) {
   POSIX_TIMES_FILETIME creation_time, exit_time, kernel_time, user_time;
   if (buf != NULL) {
@@ -47,4 +61,17 @@ clock_t posix_times(struct tms *buf) {
   return (clock_t)0;
 }
 
-#endif /* POSIX_TIMES_MSVC */
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
+/**
+ * @brief Retrieves information on posix-times availability.
+ */
+enum posix_times_error_code posix_times_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_TIMES_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_TIMES_SUCCESS;
+}
+
+typedef int make_iso_compilers_happy_tu_posix_times;

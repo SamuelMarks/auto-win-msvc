@@ -1499,6 +1499,21 @@ err:
 typedef int make_iso_compilers_happy_tu;
 
 /* Dummy function to prevent empty translation unit */
+/**
+ * @brief Retrieves information on posix-sockets availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SOCKETS_SUCCESS on success, or POSIX_SOCKETS_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_sockets_error_code posix_sockets_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_SOCKETS_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_SOCKETS_SUCCESS;
+}
+
 int dummy_posix_sockets(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sockets;

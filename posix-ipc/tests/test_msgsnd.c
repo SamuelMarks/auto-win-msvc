@@ -5,6 +5,12 @@
 #include "posix-ipc.h"
 /* clang-format on */
 
-TEST test_msgsnd(void) { SKIP(); /* Generated stub for msgsnd */ }
+TEST test_msgsnd(void) {
+  char buf[16];
+  int res;
+  res = msgsnd(-1, buf, sizeof(buf), IPC_NOWAIT);
+  ASSERT_EQ(-1, res);
+  PASS();
+}
 
 SUITE(suite_posix_ipc_msgsnd) { RUN_TEST(test_msgsnd); }

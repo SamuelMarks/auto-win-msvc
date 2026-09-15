@@ -1,33 +1,41 @@
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+/* posix_read_write.c - Strict C89 Implementation */
+
 /* clang-format off */
 #include "posix-core.h"
 #include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+#include <winsock2.h>
+#include <sys/stat.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+/* clang-format on */
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
-#include <stddef.h>
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
-#else
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
-#endif
+#define safe_get_osfhandle(fd)                                                 \
+  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
 #endif
 
-#define GET_SOCKET(fd) ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd) : (SOCKET)safe_get_osfhandle(fd))
-
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <stdlib.h>
-#include <winsock2.h>
+#define GET_SOCKET(fd)                                                         \
+  ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd)                               \
+                                  : (SOCKET)safe_get_osfhandle(fd))
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 static void my_invalid_parameter_handler(const wchar_t *expression,
@@ -44,13 +52,10 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 
 #undef _read
 #undef _write
-#include <fcntl.h>
-
-#include <stdio.h>
-#include <string.h>
 
 /* Removed g_cloned_cwd */
 
+/** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
   int flags = 0;
   DWORD dwAccess = 0, dwCreation = OPEN_EXISTING;
@@ -58,6 +63,11 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   HANDLE h;
   intptr_t fd;
   FILE *f;
+
+  if (!pathname || !mode) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   if (strchr(mode, 'r')) {
     flags |= _O_RDONLY;
@@ -86,43 +96,43 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
       errno = ENOENT;
       return NULL;
     }
-  #if defined(_MSC_VER) && _MSC_VER < 1900
-  #if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
     if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s\\%s", cwd, pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #else
+#else
     if (_snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #endif
-  #else
+#endif
+#else
     if (snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #endif
+#endif
   } else {
-  #if defined(_MSC_VER) && _MSC_VER < 1900
-  #if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
     if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s", pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #else
+#else
     if (_snprintf(abs_path, 2048, "%s", pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #endif
-  #else
+#endif
+#else
     if (snprintf(abs_path, 2048, "%s", pathname) < 0) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-  #endif
+#endif
   }
 
   h = CreateFileA(abs_path, dwAccess,
@@ -145,8 +155,7 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   return f;
 }
 
-#include <sys/stat.h>
-/* clang-format on */
+/** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...) {
   int mode = 0;
   DWORD dwDesiredAccess = 0;
@@ -442,6 +451,7 @@ extern int is_socket(intptr_t);
 extern error_type_t mark_as_socket(intptr_t);
 extern error_type_t clear_as_socket(intptr_t);
 
+/** @brief Duplicate file descriptor with POSIX semantics. */
 int posix_dup2(int oldfd, int newfd) {
   int ret = _dup2(oldfd, newfd);
   if (ret != -1) {
@@ -454,6 +464,70 @@ int posix_dup2(int oldfd, int newfd) {
     }
   }
   return ret;
+}
+
+#else
+
+/** @brief Open stream with POSIX semantics. */
+FILE *posix_fopen(const char *pathname, const char *mode) {
+  if (!pathname || !mode) {
+    errno = EINVAL;
+    return NULL;
+  }
+  return fopen(pathname, mode);
+}
+
+/** @brief Open file descriptor with POSIX semantics. */
+int posix_open(const char *pathname, int flags, ...) {
+  va_list ap;
+  int mode = 0;
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (flags & O_CREAT) {
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+    return open(pathname, flags, mode);
+  }
+  return open(pathname, flags);
+}
+
+/** @brief Read from file descriptor with POSIX semantics. */
+ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
+  if (fd < 0 || buf == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  return (ssize_t)read((int)fd, buf, count);
+}
+
+/** @brief Write to file descriptor with POSIX semantics. */
+ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
+  if (fd < 0 || buf == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  return (ssize_t)write((int)fd, buf, count);
+}
+
+/** @brief Close file descriptor with POSIX semantics. */
+int posix_close(intptr_t fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return close((int)fd);
+}
+
+/** @brief Duplicate file descriptor with POSIX semantics. */
+int posix_dup2(int oldfd, int newfd) {
+  if (oldfd < 0 || newfd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return dup2(oldfd, newfd);
 }
 
 #endif

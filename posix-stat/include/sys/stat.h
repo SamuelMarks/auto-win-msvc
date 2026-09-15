@@ -38,53 +38,53 @@ extern "C" {
 #if defined(_WIN32) || defined(_MSC_VER)
 
 #ifndef S_IRUSR
-/** \brief Read permission, owner. */
+/** @brief Read permission, owner. */
 #define S_IRUSR 0400
 #endif
 #ifndef S_IWUSR
-/** \brief Write permission, owner. */
+/** @brief Write permission, owner. */
 #define S_IWUSR 0200
 #endif
 #ifndef S_IXUSR
-/** \brief Execute/search permission, owner. */
+/** @brief Execute permission, owner. */
 #define S_IXUSR 0100
 #endif
 #ifndef S_IRWXU
-/** \brief Read, write, execute permissions, owner. */
+/** @brief Read, write, execute permissions, owner. */
 #define S_IRWXU 0700
 #endif
 
 #ifndef S_IRGRP
-/** \brief Read permission, group. */
+/** @brief Read permission, group. */
 #define S_IRGRP 0040
 #endif
 #ifndef S_IWGRP
-/** \brief Write permission, group. */
+/** @brief Write permission, group. */
 #define S_IWGRP 0020
 #endif
 #ifndef S_IXGRP
-/** \brief Execute/search permission, group. */
+/** @brief Execute permission, group. */
 #define S_IXGRP 0010
 #endif
 #ifndef S_IRWXG
-/** \brief Read, write, execute permissions, group. */
+/** @brief Read, write, execute permissions, group. */
 #define S_IRWXG 0070
 #endif
 
 #ifndef S_IROTH
-/** \brief Read permission, others. */
+/** @brief Read permission, others. */
 #define S_IROTH 0004
 #endif
 #ifndef S_IWOTH
-/** \brief Write permission, others. */
+/** @brief Write permission, others. */
 #define S_IWOTH 0002
 #endif
 #ifndef S_IXOTH
-/** \brief Execute/search permission, others. */
+/** @brief Execute permission, others. */
 #define S_IXOTH 0001
 #endif
 #ifndef S_IRWXO
-/** \brief Read, write, execute permissions, others. */
+/** @brief Read, write, execute permissions, others. */
 #define S_IRWXO 0007
 #endif
 

@@ -24,6 +24,27 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Error codes returned by posix-sys-uio module functions.
+ */
+enum posix_sys_uio_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_SYS_UIO_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_SYS_UIO_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_SYS_UIO_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-sys-uio module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SYS_UIO_SUCCESS on success, or POSIX_SYS_UIO_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_sys_uio_error_code posix_sys_uio_get_info(int *out_available);
+
 #if defined(_MSC_VER)
 typedef __int64 posix_uio_off_t;
 #else

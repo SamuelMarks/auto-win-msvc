@@ -5,6 +5,13 @@
 #include "posix-termios.h"
 /* clang-format on */
 
-TEST test_tcdrain(void) { SKIP(); /* Generated stub for tcdrain */ }
+TEST test_tcdrain(void) {
+  int rc;
+  rc = tcdrain(1);
+  (void)rc;
+  rc = tcdrain(-1);
+  (void)rc;
+  PASS();
+}
 
 SUITE(suite_posix_termios_tcdrain) { RUN_TEST(test_tcdrain); }

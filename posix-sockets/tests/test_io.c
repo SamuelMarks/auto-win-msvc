@@ -5,19 +5,41 @@
 #include "posix-sockets.h"
 /* clang-format on */
 
-TEST test_posix_recv(void) { SKIP(); /* Generated stub for posix_recv */ }
-
-TEST test_posix_recvfrom(void) {
-  SKIP(); /* Generated stub for posix_recvfrom */
+TEST test_posix_recv(void) {
+  posix_ssize_t r = posix_recv(-1, NULL, 0, 0);
+  ASSERT_EQ(-1, r);
+  PASS();
 }
 
-TEST test_posix_recvmsg(void) { SKIP(); /* Generated stub for posix_recvmsg */ }
+TEST test_posix_recvfrom(void) {
+  posix_ssize_t r = posix_recvfrom(-1, NULL, 0, 0, NULL, NULL);
+  ASSERT_EQ(-1, r);
+  PASS();
+}
 
-TEST test_posix_send(void) { SKIP(); /* Generated stub for posix_send */ }
+TEST test_posix_recvmsg(void) {
+  posix_ssize_t r = posix_recvmsg(-1, NULL, 0);
+  ASSERT_EQ(-1, r);
+  PASS();
+}
 
-TEST test_posix_sendmsg(void) { SKIP(); /* Generated stub for posix_sendmsg */ }
+TEST test_posix_send(void) {
+  posix_ssize_t r = posix_send(-1, NULL, 0, 0);
+  ASSERT_EQ(-1, r);
+  PASS();
+}
 
-TEST test_posix_sendto(void) { SKIP(); /* Generated stub for posix_sendto */ }
+TEST test_posix_sendmsg(void) {
+  posix_ssize_t r = posix_sendmsg(-1, NULL, 0);
+  ASSERT_EQ(-1, r);
+  PASS();
+}
+
+TEST test_posix_sendto(void) {
+  posix_ssize_t r = posix_sendto(-1, NULL, 0, 0, NULL, 0);
+  ASSERT_EQ(-1, r);
+  PASS();
+}
 
 SUITE(suite_posix_sockets_io) {
   RUN_TEST(test_posix_recv);

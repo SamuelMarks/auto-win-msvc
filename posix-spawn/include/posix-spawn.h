@@ -2,6 +2,11 @@
 #ifndef POSIX_SPAWN_H
 #define POSIX_SPAWN_H
 
+/**
+ * @file posix-spawn.h
+ * @brief Strict C89 POSIX spawn implementation and error codes.
+ */
+
 /* clang-format off */
 #include <stddef.h>
 
@@ -25,6 +30,7 @@ typedef unsigned long sigset_t;
 #endif
 
 #ifndef _SCHED_PARAM_DEFINED
+/** @brief Scheduling parameters structure. */
 struct sched_param {
   int sched_priority;
 };
@@ -61,8 +67,9 @@ typedef unsigned long sigset_t;
 #endif
 
 #ifndef _SCHED_PARAM_DEFINED
+/** @brief Scheduling parameters structure. */
 struct sched_param {
-    int sched_priority;
+  int sched_priority;
 };
 #define _SCHED_PARAM_DEFINED
 #endif
@@ -72,40 +79,68 @@ struct sched_param {
 #include <sched.h>
 #include <signal.h>
 #include <sys/types.h>
+
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#endif
+/**
+ * @brief Error codes returned by posix-spawn operations.
+ */
+enum posix_spawn_error_code {
+  /** @brief Successful operation. */
+  POSIX_SPAWN_SUCCESS = 0,
+  /** @brief Null pointer passed as argument. */
+  POSIX_SPAWN_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument passed. */
+  POSIX_SPAWN_ERROR_INVALID_ARGUMENT = 2
+};
 
-/* Flags */
+/**
+ * @brief Initializes and validates the posix-spawn module.
+ * @param[out] out_status Pointer to an integer that receives the initialized
+ * status.
+ * @return POSIX_SPAWN_SUCCESS on success, or an error code on failure.
+ */
+enum posix_spawn_error_code posix_spawn_init(int *out_status);
+
+/** @brief Reset effective user/group IDs flag. */
 #define POSIX_SPAWN_RESETIDS 0x01
+/** @brief Set process group flag. */
 #define POSIX_SPAWN_SETPGROUP 0x02
+/** @brief Set signal default action flag. */
 #define POSIX_SPAWN_SETSIGDEF 0x04
+/** @brief Set signal mask flag. */
 #define POSIX_SPAWN_SETSIGMASK 0x08
+/** @brief Set scheduling parameters flag. */
 #define POSIX_SPAWN_SETSCHEDPARAM 0x10
+/** @brief Set scheduler policy flag. */
 #define POSIX_SPAWN_SETSCHEDULER 0x20
 
-/* Types */
-
-/* Opaque struct for file actions */
+/** @brief Opaque struct for file actions. */
 typedef struct {
+  /** @brief Pointer to internal actions linked list. */
   void *actions;
 } posix_spawn_file_actions_t;
 
-/* Opaque struct for spawn attributes */
+/** @brief Struct for spawn attributes. */
 typedef struct {
+  /** @brief Spawn flags. */
   short flags;
+  /** @brief Process group ID. */
   pid_t pgroup;
+  /** @brief Scheduling parameters. */
   struct sched_param schedparam;
+  /** @brief Scheduling policy. */
   int schedpolicy;
+  /** @brief Signal mask. */
   sigset_t sigmask;
+  /** @brief Signals with default actions. */
   sigset_t sigdefault;
 } posix_spawnattr_t;
-
-/* Functions */
 
 /**
  * @brief Spawn a new process
@@ -137,8 +172,6 @@ int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawnattr_t *attrp, char *const argv[],
                  char *const envp[]);
 
-/* File Actions */
-
 /**
  * @brief Initialize a file actions object
  * @param file_actions Pointer to the file actions object to initialize
@@ -165,7 +198,7 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
 /**
  * @brief Add a dup2 action to the file actions object
  * @param file_actions Pointer to the file actions object
- * @param fildes Source file descriptor
+ * @param fildes File descriptor to duplicate
  * @param newfildes Target file descriptor
  * @return 0 on success, error code on failure
  */
@@ -175,17 +208,15 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
 /**
  * @brief Add an open action to the file actions object
  * @param file_actions Pointer to the file actions object
- * @param fildes File descriptor to open
- * @param path Path to the file to open
+ * @param fildes Target file descriptor
+ * @param path Path to open
  * @param oflag Open flags
- * @param mode File mode
+ * @param mode Creation mode
  * @return 0 on success, error code on failure
  */
 int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
                                      int fildes, const char *path, int oflag,
                                      mode_t mode);
-
-/* Attributes */
 
 /**
  * @brief Initialize a spawn attributes object

@@ -5,6 +5,11 @@
 #include "posix-pwdgrp.h"
 /* clang-format on */
 
-TEST test_endgrent(void) { SKIP(); /* Generated stub for endgrent */ }
+TEST test_endgrent(void) {
+  setgrent();
+  (void)getgrent();
+  endgrent();
+  PASS();
+}
 
 SUITE(suite_posix_pwdgrp_endgrent) { RUN_TEST(test_endgrent); }

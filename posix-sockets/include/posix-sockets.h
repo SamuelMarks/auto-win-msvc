@@ -205,27 +205,23 @@ struct timespec;
 
 /**
  * @brief POSIX endhostent stub
- * @return mapped value or -1 with errno EINVAL
  */
 void posix_endhostent(void);
 /**
  * @brief POSIX endnetent stub
- * @return mapped value or -1 with errno EINVAL
  */
 void posix_endnetent(void);
 /**
  * @brief POSIX endprotoent stub
- * @return mapped value or -1 with errno EINVAL
  */
 void posix_endprotoent(void);
 /**
  * @brief POSIX endservent stub
- * @return mapped value or -1 with errno EINVAL
  */
 void posix_endservent(void);
 /**
  * @brief POSIX freeaddrinfo stub
- * @return mapped value or -1 with errno EINVAL
+ * @param ai Pointer to addrinfo structure
  */
 void posix_freeaddrinfo(struct addrinfo *ai);
 /**
@@ -309,22 +305,22 @@ struct servent *posix_getservbyport(int port, const char *proto);
 struct servent *posix_getservent(void);
 /**
  * @brief POSIX sethostent stub
- * @return mapped value or -1 with errno EINVAL
+ * @param stayopen Flag indicating whether to keep the database open
  */
 void posix_sethostent(int stayopen);
 /**
  * @brief POSIX setnetent stub
- * @return mapped value or -1 with errno EINVAL
+ * @param stayopen Flag indicating whether to keep the database open
  */
 void posix_setnetent(int stayopen);
 /**
  * @brief POSIX setprotoent stub
- * @return mapped value or -1 with errno EINVAL
+ * @param stayopen Flag indicating whether to keep the database open
  */
 void posix_setprotoent(int stayopen);
 /**
  * @brief POSIX setservent stub
- * @return mapped value or -1 with errno EINVAL
+ * @param stayopen Flag indicating whether to keep the database open
  */
 void posix_setservent(int stayopen);
 /**
@@ -493,6 +489,26 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
  * @return 0 on success, or -1 on error.
  */
 int posix_close(intptr_t fd);
+
+/**
+ * @enum posix_sockets_error_code
+ * @brief Error codes returned by posix-sockets functions.
+ */
+enum posix_sockets_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_SOCKETS_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_SOCKETS_ERROR_NULL_POINTER = 1
+};
+
+/**
+ * @brief Retrieves information on posix-sockets availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SOCKETS_SUCCESS on success, or POSIX_SOCKETS_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_sockets_error_code posix_sockets_get_info(int *out_available);
 
 #define win_compat_sendmsg posix_sendmsg_native
 #define win_compat_recvmsg posix_recvmsg_native

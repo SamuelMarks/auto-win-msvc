@@ -1,23 +1,66 @@
 #ifndef POSIX_REGEX_H
 #define POSIX_REGEX_H
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
-    defined(__MSDOS__) || defined(__WATCOMC__)
+/**
+ * @file posix-regex.h
+ * @brief POSIX regular expressions and error codes.
+ */
 
 /* clang-format off */
 #include <stddef.h>
+#if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__MINGW64__) && \
+    !defined(__MSDOS__) && !defined(__WATCOMC__)
+#include <regex.h>
+#endif
+/* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Error codes returned by posix-regex operations.
+ */
+enum posix_regex_error_code {
+  /** @brief Successful operation. */
+  POSIX_REGEX_SUCCESS = 0,
+  /** @brief Null pointer passed as argument. */
+  POSIX_REGEX_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument passed. */
+  POSIX_REGEX_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Initializes and validates the posix-regex module.
+ * @param[out] out_status Pointer to an integer that receives the initialized
+ * status.
+ * @return POSIX_REGEX_SUCCESS on success, or an error code on failure.
+ */
+enum posix_regex_error_code posix_regex_init(int *out_status);
+
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
+    defined(__MSDOS__) || defined(__WATCOMC__)
+
+/** @brief Regular expression compiled pattern structure. */
 typedef struct {
+  /** @brief Internal magic value. */
   int re_magic;
+  /** @brief Number of subexpressions. */
   size_t re_nsub;
+  /** @brief End of pattern pointer. */
   const char *re_endp;
+  /** @brief Internal guts pointer. */
   void *re_guts;
 } regex_t;
 
+/** @brief Regular expression match offset type. */
 typedef int regoff_t;
 
+/** @brief Subexpression match structure. */
 typedef struct {
+  /** @brief Start offset of match. */
   regoff_t rm_so;
+  /** @brief End offset of match. */
   regoff_t rm_eo;
 } regmatch_t;
 
@@ -56,27 +99,21 @@ typedef struct {
 #define REG_ILLSEQ 17
 #define REG_ENOSYS 18
 
-/** \brief regcomp function. */
+/** @brief Compile regular expression pattern. */
 int regcomp(regex_t *preg, const char *pattern, int cflags);
-/** \brief regexec function. */
+
+/** @brief Match compiled regular expression against a string. */
 int regexec(const regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags);
-/** \brief regerror function. */
+
+/** @brief Return error string for regular expression error code. */
 size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size);
-/** \brief regfree function. */
+
+/** @brief Free resources associated with compiled regular expression. */
 void regfree(regex_t *preg);
 
-#else
-#include <regex.h>
-/* clang-format on */
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Any functions to declare here? None */
+#endif /* _MSC_VER */
 
 #ifdef __cplusplus
 }

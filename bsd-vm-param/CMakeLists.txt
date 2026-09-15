@@ -36,7 +36,6 @@ endif()
 add_library(bsd-vm-param src/bsd-vm-param.c)
 set_target_properties(bsd-vm-param PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(bsd-vm-param PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_link_libraries(bsd-vm-param PUBLIC posix-stdint posix-stdbool)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()

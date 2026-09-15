@@ -1,3 +1,11 @@
+#ifndef GETOPT_H
+#define GETOPT_H
+
+/**
+ * @file getopt.h
+ * @brief Compatibility header forwarding to linux-getopt.h.
+ */
+
 /* clang-format off */
 #include "linux-getopt.h"
 /* clang-format on */
@@ -9,3 +17,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif /* GETOPT_H */

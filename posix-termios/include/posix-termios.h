@@ -14,6 +14,27 @@ extern "C" {
 #define POSIX_TERMIOS_H
 
 /**
+ * @brief Error codes returned by posix-termios module functions.
+ */
+enum posix_termios_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_TERMIOS_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_TERMIOS_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_TERMIOS_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-termios module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_TERMIOS_SUCCESS on success, or POSIX_TERMIOS_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_termios_error_code posix_termios_get_info(int *out_available);
+
+/**
  * @brief Terminal flag type.
  */
 typedef unsigned int tcflag_t;

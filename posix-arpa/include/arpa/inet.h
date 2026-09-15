@@ -1,14 +1,19 @@
-#if defined(__GNUC__)
-#pragma GCC system_header
-#endif
+#ifndef ARPA_INET_H
+#define ARPA_INET_H
+
+/**
+ * @file arpa/inet.h
+ * @brief Compatibility header forwarding to posix-arpa-inet.h.
+ */
+
+/* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
-/* clang-format off */
 #include_next <arpa/inet.h>
 #else
 #include <arpa/inet.h>
 #endif
-#else
+#endif
 #include "posix-arpa-inet.h"
 /* clang-format on */
 
@@ -20,4 +25,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif
+#endif /* ARPA_INET_H */

@@ -1,8 +1,4 @@
-/* stdint.h - Strict C89 Header */
 #ifndef STDINT_WRAPPER_H
-#if defined(__GNUC__)
-#pragma GCC system_header
-#endif
 #define STDINT_WRAPPER_H
 
 /**

@@ -2,9 +2,13 @@
 #ifndef POSIX_TYPES_H
 #define POSIX_TYPES_H
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+/**
+ * @file posix-types.h
+ * @brief Strict C89 POSIX sys/types.h polyfills and types for MSVC.
+ */
 
 /* clang-format off */
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <basetsd.h>
 #include <sys/types.h>
 #include <time.h>
@@ -26,6 +30,30 @@
 #define _TIME_T_DEFINED
 #define _CLOCKID_T_DEFINED
 #endif
+
+#else
+#include <sys/types.h>
+#include <time.h>
+#if !defined(_MSC_VER) && !defined(_WIN32)
+#include <unistd.h>
+#endif
+
+#if defined(__MINGW32__)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#elif !defined(__MSDOS__) && !defined(__WATCOMC__)
+#include <sys/socket.h>
+#endif
+
+#endif
+#include <stddef.h>
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if defined(__GNUC__)
 #define POSIX_TYPES_EXTENSION __extension__
@@ -55,7 +83,8 @@ typedef SSIZE_T ssize_t;
  * @brief File mode type.
  * MSVC defines this as unsigned short.
  */
-#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_)
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
+    !defined(_MODE_T_)
 #define _MODE_T_DEFINED
 #define _MODE_T_DEFINED_
 #define _MODE_T_
@@ -112,24 +141,6 @@ typedef long long off_t;
 #ifndef _OFF64_T_DEFINED
 #define _OFF64_T_DEFINED
 typedef __int64 off64_t;
-#endif
-
-/**
- * @brief User ID type.
- * MSVC defines this as int.
- */
-#ifndef _UID_T_DEFINED
-#define _UID_T_DEFINED
-typedef int uid_t;
-#endif
-
-/**
- * @brief Group ID type.
- * MSVC defines this as int.
- */
-#ifndef _GID_T_DEFINED
-#define _GID_T_DEFINED
-typedef int gid_t;
 #endif
 
 /**
@@ -294,32 +305,26 @@ typedef long blksize_t;
 typedef long blkcnt_t;
 #endif
 
-#else /* ! _MSC_VER */
+#endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
-#include <sys/types.h>
-#include <time.h>
-#if !defined(_MSC_VER)
-#if !defined(_MSC_VER)
-#include <unistd.h>
-#endif
-#endif
+/**
+ * @brief Error codes returned by posix-types functions.
+ */
+enum posix_types_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_TYPES_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_TYPES_ERROR_NULL_POINTER = 1
+};
 
-#ifdef __MINGW32__
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
-/* DOS has no sys/socket.h */
-#else
-#include <sys/socket.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#endif
-
-#endif /* _MSC_VER */
+/**
+ * @brief Retrieves information on posix-types availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_TYPES_SUCCESS on success, or POSIX_TYPES_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_types_error_code posix_types_get_info(int *out_available);
 
 #ifdef __cplusplus
 }

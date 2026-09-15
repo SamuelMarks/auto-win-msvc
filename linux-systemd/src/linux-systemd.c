@@ -1,16 +1,5 @@
 /* clang-format off */
-#include <errno.h>
-
-
-
-#include <stddef.h>
-#ifndef ENOSYS
-#define ENOSYS 38
-#endif
-/* linux-systemd.c - Strict C89 Implementation */
-
 #include "systemd/sd-daemon.h"
-
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -21,22 +10,16 @@
 #define ENOSYS 38
 #endif
 
-/* linux-systemd.c - Strict C89 Implementation */
-
-#include "systemd/sd-daemon.h"
-
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#endif
 /* clang-format on */
 
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
 #undef FD_ZERO
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
 #define FD_ZERO(set) posix_fd_zero((fd_set *)set)
@@ -73,11 +56,7 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
 #define FD_CLR(fd, set) posix_fd_clr((SOCKET)(fd), (fd_set *)(set))
 #endif
 
-#ifdef _MSC_VER
-#pragma comment(lib, "ws2_32.lib")
-#endif
-
-/* Windows 10 Insider Build 17063+ supports AF_UNIX */
+#if defined(_WIN32)
 #ifndef AF_UNIX
 #define AF_UNIX 1
 #endif
@@ -102,6 +81,20 @@ struct sd_event {
   size_t sources_capacity;
   int run_flag;
 };
+
+/**
+ * @brief Initializes and validates the linux-systemd module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return LINUX_SYSTEMD_SUCCESS on success, or an error code on failure.
+ */
+enum linux_systemd_error_code linux_systemd_init(int *out_status) {
+  if (out_status == NULL) {
+    return LINUX_SYSTEMD_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return LINUX_SYSTEMD_SUCCESS;
+}
 
 /** \brief Notify service manager about state changes. */
 error_type_t sd_notify(int unset_environment, const char *state,
@@ -439,3 +432,5 @@ sd_event *sd_event_unref(sd_event *e) {
   }
   return NULL;
 }
+
+typedef int make_iso_compilers_happy_tu_linux_systemd;

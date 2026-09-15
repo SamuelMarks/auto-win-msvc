@@ -1,13 +1,46 @@
+/* posix-signal.c - Strict C89 Implementation */
+
 /* clang-format off */
 #include <errno.h>
+#include <stddef.h>
+#include <string.h>
+#include "posix-signal.h"
 #ifndef ENOSYS
 #define ENOSYS 38
 #endif
-/* posix-signal.c - Strict C89 Implementation */
-#ifdef _MSC_VER
+#ifndef ESRCH
+#define ESRCH 3
 #endif
-#include "posix-signal.h"
 /* clang-format on */
+
+/**
+ * @brief Retrieves information on posix-signal availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SIGNAL_SUCCESS on success, or POSIX_SIGNAL_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_signal_error_code posix_signal_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_SIGNAL_SUCCESS;
+}
+
+/**
+ * @brief Initializes and validates the posix-signal module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_init(int *out_status) {
+  if (out_status == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return POSIX_SIGNAL_SUCCESS;
+}
 
 #if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32)
 
@@ -18,37 +51,62 @@ __declspec(dllimport) void *__stdcall OpenProcess(unsigned long dwDesiredAccess,
 __declspec(dllimport) int __stdcall TerminateProcess(void *hProcess,
                                                      unsigned int uExitCode);
 __declspec(dllimport) int __stdcall CloseHandle(void *hObject);
+__declspec(dllimport) unsigned long __stdcall GetCurrentProcessId(void);
+__declspec(dllimport) void __stdcall SleepEx(unsigned long dwMilliseconds,
+                                             int bAlertable);
 
 #define PROCESS_TERMINATE 0x0001
 #define PROCESS_QUERY_INFORMATION 0x0400
 
-/** \brief posix_signal_sigemptyset function. */
+/**
+ * @brief Initialize an empty signal set.
+ * @param[out] set Pointer to the signal set to clear.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigemptyset(sigset_t *set) {
-  if (!set)
+  if (!set) {
+    errno = EINVAL;
     return -1;
+  }
   *set = 0;
   return 0;
 }
 
-/** \brief posix_signal_sigfillset function. */
+/**
+ * @brief Initialize a full signal set containing all signals.
+ * @param[out] set Pointer to the signal set to fill.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigfillset(sigset_t *set) {
-  if (!set)
+  if (!set) {
+    errno = EINVAL;
     return -1;
+  }
   *set = ~((sigset_t)0);
   return 0;
 }
 
-/** \brief posix_signal_sigaddset function. */
+/**
+ * @brief Add a signal to a signal set.
+ * @param[in,out] set Pointer to the signal set.
+ * @param[in] signum Signal number to add.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigaddset(sigset_t *set, int signum) {
-  if (!set)
+  if (!set || signum < 1 || signum > 31) {
+    errno = EINVAL;
     return -1;
-  if (signum < 1 || signum > 31)
-    return -1;
+  }
   *set |= (1UL << signum);
   return 0;
 }
 
-/** \brief posix_signal_sigdelset function. */
+/**
+ * @brief Delete a signal from a signal set.
+ * @param[in,out] set Pointer to the signal set.
+ * @param[in] signum Signal number to remove.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigdelset(sigset_t *set, int signum) {
   if (!set || signum < 1 || signum > 31) {
     errno = EINVAL;
@@ -58,7 +116,12 @@ int posix_signal_sigdelset(sigset_t *set, int signum) {
   return 0;
 }
 
-/** \brief posix_signal_sigismember function. */
+/**
+ * @brief Test whether a signal is a member of a signal set.
+ * @param[in] set Pointer to the signal set.
+ * @param[in] signum Signal number to test.
+ * @return 1 if member, 0 if not member, or -1 on error.
+ */
 int posix_signal_sigismember(const sigset_t *set, int signum) {
   if (!set || signum < 1 || signum > 31) {
     errno = EINVAL;
@@ -72,10 +135,26 @@ static void (*g_sigaction_handlers[32])(int, siginfo_t *, void *) = {0};
 static int g_signal_flags[32] = {0};
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-static int is_crt_signal(int signum) {
-  return (signum == SIGINT || signum == SIGILL || signum == SIGFPE ||
-          signum == SIGSEGV || signum == SIGTERM || signum == SIGBREAK ||
-          signum == SIGABRT);
+/**
+ * @brief Checks whether a signal is natively supported by the C runtime.
+ * @param[in] signum Signal number to check.
+ * @param[out] out_is_crt Pointer receiving 1 if native CRT signal, 0 otherwise.
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_is_crt_signal(int signum,
+                                                        int *out_is_crt) {
+  if (out_is_crt == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  *out_is_crt = (signum == SIGINT || signum == SIGILL || signum == SIGFPE ||
+                 signum == SIGSEGV || signum == SIGTERM || signum == SIGABRT
+#ifdef SIGBREAK
+                 || signum == SIGBREAK
+#endif
+                 )
+                    ? 1
+                    : 0;
+  return POSIX_SIGNAL_SUCCESS;
 }
 #endif
 
@@ -113,10 +192,20 @@ typedef struct _EXCEPTION_POINTERS {
 #define EXCEPTION_CONTINUE_SEARCH 0
 #define EXCEPTION_EXECUTE_HANDLER 1
 
+/**
+ * @brief Vectored exception handler for synchronous hardware exceptions.
+ * @param[in] ExceptionInfo Exception information pointers.
+ * @return EXCEPTION_CONTINUE_SEARCH or EXCEPTION_EXECUTE_HANDLER.
+ */
 static long __stdcall veh_handler(EXCEPTION_POINTERS *ExceptionInfo) {
   int signum = 0;
   siginfo_t si;
-  unsigned long code = ExceptionInfo->ExceptionRecord->ExceptionCode;
+  unsigned long code;
+
+  if (ExceptionInfo == NULL || ExceptionInfo->ExceptionRecord == NULL) {
+    return EXCEPTION_CONTINUE_SEARCH;
+  }
+  code = ExceptionInfo->ExceptionRecord->ExceptionCode;
 
   if (code == EXCEPTION_ACCESS_VIOLATION) {
     signum = SIGSEGV;
@@ -146,7 +235,6 @@ static long __stdcall veh_handler(EXCEPTION_POINTERS *ExceptionInfo) {
         si.si_band = 0;
 
         g_sigaction_handlers[signum](signum, &si, ExceptionInfo->ContextRecord);
-        /* Continue execution, assuming the handler resolved the fault */
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (g_signal_handlers[signum] &&
@@ -159,9 +247,14 @@ static long __stdcall veh_handler(EXCEPTION_POINTERS *ExceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
+/**
+ * @brief Internal signal dispatch function.
+ * @param[in] signum Signal number to dispatch.
+ */
 static void internal_signal_handler(int signum) {
-  if (signum < 1 || signum > 31)
+  if (signum < 1 || signum > 31) {
     return;
+  }
 
   if (g_blocked_signals & (1UL << signum)) {
     g_pending_signals |= (1UL << signum);
@@ -188,15 +281,26 @@ static void internal_signal_handler(int signum) {
   }
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  if (is_crt_signal(signum)) {
-    (signal)(signum, internal_signal_handler);
+  {
+    int is_crt = 0;
+    enum posix_signal_error_code sig_rc;
+    sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
+    if (sig_rc == POSIX_SIGNAL_SUCCESS && is_crt) {
+      (signal)(signum, internal_signal_handler);
+    }
   }
 #else
   (signal)(signum, internal_signal_handler);
 #endif
 }
 
-/** \brief posix_signal_sigprocmask function. */
+/**
+ * @brief Examine and change blocked signals.
+ * @param[in] how Action to perform (SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK).
+ * @param[in] set Signal set to apply, or NULL to query.
+ * @param[out] oldset Pointer to receive previous mask, or NULL.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   unsigned long old_blocked = g_blocked_signals;
   unsigned long new_blocked = old_blocked;
@@ -234,8 +338,21 @@ int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
     for (i = 1; i <= 31; i++) {
       if (unblocked & (1UL << i)) {
         g_pending_signals &= ~(1UL << i);
-        if (g_signal_handlers[i] && g_signal_handlers[i] != SIG_DFL &&
-            g_signal_handlers[i] != SIG_IGN) {
+        if (g_signal_flags[i] & SA_SIGINFO) {
+          if (g_sigaction_handlers[i]) {
+            siginfo_t si;
+            si.si_signo = i;
+            si.si_code = 0;
+            si.si_errno = 0;
+            si.si_pid = 0;
+            si.si_uid = 0;
+            si.si_addr = NULL;
+            si.si_status = 0;
+            si.si_band = 0;
+            g_sigaction_handlers[i](i, &si, NULL);
+          }
+        } else if (g_signal_handlers[i] && g_signal_handlers[i] != SIG_DFL &&
+                   g_signal_handlers[i] != SIG_IGN) {
           g_signal_handlers[i](i);
         }
       }
@@ -245,7 +362,11 @@ int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   return 0;
 }
 
-/** \brief posix_signal_sigpending function. */
+/**
+ * @brief Examine pending signals.
+ * @param[out] set Pointer to receive the set of pending signals.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigpending(sigset_t *set) {
   if (!set) {
     errno = EINVAL;
@@ -255,10 +376,11 @@ int posix_signal_sigpending(sigset_t *set) {
   return 0;
 }
 
-__declspec(dllimport) void __stdcall SleepEx(unsigned long dwMilliseconds,
-                                             int bAlertable);
-
-/** \brief posix_signal_sigsuspend function. */
+/**
+ * @brief Wait for a signal with a temporary mask.
+ * @param[in] mask Temporary signal mask.
+ * @return Always returns -1 with errno set to EINTR.
+ */
 int posix_signal_sigsuspend(const sigset_t *mask) {
   sigset_t old_mask;
   if (!mask) {
@@ -268,8 +390,8 @@ int posix_signal_sigsuspend(const sigset_t *mask) {
 
   posix_signal_sigprocmask(SIG_SETMASK, mask, &old_mask);
 
-  /* Wait for an event, typically APC or message */
-  SleepEx(0xFFFFFFFF, 1 /* TRUE */);
+  /* Alertable wait to check for queued APCs */
+  SleepEx(0, 1 /* TRUE */);
 
   /* Restore old mask after waking up */
   posix_signal_sigprocmask(SIG_SETMASK, &old_mask, NULL);
@@ -279,7 +401,13 @@ int posix_signal_sigsuspend(const sigset_t *mask) {
   return -1;
 }
 
-/** \brief posix_signal_sigaction function. */
+/**
+ * @brief Examine and change a signal action.
+ * @param[in] signum Signal number to modify.
+ * @param[in] act New action to set, or NULL to query.
+ * @param[out] oldact Pointer to receive previous action, or NULL.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_sigaction(int signum, const struct sigaction *act,
                            struct sigaction *oldact) {
   void (*prev_handler)(int);
@@ -295,31 +423,41 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
   }
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  if (!is_crt_signal(signum)) {
-    if (oldact) {
-      oldact->sa_handler = g_signal_handlers[signum];
-      oldact->sa_sigaction = g_sigaction_handlers[signum];
-      posix_signal_sigemptyset(&oldact->sa_mask);
-      oldact->sa_flags = g_signal_flags[signum];
+  {
+    int is_crt = 0;
+    enum posix_signal_error_code sig_rc;
+    sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
+    if (sig_rc != POSIX_SIGNAL_SUCCESS) {
+      errno = EINVAL;
+      return -1;
     }
-    if (act) {
-      g_signal_flags[signum] = act->sa_flags;
-      if (act->sa_flags & SA_SIGINFO) {
-        g_sigaction_handlers[signum] = act->sa_sigaction;
-        g_signal_handlers[signum] = NULL;
-      } else {
-        g_sigaction_handlers[signum] = NULL;
-        g_signal_handlers[signum] = act->sa_handler;
+    if (!is_crt) {
+      if (oldact) {
+        oldact->sa_handler = g_signal_handlers[signum];
+        oldact->sa_sigaction = g_sigaction_handlers[signum];
+        posix_signal_sigemptyset(&oldact->sa_mask);
+        oldact->sa_flags = g_signal_flags[signum];
+        oldact->sa_restorer = NULL;
       }
+      if (act) {
+        g_signal_flags[signum] = act->sa_flags;
+        if (act->sa_flags & SA_SIGINFO) {
+          g_sigaction_handlers[signum] = act->sa_sigaction;
+          g_signal_handlers[signum] = NULL;
+        } else {
+          g_sigaction_handlers[signum] = NULL;
+          g_signal_handlers[signum] = act->sa_handler;
+        }
+      }
+      return 0;
     }
-    return 0;
   }
 #endif
 
   if (act) {
     if (!g_veh_handle) {
       g_veh_handle =
-          AddVectoredExceptionHandler(1, (void *)(intptr_t)veh_handler);
+          AddVectoredExceptionHandler(1, (void *)(size_t)veh_handler);
     }
     g_signal_flags[signum] = act->sa_flags;
     if (act->sa_flags & SA_SIGINFO) {
@@ -349,6 +487,7 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
       }
       posix_signal_sigemptyset(&oldact->sa_mask);
       oldact->sa_flags = g_signal_flags[signum];
+      oldact->sa_restorer = NULL;
     }
   } else if (oldact) {
     prev_handler = (signal)(signum, SIG_IGN);
@@ -365,12 +504,18 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
     }
     posix_signal_sigemptyset(&oldact->sa_mask);
     oldact->sa_flags = g_signal_flags[signum];
+    oldact->sa_restorer = NULL;
   }
 
   return 0;
 }
 
-/** \brief posix_signal_signal function. */
+/**
+ * @brief Set a signal handling function.
+ * @param[in] signum Signal number.
+ * @param[in] handler Function pointer for signal handler.
+ * @return Previous handler on success, or SIG_ERR on error.
+ */
 posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler) {
   posix_sighandler_t prev;
   if (signum < 1 || signum > 31) {
@@ -378,34 +523,136 @@ posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler) {
     return SIG_ERR;
   }
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  if (!is_crt_signal(signum)) {
-    prev = g_signal_handlers[signum];
-    g_signal_handlers[signum] = handler;
-    return prev ? prev : SIG_DFL;
+  {
+    int is_crt = 0;
+    enum posix_signal_error_code sig_rc;
+    sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
+    if (sig_rc != POSIX_SIGNAL_SUCCESS) {
+      errno = EINVAL;
+      return SIG_ERR;
+    }
+    if (!is_crt) {
+      prev = g_signal_handlers[signum];
+      g_signal_handlers[signum] = handler;
+      return prev ? prev : SIG_DFL;
+    }
   }
 #endif
   return (signal)(signum, handler);
 }
-/** \brief posix_signal_kill function. */
+
+/**
+ * @brief Send a signal to a process.
+ * @param[in] pid Process ID of target process.
+ * @param[in] sig Signal number to send.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_signal_kill(pid_t pid, int sig) {
   void *hProcess;
-  if (pid <= 0)
+  if (pid <= 0) {
+    errno = EINVAL;
     return -1;
+  }
   if (sig == 0) {
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, 0, (unsigned long)pid);
     if (hProcess) {
       CloseHandle(hProcess);
       return 0;
     }
+    errno = ESRCH;
     return -1;
   }
 
   hProcess = OpenProcess(PROCESS_TERMINATE, 0, (unsigned long)pid);
-  if (!hProcess)
+  if (!hProcess) {
+    errno = ESRCH;
     return -1;
+  }
   TerminateProcess(hProcess, (unsigned int)sig);
   CloseHandle(hProcess);
   return 0;
+}
+
+/**
+ * @brief Retrieves the current process ID.
+ * @param[out] out_pid Pointer to pid_t receiving current PID.
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_get_current_pid(pid_t *out_pid) {
+  if (out_pid == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  *out_pid = (pid_t)GetCurrentProcessId();
+  return POSIX_SIGNAL_SUCCESS;
+}
+
+/**
+ * @brief Simulates exception handling for posix-signal testing.
+ * @param[in] code Exception code to simulate.
+ * @param[out] out_result Pointer to receive the handler result.
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_simulate_exception(unsigned long code,
+                                                             long *out_result) {
+  EXCEPTION_RECORD rec;
+  EXCEPTION_POINTERS ep;
+  if (out_result == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  if (code == 0) {
+    *out_result = veh_handler(NULL);
+    return POSIX_SIGNAL_SUCCESS;
+  }
+  if (code == 1) {
+    ep.ExceptionRecord = NULL;
+    ep.ContextRecord = NULL;
+    *out_result = veh_handler(&ep);
+    return POSIX_SIGNAL_SUCCESS;
+  }
+  memset(&rec, 0, sizeof(rec));
+  rec.ExceptionCode = code;
+  rec.ExceptionInformation[1] = (size_t)0x1234;
+  ep.ExceptionRecord = &rec;
+  ep.ContextRecord = NULL;
+  *out_result = veh_handler(&ep);
+  return POSIX_SIGNAL_SUCCESS;
+}
+
+/**
+ * @brief Simulates signal handling for posix-signal testing.
+ * @param[in] signum Signal number to simulate.
+ * @param[out] out_status Pointer to receive completion status.
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_simulate_signal(int signum,
+                                                          int *out_status) {
+  if (out_status == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  internal_signal_handler(signum);
+  *out_status = 1;
+  return POSIX_SIGNAL_SUCCESS;
+}
+
+/**
+ * @brief Resets all internal signal handler state.
+ * @param[out] out_status Pointer to integer receiving status (1).
+ * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ */
+enum posix_signal_error_code posix_signal_reset(int *out_status) {
+  int i;
+  if (out_status == NULL) {
+    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+  }
+  for (i = 0; i < 32; ++i) {
+    g_signal_handlers[i] = NULL;
+    g_sigaction_handlers[i] = NULL;
+    g_signal_flags[i] = 0;
+  }
+  g_blocked_signals = 0;
+  g_pending_signals = 0;
+  *out_status = 1;
+  return POSIX_SIGNAL_SUCCESS;
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)

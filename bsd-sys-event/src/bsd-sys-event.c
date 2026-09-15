@@ -1,14 +1,18 @@
 /* clang-format off */
 #include "bsd-sys-event.h"
 #include <errno.h>
+#include <stddef.h>
 /* clang-format on */
-#if defined(_MSC_VER) && !defined(__clang__)
-/** \brief kqueue function. */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+/** @brief Creates a new kernel event queue stub. */
 int kqueue(void) {
-  errno = EINVAL;
+  errno = ENOSYS;
   return -1;
 }
-/** \brief kevent function. */
+
+/** @brief Registers events with queue stub. */
 int kevent(int kq, const struct kevent *changelist, int nchanges,
            struct kevent *eventlist, int nevents,
            const struct timespec *timeout) {
@@ -18,12 +22,24 @@ int kevent(int kq, const struct kevent *changelist, int nchanges,
   (void)eventlist;
   (void)nevents;
   (void)timeout;
-  errno = EINVAL;
+  errno = ENOSYS;
   return -1;
 }
 #endif
 
-/* Dummy function to prevent empty translation unit */
-int dummy_bsd_sys_event(void) { return 0; }
+/** @brief Retrieves whether kqueue is natively supported on the host platform.
+ */
+enum bsd_sys_event_error_code bsd_sys_event_get_support(int *out_supported) {
+  if (out_supported == NULL) {
+    return BSD_SYS_EVENT_ERROR_NULL_POINTER;
+  }
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||      \
+    defined(__NetBSD__)
+  *out_supported = 1;
+#else
+  *out_supported = 0;
+#endif
+  return BSD_SYS_EVENT_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_event;

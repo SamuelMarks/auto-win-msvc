@@ -1,14 +1,18 @@
+#ifndef HAIKU_OS_STUB
+#define HAIKU_OS_STUB
+
+/**
+ * @file OS.h
+ * @brief Polyfill for Haiku <OS.h>.
+ */
+
+/* clang-format off */
+#include "haiku-os.h"
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* haiku-os/include/OS.h - Strict C89 Implementation */
-#ifndef HAIKU_OS_STUB
-#define HAIKU_OS_STUB
-
-/* Stub for Haiku OS.h. Valkey includes it but relies on POSIX mostly on other
- * systems. */
 
 #ifdef __cplusplus
 }

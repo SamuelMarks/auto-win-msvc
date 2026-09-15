@@ -1,75 +1,94 @@
-/* posix-arpa-inet.h - Strict C89 Header */
 #ifndef POSIX_ARPA_INET_H
 #define POSIX_ARPA_INET_H
 
 /**
  * @file posix-arpa-inet.h
- * @brief POSIX arpa/inet.h implementation for MSVC
- *
- * This header provides the POSIX inet_aton function
- * implemented using safe Microsoft CRT extensions.
+ * @brief POSIX arpa/inet.h implementation and polyfills for MSVC.
  */
 
+/* clang-format off */
+#include <stddef.h>
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #endif
-#endif
 struct in_addr {
-    uint32_t s_addr;
+  unsigned long s_addr;
 };
 #ifndef htonl
-#define posix_htonl(x) ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) | (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
-#define htonl(x) posix_htonl(x)
+#define htonl(x) ((((x) & 0xff000000UL) >> 24) | (((x) & 0x00ff0000UL) >> 8) | (((x) & 0x0000ff00UL) << 8) | (((x) & 0x000000ffUL) << 24))
 #endif
 #else
-#include <arpa/inet.h>
-/* clang-format on */
+#include <sys/types.h>
+#include <netinet/in.h>
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
-
-/**
- * @brief Converts the Internet host address cp from the IPv4 numbers-and-dots
- * notation into binary form.
- *
- * @param cp The input IP address string.
- * @param inp Pointer to a struct in_addr where the result will be stored.
- * @return 1 if the address is valid, 0 if not.
- */
-int posix_inet_aton(const char *cp, struct in_addr *inp);
-
-#ifndef inet_aton
-#define inet_aton posix_inet_aton
+#ifndef INADDR_NONE
+/** @brief Constant indicating an invalid IP address. */
+#define INADDR_NONE 0xffffffffUL
 #endif
 
 /**
- * @brief Converts the Internet host address cp from IPv4 numbers-and-dots
- * notation into binary data in network byte order.
- *
+ * @brief Error codes returned by posix-arpa-inet functions.
+ */
+enum posix_arpa_inet_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_ARPA_INET_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_ARPA_INET_ERROR_NULL_POINTER = 1,
+  /** @brief The provided IP address string was invalid. */
+  POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Parses an IPv4 address in numbers-and-dots notation into binary form.
+ * @param cp The input IP address string.
+ * @param[out] out_addr Pointer to struct in_addr receiving the parsed binary
+ * address.
+ * @return POSIX_ARPA_INET_SUCCESS on success, or an error code on failure.
+ */
+enum posix_arpa_inet_error_code
+posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr);
+
+/**
+ * @brief Converts IPv4 numbers-and-dots notation into binary form in network
+ * byte order.
+ * @param cp The input IP address string.
+ * @param[out] inp Pointer to struct in_addr where the result is stored.
+ * @return 1 if the address is valid, or 0 if invalid.
+ */
+int posix_inet_aton(const char *cp, struct in_addr *inp);
+
+/**
+ * @brief Converts IPv4 numbers-and-dots notation into binary data in network
+ * byte order.
  * @param cp The input IP address string.
  * @return The IP address in network byte order, or INADDR_NONE if invalid.
  */
 unsigned long posix_inet_addr(const char *cp);
 
-#ifndef inet_addr
-#define inet_addr posix_inet_addr
+#if defined(_MSC_VER) || defined(_WIN32)
+#ifndef inet_aton
+/** @brief Macro mapping inet_aton to posix_inet_aton on Windows. */
+#define inet_aton posix_inet_aton
 #endif
 
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#ifndef inet_addr
+/** @brief Macro mapping inet_addr to posix_inet_addr on Windows. */
+#define inet_addr posix_inet_addr
+#endif
+#endif
 
 #ifdef __cplusplus
 }

@@ -6,11 +6,15 @@
 /* clang-format on */
 
 TEST test_posix_getsockopt(void) {
-  SKIP(); /* Generated stub for posix_getsockopt */
+  int rc = posix_getsockopt(-1, 0, 0, NULL, NULL);
+  ASSERT_EQ(-1, rc);
+  PASS();
 }
 
 TEST test_posix_setsockopt(void) {
-  SKIP(); /* Generated stub for posix_setsockopt */
+  int rc = posix_setsockopt(-1, 0, 0, NULL, 0);
+  ASSERT_EQ(-1, rc);
+  PASS();
 }
 
 SUITE(suite_posix_sockets_sockopt) {

@@ -90,8 +90,8 @@ def update_readme():
             shields = f"![Doc Coverage](https://img.shields.io/badge/doc__coverage-{doc_cov:.0f}%25-{doc_color})\n![Test Coverage](https://img.shields.io/badge/test__coverage-{test_cov:.0f}%25-{test_color})\n"
 
             insert_pos = title_match.end()
-            readme = readme[:insert_pos] + shields + readme[insert_pos:]
-
+            readme = readme[:insert_pos] + shields + readme[insert_pos:].lstrip("\n")
+            readme = re.sub(r"\n{3,}", "\n\n", readme)
             with open(readme_path, 'w', encoding='utf-8') as f:
                 f.write(readme)
 

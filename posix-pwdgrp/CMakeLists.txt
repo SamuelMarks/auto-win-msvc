@@ -89,7 +89,6 @@ if(WIN32 OR MINGW)
     target_link_libraries(posix-pwdgrp PUBLIC netapi32 advapi32 userenv ole32)
 endif()
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-pwdgrp ${TEST_SOURCES})
@@ -98,7 +97,6 @@ target_include_directories(test_posix-pwdgrp PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_posix-pwdgrp PRIVATE posix-pwdgrp)
 add_test(NAME test_posix-pwdgrp COMMAND test_posix-pwdgrp)
-endif()
 
 if(MSVC)
     target_compile_options(posix-pwdgrp PRIVATE )

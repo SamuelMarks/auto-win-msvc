@@ -2,6 +2,11 @@
 #ifndef POSIX_CORE_H
 #define POSIX_CORE_H
 
+/**
+ * @file posix-core.h
+ * @brief POSIX core standard polyfills and utilities.
+ */
+
 #ifndef _ERROR_TYPE_T_DEFINED
 #define _ERROR_TYPE_T_DEFINED
 typedef int error_type_t;
@@ -11,9 +16,72 @@ typedef int error_type_t;
 /* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+#include <direct.h>
+#include <fcntl.h>
+#include <process.h>
+#include <share.h>
+#include <sys/stat.h>
+#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+#include <process.h>
+#include <share.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#if !defined(_MSC_VER)
+#include <unistd.h>
+#endif
+#else
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#if !defined(_MSC_VER)
+#include <unistd.h>
+#endif
+#endif
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Error codes returned by posix-core operations.
+ */
+enum posix_core_error_code {
+  /** @brief Successful operation. */
+  POSIX_CORE_SUCCESS = 0,
+  /** @brief Null pointer passed as argument. */
+  POSIX_CORE_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument passed. */
+  POSIX_CORE_ERROR_INVALID_ARGUMENT = 2,
+  /** @brief Operation failed or system error. */
+  POSIX_CORE_ERROR_OPERATION_FAILED = 3
+};
+
+/**
+ * @brief Initializes and validates the posix-core module.
+ * @param[out] out_status Pointer to an integer that receives the initialized
+ * status.
+ * @return POSIX_CORE_SUCCESS on success, or an error code on failure.
+ */
+enum posix_core_error_code posix_core_init(int *out_status);
 
 #ifndef NUM_FORMAT_CAST
 #if defined(_MSC_VER)
@@ -32,11 +100,6 @@ typedef int error_type_t;
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
 #if defined(_MSC_VER)
 #ifndef EACCES
 #define EACCES 13
@@ -91,7 +154,8 @@ typedef int ssize_t;
 typedef int pid_t;
 #endif
 
-#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_)
+#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
+    !defined(_MODE_T_)
 #define _MODE_T_DEFINED
 #define _MODE_T_DEFINED_
 #define _MODE_T_
@@ -123,43 +187,7 @@ typedef int gid_t;
 #endif
 #endif
 
-#include <direct.h>
-#include <fcntl.h>
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <process.h>
-#include <share.h>
-#include <sys/stat.h>
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
-#include <fcntl.h>
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <process.h>
-#include <share.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#if !defined(_MSC_VER)
-#if !defined(_MSC_VER)
-#include <unistd.h>
-#endif
-#endif
-#else
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#if !defined(_MSC_VER)
-#if !defined(_MSC_VER)
-#include <unistd.h>
-#endif
-#endif
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -317,6 +345,7 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 
 #ifndef _FLOCK_DEFINED
 #define _FLOCK_DEFINED
+/** @brief flock structure */
 struct flock {
   short l_type;
   short l_whence;
@@ -343,7 +372,6 @@ struct flock {
 #endif
 
 /* NUM_FORMAT macro for cross-platform printf of 64-bit integers */
-
 
 /* Functions */
 /** @brief open */
@@ -390,38 +418,38 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /* open */
 #endif
 /** @brief close */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int posix_close(intptr_t fd);
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef close
 #define close posix_close
 #endif
 #endif
-#else
-/* close */
 #endif
+
 /** @brief read */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 ssize_t posix_read(intptr_t fd, void *buf, size_t count);
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef read
 #define read posix_read
 #endif
 #endif
-#else
-/* read */
 #endif
+
 /** @brief write */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef write
 #define write posix_write
 #endif
 #endif
-#else
-/* write */
 #endif
+
+/** @brief Open file descriptor with POSIX semantics. */
+int posix_open(const char *pathname, int flags, ...);
+
 /** @brief lseek */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef lseek
@@ -439,13 +467,11 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
 /* dup */
 #endif
 /** @brief dup2 */
+int posix_dup2(int oldfd, int newfd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef dup2
 #define dup2 posix_dup2
-int posix_dup2(int oldfd, int newfd);
 #endif
-#else
-/* dup2 */
 #endif
 /** @brief fsync */
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -586,6 +612,7 @@ static __inline int posix_core_usleep(unsigned int usec) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef isatty
 #define isatty posix_isatty
+/** @brief Check if file descriptor is a tty. */
 extern int posix_isatty(intptr_t fd);
 #endif
 #else
@@ -604,15 +631,19 @@ extern int posix_isatty(intptr_t fd);
 #ifndef creat
 static __inline int posix_core_creat(const char *filename, int pmode) {
   int fd = -1;
+  int win_pmode = pmode & (_S_IREAD | _S_IWRITE);
+  if (win_pmode == 0) {
+    win_pmode = _S_IREAD | _S_IWRITE;
+  }
 #if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
     _MSC_VER >= 1400
-  if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO,
-               pmode) != 0) {
+  if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY,
+               _SH_DENYNO, win_pmode) != 0) {
     return -1;
   }
   return fd;
 #else
-  return _creat(filename, pmode);
+  return _creat(filename, win_pmode);
 #endif
 }
 #define creat posix_core_creat
@@ -620,32 +651,52 @@ static __inline int posix_core_creat(const char *filename, int pmode) {
 #else
 /* creat */
 #endif
-/** @brief fcntl */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief fcntl */
 int fcntl(intptr_t fd, int cmd, ...);
 #else
 /* fcntl */
 #endif
-/** @brief openat */
+/** \brief Special value to indicate current working directory for at-functions.
+ */
+#ifndef AT_FDCWD
+#define AT_FDCWD -100
+#endif
+
+/** \brief Flag to not follow symlinks for at-functions. */
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW 0x100
+#endif
+
+/** \brief Flag to check effective user/group IDs for at-functions. */
+#ifndef AT_EACCESS
+#define AT_EACCESS 0x200
+#endif
+
+/** \brief Flag to remove directory instead of unlinking file for unlinkat. */
+#ifndef AT_REMOVEDIR
+#define AT_REMOVEDIR 0x200
+#endif
+
+/** \brief Flag to follow symlinks for linkat. */
+#ifndef AT_SYMLINK_FOLLOW
+#define AT_SYMLINK_FOLLOW 0x400
+#endif
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief openat */
 int openat(int dirfd, const char *pathname, int flags, ...);
 #else
 /* openat */
 #endif
 /** @brief posix_fadvise */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
-#else
 /* posix_fadvise */
-#endif
+
 /** @brief posix_fallocate */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
-#else
 /* posix_fallocate */
-#endif
 /** @brief sync_file_range */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef SYNC_FILE_RANGE_WAIT_BEFORE
 #define SYNC_FILE_RANGE_WAIT_BEFORE 1
 #endif
@@ -656,18 +707,17 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #define SYNC_FILE_RANGE_WAIT_AFTER 4
 #endif
 /** \brief sync_file_range function. */
-int sync_file_range(intptr_t fd, off_t offset, off_t nbytes, unsigned int flags);
-#else
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
+                    unsigned int flags);
 /* sync_file_range */
-#endif
-/** @brief alarm */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief alarm */
 unsigned int alarm(unsigned int seconds);
 #else
 /* alarm */
 #endif
-/** @brief chown */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief chown */
 int chown(const char *pathname, uid_t owner, gid_t group);
 #else
 /* chown */
@@ -676,57 +726,51 @@ int chown(const char *pathname, uid_t owner, gid_t group);
 #define _CS_PATH 1
 #endif
 
-/** @brief confstr */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief confstr */
 size_t confstr(int name, char *buf, size_t len);
 #else
 /* confstr */
 #endif
-/** @brief crypt */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief crypt */
 char *crypt(const char *key, const char *salt);
 #else
 /* crypt */
 #endif
-/** @brief encrypt */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief encrypt */
 void encrypt(char block[64], int edflag);
 #else
 /* encrypt */
 #endif
-/** @brief faccessat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief faccessat */
 int faccessat(int dirfd, const char *pathname, int mode, int flags);
 #else
 /* faccessat */
 #endif
-/** @brief fchown */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief fchown */
 int fchown(intptr_t fd, uid_t owner, gid_t group);
 #else
 /* fchown */
 #endif
-/** @brief fchownat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief fchownat */
 int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
              int flags);
 #else
 /* fchownat */
 #endif
 /** @brief fdatasync */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int fdatasync(intptr_t fd);
-#else
 /* fdatasync */
-#endif
 /** @brief fexecve */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
-#else
 /* fexecve */
-#endif
-/** @brief fork */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief fork */
 int fork(void);
 #else
 /* fork */
@@ -743,44 +787,44 @@ int fork(void);
 #define _PC_VDISABLE 9
 #endif
 
-/** @brief fpathconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief fpathconf */
 long fpathconf(intptr_t fd, int name);
 #else
 /* fpathconf */
 #endif
-/** @brief getegid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getegid */
 gid_t getegid(void);
 #else
 /* getegid */
 #endif
-/** @brief geteuid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief geteuid */
 uid_t geteuid(void);
 #else
 /* geteuid */
 #endif
-/** @brief getgid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getgid */
 gid_t getgid(void);
 #else
 /* getgid */
 #endif
-/** @brief getgroups */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getgroups */
 int getgroups(int size, gid_t list[]);
 #else
 /* getgroups */
 #endif
-/** @brief setgroups */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setgroups */
 int setgroups(size_t size, const gid_t *list);
 #else
 /* setgroups */
 #endif
-/** @brief gethostid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief gethostid */
 long gethostid(void);
 #else
 /* gethostid */
@@ -791,217 +835,219 @@ long gethostid(void);
 #else
 /* gethostname */
 #endif
-/** @brief getlogin */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getlogin */
 char *getlogin(void);
 #else
 /* getlogin */
 #endif
-/** @brief getlogin_r */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getlogin_r */
 int getlogin_r(char *buf, size_t bufsize);
 #else
 /* getlogin_r */
 #endif
 /** @brief getopt */
 #if defined(_WIN32) && !defined(__CYGWIN__) && defined(_MSC_VER)
-#if defined(posix_core_EXPORTS)
-#define POSIX_CORE_API __declspec(dllexport)
+#if defined(posix_core_BUILD_DLL)
+#define POSIX_CORE_DECL __declspec(dllexport)
 #elif defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
-#define POSIX_CORE_API
+#define POSIX_CORE_DECL
 #elif defined(posix_core_SHARED) || defined(BUILD_SHARED_LIBS)
-#define POSIX_CORE_API __declspec(dllimport)
+#define POSIX_CORE_DECL __declspec(dllimport)
 #else
-#define POSIX_CORE_API
+#define POSIX_CORE_DECL
 #endif
 
-extern POSIX_CORE_API char *optarg;
-extern POSIX_CORE_API int optind;
-extern POSIX_CORE_API int opterr;
-extern POSIX_CORE_API int optopt;
-POSIX_CORE_API int getopt(int argc, char *const argv[], const char *optstring);
+/** @brief Current option argument pointer. */
+extern POSIX_CORE_DECL char *optarg;
+/** @brief Index of next element to be processed in argv. */
+extern POSIX_CORE_DECL int optind;
+/** @brief Whether getopt prints error messages. */
+extern POSIX_CORE_DECL int opterr;
+/** @brief Last unknown option character. */
+extern POSIX_CORE_DECL int optopt;
+/** @brief Parse command-line options. */
+POSIX_CORE_DECL int getopt(int argc, char *const argv[], const char *optstring);
 #elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(_MSC_VER)
-#include <getopt.h>
+/* getopt provided by environment */
 #else
 /* getopt */
 #endif
-/** @brief getsubopt */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getsubopt */
 int getsubopt(char **optionp, char *const *tokens, char **valuep);
 #else
 /* getsubopt */
 #endif
-/** @brief getpgid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getpgid */
 pid_t getpgid(pid_t pid);
 #else
 /* getpgid */
 #endif
-/** @brief getpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getpgrp */
 pid_t getpgrp(void);
 #else
 /* getpgrp */
 #endif
-/** @brief getppid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getppid */
 pid_t getppid(void);
 #else
 /* getppid */
 #endif
-/** @brief getsid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getsid */
 pid_t getsid(pid_t pid);
 #else
 /* getsid */
 #endif
-/** @brief getuid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getuid */
 uid_t getuid(void);
 #else
 /* getuid */
 #endif
-/** @brief lchown */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief lchown */
 int lchown(const char *pathname, uid_t owner, gid_t group);
 #else
 /* lchown */
 #endif
-/** @brief link */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief link */
 int link(const char *oldpath, const char *newpath);
 #else
 /* link */
 #endif
-/** @brief linkat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief linkat */
 int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
            int flags);
 #else
 /* linkat */
 #endif
-/** @brief lockf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief lockf */
 int lockf(intptr_t fd, int cmd, off_t len);
 #else
 /* lockf */
 #endif
-/** @brief pathconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief pathconf */
 long pathconf(const char *pathname, int name);
 #else
 /* pathconf */
 #endif
-/** @brief pause */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief pause */
 int pause(void);
 #else
 /* pause */
 #endif
-/** @brief pipe */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief pipe */
 int pipe(int pipefd[2]);
 #else
 /* pipe */
 #endif
 /** @brief pipe2 */
-#if defined(_WIN32) && !defined(__CYGWIN__)
 int pipe2(int pipefd[2], int flags);
-#else
 /* pipe2 */
-#endif
-/** @brief pread */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief pread */
 ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset);
 #else
 /* pread */
 #endif
-/** @brief pwrite */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief pwrite */
 ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset);
 #else
 /* pwrite */
 #endif
-/** @brief readlink */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief readlink */
 ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
 #else
 /* readlink */
 #endif
-/** @brief readlinkat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief readlinkat */
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 #else
 /* readlinkat */
 #endif
-/** @brief setegid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setegid */
 int setegid(gid_t egid);
 #else
 /* setegid */
 #endif
-/** @brief seteuid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief seteuid */
 int seteuid(uid_t euid);
 #else
 /* seteuid */
 #endif
-/** @brief setgid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setgid */
 int setgid(gid_t gid);
 #else
 /* setgid */
 #endif
-/** @brief setpgid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setpgid */
 int setpgid(pid_t pid, pid_t pgid);
 #else
 /* setpgid */
 #endif
-/** @brief setpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setpgrp */
 pid_t setpgrp(void);
 #else
 /* setpgrp */
 #endif
-/** @brief setregid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setregid */
 int setregid(gid_t rgid, gid_t egid);
 #else
 /* setregid */
 #endif
-/** @brief setreuid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setreuid */
 int setreuid(uid_t ruid, uid_t euid);
 #else
 /* setreuid */
 #endif
-/** @brief setsid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setsid */
 pid_t setsid(void);
 #else
 /* setsid */
 #endif
-/** @brief setuid */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief setuid */
 int setuid(uid_t uid);
 #else
 /* setuid */
 #endif
-/** @brief symlink */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief symlink */
 int symlink(const char *target, const char *linkpath);
 #else
 /* symlink */
 #endif
-/** @brief symlinkat */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief symlinkat */
 int symlinkat(const char *target, int newdirfd, const char *linkpath);
 #else
 /* symlinkat */
 #endif
-/** @brief sync */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief sync */
 void sync(void);
 #else
 /* sync */
@@ -1016,50 +1062,50 @@ void sync(void);
 #define _SC_AVPHYS_PAGES 6
 #endif
 
-/** @brief sysconf */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief sysconf */
 long sysconf(int name);
 #else
 /* sysconf */
 #endif
-/** @brief tcgetpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief tcgetpgrp */
 pid_t tcgetpgrp(intptr_t fd);
 #else
 /* tcgetpgrp */
 #endif
-/** @brief tcsetpgrp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief tcsetpgrp */
 int tcsetpgrp(intptr_t fd, pid_t pgrp);
 #else
 /* tcsetpgrp */
 #endif
-/** @brief truncate */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief truncate */
 int truncate(const char *path, off_t length);
 #else
 /* truncate */
 #endif
-/** @brief ttyname */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief ttyname */
 char *ttyname(intptr_t fd);
 #else
 /* ttyname */
 #endif
-/** @brief ttyname_r */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief ttyname_r */
 int ttyname_r(intptr_t fd, char *buf, size_t buflen);
 #else
 /* ttyname_r */
 #endif
-/** @brief ualarm */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief ualarm */
 useconds_t ualarm(useconds_t value, useconds_t interval);
 #else
 /* ualarm */
 #endif
-/** @brief vfork */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief vfork */
 pid_t vfork(void);
 #else
 /* vfork */
@@ -1111,55 +1157,39 @@ pid_t vfork(void);
 #endif
 
 /** @brief rename (POSIX semantics) */
+int posix_rename(const char *oldpath, const char *newpath);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #undef rename
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <stdio.h>
-int posix_rename(const char *oldpath, const char *newpath);
 #ifndef rename
 #define rename(oldpath, newpath) posix_rename((oldpath), (newpath))
 #endif
-#else
-/* rename is standard on POSIX */
 #endif
 
 /** @brief mkstemp (POSIX semantics with SHARE_DELETE) */
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <stdlib.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int posix_mkstemp(char *tmpl);
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef mkstemp
 #define mkstemp posix_mkstemp
 #endif
-#else
-/* mkstemp is standard on POSIX */
 #endif
 
-/** @brief getdelim */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getdelim */
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
 #else
 /* getdelim */
 #endif
 
-/** @brief getline */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief getline */
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #else
 /* getline */
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode);
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef fopen
 #define fopen posix_fopen
@@ -1171,4 +1201,4 @@ FILE *posix_fopen(const char *pathname, const char *mode);
 }
 #endif /* __cplusplus */
 
-#endif
+#endif /* POSIX_CORE_H */

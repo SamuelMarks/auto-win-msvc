@@ -1,17 +1,21 @@
+#ifndef HV_HLOOP_H
+#define HV_HLOOP_H
+
+/**
+ * @file hv/hloop.h
+ * @brief Compatibility header forwarding to linux-hv-hloop.h.
+ */
+
+/* clang-format off */
+#include "linux-hv-hloop.h"
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* linux-hv-hloop/include/hv/hloop.h - Strict C89 Implementation */
-#ifndef LINUX_HV_HLOOP_STUB
-#define LINUX_HV_HLOOP_STUB
-
-/* Stub for libhv event loop. Valkey uses ae.c or adapters. This is just a stub
- * for missing headers. */
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* LINUX_HV_HLOOP_STUB */
+#endif /* HV_HLOOP_H */

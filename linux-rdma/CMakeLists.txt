@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(linux-rdma VERSION 0.1.0 LANGUAGES C)
 
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -27,24 +23,17 @@ include(FetchContent)
 if(NOT TARGET greatest)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
 FetchContent_MakeAvailable(greatest)
-
 endif()
-
-
-
 
 add_library(linux-rdma src/linux-rdma.c)
 set_target_properties(linux-rdma PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-rdma PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_link_libraries(linux-rdma PUBLIC posix-stdint posix-stdbool)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-rdma ${TEST_SOURCES})
 target_link_libraries(test_linux-rdma PRIVATE linux-rdma greatest)
 add_test(NAME test_linux-rdma COMMAND test_linux-rdma)
-endif()
 
 if(MSVC)
     target_compile_options(linux-rdma PRIVATE )

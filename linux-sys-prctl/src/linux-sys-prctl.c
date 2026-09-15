@@ -1,13 +1,14 @@
 /* clang-format off */
-#include <errno.h>
-#ifndef ENOSYS
-#define ENOSYS 38
-#endif
 #include "linux-sys-prctl.h"
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
 /* clang-format on */
+
+#ifndef ENOSYS
+#define ENOSYS 38
+#endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
 
@@ -127,7 +128,7 @@ static int g_pdeathsig_signum = 0;
  *
  * \param option The operation to perform.
  * \param ... Variable arguments based on the option.
- * \return 0 on success, or -1 on error with errno set.
+ * eturn 0 on success, or non-zero error code.
  */
 error_type_t prctl(int option, ...) {
   va_list ap;
@@ -164,17 +165,11 @@ error_type_t prctl(int option, ...) {
         info.szName = name;
         info.dwThreadID = (DWORD)-1;
         info.dwFlags = 0;
-#ifdef _MSC_VER
-
-#endif /* _MSC_VER */
         __try {
           RaiseException(0x406D1388, 0, sizeof(info) / sizeof(ULONG_PTR),
                          (const ULONG_PTR *)&info);
         } __except (1) {
         }
-#ifdef _MSC_VER
-
-#endif /* _MSC_VER */
       }
 #endif
       return ERR_NONE;
@@ -332,9 +327,27 @@ error_type_t prctl(int option, ...) {
   return ENOSYS;
 }
 
+#elif defined(_WIN32)
+
+error_type_t prctl(int option, ...) {
+  (void)option;
+  return ENOSYS;
+}
+
 #endif
 
-/* Dummy function to prevent empty translation unit */
-int dummy_linux_sys_prctl(void) { return 0; }
+/**
+ * @brief Initializes and validates the linux-sys-prctl module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return LINUX_SYS_PRCTL_SUCCESS on success, or an error code on failure.
+ */
+enum linux_sys_prctl_error_code linux_sys_prctl_init(int *out_status) {
+  if (out_status == NULL) {
+    return LINUX_SYS_PRCTL_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return LINUX_SYS_PRCTL_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_linux_sys_prctl;

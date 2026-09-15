@@ -11,7 +11,27 @@
  */
 
 /* clang-format off */
+#ifdef _WIN32
 #include <stddef.h>
+#else
+#include <grp.h>
+#include <pwd.h>
+#include <stddef.h>
+#include <sys/types.h>
+#endif
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef _ERROR_TYPE_T_DEFINED
+#define _ERROR_TYPE_T_DEFINED
+/** @brief Error type representation for non-standard functions. */
+typedef int error_type_t;
+/** @brief Success indicator for error_type_t. */
+#define ERR_NONE 0
+#endif
 
 #ifdef _WIN32
 
@@ -168,17 +188,6 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
  * @brief Rewinds the user database to the beginning.
  */
 void setpwent(void);
-
-#else /* _WIN32 */
-
-#include <grp.h>
-#include <pwd.h>
-#include <sys/types.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #endif /* _WIN32 */
 

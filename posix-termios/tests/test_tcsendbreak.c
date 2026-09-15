@@ -5,6 +5,11 @@
 #include "posix-termios.h"
 /* clang-format on */
 
-TEST test_tcsendbreak(void) { SKIP(); /* Generated stub for tcsendbreak */ }
+TEST test_tcsendbreak(void) {
+  tcsendbreak(0, 0);
+  tcsendbreak(0, 10);
+  tcsendbreak(-1, 0);
+  PASS();
+}
 
 SUITE(suite_posix_termios_tcsendbreak) { RUN_TEST(test_tcsendbreak); }

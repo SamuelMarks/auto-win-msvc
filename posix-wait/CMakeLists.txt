@@ -70,7 +70,7 @@ if(MSVC)
     add_compile_options(/W4 )
     # Enable AddressSanitizer if supported (VS 2019 16.9+)
     # add_compile_options(/fsanitize=address /Zi)
-            add_link_options(/DEBUG) # Uncomment if using modern MSVC
+            # add_link_options(/DEBUG) # Uncomment if using modern MSVC
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
     add_compile_definitions(_XOPEN_SOURCE=700 _DEFAULT_SOURCE _POSIX_C_SOURCE=200809L)

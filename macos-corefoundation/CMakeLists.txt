@@ -27,11 +27,7 @@ include(FetchContent)
 if(NOT TARGET greatest)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
 FetchContent_MakeAvailable(greatest)
-
 endif()
-
-
-
 
 if(NOT TARGET posix-stdint)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdint/CMakeLists.txt")
@@ -69,7 +65,7 @@ target_link_libraries(macos-corefoundation PUBLIC posix-stdint posix-stdbool)
 if(WIN32)
     target_link_libraries(macos-corefoundation PUBLIC ws2_32)
 endif()
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_macos-corefoundation ${TEST_SOURCES})
@@ -78,7 +74,6 @@ if(WIN32)
     target_link_libraries(test_macos-corefoundation PRIVATE ws2_32)
 endif()
 add_test(NAME test_macos-corefoundation COMMAND test_macos-corefoundation)
-endif()
 
 if(MSVC)
     target_compile_options(macos-corefoundation PRIVATE )

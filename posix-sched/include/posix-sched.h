@@ -1,4 +1,3 @@
-/* posix-sched.h - Strict C89 Header */
 #ifndef POSIX_SCHED_H
 #define POSIX_SCHED_H
 
@@ -10,27 +9,22 @@
  * using Windows process APIs.
  */
 
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
 /* clang-format off */
-#include <stddef.h> /* size_t */
-#else
+#include <stddef.h>
+#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #include <sched.h>
-/* clang-format on */
 #endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
-
+#ifndef CPU_SETSIZE
+/** @brief Maximum number of CPUs in cpu_set_t. */
 #define CPU_SETSIZE 64
+#endif
 
-/**
- * @brief Structure for representing a CPU affinity mask.
- */
 #if defined(__GNUC__)
 __extension__ typedef unsigned long long mask_bit_type;
 #elif defined(_MSC_VER) || defined(__WATCOMC__)
@@ -39,6 +33,11 @@ typedef unsigned __int64 mask_bit_type;
 typedef unsigned long long mask_bit_type;
 #endif
 
+#ifndef _CPU_SET_T_DEFINED
+#define _CPU_SET_T_DEFINED
+/**
+ * @brief Structure for representing a CPU affinity mask.
+ */
 typedef struct cpu_set {
 #if defined(__GNUC__)
   __extension__ unsigned long long bits;
@@ -48,10 +47,15 @@ typedef struct cpu_set {
   unsigned long long bits;
 #endif
 } cpu_set_t;
+#endif
+
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__) || !defined(CPU_SET)
 
 /**
  * @brief Clears set, so that it contains no CPUs.
  */
+#undef CPU_ZERO
 #define CPU_ZERO(set)                                                          \
   do {                                                                         \
     (set)->bits = 0;                                                           \
@@ -60,33 +64,59 @@ typedef struct cpu_set {
 /**
  * @brief Add CPU cpu to set.
  */
+#undef CPU_SET
 #define CPU_SET(cpu, set)                                                      \
   do {                                                                         \
-    if ((cpu) < 64)                                                            \
-      (set)->bits |= (((mask_bit_type)1) << (cpu));                            \
+    if ((size_t)(cpu) < 64)                                                    \
+      (set)->bits |= (((mask_bit_type)1) << ((cpu) < 64 ? (cpu) : 0));         \
   } while ((void)0, 0)
 
 /**
  * @brief Remove CPU cpu from set.
  */
+#undef CPU_CLR
 #define CPU_CLR(cpu, set)                                                      \
   do {                                                                         \
-    if ((cpu) < 64)                                                            \
-      (set)->bits &= ~(((mask_bit_type)1) << (cpu));                           \
+    if ((size_t)(cpu) < 64)                                                    \
+      (set)->bits &= ~(((mask_bit_type)1) << ((cpu) < 64 ? (cpu) : 0));        \
   } while ((void)0, 0)
 
 /**
  * @brief Test to see if CPU cpu is a member of set.
  */
+#undef CPU_ISSET
 #define CPU_ISSET(cpu, set)                                                    \
-  (((cpu) < 64) ? (((set)->bits & (((mask_bit_type)1) << (cpu))) != 0) : 0)
+  (((size_t)(cpu) < 64) ? (((set)->bits & (((mask_bit_type)1)                  \
+                                           << ((cpu) < 64 ? (cpu) : 0))) != 0) \
+                        : 0)
+
+#endif /* cpu_set macros */
+
+/**
+ * @brief Error codes returned by posix-sched functions.
+ */
+enum posix_sched_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_SCHED_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_SCHED_ERROR_NULL_POINTER = 1
+};
+
+/**
+ * @brief Retrieves information on posix-sched availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SCHED_SUCCESS on success, or POSIX_SCHED_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_sched_error_code posix_sched_get_info(int *out_available);
 
 /**
  * @brief Relinquish the CPU.
  *
- * Mapped to Windows SwitchToThread() API.
+ * Mapped to Windows Sleep(0) API or sched_yield().
  *
- * @return 0 on success.
+ * @return 0 on success, or -1 on error.
  */
 int posix_sched_yield(void);
 
@@ -119,8 +149,6 @@ int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
 #ifndef sched_getaffinity
 #define sched_getaffinity posix_sched_getaffinity
 #endif
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #ifdef __cplusplus
 }

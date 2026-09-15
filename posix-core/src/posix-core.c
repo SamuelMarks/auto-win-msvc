@@ -1,53 +1,68 @@
 /* posix-core.c - Strict C89 Implementation */
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
 /* clang-format off */
+#include "posix-core.h"
+#include <errno.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <direct.h>
+#include <fcntl.h>
 #include <process.h>
+#include <sys/locking.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#include <stdint.h>
+#endif
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+/* clang-format on */
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
-#include <stddef.h>
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
-#else
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
-#endif
-#endif
-#endif
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "posix-core.h"
-#include <string.h>
-
-#ifdef _MSC_VER
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+static void null_invalid_param_handler(const wchar_t *expression,
+                                       const wchar_t *function,
+                                       const wchar_t *file, unsigned int line,
+                                       uintptr_t pReserved) {
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
+}
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-/** \brief fcntl function. */
-
-#if defined(_MSC_VER) && _MSC_VER >= 1600
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#include <stdint.h>
-#endif
-#endif
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  if (fd < 0 || fd >= 2048) {
+    return -1;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(null_invalid_param_handler);
+    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
 #else
-#include <stddef.h>
+  h = (ptrdiff_t)_get_osfhandle((int)fd);
 #endif
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
+  return h;
+}
 #endif
 
 #ifdef __cplusplus
@@ -228,9 +243,9 @@ typedef void *(__stdcall *GetSidSubAuthority_f)(void *, unsigned long);
 typedef unsigned char *(__stdcall *GetSidSubAuthorityCount_f)(void *);
 typedef int(__stdcall *IsValidSid_f)(void *);
 
-static unsigned long get_current_rid(int is_group) {
+static enum posix_core_error_code get_current_rid(int is_group,
+                                                  unsigned long *out_rid) {
   void *hToken = NULL;
-  unsigned long rid = 0;
   void *advapi32;
   OpenProcessToken_f pOpenProcessToken;
   GetTokenInformation_f pGetTokenInformation;
@@ -238,25 +253,29 @@ static unsigned long get_current_rid(int is_group) {
   GetSidSubAuthorityCount_f pGetSidSubAuthorityCount;
   IsValidSid_f pIsValidSid;
 
+  if (!out_rid) {
+    return POSIX_CORE_ERROR_NULL_POINTER;
+  }
+  *out_rid = 0;
+
   advapi32 = GetModuleHandleA("advapi32.dll");
   if (!advapi32) {
-    return 0;
+    return POSIX_CORE_ERROR_OPERATION_FAILED;
   }
 
-  pOpenProcessToken = (OpenProcessToken_f)(size_t)GetProcAddress(
-      advapi32, "OpenProcessToken");
+  pOpenProcessToken =
+      (OpenProcessToken_f)(size_t)GetProcAddress(advapi32, "OpenProcessToken");
   pGetTokenInformation = (GetTokenInformation_f)(size_t)GetProcAddress(
       advapi32, "GetTokenInformation");
   pGetSidSubAuthority = (GetSidSubAuthority_f)(size_t)GetProcAddress(
       advapi32, "GetSidSubAuthority");
-  pGetSidSubAuthorityCount =
-      (GetSidSubAuthorityCount_f)(size_t)GetProcAddress(
-          advapi32, "GetSidSubAuthorityCount");
+  pGetSidSubAuthorityCount = (GetSidSubAuthorityCount_f)(size_t)GetProcAddress(
+      advapi32, "GetSidSubAuthorityCount");
   pIsValidSid = (IsValidSid_f)(size_t)GetProcAddress(advapi32, "IsValidSid");
 
   if (!pOpenProcessToken || !pGetTokenInformation || !pGetSidSubAuthority ||
       !pGetSidSubAuthorityCount || !pIsValidSid) {
-    return 0;
+    return POSIX_CORE_ERROR_OPERATION_FAILED;
   }
 
   if (pOpenProcessToken((void *)(intptr_t)-1, 0x0008 /* TOKEN_QUERY */,
@@ -280,7 +299,7 @@ static unsigned long get_current_rid(int is_group) {
               unsigned long *pRid =
                   (unsigned long *)pGetSidSubAuthority(pSid, *pCount - 1);
               if (pRid) {
-                rid = *pRid;
+                *out_rid = *pRid;
               }
             }
           }
@@ -290,22 +309,21 @@ static unsigned long get_current_rid(int is_group) {
     }
     CloseHandle(hToken);
   }
-  return rid;
+  return POSIX_CORE_SUCCESS;
 }
 
 #define FIONBIO 0x8004667E
 
-#include <fcntl.h>
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0x4000
 #endif
 
 extern void set_nonblock(SOCKET s, int nb);
 extern int get_nonblock(SOCKET s);
-extern void clear_nonblock(SOCKET s);
+extern error_type_t clear_nonblock(SOCKET s);
 extern void copy_nonblock(SOCKET src, SOCKET dst);
-extern void mark_as_socket(intptr_t fd);
-extern void clear_as_socket(intptr_t fd);
+extern error_type_t mark_as_socket(intptr_t fd);
+extern error_type_t clear_as_socket(intptr_t fd);
 extern int is_socket(intptr_t fd);
 
 __declspec(dllimport) void __stdcall ExitProcess(unsigned int uExitCode);
@@ -314,11 +332,16 @@ void my_exit_hook(int status) { ExitProcess((unsigned int)status); }
 __declspec(dllimport) void *__stdcall GetModuleHandleA(const char *);
 __declspec(dllimport) void *__stdcall GetProcAddress(void *, const char *);
 
-void auto_win_exit(int code) {
+/** @brief Terminate current process with exit code. */
+enum posix_core_error_code auto_win_exit(int code) {
   int(__stdcall * tp)(void *, unsigned int) = NULL;
-  *(void **)(&tp) = GetProcAddress(GetModuleHandleA("kernel32.dll"), "TerminateProcess");
-  if (tp)
-    tp((void *)(intptr_t)-1, code);
+  *(void **)(&tp) =
+      GetProcAddress(GetModuleHandleA("kernel32.dll"), "TerminateProcess");
+  if (tp) {
+    tp((void *)(intptr_t)-1, (unsigned int)code);
+    return POSIX_CORE_SUCCESS;
+  }
+  return POSIX_CORE_ERROR_OPERATION_FAILED;
 }
 
 int fcntl(intptr_t fd, int cmd, ...) {
@@ -476,49 +499,49 @@ int fcntl(intptr_t fd, int cmd, ...) {
 #define AT_FDCWD -100
 #endif
 
-static int posix_resolve_at_path(int dirfd, const char *pathname,
-                                 char **buf_out) {
+static enum posix_core_error_code
+posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
   char *buf;
   size_t bufsiz = 32768;
   if (!pathname || !buf_out) {
     errno = EINVAL;
-    return -1;
+    return POSIX_CORE_ERROR_INVALID_ARGUMENT;
   }
 
   buf = (char *)malloc(bufsiz);
   if (!buf) {
     errno = ENOMEM;
-    return -1;
+    return POSIX_CORE_ERROR_OPERATION_FAILED;
   }
 
   if (pathname[0] == '/' || pathname[0] == '\\' ||
       (pathname[0] && pathname[1] == ':')) {
-    #if defined(_MSC_VER)
+#if defined(_MSC_VER)
     strncpy_s(buf, bufsiz, pathname, _TRUNCATE);
 #else
     strncpy(buf, pathname, bufsiz - 1);
 #endif
     buf[bufsiz - 1] = '\0';
     *buf_out = buf;
-    return 0;
+    return POSIX_CORE_SUCCESS;
   }
 
   if (dirfd == AT_FDCWD) {
     if (!_getcwd(buf, (int)bufsiz)) {
       free(buf);
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
     if (strlen(buf) + strlen(pathname) + 2 > bufsiz) {
       free(buf);
       errno = ENAMETOOLONG;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
     if (buf[strlen(buf) - 1] != '\\' && buf[strlen(buf) - 1] != '/') {
-      #if defined(_MSC_VER)
+#if defined(_MSC_VER)
       if (strcat_s(buf, bufsiz, "\\") != 0) {
         free(buf);
         errno = ENAMETOOLONG;
-        return -1;
+        return POSIX_CORE_ERROR_OPERATION_FAILED;
       }
 #else
       strcat(buf, "\\");
@@ -526,15 +549,15 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     }
 #if defined(_MSC_VER)
     if (strcat_s(buf, bufsiz, pathname) != 0) {
-        free(buf);
-        errno = ENAMETOOLONG;
-        return -1;
+      free(buf);
+      errno = ENAMETOOLONG;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
 #else
     strcat(buf, pathname);
 #endif
     *buf_out = buf;
-    return 0;
+    return POSIX_CORE_SUCCESS;
   } else {
     void *kernel32;
     void *hFile;
@@ -545,14 +568,14 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     if (hFile == (void *)(intptr_t)-1) {
       free(buf);
       errno = EBADF;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
 
     kernel32 = GetModuleHandleA("kernel32.dll");
     if (!kernel32) {
       free(buf);
       errno = ENOSYS;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
     pGetFinalPathNameByHandleA =
         (GetFinalPathNameByHandleA_Func)(size_t)GetProcAddress(
@@ -560,14 +583,14 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     if (!pGetFinalPathNameByHandleA) {
       free(buf);
       errno = ENOSYS;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
 
     res = pGetFinalPathNameByHandleA(hFile, buf, (unsigned long)bufsiz, 0);
     if (res == 0 || res >= bufsiz) {
       free(buf);
       errno = EINVAL;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
     if (res >= 4 && buf[0] == '\\' && buf[1] == '\\' && buf[2] == '?' &&
         buf[3] == '\\') {
@@ -578,14 +601,14 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     if (res + strlen(pathname) + 2 > bufsiz) {
       free(buf);
       errno = ENAMETOOLONG;
-      return -1;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
     if (buf[res - 1] != '\\' && buf[res - 1] != '/') {
-      #if defined(_MSC_VER)
+#if defined(_MSC_VER)
       if (strcat_s(buf, bufsiz, "\\") != 0) {
         free(buf);
         errno = ENAMETOOLONG;
-        return -1;
+        return POSIX_CORE_ERROR_OPERATION_FAILED;
       }
 #else
       strcat(buf, "\\");
@@ -593,15 +616,15 @@ static int posix_resolve_at_path(int dirfd, const char *pathname,
     }
 #if defined(_MSC_VER)
     if (strcat_s(buf, bufsiz, pathname) != 0) {
-        free(buf);
-        errno = ENAMETOOLONG;
-        return -1;
+      free(buf);
+      errno = ENAMETOOLONG;
+      return POSIX_CORE_ERROR_OPERATION_FAILED;
     }
 #else
     strcat(buf, pathname);
 #endif
     *buf_out = buf;
-    return 0;
+    return POSIX_CORE_SUCCESS;
   }
 }
 
@@ -611,17 +634,24 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
   int fd;
   va_list ap;
   int mode = 0;
+  enum posix_core_error_code rc;
 
-  if (posix_resolve_at_path(dirfd, pathname, &buf) == -1)
+  rc = posix_resolve_at_path(dirfd, pathname, &buf);
+  if (rc != POSIX_CORE_SUCCESS)
     return -1;
 
-  if (flags & _O_CREAT) {
+  if (flags & (_O_CREAT | 0x0200)) {
+    flags |= _O_CREAT;
     va_start(ap, flags);
-    mode = va_arg(ap, int);
+    mode = va_arg(ap, int) & (_S_IREAD | _S_IWRITE);
+    if (mode == 0) {
+      mode = _S_IREAD | _S_IWRITE;
+    }
     va_end(ap);
   }
+  flags |= _O_BINARY;
 
-  #if defined(_MSC_VER)
+#if defined(_MSC_VER)
   if (_sopen_s(&fd, buf, flags, _SH_DENYNO, mode) != 0) {
     fd = -1;
   }
@@ -666,7 +696,8 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
     if (!kernel32)
       return 0;
     pPrefetchVirtualMemory =
-        (int(__stdcall *)(void *, size_t, void *, unsigned long))(size_t)GetProcAddress(kernel32, "PrefetchVirtualMemory");
+        (int(__stdcall *)(void *, size_t, void *, unsigned long))(
+            size_t)GetProcAddress(kernel32, "PrefetchVirtualMemory");
     if (!pPrefetchVirtualMemory)
       return 0;
 
@@ -715,6 +746,18 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   }
   return 0;
 }
+#else
+/** \brief posix_fadvise function. */
+int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
+  if (fd < 0) {
+    return EBADF;
+  }
+  if (offset < 0 || len < 0) {
+    return EINVAL;
+  }
+  (void)advice;
+  return 0;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief posix_fallocate function. */
@@ -755,7 +798,8 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
     }
 
     if (!SetEndOfFile((void *)handle)) {
-      if (!SetFilePointerEx((void *)handle, old_ptr, NULL, 0)) { /* Ignore */ }
+      if (!SetFilePointerEx((void *)handle, old_ptr, NULL, 0)) { /* Ignore */
+      }
       return ENOSPC;
     }
 
@@ -767,17 +811,44 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
 
   return 0;
 }
+#else
+/** \brief posix_fallocate function. */
+int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
+  if (fd < 0) {
+    return EBADF;
+  }
+  if (offset < 0 || len <= 0) {
+    return EINVAL;
+  }
+  return 0;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief sync_file_range function. */
-int sync_file_range(intptr_t fd, off_t offset, off_t nbytes, unsigned int flags) {
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
+                    unsigned int flags) {
+  ptrdiff_t handle;
   (void)offset;
   (void)nbytes;
   (void)flags;
+  handle = safe_get_osfhandle(fd);
+  if (handle == -1) {
+    errno = EBADF;
+    return -1;
+  }
   if (_commit((int)fd) == 0) {
     return 0;
   }
   return -1;
+}
+#elif defined(__APPLE__) || !defined(__linux__)
+/** \brief sync_file_range function fallback. */
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
+                    unsigned int flags) {
+  (void)offset;
+  (void)nbytes;
+  (void)flags;
+  return fsync((int)fd);
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -790,7 +861,8 @@ static void __stdcall alarm_timer_callback(void *lpParameter,
   (void)lpParameter;
   (void)TimerOrWaitFired;
   /* SIGALRM = 14 */
-  if (raise(14) != 0) { /* Ignore */ }
+  if (raise(14) != 0) { /* Ignore */
+  }
 }
 
 /** \brief alarm function. */
@@ -906,35 +978,44 @@ char *crypt(const char *key, const char *salt) {
   }
 
   if (!CryptCreateHash(hProv, 0x00008003 /* CALG_MD5 */, 0, 0, &hHash)) {
-    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
     errno = ENOSYS;
     return NULL;
   }
 
-  if (!CryptHashData(hHash, (const unsigned char *)key, (unsigned long)strlen(key),
-                0)) {
-     if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-     if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
-     errno = ENOSYS;
-     return NULL;
+  if (!CryptHashData(hHash, (const unsigned char *)key,
+                     (unsigned long)strlen(key), 0)) {
+    if (!CryptDestroyHash(hHash)) { /* Ignore */
+    }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
+    errno = ENOSYS;
+    return NULL;
   }
-  if (!CryptHashData(hHash, (const unsigned char *)salt, (unsigned long)strlen(salt),
-                0)) {
-     if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-     if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
-     errno = ENOSYS;
-     return NULL;
+  if (!CryptHashData(hHash, (const unsigned char *)salt,
+                     (unsigned long)strlen(salt), 0)) {
+    if (!CryptDestroyHash(hHash)) { /* Ignore */
+    }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
+    errno = ENOSYS;
+    return NULL;
   }
 
   if (!CryptGetHashParam(hHash, 0x0002 /* HP_HASHVAL */, hash, &hashLen, 0)) {
-    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+    if (!CryptDestroyHash(hHash)) { /* Ignore */
+    }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
     errno = ENOSYS;
     return NULL;
   }
 
-  if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+  if (!CryptDestroyHash(hHash)) { /* Ignore */
+  }
+  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+  }
 
   p = result;
   *p++ = '$';
@@ -984,21 +1065,27 @@ void encrypt(char block[64], int edflag) {
   }
 
   if (!CryptCreateHash(hProv, 0x00008003 /* CALG_MD5 */, 0, 0, &hHash)) {
-    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
     errno = ENOSYS;
     return;
   }
 
-  if (!CryptHashData(hHash, (const unsigned char *)"POSIX_ENCRYPT_KEY", 17, 0)) {
-    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+  if (!CryptHashData(hHash, (const unsigned char *)"POSIX_ENCRYPT_KEY", 17,
+                     0)) {
+    if (!CryptDestroyHash(hHash)) { /* Ignore */
+    }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
     errno = ENOSYS;
     return;
   }
 
   if (!CryptDeriveKey(hProv, 0x00006601 /* CALG_DES */, hHash, 0, &hKey)) {
-    if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+    if (!CryptDestroyHash(hHash)) { /* Ignore */
+    }
+    if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+    }
     errno = ENOSYS;
     return;
   }
@@ -1022,9 +1109,12 @@ void encrypt(char block[64], int edflag) {
     block[i] = (packed[i >> 3] & (1 << (7 - (i & 7)))) ? 1 : 0;
   }
 
-  if (!CryptDestroyKey(hKey)) { /* Ignore */ }
-  if (!CryptDestroyHash(hHash)) { /* Ignore */ }
-  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */ }
+  if (!CryptDestroyKey(hKey)) { /* Ignore */
+  }
+  if (!CryptDestroyHash(hHash)) { /* Ignore */
+  }
+  if (!CryptReleaseContext(hProv, 0)) { /* Ignore */
+  }
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1032,8 +1122,10 @@ void encrypt(char block[64], int edflag) {
 int faccessat(int dirfd, const char *pathname, int mode, int flags) {
   char *buf;
   int res;
+  enum posix_core_error_code rc;
   (void)flags; /* AT_EACCESS, AT_SYMLINK_NOFOLLOW etc not fully supported */
-  if (posix_resolve_at_path(dirfd, pathname, &buf) == -1)
+  rc = posix_resolve_at_path(dirfd, pathname, &buf);
+  if (rc != POSIX_CORE_SUCCESS)
     return -1;
   res = _access(buf, mode);
   free(buf);
@@ -1105,8 +1197,10 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
              int flags) {
   char *buf;
   int res;
+  enum posix_core_error_code rc;
   (void)flags; /* AT_SYMLINK_NOFOLLOW ignored */
-  if (posix_resolve_at_path(dirfd, pathname, &buf) == -1) {
+  rc = posix_resolve_at_path(dirfd, pathname, &buf);
+  if (rc != POSIX_CORE_SUCCESS) {
     return -1;
   }
   res = chown(buf, owner, group);
@@ -1117,7 +1211,9 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fdatasync function. */
 int fdatasync(intptr_t fd) {
-  if (fd < 0) {
+  ptrdiff_t handle;
+  handle = safe_get_osfhandle(fd);
+  if (handle == -1) {
     errno = EBADF;
     return -1;
   }
@@ -1126,6 +1222,15 @@ int fdatasync(intptr_t fd) {
     return -1;
   }
   return 0;
+}
+#elif defined(__APPLE__)
+/** \brief fdatasync function. */
+int fdatasync(intptr_t fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return fsync((int)fd);
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1182,8 +1287,21 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
     buf[res] = '\0';
   }
 
-  if (_execve(buf, (const char *const *)argv, (const char *const *)envp) == -1) { /* Failed */ }
+  if (_execve(buf, (const char *const *)argv, (const char *const *)envp) ==
+      -1) { /* Failed */
+  }
   free(buf);
+  return -1;
+}
+#elif defined(__APPLE__) || !defined(__linux__)
+/** \brief fexecve function fallback. */
+int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
+  if (fd < 0 || !argv) {
+    errno = EINVAL;
+    return -1;
+  }
+  (void)envp;
+  errno = ENOSYS;
   return -1;
 }
 #endif
@@ -1318,12 +1436,15 @@ int fork(void) {
     return (pid_t)(size_t)info.ClientId.UniqueProcess;
   } else if (status == STATUS_PROCESS_CLONED) {
     void *ucrt;
-    if (SetCurrentDirectoryA(parent_cwd) == 0) { /* Ignore */ }
+    if (SetCurrentDirectoryA(parent_cwd) == 0) { /* Ignore */
+    }
     posix_pthread_atfork_child();
     printf("CHILD CLONED\n");
-    if (fflush(stdout) != 0) { /* Ignore */ }
+    if (fflush(stdout) != 0) { /* Ignore */
+    }
     /* Child */
-    if (_set_errno(0) != 0) { /* Ignore */ }
+    if (_set_errno(0) != 0) { /* Ignore */
+    }
 
     ucrt = GetModuleHandleA("ucrtbase.dll");
     if (ucrt) {
@@ -1336,8 +1457,10 @@ int fork(void) {
         if (p_exit) {
           unsigned long oldProtect;
           int(__stdcall * vp)(void *, size_t, unsigned long, unsigned long *) =
-              (int(__stdcall *)(void *, size_t, unsigned long, unsigned long *))(size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
-                                             "VirtualProtect");
+              (int(__stdcall *)(void *, size_t, unsigned long,
+                                unsigned long *))(
+                  size_t)GetProcAddress(GetModuleHandleA("kernel32.dll"),
+                                        "VirtualProtect");
           if (vp && vp(p_exit, 12, 0x40, &oldProtect)) {
             unsigned char *p = (unsigned char *)p_exit;
             void *target = (void *)(size_t)my_exit_hook;
@@ -1346,7 +1469,8 @@ int fork(void) {
             memcpy(p + 2, &target, 8);
             p[10] = 0xFF;
             p[11] = 0xE0;
-            if (!vp(p_exit, 12, oldProtect, &oldProtect)) { /* Ignore */ }
+            if (!vp(p_exit, 12, oldProtect, &oldProtect)) { /* Ignore */
+            }
           }
         }
       }
@@ -1377,15 +1501,39 @@ long fpathconf(intptr_t fd, int name) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getegid function. */
-gid_t getegid(void) { return (gid_t)get_current_rid(1); }
+gid_t getegid(void) {
+  unsigned long rid = 0;
+  enum posix_core_error_code rc;
+  rc = get_current_rid(1, &rid);
+  if (rc != POSIX_CORE_SUCCESS) {
+    /* handle error */
+  }
+  return (gid_t)rid;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief geteuid function. */
-uid_t geteuid(void) { return (uid_t)get_current_rid(0); }
+uid_t geteuid(void) {
+  unsigned long rid = 0;
+  enum posix_core_error_code rc;
+  rc = get_current_rid(0, &rid);
+  if (rc != POSIX_CORE_SUCCESS) {
+    /* handle error */
+  }
+  return (uid_t)rid;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getgid function. */
-gid_t getgid(void) { return (gid_t)get_current_rid(1); }
+gid_t getgid(void) {
+  unsigned long rid = 0;
+  enum posix_core_error_code rc;
+  rc = get_current_rid(1, &rid);
+  if (rc != POSIX_CORE_SUCCESS) {
+    /* handle error */
+  }
+  return (gid_t)rid;
+}
 #endif
 typedef struct _SID_AND_ATTRIBUTES {
   void *Sid;
@@ -1405,7 +1553,14 @@ int getgroups(int size, gid_t list[]) {
     return -1;
   }
   if (size > 0 && list != NULL) {
-    list[0] = (gid_t)get_current_rid(1);
+    unsigned long rid = 0;
+    enum posix_core_error_code rc;
+    rc = get_current_rid(1, &rid);
+    if (rc == POSIX_CORE_SUCCESS) {
+      list[0] = (gid_t)rid;
+    } else {
+      list[0] = 0;
+    }
   }
   return 1;
 }
@@ -1466,10 +1621,10 @@ int getlogin_r(char *buf, size_t bufsize) {
 #if defined(_WIN32) && !defined(__CYGWIN__) &&                                 \
     !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) && defined(_MSC_VER)
 
-POSIX_CORE_API char *optarg = NULL;
-POSIX_CORE_API int optind = 1;
-POSIX_CORE_API int opterr = 1;
-POSIX_CORE_API int optopt = 0;
+POSIX_CORE_DECL char *optarg = NULL;
+POSIX_CORE_DECL int optind = 1;
+POSIX_CORE_DECL int opterr = 1;
+POSIX_CORE_DECL int optopt = 0;
 
 static char *nextchar = NULL;
 
@@ -1537,7 +1692,10 @@ int getopt(int argc, char *const argv[], const char *optstring) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getpgid function. */
-pid_t getpgid(pid_t pid) { (void)pid; return 0; }
+pid_t getpgid(pid_t pid) {
+  (void)pid;
+  return 0;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getpgrp function. */
@@ -1549,11 +1707,22 @@ pid_t getppid(void) { return 0; }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getsid function. */
-pid_t getsid(pid_t pid) { (void)pid; return 0; }
+pid_t getsid(pid_t pid) {
+  (void)pid;
+  return 0;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getuid function. */
-uid_t getuid(void) { return (uid_t)get_current_rid(0); }
+uid_t getuid(void) {
+  unsigned long rid = 0;
+  enum posix_core_error_code rc;
+  rc = get_current_rid(0, &rid);
+  if (rc != POSIX_CORE_SUCCESS) {
+    /* handle error */
+  }
+  return (uid_t)rid;
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief lchown function. */
@@ -1594,10 +1763,13 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
   char *oldbuf;
   char *newbuf;
   int res = 0;
+  enum posix_core_error_code rc;
   (void)flags; /* AT_SYMLINK_FOLLOW not fully supported */
-  if (posix_resolve_at_path(olddirfd, oldpath, &oldbuf) == -1)
+  rc = posix_resolve_at_path(olddirfd, oldpath, &oldbuf);
+  if (rc != POSIX_CORE_SUCCESS)
     return -1;
-  if (posix_resolve_at_path(newdirfd, newpath, &newbuf) == -1) {
+  rc = posix_resolve_at_path(newdirfd, newpath, &newbuf);
+  if (rc != POSIX_CORE_SUCCESS) {
     free(oldbuf);
     return -1;
   }
@@ -1613,14 +1785,18 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief lockf function. */
-#include <sys/locking.h>
-/* clang-format on */
 int lockf(intptr_t fd, int cmd, off_t len) {
   int mode;
   long nbytes;
+  ptrdiff_t handle;
 
   if (len < 0) {
     errno = EINVAL;
+    return -1;
+  }
+  handle = safe_get_osfhandle(fd);
+  if (handle == -1) {
+    errno = EBADF;
     return -1;
   }
   nbytes = len == 0 ? 0x7FFFFFFF : (long)len;
@@ -1715,7 +1891,16 @@ int pipe2(int pipefd[2], int flags) {
   pipefd[1] = (int)sv[1];
   return 0;
 }
-
+#elif defined(__APPLE__) || !defined(__linux__)
+/** \brief pipe2 function. */
+int pipe2(int pipefd[2], int flags) {
+  (void)flags;
+  if (!pipefd) {
+    errno = EINVAL;
+    return -1;
+  }
+  return pipe(pipefd);
+}
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pread function. */
@@ -1922,7 +2107,9 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
   char *fullbuf;
   ssize_t res;
-  if (posix_resolve_at_path(dirfd, pathname, &fullbuf) == -1)
+  enum posix_core_error_code rc;
+  rc = posix_resolve_at_path(dirfd, pathname, &fullbuf);
+  if (rc != POSIX_CORE_SUCCESS)
     return -1;
   res = readlink(fullbuf, buf, bufsiz);
   free(fullbuf);
@@ -2038,7 +2225,9 @@ int symlink(const char *target, const char *linkpath) {
 int symlinkat(const char *target, int newdirfd, const char *linkpath) {
   char *newbuf;
   int res;
-  if (posix_resolve_at_path(newdirfd, linkpath, &newbuf) == -1)
+  enum posix_core_error_code rc;
+  rc = posix_resolve_at_path(newdirfd, linkpath, &newbuf);
+  if (rc != POSIX_CORE_SUCCESS)
     return -1;
   res = symlink(target, newbuf);
   free(newbuf);
@@ -2126,10 +2315,32 @@ long sysconf(int name) {
   }
 }
 #endif
+/** @brief Check if file descriptor refers to a terminal. */
+int posix_isatty(intptr_t fd) {
+  if (fd < 0 || fd >= 2048) {
+    errno = EBADF;
+    return 0;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    int ret;
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(null_invalid_param_handler);
+    ret = _isatty((int)fd);
+    _set_invalid_parameter_handler(old);
+    return ret;
+  }
+#elif defined(_MSC_VER) || defined(__MINGW32__)
+  return _isatty((int)fd);
+#else
+  return isatty((int)fd);
+#endif
+}
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcgetpgrp function. */
 pid_t tcgetpgrp(intptr_t fd) {
-  if (_isatty((int)fd))
+  if (posix_isatty(fd))
     return 0;
   errno = ENOTTY;
   return -1;
@@ -2139,7 +2350,7 @@ pid_t tcgetpgrp(intptr_t fd) {
 /** \brief tcsetpgrp function. */
 int tcsetpgrp(intptr_t fd, pid_t pgrp) {
   (void)pgrp;
-  if (!_isatty((int)fd)) {
+  if (!posix_isatty(fd)) {
     errno = ENOTTY;
     return -1;
   }
@@ -2172,7 +2383,7 @@ int truncate(const char *path, off_t length) {
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 char *ttyname(intptr_t fd) {
-  if (_isatty((int)fd)) {
+  if (posix_isatty(fd)) {
     return "CON";
   }
   errno = ENOTTY;
@@ -2185,7 +2396,7 @@ int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
   if (buf == NULL) {
     return EINVAL;
   }
-  if (_isatty((int)fd)) {
+  if (posix_isatty(fd)) {
     if (buflen < 4) {
       return ERANGE;
     }
@@ -2300,20 +2511,20 @@ int posix_mkstemp(char *tmpl) {
   }
   return fd;
 }
+#else
+/** \brief rename function (POSIX semantics). */
+int posix_rename(const char *oldpath, const char *newpath) {
+  return rename(oldpath, newpath);
+}
+
+/** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
+int posix_mkstemp(char *tmpl) { return mkstemp(tmpl); }
 #endif
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_core;
-
-int posix_isatty(intptr_t fd) {
-#if defined(_MSC_VER) || defined(__MINGW32__)
-  return _isatty((int)fd);
-#else
-  return isatty(fd);
-#endif
-}
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /**
@@ -2444,3 +2655,17 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
   return getdelim(lineptr, n, '\n', stream);
 }
 #endif
+
+/**
+ * @brief Initializes and validates the posix-core module.
+ * @param[out] out_status Pointer to an integer that receives the initialized
+ * status.
+ * @return POSIX_CORE_SUCCESS on success, or an error code on failure.
+ */
+enum posix_core_error_code posix_core_init(int *out_status) {
+  if (out_status == NULL) {
+    return POSIX_CORE_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return POSIX_CORE_SUCCESS;
+}

@@ -1,63 +1,70 @@
+/**
+ * @file posix-ucontext.c
+ * @brief Implementation of posix-ucontext polyfills.
+ */
+
 /* clang-format off */
-#include <posix-ucontext.h>
+#include "posix-ucontext.h"
+#include <errno.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+/* clang-format on */
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+#if defined(_M_AMD64) || defined(__x86_64__)
+#if defined(_MSC_VER)
+#define WIN_GET_CURRENT_FIBER() ((void *)__readgsqword(0x20))
+#elif defined(__GNUC__) || defined(__clang__)
+static void *win_get_current_fiber(void) {
+  void *res;
+  __asm__("movq %%gs:0x20, %0" : "=r"(res));
+  return res;
+}
+#define WIN_GET_CURRENT_FIBER() win_get_current_fiber()
+#else
+#define WIN_GET_CURRENT_FIBER() NULL
+#endif
+#elif defined(_M_IX86) || defined(__i386__)
+#if defined(_MSC_VER)
+#define WIN_GET_CURRENT_FIBER() ((void *)(size_t)__readfsdword(0x10))
+#elif defined(__GNUC__) || defined(__clang__)
+static void *win_get_current_fiber(void) {
+  void *res;
+  __asm__("movl %%fs:0x10, %0" : "=r"(res));
+  return res;
+}
+#define WIN_GET_CURRENT_FIBER() win_get_current_fiber()
+#else
+#define WIN_GET_CURRENT_FIBER() NULL
+#endif
+#else
+#define WIN_GET_CURRENT_FIBER() NULL
 #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
+typedef void *WIN_LPVOID;
+typedef void(__stdcall *WIN_PFIBER_START_ROUTINE)(WIN_LPVOID lpFiberParameter);
 
-#include <errno.h>
-#include <stdarg.h>
-#include <stdlib.h>
-/* clang-format on */
+__declspec(dllimport) void *__stdcall ConvertThreadToFiber(void *lpParameter);
+__declspec(dllimport) void __stdcall SwitchToFiber(void *lpFiber);
+__declspec(dllimport) void __stdcall DeleteFiber(void *lpFiber);
+__declspec(dllimport) void *__stdcall CreateFiber(
+    size_t dwStackSize, WIN_PFIBER_START_ROUTINE lpStartAddress,
+    void *lpParameter);
+__declspec(dllimport) void __stdcall ExitThread(unsigned long dwExitCode);
 
-/** \brief getcontext function. */
-int getcontext(ucontext_t *ucp) {
-  void *fiber;
-
-  if (!ucp) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fiber = GetCurrentFiber();
-  if (fiber == (void *)(size_t)0x1e00 || fiber == NULL) {
-    fiber = ConvertThreadToFiber(NULL);
-  }
-
-  ucp->uc_mcontext.gregs[0] = (unsigned __int64)(size_t)fiber;
-  ucp->uc_mcontext.gregs[1] = 0; /* Indicates not created by makecontext */
-
-  return 0;
+#ifdef __cplusplus
 }
-
-/** \brief setcontext function. */
-int setcontext(const ucontext_t *ucp) {
-  void *fiber;
-
-  if (!ucp) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fiber = (void *)(size_t)ucp->uc_mcontext.gregs[0];
-  if (!fiber) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  SwitchToFiber(fiber);
-
-  return 0;
-}
+#endif
 
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 #define THREAD_LOCAL __declspec(thread)
@@ -74,7 +81,7 @@ static THREAD_LOCAL int num_dead_fibers = 0;
 static void cleanup_dead_fibers(void) {
   int i;
   for (i = 0; i < num_dead_fibers; ++i) {
-    if (dead_fibers[i] != GetCurrentFiber()) {
+    if (dead_fibers[i] != WIN_GET_CURRENT_FIBER()) {
       DeleteFiber(dead_fibers[i]);
     }
   }
@@ -89,15 +96,20 @@ struct posix_makecontext_args {
   void *my_fiber;
 };
 
-static VOID WINAPI posix_fiber_start(LPVOID lpParameter) {
-  struct posix_makecontext_args *margs =
-      (struct posix_makecontext_args *)lpParameter;
-  void (*func)(void) = margs->func;
-  int argc = margs->argc;
+static void __stdcall posix_fiber_start(void *lpParameter) {
+  struct posix_makecontext_args *margs;
+  void (*func)(void);
+  int argc;
   int args[8];
-  ucontext_t *uc_link = margs->uc_link;
-  void *my_fiber = margs->my_fiber;
+  ucontext_t *uc_link;
+  void *my_fiber;
   int i;
+
+  margs = (struct posix_makecontext_args *)lpParameter;
+  func = margs->func;
+  argc = margs->argc;
+  uc_link = margs->uc_link;
+  my_fiber = margs->my_fiber;
 
   for (i = 0; i < 8 && i < argc; ++i) {
     args[i] = margs->args[i];
@@ -144,31 +156,75 @@ static VOID WINAPI posix_fiber_start(LPVOID lpParameter) {
     dead_fibers[num_dead_fibers++] = my_fiber;
   }
 
-  if (uc_link) {
+  if (uc_link != NULL) {
     setcontext(uc_link);
   }
 
-  /* POSIX spec says: If uc_link is NULL, thread exits. */
   ExitThread(0);
 }
 
-/** \brief makecontext function. */
+/**
+ * @brief Saves current execution context into ucp.
+ */
+int getcontext(ucontext_t *ucp) {
+  void *fiber;
+
+  if (ucp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  fiber = WIN_GET_CURRENT_FIBER();
+  if (fiber == (void *)(size_t)0x1e00 || fiber == NULL) {
+    fiber = ConvertThreadToFiber(NULL);
+  }
+
+  ucp->uc_mcontext.gregs[0] = (unsigned __int64)(size_t)fiber;
+  ucp->uc_mcontext.gregs[1] = 0;
+
+  return 0;
+}
+
+/**
+ * @brief Restores execution context from ucp.
+ */
+int setcontext(const ucontext_t *ucp) {
+  void *fiber;
+
+  if (ucp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  fiber = (void *)(size_t)ucp->uc_mcontext.gregs[0];
+  if (fiber == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  SwitchToFiber(fiber);
+  return 0;
+}
+
+/**
+ * @brief Modifies a context to invoke func with the specified arguments.
+ */
 void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
   struct posix_makecontext_args *margs;
   va_list ap;
   void *fiber;
   int i;
-  SIZE_T stack_size;
+  size_t stack_size;
 
   cleanup_dead_fibers();
 
-  if (!ucp || argc < 0 || argc > 8) {
+  if (ucp == NULL || argc < 0 || argc > 8) {
     return;
   }
 
   margs = (struct posix_makecontext_args *)malloc(
       sizeof(struct posix_makecontext_args));
-  if (!margs) {
+  if (margs == NULL) {
     return;
   }
 
@@ -182,32 +238,33 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
   }
   va_end(ap);
 
-  stack_size = (SIZE_T)ucp->uc_stack.ss_size;
+  stack_size = ucp->uc_stack.ss_size;
   if (stack_size == 0) {
-    /* Typical default if uninitialized or zero */
-    stack_size = 0;
+    stack_size = 65536;
   }
 
   fiber = CreateFiber(stack_size, posix_fiber_start, margs);
   margs->my_fiber = fiber;
 
   ucp->uc_mcontext.gregs[0] = (unsigned __int64)(size_t)fiber;
-  ucp->uc_mcontext.gregs[1] = 1; /* Indicates created by makecontext */
+  ucp->uc_mcontext.gregs[1] = 1;
 }
 
-/** \brief swapcontext function. */
+/**
+ * @brief Saves current context in oucp and activates context ucp.
+ */
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
   void *fiber;
 
   cleanup_dead_fibers();
 
-  if (!oucp || !ucp) {
+  if (oucp == NULL || ucp == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   fiber = (void *)(size_t)ucp->uc_mcontext.gregs[0];
-  if (!fiber) {
+  if (fiber == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -217,15 +274,20 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
   }
 
   SwitchToFiber(fiber);
-
   return 0;
 }
 
-#endif /* _WIN32 && !__CYGWIN__ */
+#endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-/* Dummy function to prevent empty translation unit */
-int dummy_posix_ucontext(void) { return 0; }
+/**
+ * @brief Retrieves information on posix-ucontext availability.
+ */
+enum posix_ucontext_error_code posix_ucontext_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_UCONTEXT_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_UCONTEXT_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_posix_ucontext;

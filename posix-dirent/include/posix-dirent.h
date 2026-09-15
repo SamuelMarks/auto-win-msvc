@@ -5,6 +5,31 @@
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Error codes returned by posix-dirent module functions.
+ */
+enum posix_dirent_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_DIRENT_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_DIRENT_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_DIRENT_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-dirent module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_DIRENT_SUCCESS on success, or POSIX_DIRENT_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_dirent_error_code posix_dirent_get_info(int *out_available);
+
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */

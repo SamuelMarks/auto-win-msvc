@@ -3,11 +3,29 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-pwdgrp.h"
+#include <string.h>
 /* clang-format on */
 
 TEST test_pwdgrp(void) {
-  if (getpwuid(0) == NULL)
-    SKIP();
+  struct passwd *pw;
+  struct group *gr;
+
+  setpwent();
+  pw = getpwent();
+  if (pw != NULL) {
+    ASSERT(pw->pw_name != NULL);
+    ASSERT(strlen(pw->pw_name) > 0);
+  }
+  endpwent();
+
+  setgrent();
+  gr = getgrent();
+  if (gr != NULL) {
+    ASSERT(gr->gr_name != NULL);
+    ASSERT(strlen(gr->gr_name) > 0);
+  }
+  endgrent();
+
   PASS();
 }
 

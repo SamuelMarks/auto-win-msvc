@@ -80,7 +80,7 @@ typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
 #define U64_CAST(x) ((double)(x))
 #endif
 
-/** \brief je_malloc_stats_print function. */
+/** @brief jemalloc stats print polyfill function. */
 error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
                                    void *cbopaque, const char *opts) {
   char buf[1024];
@@ -174,9 +174,32 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
   write_cb(cbopaque, "___ End Windows Native Memory Stats ___\n");
   return ERR_NONE;
 }
+#else
+/** @brief jemalloc stats print fallback function for non-Windows platforms. */
+error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
+                                   void *cbopaque, const char *opts) {
+  if (opts != NULL) {
+    /* unused */
+  }
+
+  if (!write_cb) {
+    return ERR_NONE;
+  }
+
+  write_cb(cbopaque, "___ Begin Fallback Memory Stats ___\n");
+  write_cb(cbopaque, "Process Memory:\n  WorkingSetSize: 0\n");
+  write_cb(cbopaque, "___ End Fallback Memory Stats ___\n");
+  return ERR_NONE;
+}
 #endif
 
-/* Dummy function to prevent empty translation unit */
-int dummy_bsd_malloc_np(void) { return 0; }
+/** @brief Validates or initializes the bsd-malloc-np module. */
+enum bsd_malloc_np_error_code bsd_malloc_np_init(int *out_status) {
+  if (out_status == NULL) {
+    return BSD_MALLOC_NP_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return BSD_MALLOC_NP_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_bsd_malloc_np;

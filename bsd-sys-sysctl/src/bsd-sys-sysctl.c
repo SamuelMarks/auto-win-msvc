@@ -1,7 +1,13 @@
 /* clang-format off */
 #include "bsd-sys-sysctl.h"
 #include <errno.h>
+#include <stddef.h>
 #include <string.h>
+#if !defined(_WIN32) && !defined(_MSC_VER)
+#if defined(__unix__) || defined(__APPLE__) || defined(__HAIKU__)
+#include <unistd.h>
+#endif
+#endif
 /* clang-format on */
 
 #if defined(_WIN32)
@@ -200,7 +206,55 @@ error_type_t sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 
 #endif
 
-/* Dummy function to prevent empty translation unit */
-int dummy_bsd_sys_sysctl(void) { return 0; }
+/**
+ * @brief Initializes and validates the bsd-sys-sysctl module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ */
+enum bsd_sys_sysctl_error_code bsd_sys_sysctl_init(int *out_status) {
+  if (out_status == NULL) {
+    return BSD_SYS_SYSCTL_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return BSD_SYS_SYSCTL_SUCCESS;
+}
+
+/**
+ * @brief Retrieves the number of CPUs via sysctl.
+ * @param[out] out_ncpu Pointer to an integer receiving the CPU count.
+ * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ */
+enum bsd_sys_sysctl_error_code bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
+  if (out_ncpu == NULL) {
+    return BSD_SYS_SYSCTL_ERROR_NULL_POINTER;
+  }
+#if defined(_WIN32)
+  {
+    int ncpu = 0;
+    size_t len = sizeof(ncpu);
+    error_type_t rc = sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0);
+    if (rc != ERR_NONE) {
+      return BSD_SYS_SYSCTL_ERROR_INVALID_ARGUMENT;
+    }
+    *out_ncpu = ncpu;
+    return BSD_SYS_SYSCTL_SUCCESS;
+  }
+#elif defined(_SC_NPROCESSORS_ONLN)
+  {
+    long n;
+    n = sysconf(_SC_NPROCESSORS_ONLN);
+    if (n > 0) {
+      *out_ncpu = (int)n;
+      return BSD_SYS_SYSCTL_SUCCESS;
+    }
+    *out_ncpu = 1;
+    return BSD_SYS_SYSCTL_SUCCESS;
+  }
+#else
+  *out_ncpu = 1;
+  return BSD_SYS_SYSCTL_SUCCESS;
+#endif
+}
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_sysctl;

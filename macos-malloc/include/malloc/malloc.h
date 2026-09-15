@@ -1,8 +1,13 @@
-/* macos-malloc/include/malloc/malloc.h - Strict C89 Implementation */
 #ifndef MACOS_MALLOC_STUB
 #define MACOS_MALLOC_STUB
 
+/**
+ * @file malloc/malloc.h
+ * @brief Forwarding compatibility header to macos-malloc.h.
+ */
+
 /* clang-format off */
+#include "macos-malloc.h"
 #include <malloc.h>
 /* clang-format on */
 

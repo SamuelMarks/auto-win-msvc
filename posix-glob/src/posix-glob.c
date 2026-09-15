@@ -467,6 +467,17 @@ void wordfree(wordexp_t *pwordexp) {
   pwordexp->we_wordc = 0;
 }
 
+/**
+ * @brief Retrieves information on posix-glob module availability.
+ */
+enum posix_glob_error_code posix_glob_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_GLOB_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_GLOB_SUCCESS;
+}
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 

@@ -70,7 +70,7 @@ if(MSVC)
     add_compile_options(/W4 )
     # Enable AddressSanitizer if supported (VS 2019 16.9+)
     # add_compile_options(/fsanitize=address /Zi)
-            add_link_options(/DEBUG) # Uncomment if using modern MSVC
+            # add_link_options(/DEBUG) # Uncomment if using modern MSVC
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
@@ -87,7 +87,6 @@ add_library(posix-stat src/posix-stat.c)
 set_target_properties(posix-stat PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stat PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-stat ${TEST_SOURCES})
@@ -96,8 +95,7 @@ add_executable(test_posix-stat ${TEST_SOURCES})
 target_include_directories(test_posix-stat PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_posix-stat PRIVATE posix-stat)
-add_test(NAME test_posix-stat COMMAND test_posix-stat WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
+add_test(NAME test_posix-stat COMMAND test_posix-stat)
 
 if(MSVC)
     target_compile_options(posix-stat PRIVATE )

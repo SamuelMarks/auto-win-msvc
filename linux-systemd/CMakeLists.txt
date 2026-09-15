@@ -27,11 +27,7 @@ include(FetchContent)
 if(NOT TARGET greatest)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
 FetchContent_MakeAvailable(greatest)
-
 endif()
-
-
-
 
 if(NOT TARGET posix-stdint)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-stdint/CMakeLists.txt")
@@ -70,13 +66,14 @@ if(WIN32)
     target_link_libraries(linux-systemd PRIVATE ws2_32)
 endif()
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-systemd ${TEST_SOURCES})
 target_link_libraries(test_linux-systemd PRIVATE linux-systemd greatest)
-add_test(NAME test_linux-systemd COMMAND test_linux-systemd)
+if(WIN32)
+    target_link_libraries(test_linux-systemd PRIVATE ws2_32)
 endif()
+add_test(NAME test_linux-systemd COMMAND test_linux-systemd)
 
 if(MSVC)
     target_compile_options(linux-systemd PRIVATE )

@@ -85,7 +85,6 @@ add_library(solaris-port src/solaris-port.c)
 set_target_properties(solaris-port PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(solaris-port PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_solaris-port ${TEST_SOURCES})
@@ -94,7 +93,7 @@ target_include_directories(test_solaris-port PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_solaris-port PRIVATE solaris-port)
 add_test(NAME test_solaris-port COMMAND test_solaris-port)
-endif()
+
 
 if(MSVC)
     target_compile_options(solaris-port PRIVATE )

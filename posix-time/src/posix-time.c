@@ -421,6 +421,18 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 }
 
 #endif /* _WIN32 */
+
+/**
+ * @brief Retrieves information on posix-time module availability.
+ */
+enum posix_time_error_code posix_time_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_TIME_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_TIME_SUCCESS;
+}
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 

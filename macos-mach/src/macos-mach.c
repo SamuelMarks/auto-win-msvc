@@ -1,20 +1,39 @@
-/* macos-mach.c - Strict C89 Implementation */
-
 /* clang-format off */
-#include <errno.h>
-
 #include "mach/mach.h"
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <errno.h>
+#include <stddef.h>
 
-#include <psapi.h>
-/* clang-format on */
+#ifndef ENOSYS
+#define ENOSYS 38
 #endif
 
-/** \brief Polyfill for mach_absolute_time
- * \return Absolute time in nanoseconds, or 0 on error.
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <psapi.h>
+#endif
+/* clang-format on */
+
+/**
+ * @brief Initializes and validates the macos-mach module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return MACOS_MACH_SUCCESS on success, or an error code on failure.
+ */
+enum macos_mach_error_code macos_mach_init(int *out_status) {
+  if (out_status == NULL) {
+    return MACOS_MACH_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return MACOS_MACH_SUCCESS;
+}
+
+/**
+ * @brief Polyfill for mach_absolute_time
+ * @return Absolute time in nanoseconds, or 0 on error.
  */
 uint64_t mach_absolute_time(void) {
 #if defined(_WIN32)
@@ -32,12 +51,13 @@ uint64_t mach_absolute_time(void) {
 #endif
 }
 
-/** \brief Polyfill for task_info
- * \param target_task The task to get info for.
- * \param flavor The type of info requested.
- * \param task_info_out Pointer to output struct.
- * \param task_info_outCnt Pointer to size of output struct.
- * \return KERN_SUCCESS on success, or -1 on error.
+/**
+ * @brief Polyfill for task_info
+ * @param target_task The task to get info for.
+ * @param flavor The type of info requested.
+ * @param task_info_out Pointer to output struct.
+ * @param task_info_outCnt Pointer to size of output struct.
+ * @return KERN_SUCCESS on success, or -1 on error.
  */
 kern_return_t task_info(task_t target_task, task_flavor_t flavor,
                         task_info_t task_info_out,
@@ -91,8 +111,9 @@ kern_return_t task_info(task_t target_task, task_flavor_t flavor,
   return -1;
 }
 
-/** \brief Polyfill for mach_task_self
- * \return The task port for the current process.
+/**
+ * @brief Polyfill for mach_task_self
+ * @return The task port for the current process.
  */
 task_t mach_task_self(void) {
 #if defined(_WIN32)
@@ -102,11 +123,12 @@ task_t mach_task_self(void) {
 #endif
 }
 
-/** \brief Polyfill for task_for_pid
- * \param target_tport The target task port (usually mach_task_self()).
- * \param pid The process ID to look up.
- * \param t Pointer to output task port.
- * \return KERN_SUCCESS on success, or -1 on error.
+/**
+ * @brief Polyfill for task_for_pid
+ * @param target_tport The target task port (usually mach_task_self()).
+ * @param pid The process ID to look up.
+ * @param t Pointer to output task port.
+ * @return KERN_SUCCESS on success, or -1 on error.
  */
 kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
 #if defined(_WIN32)
@@ -116,8 +138,8 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
     errno = EINVAL;
     return -1;
   }
-  hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE,
-                         (DWORD)pid);
+  hProcess =
+      OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, (DWORD)pid);
   if (hProcess) {
     *t = (mach_port_t)(size_t)hProcess;
     return KERN_SUCCESS;
@@ -130,3 +152,5 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
   errno = ENOSYS;
   return -1;
 }
+
+typedef int make_iso_compilers_happy_tu_macos_mach;

@@ -1,41 +1,59 @@
-/* posix-sys-select.c */
+/**
+ * @file posix-sys-select.c
+ * @brief Implementation of posix-sys-select helpers.
+ */
+
 /* clang-format off */
 #include "posix-sys-select.h"
-
-#ifdef _MSC_VER
-#ifndef _WINSOCK2API_
-#include <winsock2.h>
+#include <stddef.h>
 /* clang-format on */
-#endif
+
+/**
+ * @brief Retrieves information on posix-sys-select availability.
+ */
+enum posix_sys_select_error_code posix_sys_select_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_SYS_SELECT_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_SYS_SELECT_SUCCESS;
+}
+
+#if defined(_WIN32) || defined(_MSC_VER)
 
 void auto_win_msvc_fd_set(SOCKET fd, fd_set *set) {
-  u_int __i;
-  for (__i = 0; __i < set->fd_count; __i++) {
-    if (set->fd_array[__i] == fd) {
-      break;
+  u_int i;
+  if (set == NULL) {
+    return;
+  }
+  for (i = 0; i < set->fd_count; i++) {
+    if (set->fd_array[i] == fd) {
+      return;
     }
   }
-  if (__i == set->fd_count) {
-    if (set->fd_count < FD_SETSIZE) {
-      set->fd_array[__i] = fd;
-      set->fd_count++;
-    }
+  if (set->fd_count < FD_SETSIZE) {
+    set->fd_array[set->fd_count] = fd;
+    set->fd_count++;
   }
 }
 
 void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set) {
-  u_int __i;
-  for (__i = 0; __i < set->fd_count; __i++) {
-    if (set->fd_array[__i] == fd) {
-      while (__i < set->fd_count - 1) {
-        set->fd_array[__i] = set->fd_array[__i + 1];
-        __i++;
+  u_int i;
+  if (set == NULL) {
+    return;
+  }
+  for (i = 0; i < set->fd_count; i++) {
+    if (set->fd_array[i] == fd) {
+      while (i < set->fd_count - 1) {
+        set->fd_array[i] = set->fd_array[i + 1];
+        i++;
       }
       set->fd_count--;
-      break;
+      return;
     }
   }
 }
-#endif
+
+#endif /* defined(_WIN32) || defined(_MSC_VER) */
 
 typedef int make_iso_compilers_happy_tu_posix_sys_select;

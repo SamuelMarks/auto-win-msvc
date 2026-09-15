@@ -1,18 +1,19 @@
 /* clang-format off */
 #include "bsd-sys-param.h"
+#include <stddef.h>
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
-
-/** \brief bsd_sys_param_dummy_link function. */
-int bsd_sys_param_dummy_link(void) { return MAXPATHLEN; }
-
-#endif
-
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
-/* Dummy function to prevent empty translation unit */
-int dummy_bsd_sys_param(void) { return 0; }
+/**
+ * @brief Retrieves the maximum path length.
+ * @param[out] out_maxlen Pointer to store the max path length value.
+ * @return BSD_SYS_PARAM_SUCCESS or BSD_SYS_PARAM_ERROR_NULL_POINTER.
+ */
+enum bsd_sys_param_error_code bsd_sys_param_get_maxpathlen(size_t *out_maxlen) {
+  if (out_maxlen == NULL) {
+    return BSD_SYS_PARAM_ERROR_NULL_POINTER;
+  }
+  *out_maxlen = (size_t)MAXPATHLEN;
+  return BSD_SYS_PARAM_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_param;

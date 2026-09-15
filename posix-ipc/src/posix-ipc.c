@@ -1,3 +1,7 @@
+/* clang-format off */
+#include "posix-ipc.h"
+#include <stddef.h>
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -11,15 +15,14 @@
 #elif defined(_M_ARM) && !defined(_ARM_)
 #define _ARM_
 #endif
-#ifdef _MSC_VER
 
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
-#endif
-/* clang-format off */
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#endif /* _WIN32 */
+/* clang-format on */
 
 #ifndef NUM_FORMAT_CAST
 #if defined(_MSC_VER)
@@ -37,15 +40,7 @@
 #endif
 #endif
 
-
-#ifdef _MSC_VER
-
-#endif
-#include "posix-ipc.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-/* clang-format on */
+#ifdef _WIN32
 
 /* Helper to generate a consistent hash from a file */
 key_t ftok(const char *path, int id) {
@@ -283,7 +278,7 @@ int semget(key_t key, int nsems, int semflg) {
     }
   }
 
-  if (empty_idx == -1) {
+  if (empty_idx == -1 || !(semflg & IPC_CREAT)) {
     unlock_sem();
     return -1;
   }
@@ -512,7 +507,7 @@ int msgget(key_t key, int msgflg) {
     }
   }
 
-  if (empty_idx == -1) {
+  if (empty_idx == -1 || !(msgflg & IPC_CREAT)) {
     unlock_msg();
     return -1;
   }
@@ -746,6 +741,18 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
   return -1;
 }
 #endif /* _WIN32 */
+
+/**
+ * @brief Retrieves information on posix-ipc module availability.
+ */
+enum posix_ipc_error_code posix_ipc_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_IPC_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_IPC_SUCCESS;
+}
+
 typedef int dummy_translation_unit;
 
 /* Prevent empty translation unit */

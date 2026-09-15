@@ -1,44 +1,40 @@
 /* posix-mman.c - Strict C89 Implementation */
 
-#if defined(_WIN32) || defined(_WIN64)
 /* clang-format off */
+#if defined(_WIN32) || defined(_WIN64)
+#include <errno.h>
 #include <fcntl.h>
-
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
 #include <stddef.h>
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
-#else
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
-#endif
-#endif
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
 #if defined(_MSC_VER)
 #include <share.h>
 #endif
 #include "posix-mman.h"
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-#include "posix-mman.h"
 #include <errno.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include "posix-mman.h"
+#elif defined(__CYGWIN__)
+#include <errno.h>
+#include "posix-mman.h"
 #endif
+/* clang-format on */
 
 #if defined(_WIN32) || defined(_WIN64)
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#define safe_get_osfhandle(fd)                                                 \
+  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#endif
 
 /* Win32 Type Definitions to avoid windows.h inflating binary size */
 #if defined(_MSC_VER) && !defined(_WIN64)
@@ -97,41 +93,56 @@ typedef struct _WIN_SYSTEM_INFO {
   unsigned short wProcessorRevision;
 } WIN_SYSTEM_INFO;
 
+typedef struct _WIN_MEMORY_RANGE_ENTRY {
+  WIN_LPVOID VirtualAddress;
+  size_t NumberOfBytes;
+} WIN_MEMORY_RANGE_ENTRY;
+
+typedef int(WIN_STDCALL *PrefetchVirtualMemory_t)(WIN_HANDLE, size_t,
+                                                  WIN_MEMORY_RANGE_ENTRY *,
+                                                  WIN_DWORD);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(_MSC_VER)
 __declspec(dllimport) void WIN_STDCALL
-    GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
+GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
 __declspec(dllimport) size_t WIN_STDCALL
-    VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
-                 size_t dwLength);
+VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
+             size_t dwLength);
 __declspec(dllimport) WIN_DWORD WIN_STDCALL
-    GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
+GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
 __declspec(dllimport) WIN_HANDLE WIN_STDCALL
-    CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes,
-                       WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh,
-                       WIN_DWORD dwMaximumSizeLow, const char *lpName);
+CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes,
+                   WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh,
+                   WIN_DWORD dwMaximumSizeLow, const char *lpName);
 __declspec(dllimport) WIN_LPVOID WIN_STDCALL
-    MapViewOfFileEx(WIN_HANDLE hFileMappingObject, WIN_DWORD dwDesiredAccess,
-                    WIN_DWORD dwFileOffsetHigh, WIN_DWORD dwFileOffsetLow,
-                    size_t dwNumberOfBytesToMap, WIN_LPVOID lpBaseAddress);
+MapViewOfFileEx(WIN_HANDLE hFileMappingObject, WIN_DWORD dwDesiredAccess,
+                WIN_DWORD dwFileOffsetHigh, WIN_DWORD dwFileOffsetLow,
+                size_t dwNumberOfBytesToMap, WIN_LPVOID lpBaseAddress);
 __declspec(dllimport) int WIN_STDCALL
-    UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
+UnmapViewOfFile(WIN_LPCVOID lpBaseAddress);
 __declspec(dllimport) int WIN_STDCALL
-    FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
+FlushViewOfFile(WIN_LPCVOID lpBaseAddress, size_t dwNumberOfBytesToFlush);
 __declspec(dllimport) WIN_LPVOID WIN_STDCALL
-    VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize,
-                 WIN_DWORD flAllocationType, WIN_DWORD flProtect);
-__declspec(dllimport) int WIN_STDCALL
-    VirtualLock(WIN_LPVOID lpAddress, size_t dwSize);
-__declspec(dllimport) int WIN_STDCALL
-    VirtualUnlock(WIN_LPVOID lpAddress, size_t dwSize);
-__declspec(dllimport) int WIN_STDCALL
-    VirtualProtect(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flNewProtect,
-                   WIN_DWORD *lpflOldProtect);
+VirtualAlloc(WIN_LPVOID lpAddress, size_t dwSize, WIN_DWORD flAllocationType,
+             WIN_DWORD flProtect);
+__declspec(dllimport) int WIN_STDCALL VirtualLock(WIN_LPVOID lpAddress,
+                                                  size_t dwSize);
+__declspec(dllimport) int WIN_STDCALL VirtualUnlock(WIN_LPVOID lpAddress,
+                                                    size_t dwSize);
+__declspec(dllimport) int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress,
+                                                     size_t dwSize,
+                                                     WIN_DWORD flNewProtect,
+                                                     WIN_DWORD *lpflOldProtect);
 __declspec(dllimport) int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
+__declspec(dllimport) void *WIN_STDCALL GetCurrentProcess(void);
+__declspec(dllimport) void *WIN_STDCALL
+GetModuleHandleA(const char *lpModuleName);
+__declspec(dllimport) void *WIN_STDCALL GetProcAddress(void *hModule,
+                                                       const char *lpProcName);
 #else
 /** \brief GetSystemInfo function. */
 void WIN_STDCALL GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
@@ -174,6 +185,12 @@ int WIN_STDCALL VirtualProtect(WIN_LPVOID lpAddress, size_t dwSize,
                                WIN_DWORD *lpflOldProtect);
 /** \brief CloseHandle function. */
 int WIN_STDCALL CloseHandle(WIN_HANDLE hObject);
+/** \brief GetCurrentProcess function. */
+void *WIN_STDCALL GetCurrentProcess(void);
+/** \brief GetModuleHandleA function. */
+void *WIN_STDCALL GetModuleHandleA(const char *lpModuleName);
+/** \brief GetProcAddress function. */
+void *WIN_STDCALL GetProcAddress(void *hModule, const char *lpProcName);
 #endif
 
 #ifdef __cplusplus
@@ -189,20 +206,6 @@ __extension__ typedef unsigned long long posix_mman_uint64_t;
 typedef unsigned long long posix_mman_uint64_t;
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-__declspec(dllimport) void *__stdcall GetCurrentProcess(void);
-__declspec(dllimport) void *__stdcall GetModuleHandleA(
-    const char *lpModuleName);
-__declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
-                                                     const char *lpProcName);
-
-#ifdef __cplusplus
-}
-#endif
-
 /*
  * madvise - give advice about use of memory
  */
@@ -210,9 +213,8 @@ int madvise(void *addr, size_t length, int advice) {
 #if defined(_WIN32)
   void *hProcess;
   void *hKernel32;
-  typedef int(__stdcall * PrefetchVirtualMemory_t)(void *, size_t, void *,
-                                                   unsigned long);
   PrefetchVirtualMemory_t pPrefetchVirtualMemory = NULL;
+  WIN_MEMORY_RANGE_ENTRY entry;
 
   if (!addr || length == 0) {
     errno = EINVAL;
@@ -220,10 +222,6 @@ int madvise(void *addr, size_t length, int advice) {
   }
 
   if (advice == 4 /* MADV_DONTNEED */ || advice == 8 /* MADV_FREE */) {
-    /* POSIX advice: the application doesn't need this memory.
-       On Windows, MEM_RESET tells the OS it can discard the pages if needed
-       without writing them to the paging file. It doesn't free the address
-       space. */
     VirtualAlloc((WIN_LPVOID)(size_t)addr, length, 0x00080000 /* MEM_RESET */,
                  0x04 /* PAGE_READWRITE */);
     return 0;
@@ -236,16 +234,12 @@ int madvise(void *addr, size_t length, int advice) {
   hProcess = GetCurrentProcess();
   hKernel32 = GetModuleHandleA("kernel32.dll");
 
-  if (hKernel32) {
+  if (hKernel32 != NULL) {
     pPrefetchVirtualMemory = (PrefetchVirtualMemory_t)(size_t)GetProcAddress(
         hKernel32, "PrefetchVirtualMemory");
   }
 
-  if (pPrefetchVirtualMemory) {
-    struct {
-      void *VirtualAddress;
-      size_t NumberOfBytes;
-    } entry;
+  if (pPrefetchVirtualMemory != NULL) {
     entry.VirtualAddress = addr;
     entry.NumberOfBytes = length;
     pPrefetchVirtualMemory(hProcess, (size_t)1, &entry, 0);
@@ -262,9 +256,12 @@ int madvise(void *addr, size_t length, int advice) {
 
 /*
  * mlock - lock a range of process address space
-
  */
 int mlock(const void *addr, size_t len) {
+  if (addr == NULL || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   if (VirtualLock((WIN_LPVOID)(size_t)addr, len) != 0) {
     return 0;
   }
@@ -292,6 +289,7 @@ int mlockall(int flags) {
   GetSystemInfo(&si);
 
   while (addr < si.lpMaximumApplicationAddress) {
+    WIN_LPVOID next_addr;
     if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
       break;
     }
@@ -301,14 +299,11 @@ int mlockall(int flags) {
       VirtualLock(mbi.BaseAddress, mbi.RegionSize);
     }
 
-    {
-      WIN_LPVOID next_addr =
-          (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
-      if (next_addr <= addr) {
-        break;
-      }
-      addr = next_addr;
+    next_addr = (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
+    if (next_addr <= addr) {
+      break;
     }
+    addr = next_addr;
   }
 
   return 0;
@@ -316,8 +311,6 @@ int mlockall(int flags) {
 
 /*
  * mmap - map files or devices into memory
-
-
  */
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset) {
@@ -328,6 +321,7 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
   WIN_DWORD dwMaximumSizeHigh = 0;
   WIN_DWORD dwMaximumSizeLow = 0;
   void *map = NULL;
+  posix_mman_uint64_t off64;
 
   if (prot & PROT_EXEC) {
     if (prot & PROT_WRITE) {
@@ -337,8 +331,8 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
       flProtect = WIN_PAGE_EXECUTE_READ;
       dwDesiredAccess = WIN_FILE_MAP_READ | WIN_FILE_MAP_EXECUTE;
     } else {
-      flProtect = WIN_PAGE_EXECUTE;
-      dwDesiredAccess = WIN_FILE_MAP_EXECUTE;
+      flProtect = WIN_PAGE_EXECUTE_READ;
+      dwDesiredAccess = WIN_FILE_MAP_READ | WIN_FILE_MAP_EXECUTE;
     }
   } else {
     if (prot & PROT_WRITE) {
@@ -348,8 +342,8 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
       flProtect = WIN_PAGE_READONLY;
       dwDesiredAccess = WIN_FILE_MAP_READ;
     } else {
-      flProtect = WIN_PAGE_NOACCESS;
-      dwDesiredAccess = 0;
+      flProtect = WIN_PAGE_READONLY;
+      dwDesiredAccess = WIN_FILE_MAP_READ;
     }
   }
 
@@ -363,45 +357,48 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     }
   }
 
-  if ((flags & MAP_ANONYMOUS) == 0) {
+  if (flags & MAP_ANONYMOUS) {
+    dwDesiredAccess |= WIN_FILE_MAP_EXECUTE;
+    posix_mman_uint64_t len64 = (posix_mman_uint64_t)length;
+    dwMaximumSizeHigh = (WIN_DWORD)((len64 >> 32) & 0xFFFFFFFF);
+    dwMaximumSizeLow = (WIN_DWORD)(len64 & 0xFFFFFFFF);
+    hMap = CreateFileMappingA(WIN_INVALID_HANDLE_VALUE, NULL,
+                              WIN_PAGE_EXECUTE_READWRITE, dwMaximumSizeHigh,
+                              dwMaximumSizeLow, NULL);
+  } else {
     if (fd == -1) {
       errno = EBADF;
       return MAP_FAILED;
     }
-#if defined(_MSC_VER)
     hFile = (WIN_HANDLE)(ptrdiff_t)safe_get_osfhandle(fd);
-#else
-    hFile = (WIN_HANDLE)(ptrdiff_t)safe_get_osfhandle(fd);
-#endif
     if (hFile == WIN_INVALID_HANDLE_VALUE) {
       errno = EBADF;
       return MAP_FAILED;
     }
-  } else {
-    posix_mman_uint64_t len64 = (posix_mman_uint64_t)length;
-    dwMaximumSizeHigh = (WIN_DWORD)((len64 >> 32) & 0xFFFFFFFF);
-    dwMaximumSizeLow = (WIN_DWORD)(len64 & 0xFFFFFFFF);
+    hMap = CreateFileMappingA(hFile, NULL, flProtect, dwMaximumSizeHigh,
+                              dwMaximumSizeLow, NULL);
   }
 
-  hMap = CreateFileMappingA(hFile, NULL, flProtect, dwMaximumSizeHigh,
-                            dwMaximumSizeLow, NULL);
   if (hMap == NULL) {
     errno = EINVAL;
     return MAP_FAILED;
   }
 
-  {
-    posix_mman_uint64_t off64 = (posix_mman_uint64_t)offset;
-    map = MapViewOfFileEx(hMap, dwDesiredAccess,
-                          (WIN_DWORD)((off64 >> 32) & 0xFFFFFFFF),
-                          (WIN_DWORD)(off64 & 0xFFFFFFFF), length, addr);
-  }
+  off64 = (posix_mman_uint64_t)offset;
+  map = MapViewOfFileEx(hMap, dwDesiredAccess,
+                        (WIN_DWORD)((off64 >> 32) & 0xFFFFFFFF),
+                        (WIN_DWORD)(off64 & 0xFFFFFFFF), length, addr);
 
   CloseHandle(hMap);
 
   if (map == NULL) {
     errno = EINVAL;
     return MAP_FAILED;
+  }
+
+  if ((prot & (PROT_READ | PROT_WRITE | PROT_EXEC)) == 0) {
+    WIN_DWORD oldProt = 0;
+    VirtualProtect((WIN_LPVOID)map, length, WIN_PAGE_NOACCESS, &oldProt);
   }
 
   return map;
@@ -414,13 +411,18 @@ int mprotect(void *addr, size_t len, int prot) {
   WIN_DWORD flProtect = 0;
   WIN_DWORD oldProtect = 0;
 
+  if (addr == NULL || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (prot & PROT_EXEC) {
     if (prot & PROT_WRITE) {
       flProtect = WIN_PAGE_EXECUTE_READWRITE;
     } else if (prot & PROT_READ) {
       flProtect = WIN_PAGE_EXECUTE_READ;
     } else {
-      flProtect = WIN_PAGE_EXECUTE;
+      flProtect = WIN_PAGE_EXECUTE_READ;
     }
   } else {
     if (prot & PROT_WRITE) {
@@ -436,6 +438,23 @@ int mprotect(void *addr, size_t len, int prot) {
     return 0;
   }
 
+  if (flProtect == WIN_PAGE_READWRITE) {
+    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_WRITECOPY,
+                       &oldProtect)) {
+      return 0;
+    }
+  } else if (flProtect == WIN_PAGE_EXECUTE_READWRITE) {
+    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len,
+                       WIN_PAGE_EXECUTE_WRITECOPY, &oldProtect)) {
+      return 0;
+    }
+  } else if (flProtect == WIN_PAGE_EXECUTE) {
+    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_EXECUTE_READ,
+                       &oldProtect)) {
+      return 0;
+    }
+  }
+
   errno = EINVAL;
   return -1;
 }
@@ -445,6 +464,11 @@ int mprotect(void *addr, size_t len, int prot) {
  */
 int msync(void *addr, size_t length, int flags) {
   (void)flags;
+
+  if (addr == NULL || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
 
   if (FlushViewOfFile((WIN_LPCVOID)addr, length) != 0) {
     return 0;
@@ -458,6 +482,10 @@ int msync(void *addr, size_t length, int flags) {
  * munlock - unlock a range of process address space
  */
 int munlock(const void *addr, size_t len) {
+  if (addr == NULL || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   if (VirtualUnlock((WIN_LPVOID)(size_t)addr, len) != 0) {
     return 0;
   }
@@ -476,6 +504,7 @@ int munlockall(void) {
   GetSystemInfo(&si);
 
   while (addr < si.lpMaximumApplicationAddress) {
+    WIN_LPVOID next_addr;
     if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
       break;
     }
@@ -485,14 +514,11 @@ int munlockall(void) {
       VirtualUnlock(mbi.BaseAddress, mbi.RegionSize);
     }
 
-    {
-      WIN_LPVOID next_addr =
-          (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
-      if (next_addr <= addr) {
-        break;
-      }
-      addr = next_addr;
+    next_addr = (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
+    if (next_addr <= addr) {
+      break;
     }
+    addr = next_addr;
   }
 
   return 0;
@@ -503,6 +529,10 @@ int munlockall(void) {
  */
 int munmap(void *addr, size_t length) {
   (void)length;
+  if (addr == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   if (UnmapViewOfFile((WIN_LPCVOID)addr)) {
     return 0;
   }
@@ -511,14 +541,20 @@ int munmap(void *addr, size_t length) {
 }
 
 /* Helper to generate shm file path */
-static int generate_shm_path(const char *name, char *file_path,
-                             size_t file_path_len) {
+static error_type_t generate_shm_path(const char *name, char *file_path,
+                                      size_t file_path_len) {
   char temp_path[WIN_MAX_PATH];
   size_t i;
+  char buf[2];
+
+  if (name == NULL || file_path == NULL || file_path_len == 0) {
+    errno = EINVAL;
+    return EINVAL;
+  }
 
   if (GetTempPathA(WIN_MAX_PATH, temp_path) == 0) {
     errno = ENOENT;
-    return -1;
+    return ENOENT;
   }
 
 #if defined(_MSC_VER)
@@ -530,11 +566,10 @@ static int generate_shm_path(const char *name, char *file_path,
   strncat(file_path, "shm_", file_path_len - strlen(file_path) - 1);
 #endif
 
+  buf[1] = '\0';
   for (i = 0; name[i] != '\0' && i < 200; ++i) {
     if (name[i] != '/') {
-      char buf[2];
       buf[0] = name[i];
-      buf[1] = '\0';
 #if defined(_MSC_VER)
       strncat_s(file_path, file_path_len, buf, _TRUNCATE);
 #else
@@ -542,7 +577,7 @@ static int generate_shm_path(const char *name, char *file_path,
 #endif
     }
   }
-  return 0;
+  return ERR_NONE;
 }
 
 /*
@@ -551,10 +586,12 @@ static int generate_shm_path(const char *name, char *file_path,
 int shm_open(const char *name, int oflag, mode_t mode) {
   char file_path[WIN_MAX_PATH];
   int fd;
+  error_type_t rc;
 
   (void)mode;
 
-  if (generate_shm_path(name, file_path, WIN_MAX_PATH) != 0) {
+  rc = generate_shm_path(name, file_path, WIN_MAX_PATH);
+  if (rc != ERR_NONE) {
     return -1;
   }
 
@@ -577,8 +614,10 @@ int shm_open(const char *name, int oflag, mode_t mode) {
  */
 int shm_unlink(const char *name) {
   char file_path[WIN_MAX_PATH];
+  error_type_t rc;
 
-  if (generate_shm_path(name, file_path, WIN_MAX_PATH) != 0) {
+  rc = generate_shm_path(name, file_path, WIN_MAX_PATH);
+  if (rc != ERR_NONE) {
     return -1;
   }
 
@@ -675,19 +714,11 @@ int shm_unlink(const char *name) {
 #endif
 
 #if defined(__CYGWIN__)
-#include <errno.h>
-/* clang-format on */
 
-/** rief munlockall function. */
 int munlockall(void) { return 0; }
 
 #endif
 
 /* Ensure strict C compliance requires at least one declaration in translation
  * unit */
-typedef int dummy_posix_mman;
-
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
 typedef int make_iso_compilers_happy_tu_posix_mman;

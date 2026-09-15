@@ -85,16 +85,12 @@ add_library(linux-sys-prctl src/linux-sys-prctl.c)
 set_target_properties(linux-sys-prctl PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-sys-prctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-sys-prctl ${TEST_SOURCES})
-
 target_include_directories(test_linux-sys-prctl PRIVATE ${greatest_SOURCE_DIR})
-
-target_link_libraries(test_linux-sys-prctl PRIVATE linux-sys-prctl)
+target_link_libraries(test_linux-sys-prctl PRIVATE linux-sys-prctl greatest)
 add_test(NAME test_linux-sys-prctl COMMAND test_linux-sys-prctl)
-endif()
 
 if(MSVC)
     target_compile_options(linux-sys-prctl PRIVATE )

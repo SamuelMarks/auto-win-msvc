@@ -1,6 +1,7 @@
 /* posix-dirent.c - Strict C89 Implementation */
 /* clang-format off */
 #include "posix-dirent.h"
+#include <stddef.h>
 
 
 #ifndef NUM_FORMAT_CAST
@@ -346,6 +347,17 @@ int alphasort(const struct dirent **a, const struct dirent **b) {
 #else
 typedef int dummy_posix_dirent;
 #endif /* _WIN32 */
+
+/**
+ * @brief Retrieves information on posix-dirent module availability.
+ */
+enum posix_dirent_error_code posix_dirent_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_DIRENT_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_DIRENT_SUCCESS;
+}
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;

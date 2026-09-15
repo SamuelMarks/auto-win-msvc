@@ -1,84 +1,70 @@
-/* bsd-sys-param.h - Strict C89 Header */
 #ifndef BSD_SYS_PARAM_H
 #define BSD_SYS_PARAM_H
 
 /**
  * @file bsd-sys-param.h
- * @brief POSIX sys/param.h implementation for MSVC
- *
- * This header defines common macros from sys/param.h,
- * mapped to their MSVC/Windows equivalents.
+ * @brief Polyfill for BSD <sys/param.h> macros and utilities.
  */
-
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
-    defined(__DOS__)
 
 /* clang-format off */
-#include <stdlib.h> /* _MAX_PATH */
-
-/**
- * @brief Max length of a file path.
- */
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 4096
-#endif
-
-#ifndef LITTLE_ENDIAN
-#define LITTLE_ENDIAN 1234
-#endif
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN 4321
-#endif
-#ifndef BYTE_ORDER
-#define BYTE_ORDER LITTLE_ENDIAN
-#endif
-
-/**
- * @brief Evaluates to the smaller of two elements.
- */
-#ifndef MIN
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-
-/**
- * @brief Evaluates to the larger of two elements.
- */
-#ifndef MAX
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-
-/**
- * @brief Returns the number of units y in x (ceiling division).
- */
-#ifndef howmany
-#define howmany(x, y) (((x) + ((y) - 1)) / (y))
-#endif
-
-/**
- * @brief Rounds x up to the nearest multiple of y.
- */
-#ifndef roundup
-#define roundup(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
-#endif
-
-/**
- * @brief True if x is a power of 2, false otherwise.
- */
-#ifndef powerof2
-#define powerof2(x) ((((x) - 1) & (x)) == 0)
-#endif
-
-#else /* Not MSVC/Windows */
-
+#include <stddef.h>
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||                defined(__DOS__)
+#include <stdlib.h>
+#else
 #include <sys/param.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#endif /* defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||      \
-          defined(__DOS__) */
+#ifndef MAXPATHLEN
+/** @brief Maximum length of a pathname. */
+#define MAXPATHLEN 4096
+#endif
+
+#ifndef MIN
+/** @brief Returns minimum of two numbers. */
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef MAX
+/** @brief Returns maximum of two numbers. */
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef howmany
+/** @brief Ceiling division of x by y. */
+#define howmany(x, y) (((x) + ((y) - 1)) / (y))
+#endif
+
+#ifndef roundup
+/** @brief Rounds x up to multiple of y. */
+#define roundup(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
+#endif
+
+#ifndef powerof2
+/** @brief Returns non-zero if x is a power of 2. */
+#define powerof2(x) ((((x) - 1) & (x)) == 0)
+#endif
+
+/**
+ * @brief Error codes returned by bsd-sys-param functions.
+ */
+enum bsd_sys_param_error_code {
+  /** @brief Successful operation. */
+  BSD_SYS_PARAM_SUCCESS = 0,
+  /** @brief Null pointer passed as argument. */
+  BSD_SYS_PARAM_ERROR_NULL_POINTER = 1
+};
+
+/**
+ * @brief Retrieves the maximum path length defined in sys/param.h.
+ * @param[out] out_maxlen Pointer to a size_t that receives the max path length.
+ * @return BSD_SYS_PARAM_SUCCESS on success, or an error code on failure.
+ */
+enum bsd_sys_param_error_code bsd_sys_param_get_maxpathlen(size_t *out_maxlen);
 
 #ifdef __cplusplus
 }

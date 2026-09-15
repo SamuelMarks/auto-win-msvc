@@ -350,10 +350,18 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
 int posix_wait_kill(pid_t pid, int sig) { return kill(pid, sig); }
 #endif
 
+/**
+ * @brief Retrieves information on posix-wait polyfill availability.
+ */
+enum posix_wait_error_code posix_wait_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_WAIT_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_WAIT_SUCCESS;
+}
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
-
-/* Dummy function to prevent empty translation unit */
-int dummy_posix_wait(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_wait;

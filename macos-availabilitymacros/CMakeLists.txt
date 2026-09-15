@@ -36,7 +36,6 @@ endif()
 add_library(macos-availabilitymacros src/macos-availabilitymacros.c)
 set_target_properties(macos-availabilitymacros PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(macos-availabilitymacros PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_link_libraries(macos-availabilitymacros PUBLIC posix-stdint posix-stdbool)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()

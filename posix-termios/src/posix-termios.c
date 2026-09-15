@@ -427,6 +427,17 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 #endif
 }
 
+/**
+ * @brief Retrieves information on posix-termios module availability.
+ */
+enum posix_termios_error_code posix_termios_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_TERMIOS_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_TERMIOS_SUCCESS;
+}
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 

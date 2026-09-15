@@ -62,6 +62,27 @@ typedef int key_t;
 extern "C" {
 #endif
 
+/**
+ * @brief Error codes returned by posix-ipc module functions.
+ */
+enum posix_ipc_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_IPC_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_IPC_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_IPC_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-ipc module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_IPC_SUCCESS on success, or POSIX_IPC_ERROR_NULL_POINTER on NULL
+ * pointer.
+ */
+enum posix_ipc_error_code posix_ipc_get_info(int *out_available);
+
 #endif /* !_WIN32 */
 
 #ifdef _WIN32
@@ -272,6 +293,27 @@ int shmdt(const void *shmaddr);
  * @return A valid shared memory segment identifier on success, -1 on failure.
  */
 int shmget(key_t key, size_t size, int shmflg);
+
+/**
+ * @brief Error codes returned by posix-ipc module functions.
+ */
+enum posix_ipc_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_IPC_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_IPC_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_IPC_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-ipc module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_IPC_SUCCESS on success, or POSIX_IPC_ERROR_NULL_POINTER on NULL
+ * pointer.
+ */
+enum posix_ipc_error_code posix_ipc_get_info(int *out_available);
 
 #endif /* _WIN32 */
 

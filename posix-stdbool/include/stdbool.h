@@ -1,8 +1,4 @@
-/* stdbool.h - Strict C89 Header */
 #ifndef STDBOOL_WRAPPER_H
-#if defined(__GNUC__)
-#pragma GCC system_header
-#endif
 #define STDBOOL_WRAPPER_H
 
 /**

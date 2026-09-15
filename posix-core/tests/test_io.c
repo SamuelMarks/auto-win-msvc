@@ -3,18 +3,58 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-core.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #if defined(_MSC_VER) || defined(_WIN32)
-#include <process.h> /* For _getpid if needed */
+#include <process.h>
+#include <io.h>
+#else
+#include <unistd.h>
 #endif
 /* clang-format on */
 
-TEST test_openat(void) { SKIP(); /* Generated stub for openat */ }
+TEST test_openat(void) {
+  int fd;
 
-TEST test_sync_file_range(void) {
-  SKIP(); /* Generated stub for sync_file_range */
+  ASSERT_EQ(-1, openat(AT_FDCWD, NULL, O_RDONLY));
+  ASSERT_EQ(-1, openat(AT_FDCWD, "nonexistent_openat_xyz.tmp", O_RDONLY));
+
+  fd = openat(AT_FDCWD, "test_openat.tmp", O_RDWR | O_CREAT, 0666);
+  ASSERT(fd >= 0);
+  close(fd);
+  remove("test_openat.tmp");
+  PASS();
 }
 
-TEST test_fdatasync(void) { SKIP(); /* Generated stub for fdatasync */ }
+TEST test_sync_file_range(void) {
+  int fd;
+
+  ASSERT_EQ(-1, sync_file_range(-1, 0, 0, 0));
+
+  fd = open("test_sfr.tmp", O_RDWR | O_CREAT, 0666);
+  if (fd >= 0) {
+    (void)sync_file_range(fd, 0, 0, 0);
+    close(fd);
+    remove("test_sfr.tmp");
+  }
+  PASS();
+}
+
+TEST test_fdatasync(void) {
+  int fd;
+
+  ASSERT_EQ(-1, fdatasync(-1));
+
+  fd = open("test_fds.tmp", O_RDWR | O_CREAT, 0666);
+  if (fd >= 0) {
+    ASSERT_EQ(0, fdatasync(fd));
+    close(fd);
+    remove("test_fds.tmp");
+  }
+  PASS();
+}
 
 TEST test_pipe(void) {
   int fds[2];
@@ -37,14 +77,14 @@ TEST test_pipe(void) {
 #if defined(_WIN32)
   written = _write(fds[1], write_buf, (unsigned int)strlen(write_buf));
 #else
-  written = write(fds[1], write_buf, strlen(write_buf));
+  written = (int)write(fds[1], write_buf, strlen(write_buf));
 #endif
   ASSERT_EQ((int)strlen(write_buf), written);
 
 #if defined(_WIN32)
   nread = _read(fds[0], read_buf, (unsigned int)sizeof(read_buf) - 1);
 #else
-  nread = read(fds[0], read_buf, sizeof(read_buf) - 1);
+  nread = (int)read(fds[0], read_buf, sizeof(read_buf) - 1);
 #endif
   ASSERT_EQ(written, nread);
   ASSERT_STR_EQ("pipe_test", read_buf);
@@ -60,17 +100,79 @@ TEST test_pipe(void) {
   PASS();
 }
 
-TEST test_pipe2(void) { SKIP(); /* Generated stub for pipe2 */ }
+TEST test_pipe2(void) {
+  int fds[2];
 
-TEST test_pread(void) { SKIP(); /* Generated stub for pread */ }
+  ASSERT_EQ(-1, pipe2(NULL, 0));
 
-TEST test_pwrite(void) { SKIP(); /* Generated stub for pwrite */ }
+  ASSERT_EQ(0, pipe2(fds, 0));
+  ASSERT(fds[0] >= 0);
+  ASSERT(fds[1] >= 0);
 
-TEST test_readlink(void) { SKIP(); /* Generated stub for readlink */ }
+  close(fds[0]);
+  close(fds[1]);
+  PASS();
+}
 
-TEST test_readlinkat(void) { SKIP(); /* Generated stub for readlinkat */ }
+TEST test_pread(void) {
+  int fd;
+  char buf[16];
+  ssize_t n;
 
-TEST test_sync(void) { SKIP(); /* Generated stub for sync */ }
+  ASSERT_EQ(-1, pread(-1, NULL, 0, 0));
+
+  fd = open("test_pread_unit.tmp", O_RDWR | O_CREAT, 0666);
+  ASSERT(fd >= 0);
+  write(fd, "teststring", 10);
+
+  memset(buf, 0, sizeof(buf));
+  n = pread(fd, buf, 6, 4);
+  if (n >= 0) {
+    ASSERT_STR_EQ("string", buf);
+  }
+  close(fd);
+  remove("test_pread_unit.tmp");
+  PASS();
+}
+
+TEST test_pwrite(void) {
+  int fd;
+  ssize_t n;
+
+  ASSERT_EQ(-1, pwrite(-1, NULL, 0, 0));
+
+  fd = open("test_pwrite_unit.tmp", O_RDWR | O_CREAT, 0666);
+  ASSERT(fd >= 0);
+  n = pwrite(fd, "abcdef", 6, 0);
+  if (n >= 0) {
+    ASSERT_EQ(6, n);
+  }
+  close(fd);
+  remove("test_pwrite_unit.tmp");
+  PASS();
+}
+
+TEST test_readlink(void) {
+  char buf[64];
+
+  ASSERT_EQ(-1, readlink(NULL, buf, sizeof(buf)));
+  ASSERT_EQ(-1, readlink("nonexistent_link_xyz.tmp", buf, sizeof(buf)));
+  PASS();
+}
+
+TEST test_readlinkat(void) {
+  char buf[64];
+
+  ASSERT_EQ(-1, readlinkat(AT_FDCWD, NULL, buf, sizeof(buf)));
+  ASSERT_EQ(-1,
+            readlinkat(AT_FDCWD, "nonexistent_link_xyz.tmp", buf, sizeof(buf)));
+  PASS();
+}
+
+TEST test_sync(void) {
+  sync();
+  PASS();
+}
 
 SUITE(suite_posix_core_io) {
   RUN_TEST(test_openat);

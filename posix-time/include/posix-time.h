@@ -2,6 +2,31 @@
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Error codes returned by posix-time module functions.
+ */
+enum posix_time_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_TIME_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_TIME_ERROR_NULL_POINTER = 1,
+  /** @brief Invalid argument was provided. */
+  POSIX_TIME_ERROR_INVALID_ARGUMENT = 2
+};
+
+/**
+ * @brief Retrieves information on posix-time module availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_TIME_SUCCESS on success, or POSIX_TIME_ERROR_NULL_POINTER on
+ * NULL pointer.
+ */
+enum posix_time_error_code posix_time_get_info(int *out_available);
+
 /* clang-format off */
 #include <time.h>
 

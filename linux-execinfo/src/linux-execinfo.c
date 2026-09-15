@@ -1,5 +1,5 @@
 /* clang-format off */
-#include <linux-execinfo.h>
+#include "linux-execinfo.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -202,11 +202,38 @@ error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
   return ERR_NONE;
 }
 
+#else
+
+error_type_t backtrace(void **buffer, int size, int *captured) {
+  if (size <= 0 || !buffer)
+    return -1;
+  if (captured)
+    *captured = 0;
+  return ERR_NONE;
+}
+
+char **backtrace_symbols(void *const *buffer, int size) {
+  if (size <= 0 || !buffer)
+    return NULL;
+  return NULL;
+}
+
+error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
+  (void)fd;
+  if (size <= 0 || !buffer)
+    return -1;
+  return ERR_NONE;
+}
+
 #endif /* _MSC_VER */
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-/* Dummy function to prevent empty translation unit */
-int dummy_linux_execinfo(void) { return 0; }
+/** @brief Initializes and validates the linux-execinfo module. */
+enum linux_execinfo_error_code linux_execinfo_init(int *out_status) {
+  if (out_status == NULL) {
+    return LINUX_EXECINFO_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return LINUX_EXECINFO_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_linux_execinfo;

@@ -68,6 +68,8 @@ TEST test_sendmsg_null_arg(void) {
   ASSERT_EQ(0, posix_socketpair(AF_INET, SOCK_STREAM, 0, sv));
   ASSERT_EQ(-1, posix_sendmsg(sv[0], NULL, 0));
   ASSERT_EQ(EINVAL, errno);
+  ASSERT_EQ(-1, win_compat_sendmsg((uintptr_t)sv[0], NULL, 0));
+  ASSERT_EQ(EINVAL, errno);
 
 #ifdef _WIN32
   _close((int)sv[0]);

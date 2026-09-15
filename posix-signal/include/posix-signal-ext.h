@@ -2,6 +2,11 @@
 #ifndef POSIX_SIGNAL_EXT_H
 #define POSIX_SIGNAL_EXT_H
 
+/**
+ * @file posix-signal-ext.h
+ * @brief Extended POSIX signal constants and definitions.
+ */
+
 /* clang-format off */
 #include <signal.h>
 /* clang-format on */

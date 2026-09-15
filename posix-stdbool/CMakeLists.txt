@@ -85,7 +85,6 @@ add_library(posix-stdbool STATIC src/posix-stdbool.c)
 set_target_properties(posix-stdbool PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-stdbool PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-stdbool ${TEST_SOURCES})
@@ -94,7 +93,6 @@ target_include_directories(test_posix-stdbool PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_posix-stdbool PRIVATE posix-stdbool)
 add_test(NAME test_posix-stdbool COMMAND test_posix-stdbool)
-endif()
 
 if(MSVC)
     target_compile_options(posix-stdbool PRIVATE )

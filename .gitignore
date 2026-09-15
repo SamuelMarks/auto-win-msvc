@@ -171,6 +171,7 @@ results_*
 !/plan.md
 !/TODO_PLAN.md
 !/cdd-c-expansion.md
+!/UNDERCOVERED.md
 
 # External/Generated
 valkey_src/

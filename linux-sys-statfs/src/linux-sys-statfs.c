@@ -1,9 +1,9 @@
 /* clang-format off */
-#include <linux-sys-statfs.h>
+#include "linux-sys-statfs.h"
+#include <stddef.h>
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
-#include <stddef.h>
 #if defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -31,7 +31,7 @@
 #include <ws2tcpip.h>
 /* clang-format on */
 
-/** \brief statfs function. */
+/** @brief statfs function. */
 int statfs(const char *path, struct statfs *buf) {
   ULARGE_INTEGER freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes;
 
@@ -63,7 +63,7 @@ int statfs(const char *path, struct statfs *buf) {
 
 typedef DWORD(WINAPI *GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD, DWORD);
 
-/** \brief fstatfs function. */
+/** @brief fstatfs function. */
 int fstatfs(int fd, struct statfs *buf) {
   HANDLE hFile;
   HMODULE hKernel32;
@@ -98,10 +98,6 @@ int fstatfs(int fd, struct statfs *buf) {
           hKernel32, "GetFinalPathNameByHandleA");
 
   if (!pGetFinalPathNameByHandleA) {
-    /* Fallback for old Windows versions (XP/2003): no easy way to get path from
-     * handle. */
-    /* Since we just need volume info, we can't reliably get it without a path.
-     */
     errno = ENOSYS;
     return -1;
   }
@@ -112,16 +108,23 @@ int fstatfs(int fd, struct statfs *buf) {
     return -1;
   }
 
-  /* GetFinalPathNameByHandleA often prepends "\\?\", which GetDiskFreeSpaceExA
-   * handles fine */
   return statfs(path, buf);
 }
 
 #endif /* _MSC_VER */
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-/* Dummy function to prevent empty translation unit */
-int dummy_linux_sys_statfs(void) { return 0; }
+/**
+ * @brief Initializes and validates the linux-sys-statfs module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return LINUX_SYS_STATFS_SUCCESS on success, or an error code on failure.
+ */
+enum linux_sys_statfs_error_code linux_sys_statfs_init(int *out_status) {
+  if (out_status == NULL) {
+    return LINUX_SYS_STATFS_ERROR_NULL_POINTER;
+  }
+  *out_status = 1;
+  return LINUX_SYS_STATFS_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_linux_sys_statfs;

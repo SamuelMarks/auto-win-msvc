@@ -136,15 +136,9 @@ GetVersionExA(UTS_OSVERSIONINFOA *lpVersionInformation);
 
 /**
  * @brief Get system identification.
- *
- * Populates the provided utsname structure with system information.
- * On Windows, it uses GetComputerNameA, RtlGetVersion/GetVersionExA, and
- * GetSystemInfo.
- *
- * @param name Pointer to a utsname structure to be filled.
- * @return 0 on success, or -1 on error (with errno set appropriately).
  */
 int uname(struct utsname *name) {
+
   UTS_OSVERSIONINFOA osvi;
   UTS_SYSTEM_INFO si;
   UTS_DWORD nodename_len = _UTSNAME_LENGTH;
@@ -300,11 +294,9 @@ int uname(struct utsname *name) {
 
 /**
  * @brief Get system identification (stub for non-Windows).
- *
- * @param name Pointer to a utsname structure to be filled.
- * @return -1 and sets errno to EINVAL.
  */
 int uname(struct utsname *name) {
+
   if (!name) {
     errno = EFAULT;
     return -1;
@@ -318,7 +310,15 @@ int uname(struct utsname *name) {
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 
-/* Dummy function to prevent empty translation unit */
-int dummy_posix_utsname(void) { return 0; }
+/**
+ * @brief Retrieves information on posix-utsname availability.
+ */
+enum posix_utsname_error_code posix_utsname_get_info(int *out_available) {
+  if (out_available == NULL) {
+    return POSIX_UTSNAME_ERROR_NULL_POINTER;
+  }
+  *out_available = 1;
+  return POSIX_UTSNAME_SUCCESS;
+}
 
 typedef int make_iso_compilers_happy_tu_posix_utsname;

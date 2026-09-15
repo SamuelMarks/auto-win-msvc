@@ -1,76 +1,128 @@
-/* posix-syslog.h - Strict C89 Header */
 #ifndef POSIX_SYSLOG_H
 #define POSIX_SYSLOG_H
 
+/**
+ * @file posix-syslog.h
+ * @brief POSIX syslog.h compatibility layer for MSVC.
+ */
+
 /* clang-format off */
 #include <stdarg.h>
+#include <stddef.h>
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Format specifier macro as requested */
+/** @brief System is unusable. */
+#define LOG_EMERG 0
+/** @brief Action must be taken immediately. */
+#define LOG_ALERT 1
+/** @brief Critical conditions. */
+#define LOG_CRIT 2
+/** @brief Error conditions. */
+#define LOG_ERR 3
+/** @brief Warning conditions. */
+#define LOG_WARNING 4
+/** @brief Normal but significant condition. */
+#define LOG_NOTICE 5
+/** @brief Informational message. */
+#define LOG_INFO 6
+/** @brief Debug-level message. */
+#define LOG_DEBUG 7
 
-/* Priorities */
-#define LOG_EMERG 0   /* system is unusable */
-#define LOG_ALERT 1   /* action must be taken immediately */
-#define LOG_CRIT 2    /* critical conditions */
-#define LOG_ERR 3     /* error conditions */
-#define LOG_WARNING 4 /* warning conditions */
-#define LOG_NOTICE 5  /* normal but significant condition */
-#define LOG_INFO 6    /* informational */
-#define LOG_DEBUG 7   /* debug-level messages */
+/** @brief Kernel messages facility. */
+#define LOG_KERN (0 << 3)
+/** @brief Random user-level messages facility. */
+#define LOG_USER (1 << 3)
+/** @brief Mail system facility. */
+#define LOG_MAIL (2 << 3)
+/** @brief System daemons facility. */
+#define LOG_DAEMON (3 << 3)
+/** @brief Security/authorization messages facility. */
+#define LOG_AUTH (4 << 3)
+/** @brief Syslog internal messages facility. */
+#define LOG_SYSLOG (5 << 3)
+/** @brief Line printer subsystem facility. */
+#define LOG_LPR (6 << 3)
+/** @brief Network news subsystem facility. */
+#define LOG_NEWS (7 << 3)
+/** @brief UUCP subsystem facility. */
+#define LOG_UUCP (8 << 3)
+/** @brief Clock daemon facility. */
+#define LOG_CRON (9 << 3)
+/** @brief Private security/authorization messages facility. */
+#define LOG_AUTHPRIV (10 << 3)
+/** @brief FTP daemon facility. */
+#define LOG_FTP (11 << 3)
+/** @brief Reserved for local use 0. */
+#define LOG_LOCAL0 (16 << 3)
+/** @brief Reserved for local use 1. */
+#define LOG_LOCAL1 (17 << 3)
+/** @brief Reserved for local use 2. */
+#define LOG_LOCAL2 (18 << 3)
+/** @brief Reserved for local use 3. */
+#define LOG_LOCAL3 (19 << 3)
+/** @brief Reserved for local use 4. */
+#define LOG_LOCAL4 (20 << 3)
+/** @brief Reserved for local use 5. */
+#define LOG_LOCAL5 (21 << 3)
+/** @brief Reserved for local use 6. */
+#define LOG_LOCAL6 (22 << 3)
+/** @brief Reserved for local use 7. */
+#define LOG_LOCAL7 (23 << 3)
 
-/* Facilities */
-#define LOG_KERN (0 << 3)      /* kernel messages */
-#define LOG_USER (1 << 3)      /* random user-level messages */
-#define LOG_MAIL (2 << 3)      /* mail system */
-#define LOG_DAEMON (3 << 3)    /* system daemons */
-#define LOG_AUTH (4 << 3)      /* security/authorization messages */
-#define LOG_SYSLOG (5 << 3)    /* messages generated internally by syslogd */
-#define LOG_LPR (6 << 3)       /* line printer subsystem */
-#define LOG_NEWS (7 << 3)      /* network news subsystem */
-#define LOG_UUCP (8 << 3)      /* UUCP subsystem */
-#define LOG_CRON (9 << 3)      /* clock daemon */
-#define LOG_AUTHPRIV (10 << 3) /* security/authorization messages (private) */
-#define LOG_FTP (11 << 3)      /* ftp daemon */
-#define LOG_LOCAL0 (16 << 3)   /* reserved for local use */
-#define LOG_LOCAL1 (17 << 3)   /* reserved for local use */
-#define LOG_LOCAL2 (18 << 3)   /* reserved for local use */
-#define LOG_LOCAL3 (19 << 3)   /* reserved for local use */
-#define LOG_LOCAL4 (20 << 3)   /* reserved for local use */
-#define LOG_LOCAL5 (21 << 3)   /* reserved for local use */
-#define LOG_LOCAL6 (22 << 3)   /* reserved for local use */
-#define LOG_LOCAL7 (23 << 3)   /* reserved for local use */
+/** @brief Log the PID with each message. */
+#define LOG_PID 0x01
+/** @brief Log on the console if errors in sending. */
+#define LOG_CONS 0x02
+/** @brief Delay open until first syslog(). */
+#define LOG_ODELAY 0x04
+/** @brief Don't delay open. */
+#define LOG_NDELAY 0x08
+/** @brief Don't wait for console forks (deprecated). */
+#define LOG_NOWAIT 0x10
+/** @brief Log to stderr as well. */
+#define LOG_PERROR 0x20
 
-/* Options */
-#define LOG_PID 0x01    /* log the pid with each message */
-#define LOG_CONS 0x02   /* log on the console if errors in sending */
-#define LOG_ODELAY 0x04 /* delay open until first syslog() (default) */
-#define LOG_NDELAY 0x08 /* don't delay open */
-#define LOG_NOWAIT 0x10 /* don't wait for console forks: DEPRECATED */
-#define LOG_PERROR 0x20 /* log to stderr as well */
-
-/* Macros */
+/** @brief Combines facility and priority into a single priority value. */
 #define LOG_MAKEPRI(fac, pri) ((fac) | (pri))
+/** @brief Extracts the priority from a priority/facility value. */
 #define LOG_PRI(p) ((p) & 7)
+/** @brief Extracts the facility from a priority/facility value. */
 #define LOG_FAC(p) (((p) & 0x03f8) >> 3)
+/** @brief Creates a bit mask for a given priority. */
 #define LOG_MASK(pri) (1 << (pri))
+/** @brief Creates a mask for all priorities up to and including pri. */
 #define LOG_UPTO(pri) ((1 << ((pri) + 1)) - 1)
 
-/* Functions */
+/**
+ * @brief Error codes returned by posix-syslog functions.
+ */
+enum posix_syslog_error_code {
+  /** @brief Operation completed successfully. */
+  POSIX_SYSLOG_SUCCESS = 0,
+  /** @brief A null pointer was passed as an argument. */
+  POSIX_SYSLOG_ERROR_NULL_POINTER = 1
+};
 
 /**
- * @brief Close the log
- *
- * Closes the descriptor being used to write to the system logger.
+ * @brief Retrieves information on posix-syslog availability.
+ * @param[out] out_available Pointer to integer receiving availability status
+ * (1).
+ * @return POSIX_SYSLOG_SUCCESS on success, or POSIX_SYSLOG_ERROR_NULL_POINTER
+ * on NULL pointer.
+ */
+enum posix_syslog_error_code posix_syslog_get_info(int *out_available);
+
+/**
+ * @brief Closes the descriptor being used to write to the system logger.
  */
 void closelog(void);
 
 /**
- * @brief Open a connection to the system logger
- *
+ * @brief Opens a connection to the system logger.
  * @param ident The string to prepend to every message.
  * @param option Logging options (e.g., LOG_PID, LOG_NDELAY).
  * @param facility The default facility to assign to messages.
@@ -78,20 +130,26 @@ void closelog(void);
 void openlog(const char *ident, int option, int facility);
 
 /**
- * @brief Set the log priority mask
- *
+ * @brief Sets the log priority mask.
  * @param mask The new log priority mask.
  * @return The previous log priority mask.
  */
 int setlogmask(int mask);
 
+#if defined(__GNUC__) || defined(__clang__)
+#define POSIX_SYSLOG_PRINTF_ATTR(fmt, args)                                    \
+  __attribute__((__format__(__printf__, fmt, args)))
+#else
+#define POSIX_SYSLOG_PRINTF_ATTR(fmt, args)
+#endif
+
 /**
- * @brief Generate a log message
- *
+ * @brief Generates a log message.
  * @param priority The priority and facility of the message.
- * @param format The format string, followed by format arguments.
+ * @param format Format string.
  */
-void syslog(int priority, const char *format, ...);
+void syslog(int priority, const char *format, ...)
+    POSIX_SYSLOG_PRINTF_ATTR(2, 3);
 
 #ifdef __cplusplus
 }
