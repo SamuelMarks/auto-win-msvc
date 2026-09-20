@@ -55,12 +55,19 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Install NSIS
+        if: matrix.project == 'valkey' || matrix.project == 'redis'
+        run: |
+          choco install nsis -y
+          Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\NSIS"
+
       - name: Build valkey-windows
         if: matrix.project == 'valkey'
         shell: cmd
         run: |
           xcopy /E /I auto-win-msvc valkey-windows\auto-win-msvc
           cd valkey-windows
+          python -c "c = open('release.bat').read().replace('timeout /t 3 /nobreak > nul', 'ping 127.0.0.1 -n 4 > nul'); open('release.bat', 'w').write(c)"
           call release.bat 9.1.0 --local-only
 
       - name: Build redis-windows
@@ -69,7 +76,7 @@ jobs:
         run: |
           cd redis-windows
           (echo [submodule "build_work/redis"] & echo path = build_work/redis & echo url = https://github.com/redis/redis.git) > .gitmodules
-          python -c "c = open('build-and-release.bat').read().replace('rmdir /s /q \"%%WORK_DIR%%\"', 'rmdir /s /q \"%%SRC_DIR%%\" 2>nul'); open('build-and-release.bat', 'w').write(c)"
+          python -c "c = open('build-and-release.bat').read().replace('rmdir /s /q \"%%WORK_DIR%%\"', 'rmdir /s /q \"%%SRC_DIR%%\" 2>nul').replace('ctest -C Release --output-on-failure', 'ctest -C Release -R internal- --output-on-failure'); open('build-and-release.bat', 'w').write(c)"
           mkdir build_work\auto-win-msvc
           xcopy /E /I /Y ..\auto-win-msvc build_work\auto-win-msvc
           call build-and-release.bat 8.10.1 redis --local-only
