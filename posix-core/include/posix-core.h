@@ -48,6 +48,7 @@ typedef int error_type_t;
 #endif
 #else
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -689,13 +690,23 @@ int openat(int dirfd, const char *pathname, int flags, ...);
 #else
 /* openat */
 #endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fadvise */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
+#elif defined(__APPLE__) || !defined(__linux__)
+int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
+#else
 /* posix_fadvise */
+#endif
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fallocate */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
+#elif defined(__APPLE__) || !defined(__linux__)
+int posix_fallocate(intptr_t fd, off_t offset, off_t len);
+#else
 /* posix_fallocate */
+#endif
 /** @brief sync_file_range */
 #ifndef SYNC_FILE_RANGE_WAIT_BEFORE
 #define SYNC_FILE_RANGE_WAIT_BEFORE 1
@@ -706,10 +717,19 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #ifndef SYNC_FILE_RANGE_WAIT_AFTER
 #define SYNC_FILE_RANGE_WAIT_AFTER 4
 #endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief sync_file_range function. */
 int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
                     unsigned int flags);
-/* sync_file_range */
+#elif defined(__APPLE__) || !defined(__linux__)
+int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
+                    unsigned int flags);
+#else
+#if !defined(_GNU_SOURCE)
+extern int sync_file_range(int fd, off_t offset, off_t nbytes,
+                           unsigned int flags);
+#endif
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief alarm */
 unsigned int alarm(unsigned int seconds);
@@ -763,12 +783,22 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
 #else
 /* fchownat */
 #endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fdatasync */
 int fdatasync(intptr_t fd);
+#elif defined(__APPLE__)
+int fdatasync(intptr_t fd);
+#else
 /* fdatasync */
+#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fexecve */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
+#elif defined(__APPLE__) || !defined(__linux__)
+int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
+#else
 /* fexecve */
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fork */
 int fork(void);

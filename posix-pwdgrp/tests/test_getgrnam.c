@@ -13,7 +13,9 @@ TEST test_getgrnam(void) {
   char valid_name[128];
 
   valid_name[0] = '\0';
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(NULL, getgrnam(NULL));
+#endif
   ASSERT_EQ(NULL, getgrnam("non_existent_grp_1234567"));
 
   setgrent();

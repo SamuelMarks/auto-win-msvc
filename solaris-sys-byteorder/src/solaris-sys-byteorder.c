@@ -5,9 +5,6 @@
 
 /**
  * @brief Retrieves the current host byte order.
- * @param[out] out_byte_order Pointer to store the byte order value.
- * @return SOLARIS_SYS_BYTEORDER_SUCCESS or
- * SOLARIS_SYS_BYTEORDER_ERROR_NULL_POINTER.
  */
 enum solaris_sys_byteorder_error_code
 solaris_sys_byteorder_get_byte_order(int *out_byte_order) {

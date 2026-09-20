@@ -5,8 +5,6 @@
 
 /**
  * @brief Initializes and validates the haiku-os polyfill.
- * @param[out] out_status Pointer to store initialization status.
- * @return HAIKU_OS_SUCCESS or HAIKU_OS_ERROR_NULL_POINTER.
  */
 enum haiku_os_error_code haiku_os_init(int *out_status) {
   if (out_status == NULL) {

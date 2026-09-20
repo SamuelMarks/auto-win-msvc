@@ -1,6 +1,6 @@
 auto-win-msvc
 =============
-![Doc Coverage](https://img.shields.io/badge/doc__coverage-99%25-brightgreen)
+![Doc Coverage](https://img.shields.io/badge/doc__coverage-98%25-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/test__coverage-100%25-brightgreen)
 [![License](https://img.shields.io/badge/license-CC0%20OR%20Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![MSVC POSIX Monorepo CI](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/ci.yml/badge.svg)](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/ci.yml)

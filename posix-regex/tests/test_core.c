@@ -50,8 +50,12 @@ TEST test_regexec(void) {
   int rc;
 
   memset(&preg, 0, sizeof(preg));
-  rc = regexec(&preg, "some string", 1, pmatch, 0);
-  (void)rc;
+  rc = regcomp(&preg, "some", 0);
+  if (rc == 0) {
+    rc = regexec(&preg, "some string", 1, pmatch, 0);
+    (void)rc;
+    regfree(&preg);
+  }
   PASS();
 }
 

@@ -64,12 +64,24 @@ enum posix_strings_error_code posix_strings_get_info(int *out_available);
 #define strtok_r strtok_s
 #endif
 
+#endif /* _MSC_VER */
+
+#ifndef bzero
 /** @brief Sets first len bytes of the area starting at b to zero. */
 #define bzero(b, len) (memset((b), '\0', (len)), (void)0)
+#endif
+
+#ifndef bcopy
 /** @brief Copies len bytes from src to dest. */
 #define bcopy(src, dest, len) (memmove((dest), (src), (len)), (void)0)
+#endif
+
+#ifndef bcmp
 /** @brief Compares byte string b1 against byte string b2. */
 #define bcmp(b1, b2, len) memcmp((b1), (b2), (len))
+#endif
+
+#if defined(_MSC_VER)
 
 /**
  * @brief Finds the first (least significant) bit set in an integer.
@@ -91,6 +103,17 @@ int ffsl(long i);
  * @return 1-based index of least significant set bit, or 0 if no bits are set.
  */
 int ffsll(posix_strings_llong i);
+
+#else /* !_MSC_VER */
+
+#if !defined(__USE_POSIX)
+extern char *strtok_r(char *str, const char *delim, char **saveptr);
+#endif
+
+#if !defined(__USE_GNU)
+extern int ffsl(long i);
+extern int ffsll(posix_strings_llong i);
+#endif
 
 #endif /* _MSC_VER */
 

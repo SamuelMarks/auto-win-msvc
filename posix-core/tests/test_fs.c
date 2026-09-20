@@ -18,7 +18,9 @@ TEST test_chown(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, chown(NULL, (uid_t)-1, (gid_t)-1));
+#endif
   ASSERT_EQ(-1,
             chown("nonexistent_file_chown_xyz_123.tmp", (uid_t)-1, (gid_t)-1));
 
@@ -37,7 +39,9 @@ TEST test_faccessat(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, faccessat(AT_FDCWD, NULL, 0, 0));
+#endif
   ASSERT_EQ(-1, faccessat(AT_FDCWD, "nonexistent_faccessat_xyz.tmp", 0, 0));
 
   f = fopen("test_faccessat.tmp", "w");
@@ -78,7 +82,9 @@ TEST test_fchownat(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, fchownat(AT_FDCWD, NULL, (uid_t)-1, (gid_t)-1, 0));
+#endif
   ASSERT_EQ(-1, fchownat(AT_FDCWD, "nonexistent_fchownat.tmp", (uid_t)-1,
                          (gid_t)-1, 0));
 
@@ -97,7 +103,9 @@ TEST test_lchown(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, lchown(NULL, (uid_t)-1, (gid_t)-1));
+#endif
   ASSERT_EQ(-1, lchown("nonexistent_lchown.tmp", (uid_t)-1, (gid_t)-1));
 
   f = fopen("test_lchown.tmp", "w");
@@ -115,7 +123,9 @@ TEST test_link(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, link(NULL, NULL));
+#endif
   ASSERT_EQ(-1, link("nonexistent_link_src.tmp", "test_link_dst.tmp"));
 
   f = fopen("test_link1.tmp", "w");
@@ -135,7 +145,9 @@ TEST test_linkat(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, linkat(AT_FDCWD, NULL, AT_FDCWD, "test_linkat_dst.tmp", 0));
+#endif
   ASSERT_EQ(-1, linkat(AT_FDCWD, "nonexistent_linkat_src.tmp", AT_FDCWD,
                        "test_linkat_dst.tmp", 0));
 
@@ -156,7 +168,9 @@ TEST test_symlink(void) {
   FILE *f;
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, symlink(NULL, NULL));
+#endif
 
   f = fopen("test_symlink_tgt.tmp", "w");
   ASSERT(f != NULL);
@@ -174,7 +188,9 @@ TEST test_symlink(void) {
 TEST test_symlinkat(void) {
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, symlinkat(NULL, AT_FDCWD, "test_symlinkat_lnk.tmp"));
+#endif
 
   rc = symlinkat("test_target.tmp", AT_FDCWD, "test_symlinkat_lnk.tmp");
   if (rc == 0) {

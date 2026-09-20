@@ -32,7 +32,7 @@ TEST test_cpu_set_macros(void) {
   cpu_set_t set;
   int cpu_oob;
 
-  cpu_oob = 64;
+  cpu_oob = (int)(sizeof(cpu_set_t) * 8);
   CPU_ZERO(&set);
   ASSERT_EQ(0, CPU_ISSET(0, &set));
   ASSERT_EQ(0, CPU_ISSET(1, &set));

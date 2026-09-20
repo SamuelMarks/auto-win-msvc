@@ -140,7 +140,8 @@ int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
     return -1;
   }
   (void)pid;
-  mask->bits = 1;
+  CPU_ZERO(mask);
+  CPU_SET(0, mask);
   return 0;
 }
 

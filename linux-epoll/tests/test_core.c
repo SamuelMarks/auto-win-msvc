@@ -31,6 +31,7 @@ TEST test_linux_epoll_init(void) {
 TEST test_epoll_lifecycle(void) {
   int epfd;
   int ret;
+  struct epoll_event ev;
 
   epfd = epoll_create(1);
   if (epfd < 0 && errno == ENOSYS) {
@@ -44,10 +45,10 @@ TEST test_epoll_lifecycle(void) {
   ret = epoll_ctl(-1, 1, 0, NULL);
   ASSERT_EQ(-1, ret);
 
-  ret = epoll_wait(epfd, NULL, 0, 0);
+  ret = epoll_wait(epfd, &ev, 1, 0);
   (void)ret;
 
-  ret = epoll_wait(-1, NULL, 0, 0);
+  ret = epoll_wait(-1, &ev, 1, 0);
   ASSERT_EQ(-1, ret);
 
   ret = epoll_close(epfd);

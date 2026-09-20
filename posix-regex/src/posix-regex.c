@@ -9,8 +9,6 @@
 
 /**
  * @brief Initializes and validates the posix-regex module.
- * @param[out] out_status Pointer to an integer receiving initialized status.
- * @return POSIX_REGEX_SUCCESS on success, or POSIX_REGEX_ERROR_NULL_POINTER.
  */
 enum posix_regex_error_code posix_regex_init(int *out_status) {
   if (out_status == NULL) {

@@ -80,6 +80,14 @@ struct sched_param {
 #include <signal.h>
 #include <sys/types.h>
 
+#if !defined(__sigset_t_defined) && !defined(_SIGSET_T_DEFINED) &&             \
+    !defined(_SIGSET_T)
+#define _SIGSET_T_DEFINED
+#define _SIGSET_T 1
+#define __sigset_t_defined 1
+typedef unsigned long sigset_t;
+#endif
+
 #endif
 /* clang-format on */
 

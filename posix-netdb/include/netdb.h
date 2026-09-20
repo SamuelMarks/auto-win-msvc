@@ -1,5 +1,5 @@
 #ifndef POSIX_NETDB_NETDB_H
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #endif
 #define POSIX_NETDB_NETDB_H

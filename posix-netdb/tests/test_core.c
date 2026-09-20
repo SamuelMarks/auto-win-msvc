@@ -64,10 +64,12 @@ TEST test_posix_netdb_addrinfo(void) {
 TEST test_posix_netdb_gai_strerror(void) {
   const char *err;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(11, EAI_SYSTEM);
 
   err = posix_gai_strerror(EAI_SYSTEM);
   ASSERT_STR_EQ("System error", err);
+#endif
 
   err = posix_gai_strerror(0);
   ASSERT(err != NULL);

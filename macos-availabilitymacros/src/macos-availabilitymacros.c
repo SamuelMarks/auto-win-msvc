@@ -5,9 +5,6 @@
 
 /**
  * @brief Retrieves the max allowed macOS version.
- * @param[out] out_version Pointer to store the version value.
- * @return MACOS_AVAILABILITYMACROS_SUCCESS or
- * MACOS_AVAILABILITYMACROS_ERROR_NULL_POINTER.
  */
 enum macos_availabilitymacros_error_code
 macos_availabilitymacros_get_version(int *out_version) {

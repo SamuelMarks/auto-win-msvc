@@ -13,6 +13,28 @@
 #include <wepoll.h>
 #elif defined(__linux__)
 #include <sys/epoll.h>
+#include <unistd.h>
+#ifndef epoll_close
+#define epoll_close close
+#endif
+#else
+typedef union epoll_data {
+  void *ptr;
+  int fd;
+  unsigned int u32;
+#if defined(__GNUC__) || defined(__clang__)
+  __extension__ unsigned long long u64;
+#elif defined(_MSC_VER)
+  unsigned __int64 u64;
+#else
+  unsigned long long u64;
+#endif
+} epoll_data_t;
+
+struct epoll_event {
+  unsigned int events;
+  epoll_data_t data;
+};
 #endif
 /* clang-format on */
 

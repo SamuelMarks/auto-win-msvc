@@ -5,8 +5,6 @@
 
 /**
  * @brief Retrieves the HOST_VM_INFO constant value.
- * @param[out] out_info Pointer to store the value.
- * @return BSD_VM_PARAM_SUCCESS or BSD_VM_PARAM_ERROR_NULL_POINTER.
  */
 enum bsd_vm_param_error_code bsd_vm_param_get_host_vm_info(int *out_info) {
   if (out_info == NULL) {

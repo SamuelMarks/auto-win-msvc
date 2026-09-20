@@ -35,6 +35,9 @@ __declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
 #endif
 #else
 #include <unistd.h>
+#if !defined(__USE_XOPEN)
+extern char *realpath(const char *path, char *resolved_path);
+#endif
 #endif
 
 #ifndef O_RDWR

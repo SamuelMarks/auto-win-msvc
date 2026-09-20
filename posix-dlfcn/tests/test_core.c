@@ -116,6 +116,8 @@ TEST test_dlsym(void) {
   PASS();
 }
 
+static const int s_dummy_obj = 42;
+
 TEST test_dladdr(void) {
   Dl_info info;
   int rc;
@@ -124,11 +126,11 @@ TEST test_dladdr(void) {
   ASSERT_EQ(0, rc);
 
 #if defined(_WIN32)
-  rc = dladdr((const void *)&posix_dlfcn_get_info, NULL);
+  rc = dladdr((const void *)&s_dummy_obj, NULL);
   ASSERT_EQ(0, rc);
 #endif
 
-  rc = dladdr((const void *)&posix_dlfcn_get_info, &info);
+  rc = dladdr((const void *)&s_dummy_obj, &info);
   ASSERT_NEQ(0, rc);
   ASSERT(info.dli_fbase != NULL);
   ASSERT(info.dli_fname != NULL);

@@ -68,6 +68,8 @@ enum posix_dlfcn_error_code posix_dlfcn_get_info(int *out_available);
 #define RTLD_NEXT ((void *)(size_t)-1)
 #endif
 
+#ifndef _DL_INFO_DEFINED
+#define _DL_INFO_DEFINED
 /**
  * @struct Dl_info
  * @brief Information about a dynamically loaded object's symbol.
@@ -78,6 +80,7 @@ typedef struct {
   const char *dli_sname; /**< Name of nearest symbol. */
   void *dli_saddr;       /**< Exact value of nearest symbol. */
 } Dl_info;
+#endif
 
 /**
  * @brief Opens a dynamic library and returns a handle.
@@ -139,6 +142,24 @@ char *dlerror(void);
  */
 int dladdr(const void *addr, Dl_info *info);
 
+#endif
+
+#if defined(__linux__) && !defined(__USE_GNU)
+#ifndef _DL_INFO_DEFINED
+#define _DL_INFO_DEFINED
+/**
+ * @struct Dl_info
+ * @brief Information about a dynamically loaded object's symbol.
+ */
+typedef struct {
+  const char *dli_fname; /**< File name of defining object. */
+  void *dli_fbase;       /**< Load address of that object. */
+  const char *dli_sname; /**< Name of nearest symbol. */
+  void *dli_saddr;       /**< Exact value of nearest symbol. */
+} Dl_info;
+#endif
+
+int dladdr(const void *addr, Dl_info *info);
 #endif
 
 #ifdef __cplusplus

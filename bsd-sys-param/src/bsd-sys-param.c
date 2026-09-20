@@ -5,8 +5,6 @@
 
 /**
  * @brief Retrieves the maximum path length.
- * @param[out] out_maxlen Pointer to store the max path length value.
- * @return BSD_SYS_PARAM_SUCCESS or BSD_SYS_PARAM_ERROR_NULL_POINTER.
  */
 enum bsd_sys_param_error_code bsd_sys_param_get_maxpathlen(size_t *out_maxlen) {
   if (out_maxlen == NULL) {

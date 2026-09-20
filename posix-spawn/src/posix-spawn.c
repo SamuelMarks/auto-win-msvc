@@ -20,8 +20,6 @@
 
 /**
  * @brief Initializes and validates the posix-spawn module.
- * @param[out] out_status Pointer to an integer receiving initialized status.
- * @return POSIX_SPAWN_SUCCESS on success, or POSIX_SPAWN_ERROR_NULL_POINTER.
  */
 enum posix_spawn_error_code posix_spawn_init(int *out_status) {
   if (out_status == NULL) {

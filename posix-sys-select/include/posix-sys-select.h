@@ -7,7 +7,7 @@
  */
 
 /* clang-format off */
-#include "sys/select.h"
+#include <sys/select.h>
 #include <stddef.h>
 /* clang-format on */
 

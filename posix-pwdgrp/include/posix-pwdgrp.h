@@ -189,6 +189,28 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
  */
 void setpwent(void);
 
+#else /* !_WIN32 */
+
+#if !defined(__USE_MISC) && !defined(__USE_XOPEN)
+extern void setgrent(void);
+extern struct group *getgrent(void);
+extern void endgrent(void);
+extern void setpwent(void);
+extern struct passwd *getpwent(void);
+extern void endpwent(void);
+#endif
+
+#if !defined(__USE_POSIX)
+extern int getgrgid_r(gid_t gid, struct group *grp, char *buf, size_t buflen,
+                      struct group **result);
+extern int getgrnam_r(const char *name, struct group *grp, char *buf,
+                      size_t buflen, struct group **result);
+extern int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, size_t buflen,
+                      struct passwd **result);
+extern int getpwnam_r(const char *name, struct passwd *pwd, char *buf,
+                      size_t buflen, struct passwd **result);
+#endif
+
 #endif /* _WIN32 */
 
 #ifdef __cplusplus

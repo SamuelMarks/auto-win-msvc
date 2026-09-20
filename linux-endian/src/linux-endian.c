@@ -5,8 +5,6 @@
 
 /**
  * @brief Retrieves the current host byte order.
- * @param[out] out_byte_order Pointer to store the byte order value.
- * @return LINUX_ENDIAN_SUCCESS or LINUX_ENDIAN_ERROR_NULL_POINTER.
  */
 enum linux_endian_error_code linux_endian_get_byte_order(int *out_byte_order) {
   if (out_byte_order == NULL) {

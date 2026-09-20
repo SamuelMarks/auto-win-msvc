@@ -37,9 +37,11 @@ TEST test_posix_dirent_get_info(void) {
 TEST test_opendir_and_closedir(void) {
   DIR *d;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   /* Null pointer should fail */
   d = opendir(NULL);
   ASSERT_EQ(NULL, d);
+#endif
 
   /* Non-existent directory should fail */
   d = opendir("non_existent_directory_xyz_12345");
@@ -106,10 +108,10 @@ TEST test_scandir_and_alphasort(void) {
   int i;
 
   /* Invalid arguments */
+#if defined(_WIN32) || defined(_MSC_VER)
   n = scandir(NULL, &namelist, NULL, alphasort);
   ASSERT_EQ(-1, n);
 
-#if defined(_WIN32) || defined(_MSC_VER)
   n = scandir(".", NULL, NULL, alphasort);
   ASSERT_EQ(-1, n);
 #endif

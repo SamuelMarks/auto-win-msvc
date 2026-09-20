@@ -124,7 +124,7 @@ TEST test_posix_signal_sigemptyset(void) {
   ASSERT_EQ(-1, res);
 #endif
 
-  set = (sigset_t)0x12345678UL;
+  memset(&set, 0x55, sizeof(set));
   res = sigemptyset(&set);
   ASSERT_EQ(0, res);
 
@@ -140,7 +140,7 @@ TEST test_posix_signal_sigfillset(void) {
   ASSERT_EQ(-1, res);
 #endif
 
-  set = 0;
+  memset(&set, 0, sizeof(set));
   res = sigfillset(&set);
   ASSERT_EQ(0, res);
 

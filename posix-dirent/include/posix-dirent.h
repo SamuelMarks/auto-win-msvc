@@ -37,13 +37,16 @@ enum posix_dirent_error_code posix_dirent_get_info(int *out_available);
 /* clang-format off */
 #include <direct.h>
 #else
-#if defined(__GNUC__) || defined(__clang__)
-#include_next <dirent.h>
-#else
 #include <dirent.h>
 #endif
-#endif
 #include <sys/types.h>
+
+#if defined(__linux__) && !defined(__USE_MISC) && !defined(__USE_XOPEN2K8)
+extern int scandir(const char *dir, struct dirent ***namelist,
+                   int (*filter)(const struct dirent *),
+                   int (*compar)(const struct dirent **, const struct dirent **));
+extern int alphasort(const struct dirent **a, const struct dirent **b);
+#endif
 
 #else /* _WIN32 */
 

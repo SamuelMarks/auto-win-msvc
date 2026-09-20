@@ -19,64 +19,112 @@ typedef int error_type_t;
 #include <crtdbg.h>
 #endif
 
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#include <fcntl.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
 #include <io.h>
 #endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+/* clang-format on */
+
+#ifndef _O_RDWR
+#define _O_RDWR 2
+#endif
+#ifndef _O_BINARY
+#define _O_BINARY 0x8000
+#endif
+
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+#if defined(_WIN32)
+#define safe_get_osfhandle(fd)                                                 \
+  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
 #endif
 
-#define GET_SOCKET(fd) ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd) : (SOCKET)safe_get_osfhandle(fd))
+#define GET_SOCKET(fd)                                                         \
+  ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd)                               \
+                                  : (SOCKET)safe_get_osfhandle(fd))
 
 #ifdef _WIN32
 
-
 static int _wsaErrorToErrno(int err) {
-    switch (err) {
-    case WSAEWOULDBLOCK: return EWOULDBLOCK;
-    case WSAEINPROGRESS: return EINPROGRESS;
-    case WSAEALREADY: return EALREADY;
-    case WSAENOTSOCK: return ENOTSOCK;
-    case WSAEDESTADDRREQ: return EDESTADDRREQ;
-    case WSAEMSGSIZE: return EMSGSIZE;
-    case WSAEPROTOTYPE: return EPROTOTYPE;
-    case WSAENOPROTOOPT: return ENOPROTOOPT;
-    case WSAEPROTONOSUPPORT: return EPROTONOSUPPORT;
-    case WSAEOPNOTSUPP: return EOPNOTSUPP;
-    case WSAEAFNOSUPPORT: return EAFNOSUPPORT;
-    case WSAEADDRINUSE: return EADDRINUSE;
-    case WSAEADDRNOTAVAIL: return EADDRNOTAVAIL;
-    case WSAENETDOWN: return ENETDOWN;
-    case WSAENETUNREACH: return ENETUNREACH;
-    case WSAENETRESET: return ENETRESET;
-    case WSAECONNABORTED: return ECONNABORTED;
-    case WSAECONNRESET: return ECONNRESET;
-    case WSAENOBUFS: return ENOBUFS;
-    case WSAEISCONN: return EISCONN;
-    case WSAENOTCONN: return ENOTCONN;
-    case WSAETIMEDOUT: return ETIMEDOUT;
-    case WSAECONNREFUSED: return ECONNREFUSED;
-    case WSAELOOP: return ELOOP;
-    case WSAENAMETOOLONG: return ENAMETOOLONG;
-    case WSAEHOSTUNREACH: return EHOSTUNREACH;
-    case WSAENOTEMPTY: return ENOTEMPTY;
-    default: return EINVAL;
-    }
+  switch (err) {
+  case WSAEWOULDBLOCK:
+    return EWOULDBLOCK;
+  case WSAEINPROGRESS:
+    return EINPROGRESS;
+  case WSAEALREADY:
+    return EALREADY;
+  case WSAENOTSOCK:
+    return ENOTSOCK;
+  case WSAEDESTADDRREQ:
+    return EDESTADDRREQ;
+  case WSAEMSGSIZE:
+    return EMSGSIZE;
+  case WSAEPROTOTYPE:
+    return EPROTOTYPE;
+  case WSAENOPROTOOPT:
+    return ENOPROTOOPT;
+  case WSAEPROTONOSUPPORT:
+    return EPROTONOSUPPORT;
+  case WSAEOPNOTSUPP:
+    return EOPNOTSUPP;
+  case WSAEAFNOSUPPORT:
+    return EAFNOSUPPORT;
+  case WSAEADDRINUSE:
+    return EADDRINUSE;
+  case WSAEADDRNOTAVAIL:
+    return EADDRNOTAVAIL;
+  case WSAENETDOWN:
+    return ENETDOWN;
+  case WSAENETUNREACH:
+    return ENETUNREACH;
+  case WSAENETRESET:
+    return ENETRESET;
+  case WSAECONNABORTED:
+    return ECONNABORTED;
+  case WSAECONNRESET:
+    return ECONNRESET;
+  case WSAENOBUFS:
+    return ENOBUFS;
+  case WSAEISCONN:
+    return EISCONN;
+  case WSAENOTCONN:
+    return ENOTCONN;
+  case WSAETIMEDOUT:
+    return ETIMEDOUT;
+  case WSAECONNREFUSED:
+    return ECONNREFUSED;
+  case WSAELOOP:
+    return ELOOP;
+  case WSAENAMETOOLONG:
+    return ENAMETOOLONG;
+  case WSAEHOSTUNREACH:
+    return EHOSTUNREACH;
+  case WSAENOTEMPTY:
+    return ENOTEMPTY;
+  default:
+    return EINVAL;
+  }
 }
 
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
-static void __cdecl null_invalid_parameter_handler_auto(const wchar_t* a, const wchar_t* b, const wchar_t* c, unsigned int d, uintptr_t e) {
+static void __cdecl null_invalid_parameter_handler_auto(const wchar_t *a,
+                                                        const wchar_t *b,
+                                                        const wchar_t *c,
+                                                        unsigned int d,
+                                                        uintptr_t e) {
   (void)a;
   (void)b;
   (void)c;
@@ -87,7 +135,8 @@ static void __cdecl null_invalid_parameter_handler_auto(const wchar_t* a, const 
 static void __cdecl __init_winsock_auto(void) {
   WSADATA wsaData;
   WSAStartup(MAKEWORD(2, 2), &wsaData);
-  _set_invalid_parameter_handler((_invalid_parameter_handler)null_invalid_parameter_handler_auto);
+  _set_invalid_parameter_handler(
+      (_invalid_parameter_handler)null_invalid_parameter_handler_auto);
 }
 
 #if defined(_MSC_VER)
@@ -148,7 +197,10 @@ int get_nonblock(SOCKET s) {
       return O_NONBLOCK;
   return 0;
 }
-error_type_t clear_nonblock(SOCKET s) { set_nonblock(s, 0); return ERR_NONE; }
+error_type_t clear_nonblock(SOCKET s) {
+  set_nonblock(s, 0);
+  return ERR_NONE;
+}
 void copy_nonblock(SOCKET src, SOCKET dst) {
   if (get_nonblock(src))
     set_nonblock(dst, 1);
@@ -403,8 +455,6 @@ void posix_setservent(int stayopen) {
   return;
 }
 
-
-
 /** \brief posix_pselect function. */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                   const struct timespec *timeout, const void *sigmask) {
@@ -435,15 +485,12 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 #include <winsock2.h>
 #if defined(_MSC_VER)
 
-
-
-
 #ifndef _WINSOCK2API_
 #include <winsock2.h>
 #endif
 #undef FD_ZERO
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
-#define FD_ZERO(set) posix_fd_zero((fd_set*)set)
+#define FD_ZERO(set) posix_fd_zero((fd_set *)set)
 #undef FD_SET
 static void posix_fd_set(SOCKET fd, fd_set *set) {
   u_int __i;
@@ -475,7 +522,6 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
   }
 }
 #define FD_CLR(fd, set) posix_fd_clr((SOCKET)(fd), (fd_set *)(set))
-
 
 #endif
 
@@ -655,12 +701,13 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
   copy_nonblock(GET_SOCKET(socket), ret);
 
   {
-    intptr_t fd = _open_osfhandle((intptr_t)ret, 0);
+    intptr_t fd = _open_osfhandle((intptr_t)ret, _O_RDWR | _O_BINARY);
     if (fd == -1) {
       closesocket(ret);
       return -1;
     }
-    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */ }
+    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */
+    }
     return (int)fd;
   }
 #else
@@ -684,8 +731,8 @@ int posix_bind(intptr_t socket, const struct sockaddr *address,
     fake_addr.sin_family = AF_INET;
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     fake_addr.sin_port = 0;
-    ret = bind(GET_SOCKET(socket),
-               (const struct sockaddr *)&fake_addr, sizeof(fake_addr));
+    ret = bind(GET_SOCKET(socket), (const struct sockaddr *)&fake_addr,
+               sizeof(fake_addr));
     if (ret == SOCKET_ERROR) {
       errno = _wsaErrorToErrno(WSAGetLastError());
       return -1;
@@ -768,8 +815,8 @@ int posix_getsockname(intptr_t socket, struct sockaddr *address,
 #endif
 }
 
-int posix_getsockopt(intptr_t socket, int level, int option_name, void *option_value,
-                     posix_socklen_t *option_len) {
+int posix_getsockopt(intptr_t socket, int level, int option_name,
+                     void *option_value, posix_socklen_t *option_len) {
 #ifdef _WIN32
 #undef getsockopt
   int ret;
@@ -778,8 +825,8 @@ int posix_getsockopt(intptr_t socket, int level, int option_name, void *option_v
     if (option_len && *option_len == sizeof(struct timeval)) {
       DWORD ms = 0;
       int ms_len = sizeof(DWORD);
-      ret = getsockopt(GET_SOCKET(socket), level, option_name,
-                       (char *)&ms, &ms_len);
+      ret = getsockopt(GET_SOCKET(socket), level, option_name, (char *)&ms,
+                       &ms_len);
       if (ret == 0) {
         struct timeval *tv = (struct timeval *)((size_t)option_value);
         tv->tv_sec = ms / 1000;
@@ -831,11 +878,11 @@ int posix_listen(intptr_t socket, int backlog) {
 #endif
 }
 
-posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length, int flags) {
+posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
+                         int flags) {
 #ifdef _WIN32
 #undef recv
-  int ret =
-      recv(GET_SOCKET(socket), (char *)buffer, (int)length, flags);
+  int ret = recv(GET_SOCKET(socket), (char *)buffer, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -847,8 +894,8 @@ posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length, int flags
 }
 
 /** \brief posix_recvfrom function. */
-posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length, int flags,
-                             struct sockaddr *address,
+posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length,
+                             int flags, struct sockaddr *address,
                              posix_socklen_t *address_len) {
   (void)socket;
   (void)buffer;
@@ -864,7 +911,8 @@ posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length, int f
 }
 
 /** \brief posix_recvmsg function. */
-posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags) {
+posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
+                            int flags) {
 #ifdef _WIN32
   WSABUF stack_bufs[16];
   WSABUF *bufs;
@@ -903,7 +951,8 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags) 
 
   s = GET_SOCKET(socket);
   optlen = sizeof(optval);
-  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == SOCKET_ERROR &&
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
+          SOCKET_ERROR &&
       WSAGetLastError() == WSAENOTSOCK) {
     posix_ssize_t total = 0;
     for (i = 0; i < message->msg_iovlen; i++) {
@@ -931,9 +980,9 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message, int flags) 
   dwFlags = (DWORD)flags;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
     INT fromlen = (INT)message->msg_namelen;
-    rc = WSARecvFrom(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
-                     (struct sockaddr *)message->msg_name, &fromlen,
-                     NULL, NULL);
+    rc =
+        WSARecvFrom(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+                    (struct sockaddr *)message->msg_name, &fromlen, NULL, NULL);
     if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
       message->msg_namelen = (posix_socklen_t)fromlen;
     }
@@ -970,8 +1019,7 @@ posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
                          int flags) {
 #ifdef _WIN32
 #undef send
-  int ret = send(GET_SOCKET(socket), (const char *)message,
-                 (int)length, flags);
+  int ret = send(GET_SOCKET(socket), (const char *)message, (int)length, flags);
   if (ret == SOCKET_ERROR) {
     errno = _wsaErrorToErrno(WSAGetLastError());
     return -1;
@@ -1021,7 +1069,8 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 
   s = GET_SOCKET(socket);
   optlen = sizeof(optval);
-  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == SOCKET_ERROR &&
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
+          SOCKET_ERROR &&
       WSAGetLastError() == WSAENOTSOCK) {
     posix_ssize_t total = 0;
     for (i = 0; i < message->msg_iovlen; i++) {
@@ -1046,9 +1095,9 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 
   bytes_sent = 0;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
-    rc = WSASendTo(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
-                   (const struct sockaddr *)message->msg_name, (int)message->msg_namelen,
-                   NULL, NULL);
+    rc = WSASendTo(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
+                   (DWORD)flags, (const struct sockaddr *)message->msg_name,
+                   (int)message->msg_namelen, NULL, NULL);
   } else {
     rc = WSASend(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
                  NULL, NULL);
@@ -1072,7 +1121,8 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 #endif
 }
 
-/** \brief Native Winsock sendmsg helper operating directly on SOCKET handles. */
+/** \brief Native Winsock sendmsg helper operating directly on SOCKET handles.
+ */
 posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
                                    int flags) {
 #ifdef _WIN32
@@ -1155,7 +1205,8 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
 #endif
 }
 
-/** \brief Native Winsock recvmsg helper operating directly on SOCKET handles. */
+/** \brief Native Winsock recvmsg helper operating directly on SOCKET handles.
+ */
 posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
                                    int flags) {
 #ifdef _WIN32
@@ -1211,8 +1262,8 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
       if (message->msg_name != NULL && message->msg_namelen > 0) {
         int fromlen = (int)message->msg_namelen;
         rc = WSARecvFrom(real_s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd,
-                         &dwFlags, (struct sockaddr *)message->msg_name, &fromlen,
-                         NULL, NULL);
+                         &dwFlags, (struct sockaddr *)message->msg_name,
+                         &fromlen, NULL, NULL);
         if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
           message->msg_namelen = (posix_socklen_t)fromlen;
         }
@@ -1368,12 +1419,13 @@ int posix_socket(int domain, int type, int protocol) {
   }
 
   {
-    intptr_t fd = _open_osfhandle((intptr_t)s, 0);
+    intptr_t fd = _open_osfhandle((intptr_t)s, _O_RDWR | _O_BINARY);
     if (fd == -1) {
       closesocket(s);
       return -1;
     }
-    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */ }
+    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */
+    }
     return (int)fd;
   }
 #else
@@ -1386,21 +1438,6 @@ int posix_socket(int domain, int type, int protocol) {
 }
 
 /** \brief posix_socketpair function. */
-
-#if defined(_WIN32)
-#include <fcntl.h>
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <winsock2.h>
-#endif
-#include <ws2tcpip.h>
-/* clang-format on */
-
-#endif
 
 int posix_socketpair(int domain, int type, int protocol,
                      intptr_t socket_vector[2]) {
@@ -1454,8 +1491,8 @@ int posix_socketpair(int domain, int type, int protocol,
   closesocket(listener);
 
   {
-    intptr_t fd_server = _open_osfhandle((intptr_t)server, 0);
-    intptr_t fd_client = _open_osfhandle((intptr_t)client, 0);
+    intptr_t fd_server = _open_osfhandle((intptr_t)server, _O_RDWR | _O_BINARY);
+    intptr_t fd_client = _open_osfhandle((intptr_t)client, _O_RDWR | _O_BINARY);
     if (fd_server == -1 || fd_client == -1) {
       if (fd_server != -1)
         _close((int)fd_server);

@@ -28,6 +28,7 @@ if(MSVC)
     add_compile_options(/W4 /WX /FS)
 else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _DARWIN_C_SOURCE)
 endif()
 
 include(CTest)

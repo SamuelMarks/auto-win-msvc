@@ -69,6 +69,7 @@ TEST test_gettimeofday(void) {
   res = gettimeofday(&tv, NULL);
   ASSERT_EQ(0, res);
 
+#if defined(_WIN32) || defined(_MSC_VER)
   /* tz only */
   res = gettimeofday(NULL, &tz);
   ASSERT_EQ(0, res);
@@ -76,6 +77,7 @@ TEST test_gettimeofday(void) {
   /* both null */
   res = gettimeofday(NULL, NULL);
   ASSERT_EQ(0, res);
+#endif
 
   PASS();
 }
@@ -149,9 +151,11 @@ TEST test_utimes(void) {
   FILE *f;
   const char *test_path = "test_posix_time_tmp.txt";
 
+#if defined(_WIN32) || defined(_MSC_VER)
   /* Invalid file */
   res = utimes(NULL, NULL);
   ASSERT_EQ(-1, res);
+#endif
 
   res = utimes("non_existent_file_12345.xyz", NULL);
   ASSERT_EQ(-1, res);

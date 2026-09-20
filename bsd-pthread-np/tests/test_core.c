@@ -5,6 +5,9 @@
 #include "bsd-pthread-np.h"
 #include <errno.h>
 #include <stdio.h>
+#if defined(__linux__)
+#include <sched.h>
+#endif
 /* clang-format on */
 
 TEST test_bsd_pthread_np_init(void) {
@@ -29,30 +32,43 @@ TEST test_bsd_pthread_np_init(void) {
 }
 
 TEST test_pthread_setaffinity_np(void) {
-  unsigned long mask;
   int ret;
 
-  /* NULL cpuset */
-  mask = 1;
-  ret = pthread_setaffinity_np(0, sizeof(mask), NULL);
-  ASSERT_EQ(-1, ret);
-  ASSERT_EQ(EINVAL, errno);
+#if defined(__linux__)
+  {
+    cpu_set_t cpuset;
+    __CPU_ZERO_S(sizeof(cpuset), &cpuset);
+    __CPU_SET_S(0, sizeof(cpuset), &cpuset);
+    ret = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
+    ASSERT_EQ(0, ret);
+  }
+#else
+  {
+    unsigned long mask;
 
-  /* 0 cpusetsize */
-  ret = pthread_setaffinity_np(0, 0, &mask);
-  ASSERT_EQ(-1, ret);
-  ASSERT_EQ(EINVAL, errno);
+    mask = 1;
+    /* NULL cpuset */
+    ret = pthread_setaffinity_np(0, sizeof(mask), NULL);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
 
-  /* Zero mask */
-  mask = 0;
-  ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
-  ASSERT_EQ(-1, ret);
-  ASSERT_EQ(EINVAL, errno);
+    /* 0 cpusetsize */
+    ret = pthread_setaffinity_np(0, 0, &mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
 
-  /* Valid mask, thread = 0 */
-  mask = 1;
-  ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
-  ASSERT_EQ(0, ret);
+    /* Zero mask */
+    mask = 0;
+    ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
+
+    /* Valid mask, thread = 0 */
+    mask = 1;
+    ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
+    ASSERT_EQ(0, ret);
+  }
+#endif
 
   PASS();
 }

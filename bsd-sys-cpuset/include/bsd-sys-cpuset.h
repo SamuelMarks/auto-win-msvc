@@ -114,9 +114,10 @@ typedef int cpulevel_t;
 typedef int cpuwhich_t;
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
-    !defined(__NetBSD__) && !defined(__linux__) && !defined(__CYGWIN__)
-#ifndef _ID_T
+    !defined(__NetBSD__) && !defined(__CYGWIN__)
+#if !defined(__id_t_defined) && !defined(_ID_T)
 #define _ID_T
+#define __id_t_defined
 /** @brief Identifier type. */
 typedef int id_t;
 #endif

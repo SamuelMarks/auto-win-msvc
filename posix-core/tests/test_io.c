@@ -18,7 +18,9 @@
 TEST test_openat(void) {
   int fd;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, openat(AT_FDCWD, NULL, O_RDONLY));
+#endif
   ASSERT_EQ(-1, openat(AT_FDCWD, "nonexistent_openat_xyz.tmp", O_RDONLY));
 
   fd = openat(AT_FDCWD, "test_openat.tmp", O_RDWR | O_CREAT, 0666);
@@ -74,28 +76,15 @@ TEST test_pipe(void) {
   ASSERT(fds[0] >= 0);
   ASSERT(fds[1] >= 0);
 
-#if defined(_WIN32)
-  written = _write(fds[1], write_buf, (unsigned int)strlen(write_buf));
-#else
   written = (int)write(fds[1], write_buf, strlen(write_buf));
-#endif
   ASSERT_EQ((int)strlen(write_buf), written);
 
-#if defined(_WIN32)
-  nread = _read(fds[0], read_buf, (unsigned int)sizeof(read_buf) - 1);
-#else
   nread = (int)read(fds[0], read_buf, sizeof(read_buf) - 1);
-#endif
   ASSERT_EQ(written, nread);
   ASSERT_STR_EQ("pipe_test", read_buf);
 
-#if defined(_WIN32)
-  _close(fds[0]);
-  _close(fds[1]);
-#else
   close(fds[0]);
   close(fds[1]);
-#endif
 
   PASS();
 }
@@ -103,6 +92,18 @@ TEST test_pipe(void) {
 TEST test_pipe2(void) {
   int fds[2];
 
+#if defined(__APPLE__)
+  if (__builtin_available(macOS 27.0, *)) {
+    ASSERT_EQ(-1, pipe2(NULL, 0));
+
+    ASSERT_EQ(0, pipe2(fds, 0));
+    ASSERT(fds[0] >= 0);
+    ASSERT(fds[1] >= 0);
+
+    close(fds[0]);
+    close(fds[1]);
+  }
+#else
   ASSERT_EQ(-1, pipe2(NULL, 0));
 
   ASSERT_EQ(0, pipe2(fds, 0));
@@ -111,6 +112,8 @@ TEST test_pipe2(void) {
 
   close(fds[0]);
   close(fds[1]);
+#endif
+
   PASS();
 }
 
@@ -155,7 +158,9 @@ TEST test_pwrite(void) {
 TEST test_readlink(void) {
   char buf[64];
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, readlink(NULL, buf, sizeof(buf)));
+#endif
   ASSERT_EQ(-1, readlink("nonexistent_link_xyz.tmp", buf, sizeof(buf)));
   PASS();
 }
@@ -163,7 +168,9 @@ TEST test_readlink(void) {
 TEST test_readlinkat(void) {
   char buf[64];
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, readlinkat(AT_FDCWD, NULL, buf, sizeof(buf)));
+#endif
   ASSERT_EQ(-1,
             readlinkat(AT_FDCWD, "nonexistent_link_xyz.tmp", buf, sizeof(buf)));
   PASS();

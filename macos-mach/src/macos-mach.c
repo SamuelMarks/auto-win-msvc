@@ -53,11 +53,6 @@ uint64_t mach_absolute_time(void) {
 
 /**
  * @brief Polyfill for task_info
- * @param target_task The task to get info for.
- * @param flavor The type of info requested.
- * @param task_info_out Pointer to output struct.
- * @param task_info_outCnt Pointer to size of output struct.
- * @return KERN_SUCCESS on success, or -1 on error.
  */
 kern_return_t task_info(task_t target_task, task_flavor_t flavor,
                         task_info_t task_info_out,
@@ -125,10 +120,6 @@ task_t mach_task_self(void) {
 
 /**
  * @brief Polyfill for task_for_pid
- * @param target_tport The target task port (usually mach_task_self()).
- * @param pid The process ID to look up.
- * @param t Pointer to output task port.
- * @return KERN_SUCCESS on success, or -1 on error.
  */
 kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
 #if defined(_WIN32)

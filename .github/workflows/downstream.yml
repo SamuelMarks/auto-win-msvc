@@ -67,10 +67,12 @@ jobs:
         if: matrix.project == 'redis'
         shell: cmd
         run: |
-          mkdir redis-windows\build_work
-          xcopy /E /I auto-win-msvc redis-windows\build_work\auto-win-msvc
           cd redis-windows
-          call build-and-release.bat 8.8-rc1 redis --local-only
+          (echo [submodule "build_work/redis"] & echo path = build_work/redis & echo url = https://github.com/redis/redis.git) > .gitmodules
+          python -c "c = open('build-and-release.bat').read().replace('rmdir /s /q \"%%WORK_DIR%%\"', 'rmdir /s /q \"%%SRC_DIR%%\" 2>nul'); open('build-and-release.bat', 'w').write(c)"
+          mkdir build_work\auto-win-msvc
+          xcopy /E /I /Y ..\auto-win-msvc build_work\auto-win-msvc
+          call build-and-release.bat 8.10.1 redis --local-only
 
       - name: Build rsync
         if: matrix.project == 'rsync'

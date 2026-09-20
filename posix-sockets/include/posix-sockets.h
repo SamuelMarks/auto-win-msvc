@@ -197,7 +197,9 @@ struct pollfd {
 #endif
 struct pollfd;
 
+#if !defined(_SYS_SELECT_H) && !defined(_SYS_SELECT_H_) && !defined(FD_SET)
 typedef struct fd_set fd_set;
+#endif
 struct timeval;
 struct msghdr;
 struct iovec;

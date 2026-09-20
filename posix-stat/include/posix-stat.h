@@ -71,6 +71,25 @@ enum posix_stat_error_code {
  */
 enum posix_stat_error_code posix_stat_get_info(int *out_available);
 
+#if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC) &&           \
+    !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+/* VS2015+ provides struct timespec in time.h */
+#else
+#define _TIMESPEC_DEFINED
+#define HAVE_STRUCT_TIMESPEC 1
+#define __timespec_defined 1
+#define _STRUCT_TIMESPEC 1
+/**
+ * @brief Structure for representing time with nanosecond precision.
+ */
+struct timespec {
+  time_t tv_sec; /**< Seconds. */
+  long tv_nsec;  /**< Nanoseconds. */
+};
+#endif
+#endif
+
 #if defined(_WIN32)
 /* Standard Types (if missing) */
 #if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
@@ -82,55 +101,97 @@ enum posix_stat_error_code posix_stat_get_info(int *out_available);
 /** @brief POSIX file mode type. */
 typedef unsigned short mode_t;
 #endif
-
-#if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-/* VS2015+ provides struct timespec in time.h */
-#else
-#define _TIMESPEC_DEFINED
-#define HAVE_STRUCT_TIMESPEC 1
-/**
- * @brief Structure for representing time with nanosecond precision.
- */
-struct timespec {
-  time_t tv_sec; /**< Seconds. */
-  long tv_nsec;  /**< Nanoseconds. */
-};
-#endif
-#endif
+#endif /* _WIN32 */
 
 #ifndef S_IFMT
+#ifdef _S_IFMT
 /** @brief Bit mask for the file type bit field. */
 #define S_IFMT _S_IFMT
+#else
+/** @brief Bit mask for the file type bit field. */
+#define S_IFMT 0170000
+#endif
 #endif
 #ifndef S_IFDIR
+#ifdef _S_IFDIR
 /** @brief Directory file type. */
 #define S_IFDIR _S_IFDIR
+#else
+/** @brief Directory file type. */
+#define S_IFDIR 0040000
+#endif
 #endif
 #ifndef S_IFCHR
+#ifdef _S_IFCHR
 /** @brief Character device file type. */
 #define S_IFCHR _S_IFCHR
+#else
+/** @brief Character device file type. */
+#define S_IFCHR 0020000
+#endif
 #endif
 #ifndef S_IFREG
+#ifdef _S_IFREG
 /** @brief Regular file type. */
 #define S_IFREG _S_IFREG
+#else
+/** @brief Regular file type. */
+#define S_IFREG 0100000
+#endif
 #endif
 #ifndef S_IFIFO
+#ifdef _S_IFIFO
 /** @brief FIFO or pipe file type. */
 #define S_IFIFO _S_IFIFO
+#else
+/** @brief FIFO or pipe file type. */
+#define S_IFIFO 0010000
+#endif
+#endif
+#ifndef S_IFBLK
+#ifdef _S_IFBLK
+/** @brief Block device file type. */
+#define S_IFBLK _S_IFBLK
+#else
+/** @brief Block device file type. */
+#define S_IFBLK 0060000
+#endif
+#endif
+#ifndef S_IFLNK
+/** @brief Symbolic link file type. */
+#define S_IFLNK 0120000
+#endif
+#ifndef S_IFSOCK
+/** @brief Socket file type. */
+#define S_IFSOCK 0140000
 #endif
 
 #ifndef S_IRUSR
+#ifdef _S_IREAD
 /** @brief Read permission, owner. */
 #define S_IRUSR _S_IREAD
+#else
+/** @brief Read permission, owner. */
+#define S_IRUSR 0400
+#endif
 #endif
 #ifndef S_IWUSR
+#ifdef _S_IWRITE
 /** @brief Write permission, owner. */
 #define S_IWUSR _S_IWRITE
+#else
+/** @brief Write permission, owner. */
+#define S_IWUSR 0200
+#endif
 #endif
 #ifndef S_IXUSR
+#ifdef _S_IEXEC
 /** @brief Execute permission, owner. */
 #define S_IXUSR _S_IEXEC
+#else
+/** @brief Execute permission, owner. */
+#define S_IXUSR 0100
+#endif
 #endif
 
 #ifndef S_IFLNK
@@ -232,6 +293,7 @@ struct timespec {
 #define AT_SYMLINK_NOFOLLOW 0x100
 #endif
 
+#if defined(_WIN32)
 #ifndef stat
 /** @brief Shim for standard stat mapping to _stat64 on Windows. */
 #define stat _stat64
@@ -364,6 +426,21 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
  */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
               int flags);
+
+#else /* !_WIN32 */
+
+#if !defined(__USE_XOPEN2K8)
+extern int fchmod(int fd, mode_t mode);
+extern int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
+extern int fstatat(int dirfd, const char *pathname, struct stat *statbuf,
+                   int flags);
+extern int futimens(int fd, const struct timespec times[2]);
+extern int lstat(const char *pathname, struct stat *statbuf);
+extern int mknod(const char *pathname, mode_t mode, dev_t dev);
+extern int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
+extern int utimensat(int dirfd, const char *pathname,
+                     const struct timespec times[2], int flags);
+#endif
 
 #endif /* _WIN32 */
 

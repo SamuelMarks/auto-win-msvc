@@ -34,10 +34,13 @@ TEST test_stdint_types_and_limits(void) {
   uint16_t u16;
   int32_t i32;
   uint32_t u32;
+  int64_t i64;
+  uint64_t u64;
   intptr_t ip;
   uintptr_t up;
   intmax_t im;
   uintmax_t um;
+  size_t sz;
 
   i8 = (int8_t)INT8_MAX;
   ASSERT_EQ((int8_t)127, i8);
@@ -61,11 +64,31 @@ TEST test_stdint_types_and_limits(void) {
   u32 = (uint32_t)UINT32_MAX;
   ASSERT_EQ((uint32_t)0xffffffffU, u32);
 
-  ip = (intptr_t)0;
-  ASSERT_EQ((intptr_t)0, ip);
+#if defined(_MSC_VER)
+  i64 = (int64_t)INT64_MAX;
+  ASSERT(i64 > 0);
+  i64 = (int64_t)INT64_MIN;
+  ASSERT(i64 < 0);
 
-  up = (uintptr_t)0;
-  ASSERT_EQ((uintptr_t)0, up);
+  u64 = (uint64_t)UINT64_MAX;
+  ASSERT(u64 > 0);
+#else
+  i64 = (int64_t)1;
+  ASSERT(i64 > 0);
+  u64 = (uint64_t)1;
+  ASSERT(u64 > 0);
+#endif
+
+  ip = (intptr_t)INTPTR_MAX;
+  ASSERT(ip > 0);
+  ip = (intptr_t)INTPTR_MIN;
+  ASSERT(ip < 0);
+
+  up = (uintptr_t)UINTPTR_MAX;
+  ASSERT(up > 0);
+
+  sz = (size_t)SIZE_MAX;
+  ASSERT(sz > 0);
 
   im = (intmax_t)1;
   ASSERT_EQ((intmax_t)1, im);

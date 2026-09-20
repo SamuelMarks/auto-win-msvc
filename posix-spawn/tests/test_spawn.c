@@ -28,7 +28,12 @@ TEST test_posix_spawn_init(void) {
 
 TEST test_spawn(void) {
   pid_t pid;
-  int rc = posix_spawn(&pid, "", NULL, NULL, NULL, NULL);
+  char *argv[2];
+  int rc;
+
+  argv[0] = "";
+  argv[1] = NULL;
+  rc = posix_spawn(&pid, "", NULL, NULL, argv, NULL);
   ASSERT(rc != 0);
   PASS();
 }

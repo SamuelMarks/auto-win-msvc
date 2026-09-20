@@ -746,7 +746,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   }
   return 0;
 }
-#else
+#elif defined(__APPLE__) || !defined(__linux__)
 /** \brief posix_fadvise function. */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (fd < 0) {
@@ -811,7 +811,7 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
 
   return 0;
 }
-#else
+#elif defined(__APPLE__) || !defined(__linux__)
 /** \brief posix_fallocate function. */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   if (fd < 0) {
@@ -2516,6 +2516,10 @@ int posix_mkstemp(char *tmpl) {
 int posix_rename(const char *oldpath, const char *newpath) {
   return rename(oldpath, newpath);
 }
+
+#if !defined(_WIN32)
+extern int mkstemp(char *tmpl);
+#endif
 
 /** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
 int posix_mkstemp(char *tmpl) { return mkstemp(tmpl); }

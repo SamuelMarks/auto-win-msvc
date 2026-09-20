@@ -33,7 +33,7 @@ typedef unsigned __int64 mask_bit_type;
 typedef unsigned long long mask_bit_type;
 #endif
 
-#ifndef _CPU_SET_T_DEFINED
+#if !defined(_BITS_CPU_SET_H) && !defined(_CPU_SET_T_DEFINED)
 #define _CPU_SET_T_DEFINED
 /**
  * @brief Structure for representing a CPU affinity mask.
@@ -49,8 +49,37 @@ typedef struct cpu_set {
 } cpu_set_t;
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__) || !defined(CPU_SET)
+#if defined(_BITS_CPU_SET_H)
+
+#ifndef CPU_ZERO
+/**
+ * @brief Clears set, so that it contains no CPUs.
+ */
+#define CPU_ZERO(set) __CPU_ZERO_S(sizeof(cpu_set_t), set)
+#endif
+
+#ifndef CPU_SET
+/**
+ * @brief Add CPU cpu to set.
+ */
+#define CPU_SET(cpu, set) __CPU_SET_S(cpu, sizeof(cpu_set_t), set)
+#endif
+
+#ifndef CPU_CLR
+/**
+ * @brief Remove CPU cpu from set.
+ */
+#define CPU_CLR(cpu, set) __CPU_CLR_S(cpu, sizeof(cpu_set_t), set)
+#endif
+
+#ifndef CPU_ISSET
+/**
+ * @brief Test to see if CPU cpu is a member of set.
+ */
+#define CPU_ISSET(cpu, set) __CPU_ISSET_S(cpu, sizeof(cpu_set_t), set)
+#endif
+
+#else
 
 /**
  * @brief Clears set, so that it contains no CPUs.

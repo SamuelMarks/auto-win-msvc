@@ -31,6 +31,42 @@ typedef int error_type_t;
 #if !defined(_WIN32) && !defined(_WIN64) && !defined(__MSDOS__) &&             \
     !defined(__WATCOMC__)
 
+#ifndef MADV_NORMAL
+/** \brief No further special treatment. */
+#define MADV_NORMAL 0
+#endif
+#ifndef MADV_RANDOM
+/** \brief Expect page references in random order. */
+#define MADV_RANDOM 1
+#endif
+#ifndef MADV_SEQUENTIAL
+/** \brief Expect page references in sequential order. */
+#define MADV_SEQUENTIAL 2
+#endif
+#ifndef MADV_WILLNEED
+/** \brief Expect access in the near future. */
+#define MADV_WILLNEED 3
+#endif
+#ifndef MADV_DONTNEED
+/** \brief Do not expect access in the near future. */
+#define MADV_DONTNEED 4
+#endif
+#ifndef MADV_FREE
+/** \brief Free pages only if memory pressure. */
+#define MADV_FREE 8
+#endif
+
+#if !defined(__USE_MISC) && !defined(__USE_XOPEN2K)
+/**
+ * \brief Give advice about use of memory.
+ * \param addr Starting address.
+ * \param length Length of the memory region.
+ * \param advice Advice to give.
+ * \return 0 on success, -1 on failure.
+ */
+int madvise(void *addr, size_t length, int advice);
+#endif
+
 #if defined(__CYGWIN__)
 #ifndef MCL_CURRENT
 /** \brief MCL_CURRENT macro. */

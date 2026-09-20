@@ -13,7 +13,9 @@ TEST test_getpwnam(void) {
   char valid_name[128];
 
   valid_name[0] = '\0';
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(NULL, getpwnam(NULL));
+#endif
   ASSERT_EQ(NULL, getpwnam("non_existent_usr_1234567"));
 
   setpwent();

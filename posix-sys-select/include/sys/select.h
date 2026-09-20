@@ -23,6 +23,11 @@
 #else
 #include <sys/select.h>
 #endif
+#include <sys/time.h>
+#if !defined(__USE_XOPEN2K) && !defined(__USE_POSIX)
+extern int select(int nfds, fd_set *readfds, fd_set *writefds,
+                  fd_set *exceptfds, struct timeval *timeout);
+#endif
 #endif
 /* clang-format on */
 

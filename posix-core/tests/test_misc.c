@@ -14,6 +14,7 @@
 #include <winsock2.h>
 #else
 #include <unistd.h>
+#include <grp.h>
 #endif
 /* clang-format on */
 
@@ -82,21 +83,23 @@ TEST test_confstr(void) {
 }
 
 TEST test_crypt(void) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
   char *c;
 
-#if defined(_WIN32)
   ASSERT_EQ(NULL, crypt(NULL, NULL));
-#endif
   c = crypt("key", "salt");
   (void)c;
+#endif
   PASS();
 }
 
 TEST test_encrypt(void) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
   char block[64];
   memset(block, 0, sizeof(block));
   encrypt(block, 0);
   encrypt(block, 1);
+#endif
   PASS();
 }
 
@@ -232,8 +235,10 @@ TEST test_getlogin_r(void) {
   char lbuf[256];
   int rc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   rc = getlogin_r(NULL, 0);
   (void)rc;
+#endif
   rc = getlogin_r(lbuf, sizeof(lbuf));
   (void)rc;
   PASS();
@@ -290,7 +295,9 @@ TEST test_lockf(void) {
 TEST test_pathconf(void) {
   long pc;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, pathconf(NULL, 0));
+#endif
   pc = pathconf(".", 1);
   (void)pc;
   PASS();
@@ -334,7 +341,9 @@ TEST test_tcsetpgrp(void) {
 TEST test_truncate(void) {
   FILE *f;
 
+#if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, truncate(NULL, 0));
+#endif
   ASSERT_EQ(-1, truncate("test_trunc.tmp", -1));
 
   f = fopen("test_trunc.tmp", "w");

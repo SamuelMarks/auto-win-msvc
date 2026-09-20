@@ -5,8 +5,6 @@
 
 /**
  * @brief Initializes and validates the features polyfill.
- * @param[out] out_status Pointer to store initialization status.
- * @return LINUX_FEATURES_SUCCESS or LINUX_FEATURES_ERROR_NULL_POINTER.
  */
 enum linux_features_error_code linux_features_init(int *out_status) {
   if (out_status == NULL) {

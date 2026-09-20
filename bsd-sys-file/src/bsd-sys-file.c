@@ -19,9 +19,6 @@
 
 /**
  * @brief Apply or remove an advisory lock on the open file.
- * @param fd The file descriptor to lock.
- * @param operation Operation to perform.
- * @return 0 on success, -1 on error with errno set.
  */
 int posix_flock(int fd, int operation) {
   int op;

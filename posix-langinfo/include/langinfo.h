@@ -1,7 +1,4 @@
 #ifndef POSIX_LANGINFO_LANGINFO_H
-#if defined(__GNUC__)
-#pragma GCC system_header
-#endif
 #define POSIX_LANGINFO_LANGINFO_H
 
 /**
@@ -9,14 +6,16 @@
  * @brief POSIX langinfo header providing nl_item and nl_langinfo.
  */
 
-#if defined(_WIN32) || defined(_MSC_VER) || defined(__MSDOS__) ||              \
-    defined(__WATCOMC__)
-
+#if !defined(__nl_item_defined) && !defined(_NL_ITEM_DEFINED)
+#define _NL_ITEM_DEFINED
+#define __nl_item_defined 1
 /**
  * @brief The type used to identify langinfo items.
  */
 typedef int nl_item;
+#endif
 
+#ifndef CODESET
 /** @brief Character encoding name. */
 #define CODESET 1
 /** @brief String for formatting date and time. */
@@ -127,16 +126,11 @@ typedef int nl_item;
 #define NOEXPR 54
 /** @brief Local currency symbol. */
 #define CRNCYSTR 55
+#endif
 
 #ifndef nl_langinfo
 /** @brief Maps nl_langinfo to posix_langinfo on non-POSIX platforms. */
 #define nl_langinfo posix_langinfo
-#endif
-
-#else
-/* clang-format off */
-#include_next <langinfo.h>
-/* clang-format on */
 #endif
 
 #ifdef __cplusplus

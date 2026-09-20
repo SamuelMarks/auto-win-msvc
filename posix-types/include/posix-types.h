@@ -305,6 +305,32 @@ typedef long blksize_t;
 typedef long blkcnt_t;
 #endif
 
+#else /* !_WIN32 */
+
+#if !defined(__useconds_t_defined) && !defined(_USECONDS_T_DEFINED) &&         \
+    !defined(_USECONDS_T)
+#define _USECONDS_T_DEFINED
+#define _USECONDS_T 1
+#define __useconds_t_defined 1
+typedef unsigned int useconds_t;
+#endif
+
+#if !defined(__suseconds_t_defined) && !defined(_SUSECONDS_T_DEFINED) &&       \
+    !defined(_SUSECONDS_T)
+#define _SUSECONDS_T_DEFINED
+#define _SUSECONDS_T 1
+#define __suseconds_t_defined 1
+typedef long suseconds_t;
+#endif
+
+#if !defined(__blksize_t_defined) && !defined(_BLKSIZE_T_DEFINED) &&           \
+    !defined(_BLKSIZE_T)
+#define _BLKSIZE_T_DEFINED
+#define _BLKSIZE_T 1
+#define __blksize_t_defined 1
+typedef long blksize_t;
+#endif
+
 #endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
 /**
