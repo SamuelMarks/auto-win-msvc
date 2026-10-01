@@ -18,6 +18,16 @@
 extern "C" {
 #endif
 
+#if defined(_WIN32)
+#if defined(auto_win_msvc_export_lib_EXPORTS)
+#define POSIX_REGEX_EXPORT __declspec(dllexport)
+#else
+#define POSIX_REGEX_EXPORT
+#endif
+#else
+#define POSIX_REGEX_EXPORT
+#endif
+
 /**
  * @brief Error codes returned by posix-regex operations.
  */
@@ -36,7 +46,8 @@ enum posix_regex_error_code {
  * status.
  * @return POSIX_REGEX_SUCCESS on success, or an error code on failure.
  */
-enum posix_regex_error_code posix_regex_init(int *out_status);
+POSIX_REGEX_EXPORT enum posix_regex_error_code
+posix_regex_init(int *out_status);
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
     defined(__MSDOS__) || defined(__WATCOMC__)
@@ -100,18 +111,18 @@ typedef struct {
 #define REG_ENOSYS 18
 
 /** @brief Compile regular expression pattern. */
-int regcomp(regex_t *preg, const char *pattern, int cflags);
+POSIX_REGEX_EXPORT int regcomp(regex_t *preg, const char *pattern, int cflags);
 
 /** @brief Match compiled regular expression against a string. */
-int regexec(const regex_t *preg, const char *string, size_t nmatch,
-            regmatch_t pmatch[], int eflags);
+POSIX_REGEX_EXPORT int regexec(const regex_t *preg, const char *string,
+                               size_t nmatch, regmatch_t pmatch[], int eflags);
 
 /** @brief Return error string for regular expression error code. */
-size_t regerror(int errcode, const regex_t *preg, char *errbuf,
-                size_t errbuf_size);
+POSIX_REGEX_EXPORT size_t regerror(int errcode, const regex_t *preg,
+                                   char *errbuf, size_t errbuf_size);
 
 /** @brief Free resources associated with compiled regular expression. */
-void regfree(regex_t *preg);
+POSIX_REGEX_EXPORT void regfree(regex_t *preg);
 
 #endif /* _MSC_VER */
 

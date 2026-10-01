@@ -29,18 +29,13 @@ TEST test_posix_regex_init(void) {
 TEST test_regcomp_exec(void) {
   regex_t preg;
   int res = regcomp(&preg, "^test[0-9]+", REG_EXTENDED);
+  ASSERT_EQ(0, res);
   if (res == 0) {
     regmatch_t matches[2];
     int exec_res = regexec(&preg, "test123", 2, matches, 0);
-    (void)exec_res;
+    ASSERT_EQ(0, exec_res);
     regfree(&preg);
-    PASS();
   }
-#ifdef REG_ENOSYS
-  ASSERT_EQ(REG_ENOSYS, res);
-#else
-  ASSERT(res != 0);
-#endif
   PASS();
 }
 
@@ -51,9 +46,10 @@ TEST test_regexec(void) {
 
   memset(&preg, 0, sizeof(preg));
   rc = regcomp(&preg, "some", 0);
+  ASSERT_EQ(0, rc);
   if (rc == 0) {
     rc = regexec(&preg, "some string", 1, pmatch, 0);
-    (void)rc;
+    ASSERT_EQ(0, rc);
     regfree(&preg);
   }
   PASS();

@@ -323,7 +323,11 @@ int glob(const char *pattern, int flags,
           sprintf(full_path, "%s%s", dir_prefix, ent->d_name);
 #endif
         } else {
+#if defined(_MSC_VER)
+          strcpy_s(full_path, MAX_PATH, ent->d_name);
+#else
           strcpy(full_path, ent->d_name);
+#endif
         }
 
         ret = glob_append(pglob, full_path);

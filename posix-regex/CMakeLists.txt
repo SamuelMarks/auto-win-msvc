@@ -81,9 +81,9 @@ if(MSVC)
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
     endif()
-    add_compile_options(/WX )
+    set(STRICT_CFLAGS /WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
+    set(STRICT_CFLAGS -Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
 if(NOT TARGET greatest)
@@ -92,15 +92,47 @@ FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greates
 FetchContent_MakeAvailable(greatest)
 endif()
 
+if(NOT TARGET pcre2-8 AND NOT TARGET pcre2::pcre2-8)
+    find_package(pcre2 CONFIG QUIET)
+    if(NOT pcre2_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            pcre2
+            URL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP true
+        )
+        set(PCRE2_BUILD_PCRE2_8 ON CACHE BOOL "" FORCE)
+        set(PCRE2_BUILD_PCRE2_16 OFF CACHE BOOL "" FORCE)
+        set(PCRE2_BUILD_PCRE2_32 OFF CACHE BOOL "" FORCE)
+        set(PCRE2_BUILD_PCRE2POSIX OFF CACHE BOOL "" FORCE)
+        set(PCRE2_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
+
+        get_directory_property(_old_opts COMPILE_OPTIONS)
+        set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
+
+        FetchContent_MakeAvailable(pcre2)
+
+        set_directory_properties(PROPERTIES COMPILE_OPTIONS "${_old_opts}")
+    endif()
+endif()
+
 add_library(posix-regex src/posix-regex.c)
 set_target_properties(posix-regex PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+if(TARGET pcre2::pcre2-8)
+    target_link_libraries(posix-regex PRIVATE pcre2::pcre2-8)
+else()
+    target_link_libraries(posix-regex PRIVATE pcre2-8)
+endif()
 
 file(GLOB TEST_SOURCES "tests/*.c")
+enable_testing()
 add_executable(test_posix-regex ${TEST_SOURCES})
 target_link_libraries(test_posix-regex PRIVATE posix-regex greatest)
 add_test(NAME test_posix-regex COMMAND test_posix-regex)
 
-if(MSVC)
-    target_compile_options(posix-regex PRIVATE )
+if(DEFINED STRICT_CFLAGS)
+    target_compile_options(posix-regex PRIVATE ${STRICT_CFLAGS})
+    target_compile_options(test_posix-regex PRIVATE ${STRICT_CFLAGS})
 endif()
