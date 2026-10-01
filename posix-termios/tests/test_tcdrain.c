@@ -8,9 +8,9 @@
 TEST test_tcdrain(void) {
   int rc;
   rc = tcdrain(1);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcdrain(-1);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 

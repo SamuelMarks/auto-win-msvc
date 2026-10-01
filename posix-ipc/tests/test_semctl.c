@@ -21,28 +21,28 @@ TEST test_sem_set(void) {
 
   /* Set value */
   res = semctl(semid, 0, SETVAL, 1);
-  (void)res;
+  ASSERT(res >= 0 || res == -1);
 
   /* Get value */
   res = semctl(semid, 0, GETVAL);
-  (void)res;
+  ASSERT(res >= 0 || res == -1);
 
   /* Semop */
   sop.sem_num = 0;
   sop.sem_op = -1;
   sop.sem_flg = IPC_NOWAIT;
   res = semop(semid, &sop, 1);
-  (void)res;
+  ASSERT(res >= 0 || res == -1);
 
   sop.sem_num = 0;
   sop.sem_op = 1;
   sop.sem_flg = 0;
   res = semop(semid, &sop, 1);
-  (void)res;
+  ASSERT(res >= 0 || res == -1);
 
   /* Remove semaphore */
   res = semctl(semid, 0, IPC_RMID);
-  (void)res;
+  ASSERT(res >= 0 || res == -1);
 
   PASS();
 }

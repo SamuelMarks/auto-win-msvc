@@ -104,6 +104,9 @@ TEST test_signal_constants(void) {
   ASSERT_EQ(14, SIGALRM);
   ASSERT_EQ(15, SIGTERM);
   ASSERT_EQ(17, SIGCHLD);
+  ASSERT_EQ(18, SIGCONT);
+  ASSERT_EQ(20, SIGTSTP);
+  ASSERT_EQ(28, SIGWINCH);
   ASSERT_EQ(1, SA_NOCLDSTOP);
   ASSERT_EQ(2, SA_NOCLDWAIT);
   ASSERT_EQ(4, SA_SIGINFO);
@@ -267,18 +270,18 @@ TEST test_posix_signal_sigsuspend(void) {
   sigset_t mask;
   int res;
 
+  sigemptyset(&mask);
 #if defined(_WIN32) || defined(_MSC_VER)
   res = sigsuspend(NULL);
   ASSERT_EQ(-1, res);
   ASSERT_EQ(EINVAL, errno);
 
-  sigemptyset(&mask);
   res = sigsuspend(&mask);
   ASSERT_EQ(-1, res);
   ASSERT_EQ(EINTR, errno);
 #else
-  (void)mask;
-  (void)res;
+  res = 0;
+  ASSERT_EQ(0, res);
 #endif
 
   PASS();
@@ -460,9 +463,30 @@ TEST test_posix_signal_kill(void) {
   }
 #else
   res = kill(0, 0);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 #endif
 
+  PASS();
+}
+
+TEST test_posix_signal_killpg(void) {
+  int res;
+  res = killpg(-1, 0);
+  ASSERT_EQ(-1, res);
+  PASS();
+}
+
+TEST test_sigsetmask_and_sigblock(void) {
+  int oldmask;
+#if defined(_WIN32) || defined(_MSC_VER)
+  oldmask = sigblock(1 << (SIGINT - 1));
+  ASSERT(oldmask >= 0);
+  oldmask = sigsetmask(oldmask);
+  ASSERT(oldmask >= 0);
+#else
+  oldmask = 0;
+  ASSERT_EQ(0, oldmask);
+#endif
   PASS();
 }
 
@@ -663,6 +687,8 @@ SUITE(suite_posix_signal_signal) {
   RUN_TEST(test_posix_signal_sigaction);
   RUN_TEST(test_posix_signal_signal);
   RUN_TEST(test_posix_signal_kill);
+  RUN_TEST(test_posix_signal_killpg);
+  RUN_TEST(test_sigsetmask_and_sigblock);
 #if defined(_WIN32) || defined(_MSC_VER)
   RUN_TEST(test_posix_signal_is_crt_signal);
   RUN_TEST(test_posix_signal_simulations);

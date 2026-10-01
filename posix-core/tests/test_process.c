@@ -63,7 +63,7 @@ TEST test_fork(void) {
 
 TEST test_getppid(void) {
   pid_t ppid = getppid();
-  (void)ppid;
+  ASSERT(ppid >= 0);
   PASS();
 }
 

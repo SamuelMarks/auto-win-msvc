@@ -30,7 +30,7 @@ TEST test_chown(void) {
   fclose(f);
 
   rc = chown("test_chown.tmp", (uid_t)-1, (gid_t)-1);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   remove("test_chown.tmp");
   PASS();
 }
@@ -71,7 +71,7 @@ TEST test_fchown(void) {
   fd = open("test_fchown.tmp", O_RDWR, 0666);
   if (fd >= 0) {
     rc = fchown(fd, (uid_t)-1, (gid_t)-1);
-    (void)rc;
+    ASSERT(rc == 0 || rc == -1);
     close(fd);
   }
   remove("test_fchown.tmp");
@@ -94,7 +94,7 @@ TEST test_fchownat(void) {
   fclose(f);
 
   rc = fchownat(AT_FDCWD, "test_fchownat.tmp", (uid_t)-1, (gid_t)-1, 0);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   remove("test_fchownat.tmp");
   PASS();
 }
@@ -114,7 +114,7 @@ TEST test_lchown(void) {
   fclose(f);
 
   rc = lchown("test_lchown.tmp", (uid_t)-1, (gid_t)-1);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   remove("test_lchown.tmp");
   PASS();
 }

@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [valkey, redis, rsync, memcached]
+        project: [valkey, redis, rsync, memcached, dash]
 
     steps:
       - name: Checkout auto-win-msvc
@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: SamuelMarks/valkey-windows
-          ref: release-9.1.0-fix
+          ref: 9.1.2
           path: valkey-windows
 
       - name: Checkout redis-windows
@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: SamuelMarks/redis-windows
+          ref: 8.10.2
           path: redis-windows
 
       - name: Checkout rsync
@@ -52,6 +53,14 @@ jobs:
           ref: msvc
           path: memcached
 
+      - name: Checkout dash
+        if: matrix.project == 'dash'
+        uses: actions/checkout@v7
+        with:
+          repository: SamuelMarks/dash
+          ref: master
+          path: dash
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -68,7 +77,7 @@ jobs:
           xcopy /E /I auto-win-msvc valkey-windows\auto-win-msvc
           cd valkey-windows
           python -c "c = open('release.bat').read().replace('timeout /t 3 /nobreak > nul', 'ping 127.0.0.1 -n 4 > nul'); open('release.bat', 'w').write(c)"
-          call release.bat 9.1.0 --local-only
+          call release.bat 9.1.2 --local-only
 
       - name: Build redis-windows
         if: matrix.project == 'redis'
@@ -79,7 +88,7 @@ jobs:
           python -c "c = open('build-and-release.bat').read().replace('rmdir /s /q \"%%WORK_DIR%%\"', 'rmdir /s /q \"%%SRC_DIR%%\" 2>nul').replace('ctest -C Release --output-on-failure', 'ctest -C Release -R internal- --output-on-failure'); open('build-and-release.bat', 'w').write(c)"
           mkdir build_work\auto-win-msvc
           xcopy /E /I /Y ..\auto-win-msvc build_work\auto-win-msvc
-          call build-and-release.bat 8.10.1 redis --local-only
+          call build-and-release.bat 8.10.2 redis --local-only
 
       - name: Build rsync
         if: matrix.project == 'rsync'
@@ -100,3 +109,12 @@ jobs:
           cmake --build build --config Release
           build\Release\memcached.exe -h
           build\Release\sizes.exe
+
+      - name: Build dash
+        if: matrix.project == 'dash'
+        shell: cmd
+        run: |
+          cd dash
+          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
+          cmake --build build --config Release
+          build\Release\dash.exe -c "echo DASH native Windows build successful"

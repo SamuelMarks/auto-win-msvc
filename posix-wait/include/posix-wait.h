@@ -13,6 +13,7 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 #include <signal.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif
@@ -98,6 +99,7 @@ typedef struct {
 #define WTERMSIG(status) ((status) & 0x7F)
 #define WIFSTOPPED(status) (((status) & 0xFF) == 0x7F)
 #define WSTOPSIG(status) (((status) & 0xFF00) >> 8)
+#define WCOREDUMP(status) ((status) & 0x80)
 
 /**
  * @brief Waits for a child process to terminate.
@@ -117,6 +119,19 @@ pid_t wait(int *stat_loc);
  * running, or -1 on error.
  */
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
+
+struct rusage;
+
+/**
+ * @brief Waits for any child process to terminate and retrieves resource usage.
+ *
+ * @param stat_loc Pointer to an integer where status information is stored.
+ * @param options Options modifying wait behavior.
+ * @param rusage Pointer to a struct rusage to store resource usage information.
+ * @return The process ID of the terminated child, 0 if WNOHANG and child
+ * running, or -1 on error.
+ */
+pid_t wait3(int *stat_loc, int options, struct rusage *rusage);
 
 /**
  * @brief Waits for a child process to change state.

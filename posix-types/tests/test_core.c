@@ -103,6 +103,17 @@ TEST test_types_definitions(void) {
   uc = (uchar)0xAA;
   ASSERT_EQ(0xAA, (int)uc);
 #endif
+#if defined(_WIN32) || defined(_QUAD_T_DEFINED) || defined(__APPLE__) ||       \
+    defined(__FreeBSD__)
+  if (1) {
+    quad_t q;
+    u_quad_t uq;
+    q = 12345;
+    uq = 67890;
+    ASSERT(q > 0);
+    ASSERT(uq > 0);
+  }
+#endif
 
   PASS();
 }

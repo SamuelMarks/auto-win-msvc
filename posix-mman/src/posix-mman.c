@@ -1,8 +1,9 @@
 /* posix-mman.c - Strict C89 Implementation */
 
 /* clang-format off */
-#if defined(_WIN32) || defined(_WIN64)
+#include "posix-mman.h"
 #include <errno.h>
+#if defined(_WIN32) || defined(_WIN64)
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -16,15 +17,10 @@
 #if defined(_MSC_VER)
 #include <share.h>
 #endif
-#include "posix-mman.h"
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-#include <errno.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include "posix-mman.h"
 #elif defined(__CYGWIN__)
-#include <errno.h>
-#include "posix-mman.h"
 #endif
 /* clang-format on */
 
@@ -114,6 +110,9 @@ VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
              size_t dwLength);
 __declspec(dllimport) WIN_DWORD WIN_STDCALL
 GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
+__declspec(dllimport) WIN_DWORD WIN_STDCALL
+GetTempFileNameA(const char *lpPathName, const char *lpPrefixString,
+                 WIN_UINT uUnique, char *lpTempFileName);
 __declspec(dllimport) WIN_HANDLE WIN_STDCALL
 CreateFileMappingA(WIN_HANDLE hFile, WIN_LPVOID lpFileMappingAttributes,
                    WIN_DWORD flProtect, WIN_DWORD dwMaximumSizeHigh,
@@ -152,6 +151,10 @@ size_t WIN_STDCALL VirtualQuery(WIN_LPCVOID lpAddress,
                                 size_t dwLength);
 /** \brief GetTempPathA function. */
 WIN_DWORD WIN_STDCALL GetTempPathA(WIN_DWORD nBufferLength, char *lpBuffer);
+/** \brief GetTempFileNameA function. */
+WIN_DWORD WIN_STDCALL GetTempFileNameA(const char *lpPathName,
+                                       const char *lpPrefixString,
+                                       WIN_UINT uUnique, char *lpTempFileName);
 /** \brief CreateFileMappingA function. */
 WIN_HANDLE WIN_STDCALL CreateFileMappingA(WIN_HANDLE hFile,
                                           WIN_LPVOID lpFileMappingAttributes,
@@ -627,6 +630,51 @@ int shm_unlink(const char *name) {
   return -1;
 }
 
+/**
+ * \brief Create an anonymous file descriptor.
+ * \param name Name associated with the file descriptor for debugging.
+ * \param flags Bitmask of MFD_* flags.
+ * \return Open file descriptor on success, or -1 on failure.
+ */
+int posix_memfd_create(const char *name, unsigned int flags) {
+  char temp_path[WIN_MAX_PATH];
+  char temp_file[WIN_MAX_PATH];
+  int fd;
+  int oflags;
+
+  if (name == NULL) {
+    errno = 14; /* EFAULT */
+    return -1;
+  }
+  if (flags & ~(MFD_CLOEXEC | MFD_ALLOW_SEALING | MFD_HUGETLB)) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (!GetTempPathA(WIN_MAX_PATH, temp_path)) {
+    errno = ENOSYS;
+    return -1;
+  }
+  if (!GetTempFileNameA(temp_path, "mfd", 0, temp_file)) {
+    errno = ENOSYS;
+    return -1;
+  }
+  oflags = _O_RDWR | _O_CREAT | _O_TEMPORARY | _O_BINARY;
+  if (flags & MFD_CLOEXEC) {
+    oflags |= _O_NOINHERIT;
+  }
+#if defined(_MSC_VER)
+  if (_sopen_s(&fd, temp_file, oflags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0) {
+    return -1;
+  }
+#else
+  fd = _open(temp_file, oflags, _S_IREAD | _S_IWRITE);
+  if (fd < 0) {
+    return -1;
+  }
+#endif
+  return fd;
+}
+
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 int madvise(void *addr, size_t length, int advice) {
@@ -717,6 +765,60 @@ int shm_unlink(const char *name) {
 
 int munlockall(void) { return 0; }
 
+#endif
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#if defined(__linux__)
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sys/syscall.h>
+#include <unistd.h>
+int posix_memfd_create(const char *name, unsigned int flags) {
+#if defined(SYS_memfd_create)
+  return (int)syscall(SYS_memfd_create, name, flags);
+#else
+  errno = ENOSYS;
+  return -1;
+#endif
+}
+#else
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+int posix_memfd_create(const char *name, unsigned int flags) {
+  char temp_file[256];
+  int fd;
+  int oflags;
+
+  if (name == NULL) {
+    errno = 14; /* EFAULT */
+    return -1;
+  }
+  if (flags & ~(MFD_CLOEXEC | MFD_ALLOW_SEALING | MFD_HUGETLB)) {
+    errno = EINVAL;
+    return -1;
+  }
+#if defined(_MSC_VER)
+  sprintf_s(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
+            (unsigned int)rand());
+#else
+  sprintf(temp_file, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)rand());
+#endif
+  oflags = O_RDWR | O_CREAT | O_EXCL;
+#ifdef O_CLOEXEC
+  if (flags & MFD_CLOEXEC) {
+    oflags |= O_CLOEXEC;
+  }
+#endif
+  fd = open(temp_file, oflags, 0600);
+  if (fd >= 0) {
+    unlink(temp_file);
+  }
+  return fd;
+}
+#endif
 #endif
 
 /* Ensure strict C compliance requires at least one declaration in translation

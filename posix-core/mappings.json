@@ -804,6 +804,51 @@
         "posix": "R_OK",
         "source_header": "<unistd.h>",
         "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_BSHELL",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_DEVNULL",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_DEFPATH",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_STDPATH",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_TTY",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "_PATH_TMP",
+        "source_header": "<paths.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "F_DUPFD",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "F_DUPFD_CLOEXEC",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "FD_CLOEXEC",
+        "source_header": "<fcntl.h>",
+        "requires_polyfill": true
       }
     ]
   }

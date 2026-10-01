@@ -47,7 +47,8 @@ static _Unwind_Reason_Code sample_trace(struct _Unwind_Context *ctx,
 
   frame_count = (int *)arg;
   ip = _Unwind_GetIP(ctx);
-  (void)ip;
+  if (ip) {
+  }
 
   (*frame_count)++;
   if (*frame_count >= 2) {
@@ -67,7 +68,8 @@ TEST test__Unwind_Backtrace(void) {
 
   count = 0;
   code = _Unwind_Backtrace(sample_trace, &count);
-  (void)code;
+  ASSERT(code == _URC_NO_REASON || code == _URC_END_OF_STACK ||
+         code == _URC_NORMAL_STOP);
   ASSERT(count > 0);
 
   PASS();

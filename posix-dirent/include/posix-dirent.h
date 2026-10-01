@@ -30,11 +30,11 @@ enum posix_dirent_error_code {
  */
 enum posix_dirent_error_code posix_dirent_get_info(int *out_available);
 
+/* clang-format off */
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
 #if defined(__WATCOMC__)
-/* clang-format off */
 #include <direct.h>
 #else
 #include <dirent.h>
@@ -51,12 +51,10 @@ extern int alphasort(const struct dirent **a, const struct dirent **b);
 #else /* _WIN32 */
 
 #include <stddef.h>
+#endif /* _WIN32 */
 /* clang-format on */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 /* File types for d_type */
 #define DT_UNKNOWN 0
 #define DT_FIFO 1

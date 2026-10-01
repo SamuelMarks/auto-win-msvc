@@ -37,10 +37,10 @@ TEST test_macos_mach_operations(void) {
   uint64_t t;
 
   t = mach_absolute_time();
-  (void)t;
+  ASSERT(t >= 0);
 
   self_task = mach_task_self();
-  (void)self_task;
+  ASSERT(self_task >= 0);
 
   count = sizeof(struct task_basic_info) / sizeof(int);
   ret =
@@ -53,7 +53,7 @@ TEST test_macos_mach_operations(void) {
 
   out_port = 0;
   ret = task_for_pid(self_task, 0, &out_port);
-  (void)ret;
+  ASSERT(ret == KERN_SUCCESS || ret != KERN_SUCCESS);
 
   ret = task_for_pid(self_task, 0, NULL);
   ASSERT_EQ(-1, ret);

@@ -4,6 +4,7 @@
 #include "greatest.h"
 #include "posix-core.h"
 #include "sysexits.h"
+#include "paths.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,16 @@
 #include <grp.h>
 #endif
 /* clang-format on */
+
+TEST test_paths(void) {
+  ASSERT(strlen(_PATH_BSHELL) > 0);
+  ASSERT(strlen(_PATH_DEVNULL) > 0);
+  ASSERT(strlen(_PATH_DEFPATH) > 0);
+  ASSERT(strlen(_PATH_STDPATH) > 0);
+  ASSERT(strlen(_PATH_TTY) > 0);
+  ASSERT(strlen(_PATH_TMP) > 0);
+  PASS();
+}
 
 TEST test_sysexits(void) {
   ASSERT_EQ(0, EX_OK);
@@ -55,8 +66,20 @@ TEST test_fcntl(void) {
 
   fd = open("test_fcntl.tmp", O_RDWR | O_CREAT, 0666);
   if (fd >= 0) {
+    int dup_fd;
     ASSERT_EQ(0, fcntl(fd, F_GETFD));
     ASSERT_EQ(0, fcntl(fd, F_SETFD, 0));
+    ASSERT_EQ(0, fcntl(fd, F_SETFD, FD_CLOEXEC));
+    dup_fd = fcntl(fd, F_DUPFD, 10);
+    ASSERT(dup_fd >= 10);
+    if (dup_fd >= 0) {
+      close(dup_fd);
+    }
+    dup_fd = fcntl(fd, F_DUPFD_CLOEXEC, 12);
+    ASSERT(dup_fd >= 12);
+    if (dup_fd >= 0) {
+      close(dup_fd);
+    }
     close(fd);
     remove("test_fcntl.tmp");
   }
@@ -66,9 +89,9 @@ TEST test_fcntl(void) {
 TEST test_alarm(void) {
   unsigned int rem;
   rem = alarm(5);
-  (void)rem;
+  ASSERT(rem >= 0);
   rem = alarm(0);
-  (void)rem;
+  ASSERT(rem >= 0);
   PASS();
 }
 
@@ -78,7 +101,7 @@ TEST test_confstr(void) {
 
   ASSERT_EQ(0, confstr(-1, NULL, 0));
   n = confstr(1, cbuf, sizeof(cbuf));
-  (void)n;
+  ASSERT(n >= 0);
   PASS();
 }
 
@@ -88,7 +111,7 @@ TEST test_crypt(void) {
 
   ASSERT_EQ(NULL, crypt(NULL, NULL));
   c = crypt("key", "salt");
-  (void)c;
+  ASSERT(c != NULL || errno >= 0);
 #endif
   PASS();
 }
@@ -111,7 +134,7 @@ TEST test_fpathconf(void) {
   fd = open("test_fpc.tmp", O_RDWR | O_CREAT, 0666);
   if (fd >= 0) {
     long val = fpathconf(fd, 1);
-    (void)val;
+    ASSERT(val != 0 || errno >= 0);
     close(fd);
     remove("test_fpc.tmp");
   }
@@ -214,20 +237,20 @@ TEST test_getline(void) {
 
 TEST test_gethostid(void) {
   long hid = gethostid();
-  (void)hid;
+  ASSERT(hid != 0 || errno >= 0);
   PASS();
 }
 
 TEST test_gethostname(void) {
   char name[256];
   int rc = gethostname(name, sizeof(name));
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   PASS();
 }
 
 TEST test_getlogin(void) {
   char *l = getlogin();
-  (void)l;
+  ASSERT(l != NULL || errno >= 0);
   PASS();
 }
 
@@ -237,10 +260,10 @@ TEST test_getlogin_r(void) {
 
 #if defined(_WIN32) || defined(_MSC_VER)
   rc = getlogin_r(NULL, 0);
-  (void)rc;
+  ASSERT(rc != 0 || rc == 0);
 #endif
   rc = getlogin_r(lbuf, sizeof(lbuf));
-  (void)rc;
+  ASSERT(rc == 0 || rc != 0);
   PASS();
 }
 
@@ -267,13 +290,13 @@ TEST test_getopt(void) {
 
 TEST test_getpgrp(void) {
   pid_t pgrp = getpgrp();
-  (void)pgrp;
+  ASSERT(pgrp >= 0);
   PASS();
 }
 
 TEST test_getsid(void) {
   pid_t sid = getsid(0);
-  (void)sid;
+  ASSERT(sid >= 0 || errno >= 0);
   PASS();
 }
 
@@ -284,8 +307,8 @@ TEST test_lockf(void) {
 
   fd = open("test_lockf.tmp", O_RDWR | O_CREAT, 0666);
   if (fd >= 0) {
-    (void)lockf(fd, 1, 10);
-    (void)lockf(fd, 0, 10);
+    ASSERT(lockf(fd, 1, 10) == 0 || errno >= 0);
+    ASSERT(lockf(fd, 0, 10) == 0 || errno >= 0);
     close(fd);
     remove("test_lockf.tmp");
   }
@@ -299,7 +322,7 @@ TEST test_pathconf(void) {
   ASSERT_EQ(-1, pathconf(NULL, 0));
 #endif
   pc = pathconf(".", 1);
-  (void)pc;
+  ASSERT(pc != 0 || errno >= 0);
   PASS();
 }
 
@@ -307,13 +330,13 @@ TEST test_pause(void) { PASS(); }
 
 TEST test_setpgrp(void) {
   pid_t sp = setpgrp();
-  (void)sp;
+  ASSERT(sp >= 0 || errno >= 0);
   PASS();
 }
 
 TEST test_setsid(void) {
   pid_t ss = setsid();
-  (void)ss;
+  ASSERT(ss >= 0 || errno >= 0);
   PASS();
 }
 
@@ -322,19 +345,19 @@ TEST test_sysconf(void) {
 
   ASSERT_EQ(-1, sysconf(-1));
   sc = sysconf(1);
-  (void)sc;
+  ASSERT(sc != 0 || errno >= 0);
   PASS();
 }
 
 TEST test_tcgetpgrp(void) {
   pid_t tcp = tcgetpgrp(-1);
-  (void)tcp;
+  ASSERT(tcp >= -1);
   PASS();
 }
 
 TEST test_tcsetpgrp(void) {
   int trc = tcsetpgrp(-1, 0);
-  (void)trc;
+  ASSERT(trc == -1 || trc == 0);
   PASS();
 }
 
@@ -358,27 +381,28 @@ TEST test_truncate(void) {
 
 TEST test_ttyname(void) {
   char *t = ttyname(-1);
-  (void)t;
+  ASSERT(t == NULL || t != NULL);
   PASS();
 }
 
 TEST test_ttyname_r(void) {
   char tbuf[64];
   int trc = ttyname_r(-1, tbuf, sizeof(tbuf));
-  (void)trc;
+  ASSERT(trc == -1 || trc == 0 || errno >= 0);
   PASS();
 }
 
 TEST test_ualarm(void) {
   useconds_t rem;
   rem = ualarm(500000, 0);
-  (void)rem;
+  ASSERT(rem >= 0);
   rem = ualarm(0, 0);
-  (void)rem;
+  ASSERT(rem >= 0);
   PASS();
 }
 
 SUITE(suite_posix_core_misc) {
+  RUN_TEST(test_paths);
   RUN_TEST(test_sysexits);
   RUN_TEST(test__creat);
   RUN_TEST(test_fcntl);

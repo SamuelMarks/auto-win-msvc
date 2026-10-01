@@ -1,23 +1,24 @@
-#ifndef POSIX_SYS_MMAN_SYS_MMAN_H
+#ifndef POSIX_SPAWN_SPAWN_H
 #if defined(__GNUC__)
 #pragma GCC system_header
 #endif
-#define POSIX_SYS_MMAN_SYS_MMAN_H
+#define POSIX_SPAWN_SPAWN_H
 
 /**
- * @file mman.h
- * @brief POSIX sys/mman.h redirection header.
+ * @file spawn.h
+ * @brief POSIX spawn.h redirection header.
  */
 
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
-#include_next <sys/mman.h>
+#include_next <spawn.h>
 #else
-#include <sys/mman.h>
+#include <spawn.h>
 #endif
+#else
+#include "posix-spawn.h"
 #endif
-#include "posix-mman.h"
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -28,4 +29,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* POSIX_SYS_MMAN_SYS_MMAN_H */
+#endif /* POSIX_SPAWN_SPAWN_H */

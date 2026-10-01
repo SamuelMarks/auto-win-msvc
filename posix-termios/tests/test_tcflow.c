@@ -8,17 +8,17 @@
 TEST test_tcflow(void) {
   int rc;
   rc = tcflow(0, TCOOFF);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCOON);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCIOFF);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCION);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, 9999);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(-1, TCOOFF);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 

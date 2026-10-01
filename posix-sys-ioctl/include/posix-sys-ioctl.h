@@ -37,6 +37,11 @@ extern "C" {
 #define TIOCSWINSZ 0x5414
 #endif
 
+#ifndef TIOCNOTTY
+/** @brief Void tty association. */
+#define TIOCNOTTY 0x5422
+#endif
+
 #ifndef FIONREAD
 /** @brief Get number of bytes available to read. */
 #define FIONREAD 0x4004667f

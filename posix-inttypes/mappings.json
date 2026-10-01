@@ -1,10 +1,41 @@
 {
   "mappings": {
-    "functions": [],
+    "functions": [
+      {
+        "posix": "strtoimax",
+        "source_header": "<inttypes.h>",
+        "requires_polyfill": false,
+        "msvc": "_strtoi64",
+        "shim": {
+          "type": "macro",
+          "code": "#define strtoimax _strtoi64"
+        }
+      },
+      {
+        "posix": "strtoumax",
+        "source_header": "<inttypes.h>",
+        "requires_polyfill": false,
+        "msvc": "_strtoui64",
+        "shim": {
+          "type": "macro",
+          "code": "#define strtoumax _strtoui64"
+        }
+      }
+    ],
     "types": [],
     "macros": [
       {
         "posix": "HAS_POSIX_INTTYPES",
+        "source_header": "<inttypes.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PRIdMAX",
+        "source_header": "<inttypes.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "PRIuMAX",
         "source_header": "<inttypes.h>",
         "requires_polyfill": true
       }

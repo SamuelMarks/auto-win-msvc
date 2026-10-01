@@ -46,13 +46,13 @@ TEST test_epoll_lifecycle(void) {
   ASSERT_EQ(-1, ret);
 
   ret = epoll_wait(epfd, &ev, 1, 0);
-  (void)ret;
+  ASSERT(ret >= 0 || ret == -1);
 
   ret = epoll_wait(-1, &ev, 1, 0);
   ASSERT_EQ(-1, ret);
 
   ret = epoll_close(epfd);
-  (void)ret;
+  ASSERT(ret == 0 || ret == -1);
 
   ret = epoll_close(-1);
   ASSERT_EQ(-1, ret);
@@ -71,7 +71,7 @@ TEST test_epoll_create1(void) {
   ASSERT(epfd >= 0);
 
   ret = epoll_close(epfd);
-  (void)ret;
+  ASSERT(ret == 0 || ret == -1);
 
   PASS();
 }

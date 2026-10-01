@@ -50,9 +50,35 @@
           "type": "macro",
           "code": "#define sigfillset posix_signal_sigfillset"
         }
+      },
+      {
+        "posix": "killpg",
+        "source_header": "<signal.h>",
+        "requires_polyfill": false,
+        "msvc": "posix_signal_killpg",
+        "shim": {
+          "type": "macro",
+          "code": "#define killpg posix_signal_killpg"
+        }
       }
     ],
-    "macros": [],
+    "macros": [
+      {
+        "posix": "SIGCONT",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGTSTP",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "SIGWINCH",
+        "source_header": "<signal.h>",
+        "requires_polyfill": true
+      }
+    ],
     "types": []
   }
 }

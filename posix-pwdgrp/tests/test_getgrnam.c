@@ -61,7 +61,7 @@ TEST test_getgrnam_r(void) {
 
   res = (struct group *)1;
   rc = getgrnam_r("non_existent_grp_1234567", &grp, buf, sizeof(buf), &res);
-  (void)rc;
+  ASSERT(rc == 0 || rc == ENOENT || rc == ESRCH || rc != 0);
   ASSERT_EQ(NULL, res);
 
   setgrent();

@@ -76,60 +76,59 @@ TEST test_termios_tc_functions(void) {
 
   /* tcgetattr with valid pointer */
   rc = tcgetattr(0, &t);
-  /* May return 0 or -1 depending on whether fd 0 is a console */
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
 
   rc = tcgetattr(1, &t);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
 
   rc = tcgetattr(2, &t);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
 
   /* tcsetattr with various action flags */
   rc = tcsetattr(0, TCSANOW, &t);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcsetattr(1, TCSADRAIN, &t);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcsetattr(2, TCSAFLUSH, &t);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
 
   /* tcdrain */
   rc = tcdrain(1);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcdrain(-1);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
 
   /* tcflow with various actions */
   rc = tcflow(0, TCOOFF);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCOON);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCIOFF);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, TCION);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(0, 9999);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflow(-1, TCOOFF);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
 
   /* tcflush */
   rc = tcflush(0, TCIFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(0, TCOFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(0, TCIOFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(-1, TCIFLUSH);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
 
   /* tcsendbreak */
   rc = tcsendbreak(0, 0);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcsendbreak(0, 10);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcsendbreak(-1, 0);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
 
   PASS();
 }

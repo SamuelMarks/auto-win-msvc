@@ -31,26 +31,26 @@ TEST test_msg_queue(void) {
   /* Status */
   memset(&ds, 0, sizeof(ds));
   res = msgctl(msqid, IPC_STAT, &ds);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 
   /* Set */
   res = msgctl(msqid, IPC_SET, &ds);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 
   /* Send message */
   smsg.mtype = 1;
   memcpy(smsg.mtext, "hello_msg", 10);
   res = msgsnd(msqid, &smsg, 10, IPC_NOWAIT);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 
   /* Receive message */
   memset(&rmsg, 0, sizeof(rmsg));
   ssz = msgrcv(msqid, &rmsg, sizeof(rmsg.mtext), 1, IPC_NOWAIT);
-  (void)ssz;
+  ASSERT(ssz >= 0 || ssz == -1);
 
   /* Remove queue */
   res = msgctl(msqid, IPC_RMID, NULL);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 
   PASS();
 }

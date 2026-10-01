@@ -246,6 +246,19 @@ typedef unsigned short mode_t;
 #define S_IRWXO (S_IRWXG >> 3)
 #endif
 
+#ifndef S_ISUID
+/** @brief Set user ID on execution. */
+#define S_ISUID 04000
+#endif
+#ifndef S_ISGID
+/** @brief Set group ID on execution. */
+#define S_ISGID 02000
+#endif
+#ifndef S_ISVTX
+/** @brief Save swapped text after use (sticky bit). */
+#define S_ISVTX 01000
+#endif
+
 #ifndef S_ISDIR
 /** @brief Test for directory. */
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)

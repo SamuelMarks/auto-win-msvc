@@ -58,6 +58,14 @@
 /** \brief wait function. */
 pid_t wait(int *stat_loc) { return waitpid(-1, stat_loc, 0); }
 
+/** \brief wait3 function. */
+pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
+  pid_t ret = waitpid(-1, stat_loc, options);
+  if (ret > 0 && rusage != NULL) {
+  }
+  return ret;
+}
+
 /* Missing functions from TlHelp32 */
 typedef void *WIN_HANDLE;
 typedef unsigned long WIN_DWORD;
@@ -120,7 +128,6 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
           pid_t ret;
           if (stat_loc != NULL) {
             if (GetExitCodeProcess(g_posix_child_handles[i], &exit_code)) {
-              printf("CHILD EXIT CODE: 0x%lX\n", (unsigned long)exit_code);
               *stat_loc = ((int)(exit_code & 0xFF) << 8);
             } else {
               *stat_loc = 0;
@@ -172,7 +179,6 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     } else if (wait_res == WAIT_OBJECT_0) {
       if (stat_loc != NULL) {
         if (GetExitCodeProcess(hProcess, &exit_code)) {
-          printf("CHILD EXIT CODE: 0x%lX\n", (unsigned long)exit_code);
           *stat_loc = ((int)(exit_code & 0xFF) << 8);
         } else {
           *stat_loc = 0;
@@ -291,11 +297,19 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 
+pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
+  if (stat_loc || options || rusage) {
+  }
+  errno = ECHILD;
+  return -1;
+}
+
 #endif /* MSDOS || WATCOMC */
 
 /* Non-standard Microsoft-compatible cwait */
 pid_t cwait(int *termstat, pid_t pid, int action) {
-  (void)action; /* Unused */
+  if (action) {
+  }
   return waitpid(pid, termstat, 0);
 }
 

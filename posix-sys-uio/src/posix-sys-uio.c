@@ -48,6 +48,12 @@
 #endif
 #include <stdlib.h>
 #include <winsock2.h>
+#else
+#include <unistd.h>
+#endif
+/* clang-format on */
+
+#if defined(_MSC_VER) || defined(_WIN32)
 
 /** \brief posix_writev function. */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
@@ -74,7 +80,8 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
 
   ret = WSASend((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
   if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
-    ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
+    ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
+                  &bytesSent, 0, NULL, NULL);
   }
   free(bufs);
 
@@ -154,7 +161,8 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   ret =
       WSARecv((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesRecv, &flags, NULL, NULL);
   if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
-    ret = WSARecv((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt, &bytesRecv, &flags, NULL, NULL);
+    ret = WSARecv((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
+                  &bytesRecv, &flags, NULL, NULL);
   }
   free(bufs);
 
@@ -306,10 +314,6 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 }
 
 #else
-
-/* clang-format off */
-#include <unistd.h>
-/* clang-format on */
 
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   return (long)readv(fd, iov, iovcnt);

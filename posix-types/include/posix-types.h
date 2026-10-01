@@ -144,6 +144,26 @@ typedef __int64 off64_t;
 #endif
 
 /**
+ * @brief 64-bit signed quad integer type.
+ */
+#ifndef _QUAD_T_DEFINED
+#define _QUAD_T_DEFINED
+#if defined(_MSC_VER)
+typedef __int64 quad_t;
+/**
+ * @brief 64-bit unsigned quad integer type.
+ */
+typedef unsigned __int64 u_quad_t;
+#else
+typedef long long quad_t;
+/**
+ * @brief 64-bit unsigned quad integer type.
+ */
+typedef unsigned long long u_quad_t;
+#endif
+#endif
+
+/**
  * @brief Microseconds type.
  * MSVC defines this as unsigned int.
  */

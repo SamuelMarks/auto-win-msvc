@@ -146,13 +146,21 @@ char **backtrace_symbols(void *const *buffer, int size) {
     strings[i] = p;
     if (SymFromAddr(process, (DWORD64)(size_t)buffer[i], &displacement,
                     symbol)) {
+#if defined(_MSC_VER)
       printf_rc = sprintf_s(p, line_size, "%s [%p]", symbol->Name, buffer[i]);
+#else
+      printf_rc = sprintf(p, "%s [%p]", symbol->Name, buffer[i]);
+#endif
       if (printf_rc < 0) {
         free(strings);
         return NULL;
       }
     } else {
+#if defined(_MSC_VER)
       printf_rc = sprintf_s(p, line_size, "??? [%p]", buffer[i]);
+#else
+      printf_rc = sprintf(p, "??? [%p]", buffer[i]);
+#endif
       if (printf_rc < 0) {
         free(strings);
         return NULL;

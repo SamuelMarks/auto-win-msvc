@@ -87,6 +87,59 @@ struct itimerval {
 };
 #endif
 
+#ifndef timeradd
+/**
+ * @brief Adds timeval structures: result = a + b.
+ */
+#define timeradd(a, b, result)                                                \
+  do {                                                                        \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;                            \
+    (result)->tv_usec = (a)->tv_usec + (b)->tv_usec;                          \
+    if ((result)->tv_usec >= 1000000L) {                                      \
+      ++(result)->tv_sec;                                                     \
+      (result)->tv_usec -= 1000000L;                                          \
+    }                                                                         \
+  } while (0)
+#endif
+
+#ifndef timersub
+/**
+ * @brief Subtracts timeval structures: result = a - b.
+ */
+#define timersub(a, b, result)                                                \
+  do {                                                                        \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                            \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                          \
+    if ((result)->tv_usec < 0L) {                                             \
+      --(result)->tv_sec;                                                     \
+      (result)->tv_usec += 1000000L;                                          \
+    }                                                                         \
+  } while (0)
+#endif
+
+#ifndef timerclear
+/**
+ * @brief Clears a timeval structure to zero.
+ */
+#define timerclear(tvp) ((tvp)->tv_sec = (tvp)->tv_usec = 0)
+#endif
+
+#ifndef timerisset
+/**
+ * @brief Tests whether a timeval structure is non-zero.
+ */
+#define timerisset(tvp) ((tvp)->tv_sec != 0 || (tvp)->tv_usec != 0)
+#endif
+
+#ifndef timercmp
+/**
+ * @brief Compares two timeval structures using comparison operator CMP.
+ */
+#define timercmp(a, b, CMP)                                                   \
+  (((a)->tv_sec == (b)->tv_sec) ? ((a)->tv_usec CMP (b)->tv_usec)             \
+                                : ((a)->tv_sec CMP (b)->tv_sec))
+#endif
+
 /* Interval timer definitions */
 #define ITIMER_REAL                                                            \
   0 /**< Decrements in real time, and delivers SIGALRM upon expiration. */
@@ -188,13 +241,8 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
 
 #include <sys/time.h>
 #include <utime.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #endif /* _WIN32 */
+/* clang-format on */
 
 #ifdef __cplusplus
 }

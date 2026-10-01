@@ -34,10 +34,8 @@ TEST test_linux_systemd_init(void) {
 
 static int dummy_io_cb(sd_event_source *s, int fd, uint32_t revents,
                        void *userdata) {
-  (void)s;
-  (void)fd;
-  (void)revents;
-  (void)userdata;
+  if (s || fd || revents || userdata) {
+  }
   return -1;
 }
 

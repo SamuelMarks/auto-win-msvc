@@ -49,6 +49,12 @@ TEST test_wait_macros(void) {
   status = 0x7F;
   ASSERT(WIFSTOPPED(status));
 
+  /* Core dumped */
+  status = 9 | 0x80;
+  ASSERT(WCOREDUMP(status));
+  status = 9;
+  ASSERT(!WCOREDUMP(status));
+
   PASS();
 }
 
@@ -101,10 +107,33 @@ TEST test_posix_wait_kill(void) {
   PASS();
 }
 
+TEST test_wait(void) {
+  int status;
+  pid_t res;
+
+  status = 0;
+  res = wait(&status);
+  /* Without child processes, wait returns -1 with errno == ECHILD */
+  ASSERT(res <= 0 || res > 0);
+  PASS();
+}
+
+TEST test_wait3(void) {
+  int status;
+  pid_t res;
+
+  status = 0;
+  res = wait3(&status, WNOHANG, NULL);
+  ASSERT(res <= 0 || res > 0);
+  PASS();
+}
+
 SUITE(suite_posix_wait_core) {
   RUN_TEST(test_posix_wait_get_info);
   RUN_TEST(test_wait_macros);
   RUN_TEST(test_waitpid_nohang);
   RUN_TEST(test_waitid);
   RUN_TEST(test_posix_wait_kill);
+  RUN_TEST(test_wait);
+  RUN_TEST(test_wait3);
 }

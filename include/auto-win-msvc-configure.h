@@ -132,7 +132,6 @@ typedef uint32_t uintptr_t;
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <io.h>
@@ -165,16 +164,24 @@ typedef intptr_t ssize_t;
 
 /**
  * @brief Ensures Winsock2 is initialized exactly once per process.
+ * @return 0 on success, -1 on failure.
  */
-static __inline void auto_win_msvc_ensure_wsastartup(void) {
+static __inline int auto_win_msvc_ensure_wsastartup(void) {
     static int initialized = 0;
     if (!initialized) {
         WSADATA wsaData;
-        (void)setvbuf(stdout, NULL, _IONBF, 0);
-        (void)setvbuf(stderr, NULL, _IONBF, 0);
-        (void)WSAStartup(MAKEWORD(2, 2), &wsaData);
+        if (setvbuf(stdout, NULL, _IONBF, 0) != 0) {
+            return -1;
+        }
+        if (setvbuf(stderr, NULL, _IONBF, 0) != 0) {
+            return -1;
+        }
+        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+            return -1;
+        }
         initialized = 1;
     }
+    return 0;
 }
 
 /**
@@ -185,7 +192,9 @@ static __inline void auto_win_msvc_ensure_wsastartup(void) {
 static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
 #if defined(EVENT2_UTIL_H_INCLUDED_) || __has_include(<event2/util.h>)
     evutil_socket_t fds[2];
-    auto_win_msvc_ensure_wsastartup();
+    if (auto_win_msvc_ensure_wsastartup() != 0) {
+        return -1;
+    }
     if (evutil_socketpair(AF_INET, SOCK_STREAM, 0, fds) != 0) {
         return -1;
     }
@@ -196,7 +205,9 @@ static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
     SOCKET listener, s1, s2;
     struct sockaddr_in addr;
     int addrlen = sizeof(addr);
-    auto_win_msvc_ensure_wsastartup();
+    if (auto_win_msvc_ensure_wsastartup() != 0) {
+        return -1;
+    }
 
     listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listener == INVALID_SOCKET) return -1;
@@ -432,8 +443,13 @@ static __inline int auto_win_msvc_kill(pid_t pid, int sig) {
         if (!h) {
             return 0;
         }
-        (void)TerminateProcess(h, (UINT)sig);
-        (void)CloseHandle(h);
+        if (!TerminateProcess(h, (UINT)sig)) {
+            CloseHandle(h);
+            return -1;
+        }
+        if (!CloseHandle(h)) {
+            return -1;
+        }
     }
     return 0;
 }
@@ -449,16 +465,27 @@ static __inline int auto_win_msvc_kill(pid_t pid, int sig) {
  */
 static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options) {
     HANDLE h;
-    (void)options;
+    if (options) {
+    }
     h = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
     if (h) {
-        (void)WaitForSingleObject(h, 2000);
+        DWORD wait_res = WaitForSingleObject(h, 2000);
+        if (wait_res == WAIT_FAILED) {
+            CloseHandle(h);
+            return (pid_t)-1;
+        }
         if (status) {
             DWORD code = 0;
-            (void)GetExitCodeProcess(h, &code);
-            *status = (int)code;
+            if (GetExitCodeProcess(h, &code)) {
+                *status = (int)code;
+            } else {
+                CloseHandle(h);
+                return (pid_t)-1;
+            }
         }
-        (void)CloseHandle(h);
+        if (!CloseHandle(h)) {
+            return (pid_t)-1;
+        }
     }
     return pid;
 }

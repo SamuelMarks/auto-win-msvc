@@ -9,6 +9,32 @@
       }
     ],
     "types": [],
-    "macros": []
+    "macros": [
+      {
+        "posix": "TIOCGWINSZ",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TIOCSWINSZ",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "TIOCNOTTY",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "FIONREAD",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "FIONBIO",
+        "source_header": "<sys/ioctl.h>",
+        "requires_polyfill": true
+      }
+    ]
   }
 }

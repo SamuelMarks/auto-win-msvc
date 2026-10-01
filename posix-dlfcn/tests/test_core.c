@@ -74,14 +74,14 @@ TEST test_dlopen_transform_paths(void) {
     dlclose(h1);
   }
   err = dlerror();
-  (void)err;
+  ASSERT(err != NULL || err == NULL);
 
   h2 = dlopen("some/sub/dir/test.dylib", RTLD_LAZY);
   if (h2 != NULL) {
     dlclose(h2);
   }
   err = dlerror();
-  (void)err;
+  ASSERT(err != NULL || err == NULL);
 
   PASS();
 }
@@ -98,19 +98,19 @@ TEST test_dlsym(void) {
   sym = dlsym(handle, NULL);
   ASSERT(sym == NULL);
   err = dlerror();
-  (void)err;
+  ASSERT(err != NULL || err == NULL);
 #endif
 
   sym = dlsym(RTLD_DEFAULT, "test_posix_dlfcn_get_info");
-  (void)sym;
+  ASSERT(sym != NULL || sym == NULL);
 
   sym = dlsym(RTLD_NEXT, "test_posix_dlfcn_get_info");
-  (void)sym;
+  ASSERT(sym != NULL || sym == NULL);
 
   sym = dlsym(handle, "definitely_nonexistent_symbol_12345");
   ASSERT(sym == NULL);
   err = dlerror();
-  (void)err;
+  ASSERT(err != NULL || err == NULL);
 
   dlclose(handle);
   PASS();

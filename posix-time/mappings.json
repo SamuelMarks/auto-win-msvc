@@ -56,6 +56,32 @@
         "requires_polyfill": true
       }
     ],
-    "macros": []
+    "macros": [
+      {
+        "posix": "timeradd",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "timersub",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "timerclear",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "timerisset",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "timercmp",
+        "source_header": "<sys/time.h>",
+        "requires_polyfill": true
+      }
+    ]
   }
 }

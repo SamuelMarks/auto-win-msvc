@@ -313,6 +313,15 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0x4000
 #endif
+#ifndef F_DUPFD
+#define F_DUPFD 0
+#endif
+#ifndef F_DUPFD_CLOEXEC
+#define F_DUPFD_CLOEXEC 67
+#endif
+#ifndef FD_CLOEXEC
+#define FD_CLOEXEC 1
+#endif
 #ifndef F_GETFD
 #define F_GETFD 1
 #endif

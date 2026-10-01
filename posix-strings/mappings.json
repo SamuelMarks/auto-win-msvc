@@ -15,6 +15,36 @@
         "posix": "ffsll",
         "source_header": "<strings.h>",
         "requires_polyfill": true
+      },
+      {
+        "posix": "stpcpy",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "stpncpy",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "strchrnul",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "mempcpy",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "memrchr",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "strsignal",
+        "source_header": "<string.h>",
+        "requires_polyfill": true
       }
     ],
     "types": [],

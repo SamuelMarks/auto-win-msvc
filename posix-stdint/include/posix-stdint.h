@@ -188,13 +188,21 @@ typedef unsigned int uintptr_t;
 #ifndef _INTMAX_T_DEFINED
 #define _INTMAX_T_DEFINED
 /** @brief Greatest-width signed integer type. */
+#if defined(__APPLE__) && (defined(__LP64__) || defined(_LP64))
+typedef long intmax_t;
+#else
 typedef int64_t intmax_t;
+#endif
 #endif
 
 #ifndef _UINTMAX_T_DEFINED
 #define _UINTMAX_T_DEFINED
 /** @brief Greatest-width unsigned integer type. */
+#if defined(__APPLE__) && (defined(__LP64__) || defined(_LP64))
+typedef unsigned long uintmax_t;
+#else
 typedef uint64_t uintmax_t;
+#endif
 #endif
 
 #ifndef INT8_MIN

@@ -172,6 +172,7 @@ results_*
 !/TODO_PLAN.md
 !/cdd-c-expansion.md
 !/UNDERCOVERED.md
+!/DASH_TODO_PLAN.md
 
 # External/Generated
 valkey_src/

@@ -8,13 +8,13 @@
 TEST test_tcflush(void) {
   int rc;
   rc = tcflush(0, TCIFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(0, TCOFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(0, TCIOFLUSH);
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   rc = tcflush(-1, TCIFLUSH);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 

@@ -9,12 +9,8 @@
 /* clang-format off */
 #include <stddef.h>
 #if defined(_MSC_VER)
-#if _MSC_VER < 1800
 #include <posix-stdint.h>
 #include <stdlib.h>
-#else
-#include <inttypes.h>
-#endif
 #else
 #include <inttypes.h>
 #endif
@@ -24,7 +20,7 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) && (_MSC_VER < 1800)
+#if defined(_MSC_VER)
 
 #ifndef PRId8
 /** @brief Format specifier for signed 8-bit integer decimal output. */
@@ -128,6 +124,31 @@ extern "C" {
 #define PRIX64 "I64X"
 #endif
 
+#ifndef PRIdMAX
+/** @brief Format specifier for intmax_t signed decimal output. */
+#define PRIdMAX PRId64
+#endif
+#ifndef PRIiMAX
+/** @brief Format specifier for intmax_t signed integer output. */
+#define PRIiMAX PRIi64
+#endif
+#ifndef PRIoMAX
+/** @brief Format specifier for uintmax_t unsigned octal output. */
+#define PRIoMAX PRIo64
+#endif
+#ifndef PRIuMAX
+/** @brief Format specifier for uintmax_t unsigned decimal output. */
+#define PRIuMAX PRIu64
+#endif
+#ifndef PRIxMAX
+/** @brief Format specifier for uintmax_t unsigned hexadecimal output. */
+#define PRIxMAX PRIx64
+#endif
+#ifndef PRIXMAX
+/** @brief Format specifier for uppercase hexadecimal uintmax_t output. */
+#define PRIXMAX PRIX64
+#endif
+
 #ifndef strtoimax
 /** @brief Macro mapping strtoimax to MSVC _strtoi64. */
 #define strtoimax _strtoi64
@@ -137,7 +158,7 @@ extern "C" {
 #define strtoumax _strtoui64
 #endif
 
-#endif /* defined(_MSC_VER) && (_MSC_VER < 1800) */
+#endif /* defined(_MSC_VER) */
 
 /**
  * @brief Error codes returned by posix-inttypes functions.

@@ -10,15 +10,19 @@
  * mapped to WSASend and _write system calls.
  */
 
-#if defined(_MSC_VER) || defined(_WIN32)
 /* clang-format off */
+#if defined(_MSC_VER) || defined(_WIN32)
 #include <stddef.h> /* size_t */
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <stddef.h> /* size_t */
 #else
 #include <sys/uio.h>
-/* clang-format on */
 #endif
+
+#if !defined(_MSC_VER)
+#include <sys/types.h>
+#endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,9 +52,6 @@ enum posix_sys_uio_error_code posix_sys_uio_get_info(int *out_available);
 #if defined(_MSC_VER)
 typedef __int64 posix_uio_off_t;
 #else
-/* clang-format off */
-#include <sys/types.h>
-/* clang-format on */
 typedef off_t posix_uio_off_t;
 #endif
 

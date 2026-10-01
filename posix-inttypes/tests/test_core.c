@@ -59,6 +59,20 @@ TEST test_inttypes(void) {
 #endif
   ASSERT_STR_EQ("FF", buf);
 
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)789);
+#else
+  sprintf(buf, "%" PRIdMAX, (intmax_t)789);
+#endif
+  ASSERT_STR_EQ("789", buf);
+
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "%" PRIuMAX, (uintmax_t)987);
+#else
+  sprintf(buf, "%" PRIuMAX, (uintmax_t)987);
+#endif
+  ASSERT_STR_EQ("987", buf);
+
   PASS();
 }
 

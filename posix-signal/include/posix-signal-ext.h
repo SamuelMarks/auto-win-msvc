@@ -68,6 +68,36 @@ extern "C" {
 #define SIGCHLD 17
 #endif
 
+/** \brief Continue execution, if stopped. */
+#ifndef SIGCONT
+#define SIGCONT 18
+#endif
+
+/** \brief Stop process (cannot be caught or ignored). */
+#ifndef SIGSTOP
+#define SIGSTOP 19
+#endif
+
+/** \brief Stop typed at terminal. */
+#ifndef SIGTSTP
+#define SIGTSTP 20
+#endif
+
+/** \brief Terminal input for background process. */
+#ifndef SIGTTIN
+#define SIGTTIN 21
+#endif
+
+/** \brief Terminal output for background process. */
+#ifndef SIGTTOU
+#define SIGTTOU 22
+#endif
+
+/** \brief Window resize signal. */
+#ifndef SIGWINCH
+#define SIGWINCH 28
+#endif
+
 /** \brief Do not generate SIGCHLD when children stop. */
 #ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP 1

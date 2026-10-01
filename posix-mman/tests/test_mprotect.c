@@ -38,7 +38,7 @@ TEST test_mprotect(void) {
 #if defined(_WIN32)
   ASSERT_EQ(0, rc);
 #else
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
 #endif
 
   rc = mprotect(ptr, 4096, PROT_NONE);

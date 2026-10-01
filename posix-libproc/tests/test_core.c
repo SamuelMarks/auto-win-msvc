@@ -60,7 +60,7 @@ TEST test_proc_pidpath(void) {
   ASSERT(ret > 0);
   ASSERT(strlen(path) > 0);
 #else
-  (void)ret;
+  ASSERT(ret >= 0);
 #endif
 
   PASS();

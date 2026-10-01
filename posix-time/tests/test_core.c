@@ -188,6 +188,36 @@ TEST test_utimes(void) {
   PASS();
 }
 
+TEST test_timer_macros(void) {
+  struct timeval t1;
+  struct timeval t2;
+  struct timeval res;
+
+  t1.tv_sec = 1;
+  t1.tv_usec = 600000;
+  t2.tv_sec = 2;
+  t2.tv_usec = 700000;
+
+  timeradd(&t1, &t2, &res);
+  ASSERT_EQ(4, (long)res.tv_sec);
+  ASSERT_EQ(300000L, (long)res.tv_usec);
+
+  timersub(&res, &t1, &res);
+  ASSERT_EQ(2, (long)res.tv_sec);
+  ASSERT_EQ(700000L, (long)res.tv_usec);
+
+  ASSERT(timerisset(&res));
+  ASSERT(timercmp(&res, &t1, >));
+  ASSERT(!timercmp(&res, &t1, <));
+
+  timerclear(&res);
+  ASSERT_EQ(0L, (long)res.tv_sec);
+  ASSERT_EQ(0L, (long)res.tv_usec);
+  ASSERT(!timerisset(&res));
+
+  PASS();
+}
+
 SUITE(suite_posix_time_core) {
   RUN_TEST(test_posix_time_get_info);
   RUN_TEST(test_clock_gettime);
@@ -196,4 +226,5 @@ SUITE(suite_posix_time_core) {
   RUN_TEST(test_localtime_r);
   RUN_TEST(test_getitimer_setitimer);
   RUN_TEST(test_utimes);
+  RUN_TEST(test_timer_macros);
 }

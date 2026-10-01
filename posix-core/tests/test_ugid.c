@@ -15,31 +15,31 @@
 
 TEST test_getegid(void) {
   gid_t egid = getegid();
-  (void)egid;
+  ASSERT(egid >= 0);
   PASS();
 }
 
 TEST test_geteuid(void) {
   uid_t euid = geteuid();
-  (void)euid;
+  ASSERT(euid >= 0);
   PASS();
 }
 
 TEST test_getgid(void) {
   gid_t gid = getgid();
-  (void)gid;
+  ASSERT(gid >= 0);
   PASS();
 }
 
 TEST test_getpgid(void) {
   pid_t pgid = getpgid(0);
-  (void)pgid;
+  ASSERT(pgid >= 0);
   PASS();
 }
 
 TEST test_getuid(void) {
   uid_t uid = getuid();
-  (void)uid;
+  ASSERT(uid >= 0);
   PASS();
 }
 
@@ -78,7 +78,7 @@ TEST test_setpgid(void) {
   if (rc == -1 && (errno == EPERM || errno == EACCES)) {
     PASS();
   }
-  (void)rc;
+  ASSERT(rc == 0 || rc == -1);
   PASS();
 }
 

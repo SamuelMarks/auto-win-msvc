@@ -297,6 +297,31 @@ int shm_unlink(const char *name);
 #endif /* !defined(_WIN32) && !defined(_WIN64) && !defined(__MSDOS__) &&       \
           !defined(__WATCOMC__) */
 
+#ifndef MFD_CLOEXEC
+/** \brief Set close-on-exec flag on the new file descriptor. */
+#define MFD_CLOEXEC 0x0001U
+#endif
+#ifndef MFD_ALLOW_SEALING
+/** \brief Allow sealing operations on this file. */
+#define MFD_ALLOW_SEALING 0x0002U
+#endif
+#ifndef MFD_HUGETLB
+/** \brief Create memory file using huge pages. */
+#define MFD_HUGETLB 0x0004U
+#endif
+
+/**
+ * \brief Create an anonymous file descriptor.
+ * \param name Name associated with the file descriptor for debugging.
+ * \param flags Bitmask of MFD_* flags.
+ * \return Open file descriptor on success, or -1 on failure.
+ */
+int posix_memfd_create(const char *name, unsigned int flags);
+
+#ifndef memfd_create
+#define memfd_create posix_memfd_create
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

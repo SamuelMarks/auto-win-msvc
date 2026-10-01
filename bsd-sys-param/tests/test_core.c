@@ -34,6 +34,10 @@ TEST test_bsd_sys_param_macros(void) {
   ASSERT_EQ(12, roundup(10, 4));
   ASSERT(powerof2(8));
   ASSERT(!powerof2(7));
+  ASSERT(PIPE_BUF >= 512);
+  ASSERT(BSD4_4 >= 1);
+  ASSERT(NCARGS >= 1024);
+  ASSERT(NOFILE >= 64);
   PASS();
 }
 

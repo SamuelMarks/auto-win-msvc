@@ -57,6 +57,12 @@
         "posix": "shm_unlink",
         "source_header": "<sys/mman.h>",
         "requires_polyfill": true
+      },
+      {
+        "posix": "memfd_create",
+        "source_header": "<sys/mman.h>",
+        "requires_polyfill": true,
+        "windows_api": "_open"
       }
     ],
     "types": [],

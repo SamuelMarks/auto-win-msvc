@@ -158,6 +158,8 @@ int glob(const char *pattern, int flags,
   if (!pattern || !pglob)
     return GLOB_ABORTED;
 
+  pglob->gl_flags = flags;
+
   if (!(flags & GLOB_APPEND)) {
     pglob->gl_pathc = 0;
     pglob->gl_pathv = NULL;
@@ -206,11 +208,7 @@ int glob(const char *pattern, int flags,
         sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
                   fileinfo.name);
 #else
-#if defined(_MSC_VER)
-        sprintf_s(full_path, MAX_PATH, "%s%s", dir_prefix, fileinfo.name);
-#else
         sprintf(full_path, "%s%s", dir_prefix, fileinfo.name);
-#endif
 #endif
       } else {
 #if defined(_MSC_VER)
@@ -232,8 +230,10 @@ int glob(const char *pattern, int flags,
     return ret;
 
   if (!match_found) {
-    if (flags & GLOB_NOCHECK)
+    if ((flags & GLOB_NOCHECK) || (flags & GLOB_NOMAGIC)) {
+      pglob->gl_flags |= GLOB_NOMAGIC;
       return glob_append(pglob, pattern);
+    }
     return GLOB_NOMATCH;
   }
 
@@ -263,6 +263,8 @@ int glob(const char *pattern, int flags,
 
   if (!pattern || !pglob)
     return GLOB_ABORTED;
+
+  pglob->gl_flags = flags;
 
   if (!(flags & GLOB_APPEND)) {
     pglob->gl_pathc = 0;
@@ -343,8 +345,10 @@ int glob(const char *pattern, int flags,
     return ret;
 
   if (!match_found) {
-    if (flags & GLOB_NOCHECK)
+    if ((flags & GLOB_NOCHECK) || (flags & GLOB_NOMAGIC)) {
+      pglob->gl_flags |= GLOB_NOMAGIC;
       return glob_append(pglob, pattern);
+    }
     return GLOB_NOMATCH;
   }
 

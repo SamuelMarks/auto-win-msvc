@@ -574,6 +574,48 @@ int posix_signal_kill(pid_t pid, int sig) {
 }
 
 /**
+ * @brief Send a signal to a process group.
+ * @param[in] pgrp Process group ID.
+ * @param[in] sig Signal number to send.
+ * @return 0 on success, or -1 on error.
+ */
+int posix_signal_killpg(pid_t pgrp, int sig) {
+  if (pgrp < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  return posix_signal_kill(pgrp, sig);
+}
+
+/**
+ * @brief Sets the current signal mask.
+ * @param[in] mask New signal mask.
+ * @return Previous signal mask.
+ */
+int sigsetmask(int mask) {
+  sigset_t set;
+  sigset_t oset;
+  set = (sigset_t)mask;
+  oset = 0;
+  posix_signal_sigprocmask(SIG_SETMASK, &set, &oset);
+  return (int)oset;
+}
+
+/**
+ * @brief Adds signals to the current signal mask.
+ * @param[in] mask Signal mask to add.
+ * @return Previous signal mask.
+ */
+int sigblock(int mask) {
+  sigset_t set;
+  sigset_t oset;
+  set = (sigset_t)mask;
+  oset = 0;
+  posix_signal_sigprocmask(SIG_BLOCK, &set, &oset);
+  return (int)oset;
+}
+
+/**
  * @brief Retrieves the current process ID.
  * @param[out] out_pid Pointer to pid_t receiving current PID.
  * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
@@ -722,6 +764,13 @@ int posix_signal_sigaction(int sig, const struct sigaction *act,
 
 int posix_signal_kill(pid_t pid, int sig) {
   (void)pid;
+  (void)sig;
+  errno = ENOSYS;
+  return -1;
+}
+
+int posix_signal_killpg(pid_t pgrp, int sig) {
+  (void)pgrp;
   (void)sig;
   errno = ENOSYS;
   return -1;

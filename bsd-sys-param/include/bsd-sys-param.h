@@ -24,6 +24,27 @@ extern "C" {
 #define MAXPATHLEN 4096
 #endif
 
+#ifndef PIPE_BUF
+/** @brief Maximum number of bytes guaranteed to be written atomically to a
+ * pipe. */
+#define PIPE_BUF 4096
+#endif
+
+#ifndef BSD4_4
+/** @brief BSD 4.4 compatibility level identifier. */
+#define BSD4_4 1
+#endif
+
+#ifndef NCARGS
+/** @brief Maximum length of arguments and environment to execve. */
+#define NCARGS 262144
+#endif
+
+#ifndef NOFILE
+/** @brief Maximum number of open files per process. */
+#define NOFILE 2048
+#endif
+
 #ifndef MIN
 /** @brief Returns minimum of two numbers. */
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

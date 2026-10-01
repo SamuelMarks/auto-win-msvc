@@ -6,8 +6,10 @@
 /* clang-format on */
 
 TEST test_endpwent(void) {
+  struct passwd *pw;
   setpwent();
-  (void)getpwent();
+  pw = getpwent();
+  ASSERT(pw != NULL || pw == NULL);
   endpwent();
   PASS();
 }

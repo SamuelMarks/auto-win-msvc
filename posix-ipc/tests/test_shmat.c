@@ -38,7 +38,7 @@ TEST test_shm_comprehensive(void) {
     /* Status */
     memset(&ds, 0, sizeof(ds));
     res = shmctl(shmid, IPC_STAT, &ds);
-    (void)res;
+    ASSERT(res == 0 || res == -1);
 
     /* Detach */
     res = shmdt(addr);
@@ -47,7 +47,7 @@ TEST test_shm_comprehensive(void) {
 
   /* Remove */
   res = shmctl(shmid, IPC_RMID, NULL);
-  (void)res;
+  ASSERT(res == 0 || res == -1);
 
   PASS();
 }

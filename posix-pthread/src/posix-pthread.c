@@ -1990,8 +1990,11 @@ sem_t *sem_open(const char *name, int oflag, ...) {
 
   if (oflag & O_CREAT) {
     va_list ap;
+    int mode;
     va_start(ap, oflag);
-    (void)va_arg(ap, int);
+    mode = va_arg(ap, int);
+    if (mode) {
+    }
     value = va_arg(ap, unsigned int);
     va_end(ap);
 

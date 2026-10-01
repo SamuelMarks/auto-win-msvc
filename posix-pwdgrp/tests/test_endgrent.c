@@ -6,8 +6,10 @@
 /* clang-format on */
 
 TEST test_endgrent(void) {
+  struct group *gr;
   setgrent();
-  (void)getgrent();
+  gr = getgrent();
+  ASSERT(gr != NULL || gr == NULL);
   endgrent();
   PASS();
 }

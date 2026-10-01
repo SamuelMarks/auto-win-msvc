@@ -27,7 +27,8 @@ TEST test_mlock(void) {
   ASSERT_EQ(0, rc);
 #else
   if (rc == 0) {
-    (void)munlock(ptr, 4096);
+    int un_rc = munlock(ptr, 4096);
+    ASSERT(un_rc == 0 || un_rc == -1);
   }
 #endif
 

@@ -35,11 +35,8 @@ TEST test_macos_corefoundation_init(void) {
 
 static void dummy_cf_cb(CFSocketRef s, int type, CFDataRef address,
                         const void *data, void *info) {
-  (void)s;
-  (void)type;
-  (void)address;
-  (void)data;
-  (void)info;
+  if (s || type || address || data || info) {
+  }
 }
 
 TEST test_macos_corefoundation_operations(void) {

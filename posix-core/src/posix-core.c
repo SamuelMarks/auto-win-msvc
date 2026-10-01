@@ -349,7 +349,36 @@ int fcntl(intptr_t fd, int cmd, ...) {
   SOCKET s;
   va_start(ap, cmd);
 
-  if (cmd == F_GETFD || cmd == F_SETFD) {
+  if (cmd == F_DUPFD || cmd == F_DUPFD_CLOEXEC) {
+    int min_fd;
+    int target_fd;
+    min_fd = va_arg(ap, int);
+    va_end(ap);
+    if (min_fd < 0 || min_fd >= 2048) {
+      errno = EINVAL;
+      return -1;
+    }
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    for (target_fd = min_fd; target_fd < 128; target_fd++) {
+      if (_dup2((int)fd, target_fd) == 0) {
+        return target_fd;
+      }
+    }
+    errno = EMFILE;
+    return -1;
+#else
+    return (int)dup((int)fd);
+#endif
+  }
+
+  if (cmd == F_GETFD) {
+    va_end(ap);
+    return 0;
+  }
+  if (cmd == F_SETFD) {
+    int arg;
+    arg = va_arg(ap, int);
+    (void)arg;
     va_end(ap);
     return 0;
   }

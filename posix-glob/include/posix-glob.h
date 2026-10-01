@@ -76,6 +76,7 @@ typedef struct {
   size_t gl_pathc; /**< Count of paths matched so far. */
   char **gl_pathv; /**< List of matched pathnames. */
   size_t gl_offs;  /**< Slots to reserve in gl_pathv. */
+  int gl_flags;    /**< Flags used in glob. */
 } glob_t;
 
 /**
@@ -89,6 +90,9 @@ typedef struct {
 #define GLOB_NOCHECK 0x10  /**< If nothing matches, return the pattern. */
 #define GLOB_APPEND 0x20   /**< Append to results of a previous call. */
 #define GLOB_NOESCAPE 0x40 /**< Backslashes don't quote metacharacters. */
+#ifndef GLOB_NOMAGIC
+#define GLOB_NOMAGIC 0x0800 /**< If no magic chars, return the pattern. */
+#endif
 /** @} */
 
 /**

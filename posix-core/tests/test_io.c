@@ -37,7 +37,7 @@ TEST test_sync_file_range(void) {
 
   fd = open("test_sfr.tmp", O_RDWR | O_CREAT, 0666);
   if (fd >= 0) {
-    (void)sync_file_range(fd, 0, 0, 0);
+    ASSERT(sync_file_range(fd, 0, 0, 0) == 0 || errno >= 0);
     close(fd);
     remove("test_sfr.tmp");
   }

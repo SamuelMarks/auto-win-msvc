@@ -18,6 +18,12 @@
         "windows_api": "_cwait"
       },
       {
+        "posix": "wait3",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true,
+        "windows_api": "WaitForSingleObject"
+      },
+      {
         "posix": "waitid",
         "source_header": "<sys/wait.h>",
         "requires_polyfill": true,
@@ -49,6 +55,31 @@
       },
       {
         "posix": "WEXITSTATUS",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WIFSIGNALED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WTERMSIG",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WIFSTOPPED",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WSTOPSIG",
+        "source_header": "<sys/wait.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "WCOREDUMP",
         "source_header": "<sys/wait.h>",
         "requires_polyfill": true
       }

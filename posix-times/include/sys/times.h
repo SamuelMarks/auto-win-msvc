@@ -1,4 +1,7 @@
 #ifndef POSIX_SYS_TIMES_H
+#if defined(__GNUC__)
+#pragma GCC system_header
+#endif
 #define POSIX_SYS_TIMES_H
 
 /**
@@ -7,7 +10,15 @@
  */
 
 /* clang-format off */
+#if !defined(_WIN32)
+#if defined(__GNUC__) || defined(__clang__)
+#include_next <sys/times.h>
+#else
+#include <sys/times.h>
+#endif
+#else
 #include <time.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus

@@ -241,6 +241,28 @@ int posix_signal_sigsuspend(const sigset_t *mask);
 int posix_signal_kill(pid_t pid, int sig);
 
 /**
+ * @brief Send a signal to a process group.
+ * @param[in] pgrp Process group ID of target process group.
+ * @param[in] sig Signal number to send.
+ * @return 0 on success, or -1 on error.
+ */
+int posix_signal_killpg(pid_t pgrp, int sig);
+
+/**
+ * @brief Sets the current signal mask.
+ * @param[in] mask New signal mask.
+ * @return Previous signal mask.
+ */
+int sigsetmask(int mask);
+
+/**
+ * @brief Adds signals to the current signal mask.
+ * @param[in] mask Signal mask to add.
+ * @return Previous signal mask.
+ */
+int sigblock(int mask);
+
+/**
  * @brief Set a signal handling function.
  * @param[in] signum Signal number.
  * @param[in] handler Function pointer for signal handler.
@@ -332,6 +354,9 @@ enum posix_signal_error_code posix_signal_reset(int *out_status);
 #endif
 #ifndef kill
 #define kill posix_signal_kill
+#endif
+#ifndef killpg
+#define killpg posix_signal_killpg
 #endif
 
 #endif

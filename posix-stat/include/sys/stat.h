@@ -87,6 +87,18 @@ extern "C" {
 /** @brief Read, write, execute permissions, others. */
 #define S_IRWXO 0007
 #endif
+#ifndef S_ISUID
+/** @brief Set user ID on execution. */
+#define S_ISUID 04000
+#endif
+#ifndef S_ISGID
+/** @brief Set group ID on execution. */
+#define S_ISGID 02000
+#endif
+#ifndef S_ISVTX
+/** @brief Save swapped text after use (sticky bit). */
+#define S_ISVTX 01000
+#endif
 
 #endif /* defined(_WIN32) || defined(_MSC_VER) */
 

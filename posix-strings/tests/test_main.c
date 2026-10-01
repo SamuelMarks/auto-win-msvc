@@ -5,11 +5,13 @@
 /* clang-format on */
 
 SUITE_EXTERN(suite_posix_strings_core);
+SUITE_EXTERN(suite_posix_strings_extras);
 
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
   GREATEST_MAIN_BEGIN();
   RUN_SUITE(suite_posix_strings_core);
+  RUN_SUITE(suite_posix_strings_extras);
   GREATEST_MAIN_END();
 }

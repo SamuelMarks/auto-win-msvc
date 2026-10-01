@@ -43,7 +43,7 @@ TEST test_getgrgid_r(void) {
 
   res = (struct group *)1;
   rc = getgrgid_r((gid_t)99999999, &grp, buf, sizeof(buf), &res);
-  (void)rc;
+  ASSERT(rc == 0 || rc == ENOENT || rc == ESRCH || rc != 0);
   ASSERT_EQ(NULL, res);
 
   setgrent();

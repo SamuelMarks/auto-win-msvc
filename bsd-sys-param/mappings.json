@@ -17,6 +17,26 @@
         "posix": "MAX",
         "source_header": "<sys/param.h>",
         "windows_api": "MAX"
+      },
+      {
+        "posix": "PIPE_BUF",
+        "source_header": "<sys/param.h>",
+        "windows_api": "4096"
+      },
+      {
+        "posix": "BSD4_4",
+        "source_header": "<sys/param.h>",
+        "windows_api": "1"
+      },
+      {
+        "posix": "NCARGS",
+        "source_header": "<sys/param.h>",
+        "windows_api": "262144"
+      },
+      {
+        "posix": "NOFILE",
+        "source_header": "<sys/param.h>",
+        "windows_api": "2048"
       }
     ]
   }

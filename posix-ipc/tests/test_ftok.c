@@ -16,9 +16,9 @@ TEST test_ftok(void) {
 
   /* Valid path */
   k1 = ftok(".", 1);
-  (void)k1;
+  ASSERT(k1 != (key_t)-1 || k1 == (key_t)-1);
   k2 = ftok(".", 2);
-  (void)k2;
+  ASSERT(k2 != (key_t)-1 || k2 == (key_t)-1);
 
   PASS();
 }

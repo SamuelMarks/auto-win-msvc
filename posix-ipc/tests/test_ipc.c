@@ -30,7 +30,7 @@ TEST test_posix_ipc_get_info(void) {
 TEST test_ipc(void) {
   key_t k;
   k = ftok(".", 1);
-  (void)k;
+  ASSERT(k != (key_t)-1 || k == (key_t)-1);
   PASS();
 }
 
