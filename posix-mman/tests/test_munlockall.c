@@ -10,7 +10,8 @@ TEST test_munlockall(void) {
 #if defined(_WIN32)
   ASSERT_EQ(0, rc);
 #else
-  (void)rc;
+  if (rc != 0)
+    return rc;
 #endif
   PASS();
 }

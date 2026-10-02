@@ -1,0 +1,34 @@
+{
+    "sys/epoll.h": {
+        "epoll_create": {
+            "prototype": "int epoll_create(int size);",
+            "description": "epoll_create() creates a new epoll(7) instance. Since Linux  2.6.8, the size argument is ignored, but must be greater than  zero; see HISTORY."
+        },
+        "epoll_create1": {
+            "prototype": "int epoll_create1(int flags);",
+            "description": "epoll_create() creates a new epoll(7) instance. Since Linux  2.6.8, the size argument is ignored, but must be greater than  zero; see HISTORY."
+        },
+        "epoll_ctl": {
+            "prototype": "int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);",
+            "description": "This system call is used to add, modify, or remove entries in the  interest list of the epoll(7) instance referred to by the file  descriptor epfd. It requests that the operation op be performed  for the target file descriptor, fd."
+        },
+        "epoll_wait": {
+            "prototype": "int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);",
+            "description": "The epoll_wait() system call waits for events on the epoll(7)  instance referred to by the file descriptor epfd. The buffer  pointed to by events is used to return information from the ready  list about file descriptors in the interest list that have some  events available. Up to n are returned by epoll_wait(). The n  argument must be greater than zero."
+        },
+        "epoll_pwait": {
+            "prototype": "int epoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask);",
+            "description": "The epoll_wait() system call waits for events on the epoll(7)  instance referred to by the file descriptor epfd. The buffer  pointed to by events is used to return information from the ready  list about file descriptors in the interest list that have some  events available. Up to n are returned by epoll_wait(). The n  argument must be greater than zero."
+        },
+        "epoll_pwait2": {
+            "prototype": "int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents, const struct timespec *timeout, const sigset_t *sigmask);",
+            "description": "The epoll_wait() system call waits for events on the epoll(7)  instance referred to by the file descriptor epfd. The buffer  pointed to by events is used to return information from the ready  list about file descriptors in the interest list that have some  events available. Up to n are returned by epoll_wait(). The n  argument must be greater than zero."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "stdint.h",
+            "signal.h",
+            "time.h"
+        ]
+    }
+}

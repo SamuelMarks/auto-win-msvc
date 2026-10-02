@@ -1,0 +1,12 @@
+{
+    "bsd/stdlib.h": {
+        "reallocarray": {
+            "prototype": "void *reallocarray(void *ptr, size_t nmemb, size_t size);",
+            "description": "Reallocate memory safely."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "stddef.h"
+        ]
+    }
+}

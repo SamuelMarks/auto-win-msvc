@@ -55,7 +55,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
 
       - name: Setup MSVC Environment
         if: startsWith(matrix.env, 'msvc')

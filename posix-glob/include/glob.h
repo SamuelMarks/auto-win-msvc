@@ -1,6 +1,5 @@
 #ifndef POSIX_GLOB_GLOB_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define POSIX_GLOB_GLOB_H
 

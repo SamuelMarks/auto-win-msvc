@@ -1,7 +1,6 @@
 /* net/if.h - Strict C89 Header */
 #ifndef POSIX_NET_IF_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define POSIX_NET_IF_H
 
@@ -13,6 +12,7 @@
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <net/if.h>
 #else
 #include <net/if.h>

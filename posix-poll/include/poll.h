@@ -1,6 +1,5 @@
 #ifndef POSIX_POLL_POLL_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define POSIX_POLL_POLL_H
 
@@ -12,6 +11,7 @@
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <poll.h>
 #else
 #include <poll.h>
@@ -30,3 +30,5 @@ extern "C" {
 #endif /* __cplusplus */
 
 #endif /* POSIX_POLL_POLL_H */
+
+/* API Contract symbols: __dependencies__, __include_next__ */

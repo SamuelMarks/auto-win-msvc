@@ -1,0 +1,50 @@
+{
+    "termios.h": {
+        "cfgetispeed": {
+            "prototype": "speed_t cfgetispeed(const struct termios *termios_p);",
+            "description": "The cfgetispeed() function shall extract the input baud rate from  the termios structure to which the termios_p argument points."
+        },
+        "cfgetospeed": {
+            "prototype": "speed_t cfgetospeed(const struct termios *termios_p);",
+            "description": "The cfgetospeed() function shall extract the output baud rate from  the termios structure to which the termios_p argument points."
+        },
+        "cfsetispeed": {
+            "prototype": "int cfsetispeed(struct termios *termios_p, speed_t speed);",
+            "description": "The cfsetispeed() function shall set the input baud rate stored in  the structure pointed to by termios_p to speed."
+        },
+        "cfsetospeed": {
+            "prototype": "int cfsetospeed(struct termios *termios_p, speed_t speed);",
+            "description": "The cfsetospeed() function shall set the output baud rate stored  in the structure pointed to by termios_p to speed."
+        },
+        "tcdrain": {
+            "prototype": "int tcdrain(int fildes);",
+            "description": "The tcdrain() function shall block until all output written to the  object referred to by fildes is transmitted. The fildes argument  is an open file descriptor associated with a terminal."
+        },
+        "tcflow": {
+            "prototype": "int tcflow(int fildes, int action);",
+            "description": "The tcflow() function shall suspend or restart transmission or  reception of data on the object referred to by fildes, depending  on the value of action. The fildes argument is an open file  descriptor associated with a terminal."
+        },
+        "tcflush": {
+            "prototype": "int tcflush(int fildes, int queue_selector);",
+            "description": "Upon successful completion, tcflush() shall discard data written  to the object referred to by fildes (an open file descriptor  associated with a terminal) but not transmitted, or data received  but not read, depending on the value of queue_selector:"
+        },
+        "tcgetattr": {
+            "prototype": "int tcgetattr(int fildes, struct termios *termios_p);",
+            "description": "The tcgetattr() function shall get the parameters associated with  the terminal referred to by fildes and store them in the termios  structure referenced by termios_p. The fildes argument is an open  file descriptor associated with a terminal."
+        },
+        "tcgetsid": {
+            "prototype": "pid_t tcgetsid(int fildes);",
+            "description": "The tcgetsid() function shall obtain the process group ID of the  session for which the terminal specified by fildes is the  controlling terminal."
+        },
+        "tcsendbreak": {
+            "prototype": "int tcsendbreak(int fildes, int duration);",
+            "description": "If the terminal is using asynchronous serial data transmission,  tcsendbreak() shall cause transmission of a continuous stream of  zero-valued bits for a specific duration. If duration is 0, it  shall cause transmission of zero-valued bits for at least 0.25  seconds, and not more than 0.5 seconds. If duration is not 0, it  shall send zero-valued bits for an implementation-defined period  of time."
+        },
+        "tcsetattr": {
+            "prototype": "int tcsetattr(int fildes, int optional_actions, const struct termios *termios_p);",
+            "description": "The tcsetattr() function shall set the parameters associated with  the terminal referred to by the open file descriptor fildes (an  open file descriptor associated with a terminal) from the termios  structure referenced by termios_p as follows:"
+        },
+        "__dependencies__": [],
+        "__include_next__": true
+    }
+}

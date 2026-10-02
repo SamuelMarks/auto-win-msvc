@@ -206,8 +206,10 @@ struct _pthread_cleanup_buffer {
   struct _pthread_cleanup_buffer *next;
 };
 
+/** \brief Internal cleanup push handler. */
 void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
                                  void (*routine)(void *), void *arg);
+/** \brief Internal cleanup pop handler. */
 void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
                                 int execute);
 
@@ -263,6 +265,7 @@ int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id);
 /** \brief pthread_getschedparam function. */
 int pthread_getschedparam(pthread_t thread, int *policy,
                           struct sched_param *param);
+/** \brief pthread_getspecific function. */
 void *pthread_getspecific(pthread_key_t key);
 /** \brief pthread_join function. */
 int pthread_join(pthread_t thread, void **value_ptr);
@@ -393,6 +396,7 @@ int sem_destroy(sem_t *sem);
 int sem_getvalue(sem_t *sem, int *sval);
 /** \brief sem_init function. */
 int sem_init(sem_t *sem, int pshared, unsigned int value);
+/** \brief sem_open function. */
 sem_t *sem_open(const char *name, int oflag, ...);
 /** \brief sem_post function. */
 int sem_post(sem_t *sem);

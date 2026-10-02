@@ -2,7 +2,7 @@
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
-#include "linux-epoll.h"
+#include <sys/epoll.h>
 #include <errno.h>
 #include <stdio.h>
 /* clang-format on */

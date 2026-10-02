@@ -1,0 +1,16 @@
+{
+    "bsd/string.h": {
+        "strlcpy": {
+            "prototype": "size_t strlcpy(char *dst, const char *src, size_t size);",
+            "description": "Copy strings safely."
+        },
+        "strlcat": {
+            "prototype": "size_t strlcat(char *dst, const char *src, size_t size);",
+            "description": "Concatenate strings safely."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "stddef.h"
+        ]
+    }
+}

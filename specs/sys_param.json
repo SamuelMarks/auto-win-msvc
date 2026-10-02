@@ -1,0 +1,5 @@
+{
+    "sys/param.h": {
+        "__include_next__": true
+    }
+}

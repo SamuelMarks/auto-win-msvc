@@ -1,0 +1,40 @@
+{
+    "mqueue.h": {
+        "mq_close": {
+            "prototype": "int mq_close(mqd_t mqdes);",
+            "description": "The mq_close() function shall remove the association between the  message queue descriptor, mqdes, and its message queue. The  results of using this message queue descriptor after successful  return from this mq_close(), and until the return of this message  queue descriptor from a subsequent mq_open(), are undefined."
+        },
+        "mq_getattr": {
+            "prototype": "int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat);",
+            "description": "The mq_getattr() function shall obtain status information and  attributes of the message queue and the open message queue  description associated with the message queue descriptor."
+        },
+        "mq_notify": {
+            "prototype": "int mq_notify(mqd_t mqdes, const struct sigevent *notification);",
+            "description": "If the argument notification is not NULL, this function shall  register the calling process to be notified of message arrival at  an empty message queue associated with the specified message queue  descriptor, mqdes. The notification specified by the notification  argument shall be sent to the process when the message queue  transitions from empty to non-empty. At any time, only one process  may be registered for notification by a message queue. If the  calling process or any other process has already registered for  notification of message arrival at the specified message queue,  subsequent attempts to register for that message queue shall fail."
+        },
+        "mq_open": {
+            "prototype": "mqd_t mq_open(const char *name, int oflag, ...);",
+            "description": "The mq_open() function shall establish the connection between a  process and a message queue with a message queue descriptor. It  shall create an open message queue description that refers to the  message queue, and a message queue descriptor that refers to that  open message queue description. The message queue descriptor is  used by other functions to refer to that message queue. The name  argument points to a string naming a message queue. It is  unspecified whether the name appears in the file system and is  visible to other functions that take pathnames as arguments. The  name argument conforms to the construction rules for a pathname,  except that the interpretation of characters other than  the leading character in name is implementation-defined,  and that the length limits for the name argument are  implementation-defined and need not be the same as the pathname  limits {PATH_MAX} and {NAME_MAX}. If name begins with the   character, then processes calling mq_open() with the same value of  name shall refer to the same message queue object, as long as that  name has not been removed. If name does not begin with the   character, the effect is implementation-defined. If the name  argument is not the name of an existing message queue and creation  is not requested, mq_open() shall fail and return an error."
+        },
+        "mq_receive": {
+            "prototype": "ssize_t mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio);",
+            "description": "The mq_receive() function shall receive the oldest of the highest  priority message(s) from the message queue specified by mqdes. If  the size of the buffer in bytes, specified by the msg_len  argument, is less than the mq_msgsize attribute of the message  queue, the function shall fail and return an error. Otherwise, the  selected message shall be removed from the queue and copied to the  buffer pointed to by the msg_ptr argument."
+        },
+        "mq_send": {
+            "prototype": "int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);",
+            "description": "The mq_send() function shall add the message pointed to by the  argument msg_ptr to the message queue specified by mqdes. The  msg_len argument specifies the length of the message, in bytes,  pointed to by msg_ptr. The value of msg_len shall be less than or  equal to the mq_msgsize attribute of the message queue, or  mq_send() shall fail."
+        },
+        "mq_unlink": {
+            "prototype": "int mq_unlink(const char *name);",
+            "description": "The mq_unlink() function shall remove the message queue named by  the string name. If one or more processes have the message queue  open when mq_unlink() is called, destruction of the message queue  shall be postponed until all references to the message queue have  been closed. However, the mq_unlink() call need not block until  all references have been closed; it may return immediately."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "fcntl.h",
+            "time.h",
+            "signal.h",
+            "posix-types.h"
+        ],
+        "__include_next__": false
+    }
+}

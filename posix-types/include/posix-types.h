@@ -74,6 +74,11 @@ typedef int pid_t;
  * @brief Signed size type.
  * MSVC defines this as SSIZE_T from basetsd.h.
  */
+#ifndef _MQD_T_DEFINED
+#define _MQD_T_DEFINED
+typedef int mqd_t;
+#endif
+
 #ifndef _SSIZE_T_DEFINED
 #define _SSIZE_T_DEFINED
 typedef SSIZE_T ssize_t;
@@ -351,6 +356,10 @@ typedef long suseconds_t;
 typedef long blksize_t;
 #endif
 
+#ifndef _MQD_T_DEFINED
+#define _MQD_T_DEFINED
+typedef int mqd_t;
+#endif
 #endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
 /**

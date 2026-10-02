@@ -1,6 +1,5 @@
 #ifndef POSIX_SYS_SELECT_SYS_SELECT_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define POSIX_SYS_SELECT_SYS_SELECT_H
 
@@ -19,6 +18,7 @@
 #include <stddef.h>
 #else
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sys/select.h>
 #else
 #include <sys/select.h>

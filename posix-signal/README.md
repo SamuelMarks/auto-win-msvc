@@ -46,3 +46,4 @@ Add this specific module to your `vcpkg.json`:
   ]
 }
 ```
+## Unsupported Features\nThe following POSIX signal manipulation functions are unsupported natively by Windows and will return `ENOSYS`:\n- `sigaction`\n- `sigprocmask`\n- `sigsuspend`\n- `sigpending`\n- `sigaltstack`

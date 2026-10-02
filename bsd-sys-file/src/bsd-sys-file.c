@@ -13,7 +13,17 @@
 #endif
 #include <winsock2.h>
 #else
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
 #include <sys/file.h>
+extern int flock(int fd, int operation);
 #endif
 /* clang-format on */
 

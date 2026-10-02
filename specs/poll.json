@@ -1,0 +1,10 @@
+{
+    "poll.h": {
+        "poll": {
+            "prototype": "int poll(struct pollfd fds[], nfds_t nfds, int timeout);",
+            "description": "The poll() function provides applications with a mechanism for  multiplexing input/output over a set of file descriptors. For each  member of the array pointed to by fds, poll() shall examine the  given file descriptor for the event(s) specified in events. The  number of pollfd structures in the fds array is specified by nfds.  The poll() function shall identify those file descriptors on which  an application can read or write data, or on which certain events  have occurred."
+        },
+        "__dependencies__": [],
+        "__include_next__": true
+    }
+}

@@ -1,0 +1,44 @@
+{
+    "dirent.h": {
+        "alphasort": {
+            "prototype": "int alphasort(const struct dirent **d1, const struct dirent **d2);",
+            "description": "The alphasort() function can be used as the comparison function  for the scandir() function to sort the directory entries, d1 and  d2, into alphabetical order. Sorting happens as if by calling the  strcoll() function on the d_name element of the dirent structures  passed as the two parameters. If the strcoll() function fails, the  return value of alphasort() is unspecified."
+        },
+        "closedir": {
+            "prototype": "int closedir(DIR *dirp);",
+            "description": "The closedir() function shall close the directory stream referred  to by the argument dirp. Upon return, the value of dirp may no  longer point to an accessible object of the type DIR. If a file  descriptor is used to implement type DIR, that file descriptor  shall be closed."
+        },
+        "dirfd": {
+            "prototype": "int dirfd(DIR *dirp);",
+            "description": "The dirfd() function shall return a file descriptor referring to  the same directory as the dirp argument. This file descriptor  shall be closed by a call to closedir(). If any attempt is made  to close the file descriptor, or to modify the state of the  associated description, other than by means of closedir(),  readdir(), readdir_r(), rewinddir(), or seekdir(), the behavior is  undefined."
+        },
+        "fdopendir": {
+            "prototype": "DIR *fdopendir(int fd);",
+            "description": "The fdopendir() function shall be equivalent to the opendir()  function except that the directory is specified by a file  descriptor rather than by a name. The file offset associated with  the file descriptor at the time of the call determines which  entries are returned."
+        },
+        "opendir": {
+            "prototype": "DIR *opendir(const char *dirname);",
+            "description": "Refer to fdopendir(3p)."
+        },
+        "readdir": {
+            "prototype": "struct dirent *readdir(DIR *dirp);",
+            "description": "The type DIR, which is defined in the header,  represents a directory stream, which is an ordered sequence of all  the directory entries in a particular directory. Directory entries  represent files; files may be removed from a directory or added to  a directory asynchronously to the operation of readdir()."
+        },
+        "rewinddir": {
+            "prototype": "void rewinddir(DIR *dirp);",
+            "description": "The rewinddir() function shall reset the position of the directory  stream to which dirp refers to the beginning of the directory. It  shall also cause the directory stream to refer to the current  state of the corresponding directory, as a call to opendir() would  have done. If dirp does not refer to a directory stream, the  effect is undefined."
+        },
+        "seekdir": {
+            "prototype": "void seekdir(DIR *dirp, long loc);",
+            "description": "The seekdir() function shall set the position of the next  readdir() operation on the directory stream specified by dirp to  the position specified by loc. The value of loc should have been  returned from an earlier call to telldir() using the same  directory stream. The new position reverts to the one associated  with the directory stream when telldir() was performed."
+        },
+        "telldir": {
+            "prototype": "long telldir(DIR *dirp);",
+            "description": "The telldir() function shall obtain the current location  associated with the directory stream specified by dirp."
+        },
+        "__dependencies__": [
+            "sys/types.h"
+        ],
+        "__include_next__": true
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "semaphore.h": {
+        "sem_close": {
+            "prototype": "int sem_close(sem_t *sem);",
+            "description": "The sem_close() function shall indicate that the calling process  is finished using the named semaphore indicated by sem. The  effects of calling sem_close() for an unnamed semaphore (one  created by sem_init()) are undefined. The sem_close() function  shall deallocate (that is, make available for reuse by a  subsequent sem_open() by this process) any system resources  allocated by the system for use by this process for this  semaphore. The effect of subsequent use of the semaphore indicated  by sem by this process is undefined. If any threads in the calling  process are currently blocked on the semaphore, the behavior is  undefined. If the semaphore has not been removed with a  successful call to sem_unlink(), then sem_close() has no effect on  the state of the semaphore. If the sem_unlink() function has been  successfully invoked for name after the most recent call to  sem_open() with O_CREAT for this semaphore, then when all  processes that have opened the semaphore close it, the semaphore  is no longer accessible."
+        },
+        "sem_destroy": {
+            "prototype": "int sem_destroy(sem_t *sem);",
+            "description": "The sem_destroy() function shall destroy the unnamed semaphore  indicated by sem. Only a semaphore that was created using  sem_init() may be destroyed using sem_destroy(); the effect of  calling sem_destroy() with a named semaphore is undefined. The  effect of subsequent use of the semaphore sem is undefined until  sem is reinitialized by another call to sem_init()."
+        },
+        "sem_getvalue": {
+            "prototype": "int sem_getvalue(sem_t *restrict sem, int *restrict sval);",
+            "description": "The sem_getvalue() function shall update the location referenced  by the sval argument to have the value of the semaphore referenced  by sem without affecting the state of the semaphore. The updated  value represents an actual semaphore value that occurred at some  unspecified time during the call, but it need not be the actual  value of the semaphore when it is returned to the calling process."
+        },
+        "sem_init": {
+            "prototype": "int sem_init(sem_t *sem, int pshared, unsigned value);",
+            "description": "The sem_init() function shall initialize the unnamed semaphore  referred to by sem. The value of the initialized semaphore shall  be value. Following a successful call to sem_init(), the  semaphore may be used in subsequent calls to sem_wait(),  sem_timedwait(), sem_trywait(), sem_post(), and sem_destroy().  This semaphore shall remain usable until the semaphore is  destroyed."
+        },
+        "sem_open": {
+            "prototype": "sem_t *sem_open(const char *name, int oflag, ...);",
+            "description": "The sem_open() function shall establish a connection between a  named semaphore and a process. Following a call to sem_open() with  semaphore name name, the process may reference the semaphore  associated with name using the address returned from the call.  This semaphore may be used in subsequent calls to sem_wait(),  sem_timedwait(), sem_trywait(), sem_post(), and sem_close(). The  semaphore remains usable by this process until the semaphore is  closed by a successful call to sem_close(), _exit(), or one of the  exec functions."
+        },
+        "sem_post": {
+            "prototype": "int sem_post(sem_t *sem);",
+            "description": "The sem_post() function shall unlock the semaphore referenced by  sem by performing a semaphore unlock operation on that semaphore."
+        },
+        "sem_timedwait": {
+            "prototype": "int sem_timedwait(sem_t *restrict sem, const struct timespec *restrict abstime);",
+            "description": "The sem_timedwait() function shall lock the semaphore referenced  by sem as in the sem_wait() function. However, if the semaphore  cannot be locked without waiting for another process or thread to  unlock the semaphore by performing a sem_post() function, this  wait shall be terminated when the specified timeout expires."
+        },
+        "sem_trywait": {
+            "prototype": "int sem_trywait(sem_t *sem);",
+            "description": "The sem_trywait() function shall lock the semaphore referenced by  sem only if the semaphore is currently not locked; that is, if the  semaphore value is currently positive. Otherwise, it shall not  lock the semaphore."
+        },
+        "sem_unlink": {
+            "prototype": "int sem_unlink(const char *name);",
+            "description": "The sem_unlink() function shall remove the semaphore named by the  string name. If the semaphore named by name is currently  referenced by other processes, then sem_unlink() shall have no  effect on the state of the semaphore. If one or more processes  have the semaphore open when sem_unlink() is called, destruction  of the semaphore is postponed until all references to the  semaphore have been destroyed by calls to sem_close(), _exit(), or  exec. Calls to sem_open() to recreate or reconnect to the  semaphore refer to a new semaphore after sem_unlink() is called.  The sem_unlink() call shall not block until all references have  been destroyed; it shall return immediately."
+        },
+        "sem_wait": {
+            "prototype": "int sem_wait(sem_t *sem);",
+            "description": "Refer to sem_trywait(3p)."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "fcntl.h",
+            "time.h"
+        ],
+        "__include_next__": true
+    }
+}

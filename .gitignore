@@ -180,3 +180,14 @@ docs/
 html/
 latex/
 linux-epoll/include/sys/
+
+# Additional common ignores
+tags
+TAGS
+cscope.*
+*.dSYM/
+.cache/
+venv/
+.venv/
+env/
+.env/

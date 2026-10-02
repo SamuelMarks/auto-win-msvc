@@ -46,3 +46,4 @@ Add this specific module to your `vcpkg.json`:
   ]
 }
 ```
+## Unsupported Features\nThe following POSIX pthread functions are unsupported on Windows and will return `ENOSYS`:\n- `pthread_atfork`\n- `pthread_cancel`\n- `pthread_cleanup_push` / `pop`\n- Various fine-grained thread attributes (scheduling policy overrides beyond Win32 capabilities)

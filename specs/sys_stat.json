@@ -1,0 +1,73 @@
+{
+    "sys/stat.h": {
+        "chmod": {
+            "prototype": "int chmod(const char *path, mode_t mode);",
+            "description": "The chmod() function shall change S_ISUID, S_ISGID, S_ISVTX, and  the file permission bits of the file named by the pathname pointed  to by the path argument to the corresponding bits in the mode  argument. The application shall ensure that the effective user ID  of the process matches the owner of the file or the process has  appropriate privileges in order to do this."
+        },
+        "fchmod": {
+            "prototype": "int fchmod(int fildes, mode_t mode);",
+            "description": "The fchmod() function shall be equivalent to chmod() except that  the file whose permissions are changed is specified by the file  descriptor fildes."
+        },
+        "fchmodat": {
+            "prototype": "int fchmodat(int fd, const char *path, mode_t mode, int flag);",
+            "description": "Refer to chmod(3p)."
+        },
+        "fstat": {
+            "prototype": "int fstat(int fildes, struct stat *buf);",
+            "description": "The fstat() function shall obtain information about an open file  associated with the file descriptor fildes, and shall write it to  the area pointed to by buf."
+        },
+        "fstatat": {
+            "prototype": "int fstatat(int fd, const char *restrict path, struct stat *restrict buf, int flag);",
+            "description": "The stat() function shall obtain information about the named file  and write it to the area pointed to by the buf argument. The path  argument points to a pathname naming a file. Read, write, or  execute permission of the named file is not required. An  implementation that provides additional or alternate file access  control mechanisms may, under implementation-defined conditions,  cause stat() to fail. In particular, the system may deny the  existence of the file specified by path."
+        },
+        "futimens": {
+            "prototype": "int futimens(int fd, const struct timespec times[2]);",
+            "description": "The futimens() and utimensat() functions shall set the access and  modification times of a file to the values of the times argument.  The futimens() function changes the times of the file associated  with the file descriptor fd. The utimensat() function changes the  times of the file pointed to by the path argument, relative to the  directory associated with the file descriptor fd. Both functions  allow time specifications accurate to the nanosecond."
+        },
+        "lstat": {
+            "prototype": "int lstat(const char *restrict path, struct stat *restrict buf);",
+            "description": "Refer to fstatat(3p)."
+        },
+        "mkdir": {
+            "prototype": "int mkdir(const char *path, mode_t mode);",
+            "description": "The mkdir() function shall create a new directory with name path.  The file permission bits of the new directory shall be initialized  from mode. These file permission bits of the mode argument shall  be modified by the process' file creation mask."
+        },
+        "mkdirat": {
+            "prototype": "int mkdirat(int fd, const char *path, mode_t mode);",
+            "description": "The mkdir() function shall create a new directory with name path.  The file permission bits of the new directory shall be initialized  from mode. These file permission bits of the mode argument shall  be modified by the process' file creation mask."
+        },
+        "mkfifo": {
+            "prototype": "int mkfifo(const char *path, mode_t mode);",
+            "description": "The mkfifo() function shall create a new FIFO special file named  by the pathname pointed to by path. The file permission bits of  the new FIFO shall be initialized from mode. The file permission  bits of the mode argument shall be modified by the process' file  creation mask."
+        },
+        "mkfifoat": {
+            "prototype": "int mkfifoat(int fd, const char *path, mode_t mode);",
+            "description": "The mkfifo() function shall create a new FIFO special file named  by the pathname pointed to by path. The file permission bits of  the new FIFO shall be initialized from mode. The file permission  bits of the mode argument shall be modified by the process' file  creation mask."
+        },
+        "mknod": {
+            "prototype": "int mknod(const char *path, mode_t mode, dev_t dev);",
+            "description": "The mknod() function shall create a new file named by the pathname  to which the argument path points."
+        },
+        "mknodat": {
+            "prototype": "int mknodat(int fd, const char *path, mode_t mode, dev_t dev);",
+            "description": "The mknod() function shall create a new file named by the pathname  to which the argument path points."
+        },
+        "stat": {
+            "prototype": "int stat(const char *restrict path, struct stat *restrict buf);",
+            "description": "Refer to fstatat(3p)."
+        },
+        "umask": {
+            "prototype": "mode_t umask(mode_t cmask);",
+            "description": "The umask() function shall set the file mode creation mask of the  process to cmask and return the previous value of the mask. Only  the file permission bits of cmask (see ) are used; the  meaning of the other bits is implementation-defined."
+        },
+        "utimensat": {
+            "prototype": "int utimensat(int fd, const char *path, const struct timespec times[2], int flag);",
+            "description": "Refer to futimens(3p)."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "time.h"
+        ],
+        "__include_next__": true
+    }
+}

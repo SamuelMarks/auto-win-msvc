@@ -1,0 +1,11 @@
+{
+    "sys/sendfile.h": {
+        "sendfile": {
+            "prototype": "ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count);",
+            "description": "sendfile() copies data between one file descriptor and another.  Because this copying is done within the kernel, sendfile() is more  efficient than the combination of read(2) and write(2), which  would require transferring data to and from user space."
+        },
+        "__dependencies__": [
+            "sys/types.h"
+        ]
+    }
+}

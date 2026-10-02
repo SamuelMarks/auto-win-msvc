@@ -14,7 +14,8 @@ TEST test_mlockall(void) {
 #if defined(_WIN32)
   ASSERT_EQ(-1, rc);
 #else
-  (void)rc;
+  if (rc != 0)
+    return rc;
 #endif
 
   /* Without MCL_CURRENT */
@@ -22,7 +23,8 @@ TEST test_mlockall(void) {
 #if defined(_WIN32)
   ASSERT_EQ(0, rc);
 #else
-  (void)rc;
+  if (rc != 0)
+    return rc;
 #endif
 
   /* With MCL_CURRENT */
@@ -30,7 +32,8 @@ TEST test_mlockall(void) {
 #if defined(_WIN32)
   ASSERT_EQ(0, rc);
 #else
-  (void)rc;
+  if (rc != 0)
+    return rc;
 #endif
 
   /* With both */
@@ -38,7 +41,8 @@ TEST test_mlockall(void) {
 #if defined(_WIN32)
   ASSERT_EQ(0, rc);
 #else
-  (void)rc;
+  if (rc != 0)
+    return rc;
 #endif
 
   PASS();

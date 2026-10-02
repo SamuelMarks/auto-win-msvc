@@ -486,11 +486,13 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
 
     if (userInfo->usri4_home_dir) {
       rc = utf16_to_utf8(userInfo->usri4_home_dir, &dir);
-      (void)rc;
+      if (rc != 0)
+        return rc;
     }
     if (userInfo->usri4_full_name) {
       rc = utf16_to_utf8(userInfo->usri4_full_name, &gecos);
-      (void)rc;
+      if (rc != 0)
+        return rc;
     }
 
     rc = copy_string(&buffer, &bufsize, name, &pwd->pw_name);

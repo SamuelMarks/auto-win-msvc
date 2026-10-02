@@ -50,6 +50,7 @@
 #include <winsock2.h>
 #else
 #include <unistd.h>
+#include <stddef.h>
 #endif
 /* clang-format on */
 
@@ -251,7 +252,6 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #include <errno.h>
-/* clang-format on */
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK 140
 #endif

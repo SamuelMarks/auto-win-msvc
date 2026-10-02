@@ -2,12 +2,12 @@
 #define POSIX_CORE_SYSEXITS_H
 
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 
 /* clang-format off */
 #if !defined(_WIN32) && !defined(_MSC_VER)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sysexits.h>
 #else
 #include <sysexits.h>

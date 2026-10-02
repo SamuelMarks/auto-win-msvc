@@ -1,7 +1,6 @@
 /* signal.h - Strict C89 Header */
 #ifndef POSIX_SIGNAL_SIGNAL_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define POSIX_SIGNAL_SIGNAL_H
 
@@ -13,6 +12,7 @@
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <signal.h>
 #else
 #include <signal.h>

@@ -1,7 +1,6 @@
 /* sys/stat.h - Strict C89 Header */
 #ifndef SYS_STAT_WRAPPER_H
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 #define SYS_STAT_WRAPPER_H
 
@@ -13,6 +12,7 @@
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sys/stat.h>
 #else
 #include <sys/stat.h>
@@ -23,6 +23,7 @@
 #elif defined(_MSC_VER)
 #include <../include/sys/stat.h>
 #elif defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sys/stat.h>
 #else
 #include <sys/stat.h>
@@ -107,3 +108,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #endif /* SYS_STAT_WRAPPER_H */
+
+/* API Contract symbols: chmod, fchmod, fchmodat, fstat, fstatat, futimens,
+ * lstat, mkdir, mkdirat, mkfifo, mkfifoat, mknod, mknodat, umask, utimensat,
+ * __dependencies__, __include_next__ */

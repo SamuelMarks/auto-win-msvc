@@ -1,0 +1,72 @@
+{
+    "sys/socket.h": {
+        "socket": {
+            "prototype": "int socket(int domain, int type, int protocol);",
+            "description": "The socket() function shall create an unbound socket in a  communications domain, and return a file descriptor that can be  used in later function calls that operate on sockets. The file  descriptor shall be allocated as described in Section 2.14, File  Descriptor Allocation."
+        },
+        "bind": {
+            "prototype": "int bind(int socket, const struct sockaddr *address, socklen_t address_len);",
+            "description": "The bind() function shall assign a local socket address address to  a socket identified by descriptor socket that has no local socket  address assigned. Sockets created with the socket() function are  initially unnamed; they are identified only by their address  family."
+        },
+        "accept": {
+            "prototype": "int accept(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len);",
+            "description": "The accept() function shall extract the first connection on the  queue of pending connections, create a new socket with the same  socket type protocol and address family as the specified socket,  and allocate a new file descriptor for that socket. The file  descriptor shall be allocated as described in Section 2.14, File  Descriptor Allocation."
+        },
+        "__dependencies__": [
+            "sys/types.h"
+        ],
+        "__include_next__": true,
+        "connect": {
+            "prototype": "int connect(int socket, const struct sockaddr *address, socklen_t address_len);",
+            "description": "The connect() function shall attempt to make a connection on a  connection-mode socket or to set or reset the peer address of a  connectionless-mode socket. The function takes the following  arguments:"
+        },
+        "getpeername": {
+            "prototype": "int getpeername(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len);",
+            "description": "The getpeername() function shall retrieve the peer address of the  specified socket, store this address in the sockaddr structure  pointed to by the address argument, and store the length of this  address in the object pointed to by the address_len argument."
+        },
+        "getsockname": {
+            "prototype": "int getsockname(int socket, struct sockaddr *restrict address, socklen_t *restrict address_len);",
+            "description": "The getsockname() function shall retrieve the locally-bound name  of the specified socket, store this address in the sockaddr  structure pointed to by the address argument, and store the length  of this address in the object pointed to by the address_len  argument."
+        },
+        "getsockopt": {
+            "prototype": "int getsockopt(int socket, int level, int option_name, void *restrict option_value, socklen_t *restrict option_len);",
+            "description": "The getsockopt() function manipulates options associated with a  socket."
+        },
+        "listen": {
+            "prototype": "int listen(int socket, int backlog);",
+            "description": "The listen() function shall mark a connection-mode socket,  specified by the socket argument, as accepting connections."
+        },
+        "recv": {
+            "prototype": "ssize_t recv(int socket, void *buffer, size_t length, int flags);",
+            "description": "The recv() function shall receive a message from a connection-mode  or connectionless-mode socket. It is normally used with connected  sockets because it does not permit the application to retrieve the  source address of received data."
+        },
+        "recvmsg": {
+            "prototype": "ssize_t recvmsg(int socket, struct msghdr *message, int flags);",
+            "description": "The recvmsg() function shall receive a message from a connection-  mode or connectionless-mode socket. It is normally used with  connectionless-mode sockets because it permits the application to  retrieve the source address of received data."
+        },
+        "send": {
+            "prototype": "ssize_t send(int socket, const void *buffer, size_t length, int flags);",
+            "description": "The send() function shall initiate transmission of a message from  the specified socket to its peer. The send() function shall send a  message only when the socket is connected. If the socket is a  connectionless-mode socket, the message shall be sent to the pre-  specified peer address."
+        },
+        "sendmsg": {
+            "prototype": "ssize_t sendmsg(int socket, const struct msghdr *message, int flags);",
+            "description": "The sendmsg() function shall send a message through a connection-  mode or connectionless-mode socket. If the socket is a  connectionless-mode socket, the message shall be sent to the  address specified by msghdr if no pre-specified peer address has  been set. If a peer address has been pre-specified, either the  message shall be sent to the address specified in msghdr  (overriding the pre-specified peer address), or the function shall  return -1 and set errno to [EISCONN]. If the socket is  connection-mode, the destination address in msghdr shall be  ignored."
+        },
+        "setsockopt": {
+            "prototype": "int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);",
+            "description": "The setsockopt() function shall set the option specified by the  option_name argument, at the protocol level specified by the level  argument, to the value pointed to by the option_value argument for  the socket associated with the file descriptor specified by the  socket argument."
+        },
+        "shutdown": {
+            "prototype": "int shutdown(int socket, int how);",
+            "description": "The shutdown() function shall cause all or part of a full-duplex  connection on the socket associated with the file descriptor  socket to be shut down."
+        },
+        "sockatmark": {
+            "prototype": "int sockatmark(int s);",
+            "description": "The sockatmark() function shall determine whether the socket  specified by the descriptor s is at the out-of-band data mark (see  Section 2.10.12, Socket Out-of-Band Data State). If the protocol  for the socket supports out-of-band data by marking the stream  with an out-of-band data mark, the sockatmark() function shall  return 1 when all data preceding the mark has been read and the  out-of-band data mark is the first element in the receive queue.  The sockatmark() function shall not remove the mark from the  stream."
+        },
+        "socketpair": {
+            "prototype": "int socketpair(int domain, int type, int protocol, int socket_vector[2]);",
+            "description": "The socketpair() function shall create an unbound pair of  connected sockets in a specified domain, of a specified type,  under the protocol optionally specified by the protocol argument.  The two sockets shall be identical. The file descriptors used in  referencing the created sockets shall be returned in  socket_vector[0] and socket_vector[1]. The file descriptors shall  be allocated as described in Section 2.14, File Descriptor  Allocation."
+        }
+    }
+}

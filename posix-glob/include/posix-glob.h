@@ -43,16 +43,24 @@ enum posix_glob_error_code posix_glob_get_info(int *out_available);
  * @defgroup fnmatch_flags Flags for fnmatch
  * @{
  */
+#ifndef FNM_PATHNAME
 #define FNM_PATHNAME                                                           \
-  0x01                    /**< Slash in string only matches slash in pattern.  \
-                           */
+  0x01 /**< Slash in string only matches slash in pattern.                     \
+        */
+#endif
+#ifndef FNM_NOESCAPE
 #define FNM_NOESCAPE 0x02 /**< Backslash is ordinary character. */
+#endif
+#ifndef FNM_PERIOD
 #define FNM_PERIOD                                                             \
   0x04 /**< Leading period in string must be exactly matched by period in      \
           pattern. */
 /** @} */
 
+#endif
+#ifndef FNM_NOMATCH
 #define FNM_NOMATCH 1 /**< Match failed. */
+#endif
 
 /**
  * @brief Match filename or pathname.

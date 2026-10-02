@@ -1,0 +1,21 @@
+{
+    "sys/time.h": {
+        "getitimer": {
+            "prototype": "int getitimer(int which, struct itimerval *value);",
+            "description": "The getitimer() function shall store the current value of the  timer specified by which into the structure pointed to by value.  The setitimer() function shall set the timer specified by which to  the value specified in the structure pointed to by value, and if  ovalue is not a null pointer, store the previous value of the  timer in the structure pointed to by ovalue."
+        },
+        "gettimeofday": {
+            "prototype": "int gettimeofday(struct timeval *restrict tp, void *restrict tzp);",
+            "description": "The gettimeofday() function shall obtain the current time,  expressed as seconds and microseconds since the Epoch, and store  it in the timeval structure pointed to by tp. The resolution of  the system clock is unspecified."
+        },
+        "utimes": {
+            "prototype": "int utimes(const char *path, const struct timeval times[2]);",
+            "description": "The futimens() and utimensat() functions shall set the access and  modification times of a file to the values of the times argument.  The futimens() function changes the times of the file associated  with the file descriptor fd. The utimensat() function changes the  times of the file pointed to by the path argument, relative to the  directory associated with the file descriptor fd. Both functions  allow time specifications accurate to the nanosecond."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "sys/select.h"
+        ],
+        "__include_next__": true
+    }
+}

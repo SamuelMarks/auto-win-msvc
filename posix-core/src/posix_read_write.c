@@ -3,6 +3,7 @@
 
 /* clang-format off */
 #include "posix-core.h"
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>

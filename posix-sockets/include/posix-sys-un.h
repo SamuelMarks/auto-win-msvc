@@ -1,5 +1,4 @@
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 /* posix-sys-un.h - Strict C89 Header */
 #ifndef POSIX_SYS_UN_H
@@ -19,6 +18,7 @@
 #endif
 #else
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sys/un.h>
 #else
 #include <sys/un.h>

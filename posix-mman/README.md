@@ -46,3 +46,4 @@ Add this specific module to your `vcpkg.json`:
   ]
 }
 ```
+## Unsupported Features\nThe following functions are officially unsupported on Windows and always return `ENOSYS`:\n- `madvise`\n- `mlock`\n- `mlockall`\n- `munlock`\n- `munlockall`\n- `msync`\n- `mprotect` (partially)

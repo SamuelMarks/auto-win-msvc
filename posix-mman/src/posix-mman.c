@@ -3,12 +3,15 @@
 /* clang-format off */
 #include "posix-mman.h"
 #include <errno.h>
-#if defined(_WIN32) || defined(_WIN64)
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
+#if defined(_WIN32) || defined(_WIN64)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -18,7 +21,6 @@
 #include <share.h>
 #endif
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-#include <stddef.h>
 #include <sys/types.h>
 #elif defined(__CYGWIN__)
 #endif

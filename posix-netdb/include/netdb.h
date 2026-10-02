@@ -1,6 +1,5 @@
 #ifndef POSIX_NETDB_NETDB_H
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC system_header
 #endif
 #define POSIX_NETDB_NETDB_H
 
@@ -12,6 +11,7 @@
 /* clang-format off */
 #if !defined(_WIN32)
 #if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <netdb.h>
 #else
 #include <netdb.h>

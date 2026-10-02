@@ -22,6 +22,7 @@
 #include <../include/sys/types.h>
 #include <io.h>
 #elif defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
 #include_next <sys/stat.h>
 #include <sys/types.h>
 #include <io.h>

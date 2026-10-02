@@ -1,0 +1,237 @@
+{
+    "pthread.h": {
+        "pthread_atfork": {
+            "prototype": "int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));",
+            "description": "The pthread_atfork() function shall declare fork handlers to be  called before and after fork(), in the context of the thread that  called fork(). The prepare fork handler shall be called before  fork() processing commences. The parent fork handle shall be  called after fork() processing completes in the parent process.  The child fork handler shall be called after fork() processing  completes in the child process. If no handling is desired at one  or more of these three points, the corresponding fork handler  address(es) may be set to NULL."
+        },
+        "pthread_attr_destroy": {
+            "prototype": "int pthread_attr_destroy(pthread_attr_t *attr);",
+            "description": "The pthread_attr_destroy() function shall destroy a thread  attributes object. An implementation may cause  pthread_attr_destroy() to set attr to an implementation-defined  invalid value. A destroyed attr attributes object can be  reinitialized using pthread_attr_init(); the results of otherwise  referencing the object after it has been destroyed are undefined."
+        },
+        "pthread_attr_getdetachstate": {
+            "prototype": "int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);",
+            "description": "The detachstate attribute controls whether the thread is created  in a detached state. If the thread is created detached, then use  of the ID of the newly created thread by the pthread_detach() or  pthread_join() function is an error."
+        },
+        "pthread_attr_init": {
+            "prototype": "int pthread_attr_init(pthread_attr_t *attr);",
+            "description": "Refer to pthread_attr_destroy(3p)."
+        },
+        "pthread_attr_setdetachstate": {
+            "prototype": "int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);",
+            "description": "Refer to pthread_attr_getdetachstate(3p)."
+        },
+        "pthread_attr_setguardsize": {
+            "prototype": "int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);",
+            "description": "Refer to pthread_attr_getguardsize(3p)."
+        },
+        "pthread_attr_setinheritsched": {
+            "prototype": "int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);",
+            "description": "Refer to pthread_attr_getinheritsched(3p)."
+        },
+        "pthread_attr_setschedpolicy": {
+            "prototype": "int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);",
+            "description": "Refer to pthread_attr_getschedpolicy(3p)."
+        },
+        "pthread_attr_setscope": {
+            "prototype": "int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);",
+            "description": "Refer to pthread_attr_getscope(3p)."
+        },
+        "pthread_attr_setstack": {
+            "prototype": "int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize);",
+            "description": "Refer to pthread_attr_getstack(3p)."
+        },
+        "pthread_attr_setstacksize": {
+            "prototype": "int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);",
+            "description": "Refer to pthread_attr_getstacksize(3p)."
+        },
+        "pthread_cancel": {
+            "prototype": "int pthread_cancel(pthread_t thread);",
+            "description": "The pthread_cancel() function shall request that thread be  canceled. The target thread's cancelability state and type  determines when the cancellation takes effect. When the  cancellation is acted on, the cancellation cleanup handlers for  thread shall be called. When the last cancellation cleanup handler  returns, the thread-specific data destructor functions shall be  called for thread. When the last destructor function returns,  thread shall be terminated."
+        },
+        "pthread_cond_broadcast": {
+            "prototype": "int pthread_cond_broadcast(pthread_cond_t *cond);",
+            "description": "These functions shall unblock threads blocked on a condition  variable."
+        },
+        "pthread_cond_destroy": {
+            "prototype": "int pthread_cond_destroy(pthread_cond_t *cond);",
+            "description": "The pthread_cond_destroy() function shall destroy the given  condition variable specified by cond; the object becomes, in  effect, uninitialized. An implementation may cause  pthread_cond_destroy() to set the object referenced by cond to an  invalid value. A destroyed condition variable object can be  reinitialized using pthread_cond_init(); the results of otherwise  referencing the object after it has been destroyed are undefined."
+        },
+        "pthread_cond_signal": {
+            "prototype": "int pthread_cond_signal(pthread_cond_t *cond);",
+            "description": "Refer to pthread_cond_broadcast(3p)."
+        },
+        "pthread_condattr_destroy": {
+            "prototype": "int pthread_condattr_destroy(pthread_condattr_t *attr);",
+            "description": "The pthread_condattr_destroy() function shall destroy a condition  variable attributes object; the object becomes, in effect,  uninitialized. An implementation may cause  pthread_condattr_destroy() to set the object referenced by attr to  an invalid value. A destroyed attr attributes object can be  reinitialized using pthread_condattr_init(); the results of  otherwise referencing the object after it has been destroyed are  undefined."
+        },
+        "pthread_condattr_init": {
+            "prototype": "int pthread_condattr_init(pthread_condattr_t *attr);",
+            "description": "Refer to pthread_condattr_destroy(3p)."
+        },
+        "pthread_condattr_setclock": {
+            "prototype": "int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id);",
+            "description": "Refer to pthread_condattr_getclock(3p)."
+        },
+        "pthread_condattr_setpshared": {
+            "prototype": "int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared);",
+            "description": "Refer to pthread_condattr_getpshared(3p)."
+        },
+        "pthread_detach": {
+            "prototype": "int pthread_detach(pthread_t thread);",
+            "description": "The pthread_detach() function shall indicate to the implementation  that storage for the thread thread can be reclaimed when that  thread terminates. If thread has not terminated, pthread_detach()  shall not cause it to terminate."
+        },
+        "pthread_equal": {
+            "prototype": "int pthread_equal(pthread_t t1, pthread_t t2);",
+            "description": "This function shall compare the thread IDs t1 and t2."
+        },
+        "pthread_getconcurrency": {
+            "prototype": "int pthread_getconcurrency(void);",
+            "description": "Unbound threads in a process may or may not be required to be  simultaneously active. By default, the threads implementation  ensures that a sufficient number of threads are active so that the  process can continue to make progress. While this conserves system  resources, it may not produce the most effective level of  concurrency."
+        },
+        "pthread_getcpuclockid": {
+            "prototype": "int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id);",
+            "description": "The pthread_getcpuclockid() function shall return in clock_id the  clock ID of the CPU-time clock of the thread specified by  thread_id, if the thread specified by thread_id exists."
+        },
+        "pthread_getspecific": {
+            "prototype": "void *pthread_getspecific(pthread_key_t key);",
+            "description": "The pthread_getspecific() function shall return the value  currently bound to the specified key on behalf of the calling  thread."
+        },
+        "pthread_join": {
+            "prototype": "int pthread_join(pthread_t thread, void **value_ptr);",
+            "description": "The pthread_join() function shall suspend execution of the calling  thread until the target thread terminates, unless the target  thread has already terminated. On return from a successful  pthread_join() call with a non-NULL value_ptr argument, the value  passed to pthread_exit() by the terminating thread shall be made  available in the location referenced by value_ptr. When a  pthread_join() returns successfully, the target thread has been  terminated. The results of multiple simultaneous calls to  pthread_join() specifying the same target thread are undefined. If  the thread calling pthread_join() is canceled, then the target  thread shall not be detached."
+        },
+        "pthread_key_create": {
+            "prototype": "int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));",
+            "description": "The pthread_key_create() function shall create a thread-specific  data key visible to all threads in the process. Key values  provided by pthread_key_create() are opaque objects used to locate  thread-specific data. Although the same key value may be used by  different threads, the values bound to the key by  pthread_setspecific() are maintained on a per-thread basis and  persist for the life of the calling thread."
+        },
+        "pthread_key_delete": {
+            "prototype": "int pthread_key_delete(pthread_key_t key);",
+            "description": "The pthread_key_delete() function shall delete a thread-specific  data key previously returned by pthread_key_create(). The thread-  specific data values associated with key need not be NULL at the  time pthread_key_delete() is called. It is the responsibility of  the application to free any application storage or perform any  cleanup actions for data structures related to the deleted key or  associated thread-specific data in any threads; this cleanup can  be done either before or after pthread_key_delete() is called. Any  attempt to use key following the call to pthread_key_delete()  results in undefined behavior."
+        },
+        "pthread_mutex_consistent": {
+            "prototype": "int pthread_mutex_consistent(pthread_mutex_t *mutex);",
+            "description": "If mutex is a robust mutex in an inconsistent state, the  pthread_mutex_consistent() function can be used to mark the state  protected by the mutex referenced by mutex as consistent again."
+        },
+        "pthread_mutex_destroy": {
+            "prototype": "int pthread_mutex_destroy(pthread_mutex_t *mutex);",
+            "description": "The pthread_mutex_destroy() function shall destroy the mutex  object referenced by mutex; the mutex object becomes, in effect,  uninitialized. An implementation may cause pthread_mutex_destroy()  to set the object referenced by mutex to an invalid value."
+        },
+        "pthread_mutex_lock": {
+            "prototype": "int pthread_mutex_lock(pthread_mutex_t *mutex);",
+            "description": "The mutex object referenced by mutex shall be locked by a call to  pthread_mutex_lock() that returns zero or [EOWNERDEAD]. If the  mutex is already locked by another thread, the calling thread  shall block until the mutex becomes available. This operation  shall return with the mutex object referenced by mutex in the  locked state with the calling thread as its owner. If a thread  attempts to relock a mutex that it has already locked,  pthread_mutex_lock() shall behave as described in the Relock  column of the following table. If a thread attempts to unlock a  mutex that it has not locked or a mutex which is unlocked,  pthread_mutex_unlock() shall behave as described in the Unlock  When Not Owner column of the following table.  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2502 Mutex Type \u2502 Robustness \u2502 Relock \u2502 Unlock When Not Owner \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 NORMAL \u2502 non-robust \u2502 deadlock \u2502 undefined behavior \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 NORMAL \u2502 robust \u2502 deadlock \u2502 error returned \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 ERRORCHECK \u2502 either \u2502 error returned \u2502 error returned \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 RECURSIVE \u2502 either \u2502 recursive \u2502 error returned \u2502  \u2502 \u2502 \u2502 (see below) \u2502 \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 DEFAULT \u2502 non-robust \u2502 undefined \u2502 undefined behavior\u2020 \u2502  \u2502 \u2502 \u2502 behavior\u2020 \u2502 \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 DEFAULT \u2502 robust \u2502 undefined \u2502 error returned \u2502  \u2502 \u2502 \u2502 behavior\u2020 \u2502 \u2502  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        },
+        "pthread_mutex_trylock": {
+            "prototype": "int pthread_mutex_trylock(pthread_mutex_t *mutex);",
+            "description": "Refer to pthread_mutex_lock(3p)."
+        },
+        "pthread_mutex_unlock": {
+            "prototype": "int pthread_mutex_unlock(pthread_mutex_t *mutex);",
+            "description": "The mutex object referenced by mutex shall be locked by a call to  pthread_mutex_lock() that returns zero or [EOWNERDEAD]. If the  mutex is already locked by another thread, the calling thread  shall block until the mutex becomes available. This operation  shall return with the mutex object referenced by mutex in the  locked state with the calling thread as its owner. If a thread  attempts to relock a mutex that it has already locked,  pthread_mutex_lock() shall behave as described in the Relock  column of the following table. If a thread attempts to unlock a  mutex that it has not locked or a mutex which is unlocked,  pthread_mutex_unlock() shall behave as described in the Unlock  When Not Owner column of the following table.  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2502 Mutex Type \u2502 Robustness \u2502 Relock \u2502 Unlock When Not Owner \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 NORMAL \u2502 non-robust \u2502 deadlock \u2502 undefined behavior \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 NORMAL \u2502 robust \u2502 deadlock \u2502 error returned \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 ERRORCHECK \u2502 either \u2502 error returned \u2502 error returned \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 RECURSIVE \u2502 either \u2502 recursive \u2502 error returned \u2502  \u2502 \u2502 \u2502 (see below) \u2502 \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 DEFAULT \u2502 non-robust \u2502 undefined \u2502 undefined behavior\u2020 \u2502  \u2502 \u2502 \u2502 behavior\u2020 \u2502 \u2502  \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524  \u2502 DEFAULT \u2502 robust \u2502 undefined \u2502 error returned \u2502  \u2502 \u2502 \u2502 behavior\u2020 \u2502 \u2502  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        },
+        "pthread_mutexattr_destroy": {
+            "prototype": "int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);",
+            "description": "The pthread_mutexattr_destroy() function shall destroy a mutex  attributes object; the object becomes, in effect, uninitialized.  An implementation may cause pthread_mutexattr_destroy() to set the  object referenced by attr to an invalid value."
+        },
+        "pthread_mutexattr_init": {
+            "prototype": "int pthread_mutexattr_init(pthread_mutexattr_t *attr);",
+            "description": "Refer to pthread_mutexattr_destroy(3p)."
+        },
+        "pthread_mutexattr_setprioceiling": {
+            "prototype": "int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling);",
+            "description": "Refer to pthread_mutexattr_getprioceiling(3p)."
+        },
+        "pthread_mutexattr_setprotocol": {
+            "prototype": "int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol);",
+            "description": "Refer to pthread_mutexattr_getprotocol(3p)."
+        },
+        "pthread_mutexattr_setpshared": {
+            "prototype": "int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared);",
+            "description": "Refer to pthread_mutexattr_getpshared(3p)."
+        },
+        "pthread_mutexattr_setrobust": {
+            "prototype": "int pthread_mutexattr_setrobust(pthread_mutexattr_t *attr, int robust);",
+            "description": "Refer to pthread_mutexattr_getrobust(3p)."
+        },
+        "pthread_mutexattr_settype": {
+            "prototype": "int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);",
+            "description": "Refer to pthread_mutexattr_gettype(3p)."
+        },
+        "pthread_once": {
+            "prototype": "int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));",
+            "description": "The first call to pthread_once() by any thread in a process, with  a given once_control, shall call the init_routine with no  arguments. Subsequent calls of pthread_once() with the same  once_control shall not call the init_routine. On return from  pthread_once(), init_routine shall have completed. The  once_control parameter shall determine whether the associated  initialization routine has been called."
+        },
+        "pthread_rwlock_destroy": {
+            "prototype": "int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);",
+            "description": "The pthread_rwlock_destroy() function shall destroy the read-write  lock object referenced by rwlock and release any resources used by  the lock. The effect of subsequent use of the lock is undefined  until the lock is reinitialized by another call to  pthread_rwlock_init(). An implementation may cause  pthread_rwlock_destroy() to set the object referenced by rwlock to  an invalid value. Results are undefined if  pthread_rwlock_destroy() is called when any thread holds rwlock.  Attempting to destroy an uninitialized read-write lock results in  undefined behavior."
+        },
+        "pthread_rwlock_rdlock": {
+            "prototype": "int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);",
+            "description": "The pthread_rwlock_rdlock() function shall apply a read lock to  the read-write lock referenced by rwlock. The calling thread  acquires the read lock if a writer does not hold the lock and  there are no writers blocked on the lock."
+        },
+        "pthread_rwlock_tryrdlock": {
+            "prototype": "int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);",
+            "description": "Refer to pthread_rwlock_rdlock(3p)."
+        },
+        "pthread_rwlock_trywrlock": {
+            "prototype": "int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);",
+            "description": "The pthread_rwlock_trywrlock() function shall apply a write lock  like the pthread_rwlock_wrlock() function, with the exception that  the function shall fail if any thread currently holds rwlock (for  reading or writing)."
+        },
+        "pthread_rwlock_unlock": {
+            "prototype": "int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);",
+            "description": "The pthread_rwlock_unlock() function shall release a lock held on  the read-write lock object referenced by rwlock. Results are  undefined if the read-write lock rwlock is not held by the calling  thread."
+        },
+        "pthread_rwlock_wrlock": {
+            "prototype": "int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);",
+            "description": "Refer to pthread_rwlock_trywrlock(3p)."
+        },
+        "pthread_rwlockattr_destroy": {
+            "prototype": "int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);",
+            "description": "The pthread_rwlockattr_destroy() function shall destroy a read-  write lock attributes object. A destroyed attr attributes object  can be reinitialized using pthread_rwlockattr_init(); the results  of otherwise referencing the object after it has been destroyed  are undefined. An implementation may cause  pthread_rwlockattr_destroy() to set the object referenced by attr  to an invalid value."
+        },
+        "pthread_rwlockattr_init": {
+            "prototype": "int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);",
+            "description": "Refer to pthread_rwlockattr_destroy(3p)."
+        },
+        "pthread_rwlockattr_setpshared": {
+            "prototype": "int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);",
+            "description": "Refer to pthread_rwlockattr_getpshared(3p)."
+        },
+        "pthread_setcancelstate": {
+            "prototype": "int pthread_setcancelstate(int state, int *oldstate);",
+            "description": "The pthread_setcancelstate() function shall atomically both set  the calling thread's cancelability state to the indicated state  and return the previous cancelability state at the location  referenced by oldstate. Legal values for state are  PTHREAD_CANCEL_ENABLE and PTHREAD_CANCEL_DISABLE."
+        },
+        "pthread_setcanceltype": {
+            "prototype": "int pthread_setcanceltype(int type, int *oldtype);",
+            "description": "The pthread_setcancelstate() function shall atomically both set  the calling thread's cancelability state to the indicated state  and return the previous cancelability state at the location  referenced by oldstate. Legal values for state are  PTHREAD_CANCEL_ENABLE and PTHREAD_CANCEL_DISABLE."
+        },
+        "pthread_setconcurrency": {
+            "prototype": "int pthread_setconcurrency(int new_level);",
+            "description": "Refer to pthread_getconcurrency(3p)."
+        },
+        "pthread_setschedprio": {
+            "prototype": "int pthread_setschedprio(pthread_t thread, int prio);",
+            "description": "The pthread_setschedprio() function shall set the scheduling  priority for the thread whose thread ID is given by thread to the  value given by prio. See Scheduling Policies for a description on  how this function call affects the ordering of the thread in the  thread list for its new priority."
+        },
+        "pthread_setspecific": {
+            "prototype": "int pthread_setspecific(pthread_key_t key, const void *value);",
+            "description": "Refer to pthread_getspecific(3p)."
+        },
+        "pthread_testcancel": {
+            "prototype": "void pthread_testcancel(void);",
+            "description": "Refer to pthread_setcancelstate(3p)."
+        },
+        "__dependencies__": [
+            "sched.h",
+            "time.h"
+        ],
+        "__include_next__": true,
+        "pthread_exit": {
+            "prototype": "void pthread_exit(void *value_ptr);",
+            "description": "The pthread_exit() function shall terminate the calling thread and make the value value_ptr available to any successful join with the terminating thread."
+        },
+        "pthread_self": {
+            "prototype": "pthread_t pthread_self(void);",
+            "description": "The pthread_self() function shall return the thread ID of the calling thread."
+        }
+    }
+}

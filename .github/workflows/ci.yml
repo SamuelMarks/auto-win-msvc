@@ -16,7 +16,7 @@ jobs:
         build_type: [Release, Debug]
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@master
 
     - name: Verify PATCH_COMMAND files exist and are tracked
       run: python scripts/check_patches.py

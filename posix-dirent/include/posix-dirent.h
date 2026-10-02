@@ -1,5 +1,4 @@
 #if defined(__GNUC__)
-#pragma GCC system_header
 #endif
 /* posix-dirent.h - Strict C89 Header */
 #ifndef POSIX_DIRENT_H

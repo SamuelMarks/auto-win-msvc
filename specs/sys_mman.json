@@ -1,0 +1,20 @@
+{
+    "sys/mman.h": {
+        "mmap": {
+            "prototype": "void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);",
+            "description": "The mmap() function shall establish a mapping between an address  space of a process and a memory object."
+        },
+        "munmap": {
+            "prototype": "int munmap(void *addr, size_t len);",
+            "description": "The munmap() function shall remove any mappings for those entire  pages containing any part of the address space of the process  starting at addr and continuing for len bytes. Further references  to these pages shall result in the generation of a SIGSEGV signal  to the process. If there are no mappings in the specified address  range, then munmap() has no effect."
+        },
+        "mprotect": {
+            "prototype": "int mprotect(void *addr, size_t len, int prot);",
+            "description": "The mprotect() function shall change the access protections to be  that specified by prot for those whole pages containing any part  of the address space of the process starting at address addr and  continuing for len bytes. The parameter prot determines whether  read, write, execute, or some combination of accesses are  permitted to the data being mapped. The prot argument should be  either PROT_NONE or the bitwise-inclusive OR of one or more of  PROT_READ, PROT_WRITE, and PROT_EXEC."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "stddef.h"
+        ]
+    }
+}

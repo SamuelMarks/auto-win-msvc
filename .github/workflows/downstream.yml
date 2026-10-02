@@ -17,13 +17,13 @@ jobs:
 
     steps:
       - name: Checkout auto-win-msvc
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           path: auto-win-msvc
 
       - name: Checkout valkey-windows
         if: matrix.project == 'valkey'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/valkey-windows
           ref: master
@@ -31,7 +31,7 @@ jobs:
 
       - name: Checkout redis-windows
         if: matrix.project == 'redis'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/redis-windows
           ref: 8.10.2
@@ -39,7 +39,7 @@ jobs:
 
       - name: Checkout rsync
         if: matrix.project == 'rsync'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/rsync
           ref: windows
@@ -47,7 +47,7 @@ jobs:
 
       - name: Checkout memcached
         if: matrix.project == 'memcached'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/memcached
           ref: msvc
@@ -55,7 +55,7 @@ jobs:
 
       - name: Checkout dash-windows
         if: matrix.project == 'dash'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/dash-windows
           ref: master
@@ -63,7 +63,7 @@ jobs:
 
       - name: Checkout dash
         if: matrix.project == 'dash'
-        uses: actions/checkout@v7
+        uses: actions/checkout@master
         with:
           repository: SamuelMarks/dash
           ref: v0.5.13.5

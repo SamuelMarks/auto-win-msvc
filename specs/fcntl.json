@@ -1,0 +1,33 @@
+{
+    "fcntl.h": {
+        "creat": {
+            "prototype": "int creat(const char *path, mode_t mode);",
+            "description": "The creat() function shall behave as if it is implemented as  follows:"
+        },
+        "fcntl": {
+            "prototype": "int fcntl(int fildes, int cmd, ...);",
+            "description": "The fcntl() function shall perform the operations described below  on open files. The fildes argument is a file descriptor."
+        },
+        "open": {
+            "prototype": "int open(const char *path, int oflag, ...);",
+            "description": "The open() function shall establish the connection between a file  and a file descriptor. It shall create an open file description  that refers to a file and a file descriptor that refers to that  open file description. The file descriptor is used by other I/O  functions to refer to that file. The path argument points to a  pathname naming the file."
+        },
+        "openat": {
+            "prototype": "int openat(int fd, const char *path, int oflag, ...);",
+            "description": "Refer to open(3p)."
+        },
+        "posix_fadvise": {
+            "prototype": "int posix_fadvise(int fd, off_t offset, off_t len, int advice);",
+            "description": "The posix_fadvise() function shall advise the implementation on  the expected behavior of the application with respect to the data  in the file associated with the open file descriptor, fd, starting  at offset and continuing for len bytes. The specified range need  not currently exist in the file. If len is zero, all data  following offset is specified. The implementation may use this  information to optimize handling of the specified data. The  posix_fadvise() function shall have no effect on the semantics of  other operations on the specified data, although it may affect the  performance of other operations."
+        },
+        "posix_fallocate": {
+            "prototype": "int posix_fallocate(int fd, off_t offset, off_t len);",
+            "description": "The posix_fallocate() function shall ensure that any required  storage for regular file data starting at offset and continuing  for len bytes is allocated on the file system storage media. If  posix_fallocate() returns successfully, subsequent writes to the  specified file data shall not fail due to the lack of free space  on the file system storage media."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "sys/stat.h"
+        ],
+        "__include_next__": true
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "sys/timerfd.h": {
+        "timerfd_create": {
+            "prototype": "int timerfd_create(int clockid, int flags);",
+            "description": "These system calls create and operate on a timer that delivers  timer expiration notifications via a file descriptor. They  provide an alternative to the use of setitimer(2) or  timer_create(2), with the advantage that the file descriptor may  be monitored by select(2), poll(2), and epoll(7)."
+        },
+        "timerfd_gettime": {
+            "prototype": "int timerfd_gettime(int fd, struct itimerspec *curr_value);",
+            "description": "These system calls create and operate on a timer that delivers  timer expiration notifications via a file descriptor. They  provide an alternative to the use of setitimer(2) or  timer_create(2), with the advantage that the file descriptor may  be monitored by select(2), poll(2), and epoll(7)."
+        },
+        "timerfd_settime": {
+            "prototype": "int timerfd_settime(int fd, int flags, const struct itimerspec *new_value, struct itimerspec *old_value);",
+            "description": "These system calls create and operate on a timer that delivers  timer expiration notifications via a file descriptor. They  provide an alternative to the use of setitimer(2) or  timer_create(2), with the advantage that the file descriptor may  be monitored by select(2), poll(2), and epoll(7)."
+        },
+        "__dependencies__": [
+            "sys/types.h",
+            "time.h"
+        ]
+    }
+}

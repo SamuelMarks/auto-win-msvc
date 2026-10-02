@@ -46,3 +46,4 @@ Add this specific module to your `vcpkg.json`:
   ]
 }
 ```
+## Unsupported Features\nThe `syscall()` wrapper is officially unsupported for raw Linux syscalls on Windows. Only specific mapped wrappers (like `SYS_gettid`) are emulated, others return `ENOSYS`.
