@@ -67,17 +67,17 @@ extern char *realpath(const char *path, char *resolved_path);
 
 TEST test_posix_stat_get_info(void) {
   int info;
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   info = 0;
   rc = posix_stat_get_info(NULL);
-  if (rc != POSIX_STAT_ERROR_NULL_POINTER) {
-    printf("Expected POSIX_STAT_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_stat_get_info(&info);
-  if (rc != POSIX_STAT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_stat_get_info failed with %d\n", (int)rc);
     FAIL();
   }
@@ -87,19 +87,18 @@ TEST test_posix_stat_get_info(void) {
 }
 
 TEST test_posix_stat_error_codes(void) {
-  ASSERT_EQ(0, (int)POSIX_STAT_SUCCESS);
-  ASSERT_EQ(1, (int)POSIX_STAT_ERROR_NULL_POINTER);
-  ASSERT_EQ(2, (int)POSIX_STAT_ERROR_INVALID_ARGUMENT);
-  ASSERT_EQ(3, (int)POSIX_STAT_ERROR_PATH_RESOLUTION);
-  ASSERT_EQ(4, (int)POSIX_STAT_ERROR_IO);
-  ASSERT_EQ(5, (int)POSIX_STAT_ERROR_NOT_SUPPORTED);
+  ASSERT_EQ(0, (int)AUTO_WIN_MSVC_SUCCESS);
+  ASSERT_EQ(1, (int)AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT);
+  ASSERT_EQ(7, (int)AUTO_WIN_MSVC_ERROR_NOT_FOUND);
+  ASSERT_EQ(5, (int)AUTO_WIN_MSVC_ERROR_IO);
+  ASSERT_EQ(3, (int)AUTO_WIN_MSVC_ERROR_NOT_IMPLEMENTED);
   PASS();
 }
 
 #if defined(_WIN32)
 TEST test_posix_stat_internal_helpers(void) {
   ptrdiff_t h;
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
   char buf[260];
   struct timespec ts;
   unsigned char ft_buf[16];
@@ -107,63 +106,63 @@ TEST test_posix_stat_internal_helpers(void) {
 
   h = 0;
   rc = posix_stat_safe_get_osfhandle(0, NULL);
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_safe_get_osfhandle(-1, &h);
-  ASSERT_EQ(POSIX_STAT_ERROR_INVALID_ARGUMENT, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
   ASSERT_EQ(-1, (long)h);
 
   rc = posix_stat_safe_get_osfhandle(9999, &h);
-  ASSERT_EQ(POSIX_STAT_ERROR_INVALID_ARGUMENT, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
   ASSERT_EQ(-1, (long)h);
 
   rc = posix_stat_resolve_at_path(AT_FDCWD, NULL, buf, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_resolve_at_path(AT_FDCWD, "test", NULL, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_resolve_at_path(AT_FDCWD, "test", buf, 0);
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_resolve_at_path(-1, "test", buf, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_ERROR_INVALID_ARGUMENT, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_resolve_at_path(9999, "test", buf, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_ERROR_INVALID_ARGUMENT, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_resolve_at_path(AT_FDCWD, "test", buf, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_STR_EQ("test", buf);
 
   rc = posix_stat_resolve_at_path(AT_FDCWD, "C:\\test", buf, sizeof(buf));
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   rc = posix_stat_fill_filetime(NULL, NULL, &omit);
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_fill_filetime(NULL, ft_buf, NULL);
-  ASSERT_EQ(POSIX_STAT_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_stat_fill_filetime(NULL, ft_buf, &omit);
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, omit);
 
   ts.tv_sec = 0;
   ts.tv_nsec = UTIME_OMIT;
   rc = posix_stat_fill_filetime(&ts, ft_buf, &omit);
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, omit);
 
   ts.tv_nsec = UTIME_NOW;
   rc = posix_stat_fill_filetime(&ts, ft_buf, &omit);
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, omit);
 
   ts.tv_sec = 1600000000;
   ts.tv_nsec = 500;
   rc = posix_stat_fill_filetime(&ts, ft_buf, &omit);
-  ASSERT_EQ(POSIX_STAT_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, omit);
 
   PASS();

@@ -36,12 +36,12 @@
 /**
  * @brief Retrieves information on posix-sys-ioctl availability.
  */
-enum posix_sys_ioctl_error_code posix_sys_ioctl_get_info(int *out_available) {
+auto_win_msvc_error_t posix_sys_ioctl_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SYS_IOCTL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SYS_IOCTL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -225,8 +225,10 @@ int posix_ioctl(intptr_t fd, unsigned long request, ...) {
     defined(__CYGWIN__)
   return ioctl((int)fd, request, argp);
 #else
-  (void)request;
-  (void)argp;
+  if (request == 0 && argp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 #endif
 }

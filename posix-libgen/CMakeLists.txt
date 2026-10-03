@@ -91,7 +91,7 @@ endif()
 
 add_library(posix-libgen src/posix-libgen.c)
 set_target_properties(posix-libgen PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-libgen PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-libgen PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

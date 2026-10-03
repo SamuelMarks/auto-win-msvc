@@ -18,6 +18,7 @@
 #include <pwd.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <unistd.h>
 #endif
 /* clang-format on */
 
@@ -133,6 +134,17 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer,
  * @brief Rewinds the group database to the beginning.
  */
 void setgrent(void);
+
+/**
+ * @brief Calculate supplementary group access list.
+ * @param[in] user Username to get groups for.
+ * @param[in] group Primary group ID to include.
+ * @param[out] groups Buffer to store group IDs.
+ * @param[in,out] ngroups Size of groups buffer on input, count of groups on
+ * output.
+ * @return Number of groups on success, or -1 if the buffer was too small.
+ */
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups);
 
 /**
  * @brief Closes the user database.

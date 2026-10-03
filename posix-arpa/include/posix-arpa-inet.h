@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -40,26 +41,14 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-arpa-inet functions.
- */
-enum posix_arpa_inet_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_ARPA_INET_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_ARPA_INET_ERROR_NULL_POINTER = 1,
-  /** @brief The provided IP address string was invalid. */
-  POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Parses an IPv4 address in numbers-and-dots notation into binary form.
  * @param cp The input IP address string.
  * @param[out] out_addr Pointer to struct in_addr receiving the parsed binary
  * address.
- * @return POSIX_ARPA_INET_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_arpa_inet_error_code
-posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr);
+auto_win_msvc_error_t posix_arpa_inet_parse_ipv4(const char *cp,
+                                                 struct in_addr *out_addr);
 
 /**
  * @brief Converts IPv4 numbers-and-dots notation into binary form in network

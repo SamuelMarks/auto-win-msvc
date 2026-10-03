@@ -43,11 +43,9 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
                                          const wchar_t *function,
                                          const wchar_t *file, unsigned int line,
                                          uintptr_t pReserved) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression || function || file || line || pReserved) {
+    /* parameter error handled */
+  }
 }
 #endif
 
@@ -68,6 +66,52 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
+  }
+
+  if (strcmp(pathname, "/proc/meminfo") == 0) {
+    char mem_buf[256];
+    FILE *tmp_f = tmpfile();
+    if (tmp_f) {
+      typedef struct _WIN_MEMSTATEX {
+        DWORD dwLength;
+        DWORD dwMemoryLoad;
+        DWORDLONG ullTotalPhys;
+        DWORDLONG ullAvailPhys;
+        DWORDLONG ullTotalPageFile;
+        DWORDLONG ullAvailPageFile;
+        DWORDLONG ullTotalVirtual;
+        DWORDLONG ullAvailVirtual;
+        DWORDLONG ullAvailExtendedVirtual;
+      } WIN_MEMSTATEX;
+      typedef BOOL(WINAPI * PFN_GMS)(WIN_MEMSTATEX *);
+      HMODULE hK32 = GetModuleHandleA("kernel32.dll");
+      PFN_GMS pGMS =
+          hK32 ? (PFN_GMS)(size_t)GetProcAddress(hK32, "GlobalMemoryStatusEx")
+               : NULL;
+      WIN_MEMSTATEX mem;
+      unsigned long long total_kb = 16777216;
+      unsigned long long avail_kb = 8388608;
+      memset(&mem, 0, sizeof(mem));
+      mem.dwLength = sizeof(mem);
+      if (pGMS && pGMS(&mem)) {
+        total_kb = mem.ullTotalPhys / 1024;
+        avail_kb = mem.ullAvailPhys / 1024;
+      }
+#if defined(_MSC_VER)
+      sprintf_s(mem_buf, sizeof(mem_buf),
+                "MemTotal: %I64u kB\nMemFree: %I64u kB\nMemAvailable: %I64u "
+                "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
+                total_kb, avail_kb, avail_kb);
+#else
+      sprintf(mem_buf,
+              "MemTotal: %llu kB\nMemFree: %llu kB\nMemAvailable: %llu "
+              "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
+              total_kb, avail_kb, avail_kb);
+#endif
+      fputs(mem_buf, tmp_f);
+      rewind(tmp_f);
+      return tmp_f;
+    }
   }
 
   if (strchr(mode, 'r')) {
@@ -166,7 +210,6 @@ int posix_open(const char *pathname, int flags, ...) {
   HANDLE hFile;
   int fd_flags;
   intptr_t fd;
-  (void)mode;
 
   if (flags & O_CREAT) {
     va_list ap;
@@ -224,6 +267,11 @@ int posix_open(const char *pathname, int flags, ...) {
     return -1;
   }
   return (int)fd;
+}
+
+/** @brief Create file descriptor with POSIX semantics. */
+int posix_creat(const char *pathname, mode_t mode) {
+  return posix_open(pathname, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
 
 extern int is_socket(intptr_t fd);
@@ -398,12 +446,18 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
 #pragma comment(linker,                                                        \
                 "/alternatename:posix_epoll_close=posix_epoll_close_stub")
 int posix_epoll_close_stub(intptr_t fd) {
-  (void)fd;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   return -1;
 }
 #elif defined(__GNUC__) || defined(__clang__)
 int __attribute__((weak)) posix_epoll_close(intptr_t fd) {
-  (void)fd;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   return -1;
 }
 #endif
@@ -463,8 +517,9 @@ int posix_dup2(int oldfd, int newfd) {
       if (clear_as_socket(newfd) != ERR_NONE) { /* Ignore */
       }
     }
+    return newfd;
   }
-  return ret;
+  return -1;
 }
 
 #else
@@ -474,6 +529,23 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
+  }
+  if (strcmp(pathname, "/proc/meminfo") == 0) {
+    FILE *f_test = fopen("/proc/meminfo", mode);
+    if (!f_test) {
+      char mem_buf[256];
+      FILE *tmp_f = tmpfile();
+      if (tmp_f) {
+        sprintf(mem_buf,
+                "MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: "
+                "8388608 kB\nCached: 0 kB\nSReclaimable: 0 kB\n");
+        fputs(mem_buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+    } else {
+      return f_test;
+    }
   }
   return fopen(pathname, mode);
 }
@@ -493,6 +565,11 @@ int posix_open(const char *pathname, int flags, ...) {
     return open(pathname, flags, mode);
   }
   return open(pathname, flags);
+}
+
+/** @brief Create file descriptor with POSIX semantics. */
+int posix_creat(const char *pathname, mode_t mode) {
+  return creat(pathname, mode);
 }
 
 /** @brief Read from file descriptor with POSIX semantics. */

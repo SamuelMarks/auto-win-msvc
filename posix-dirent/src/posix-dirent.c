@@ -351,12 +351,12 @@ typedef int dummy_posix_dirent;
 /**
  * @brief Retrieves information on posix-dirent module availability.
  */
-enum posix_dirent_error_code posix_dirent_get_info(int *out_available) {
+auto_win_msvc_error_t posix_dirent_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_DIRENT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_DIRENT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /* Prevent empty translation unit */

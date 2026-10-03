@@ -6,12 +6,12 @@
 /**
  * @brief Initializes and validates the bitops module.
  */
-enum linux_sys_bitops_error_code linux_sys_bitops_init(int *out_status) {
+auto_win_msvc_error_t linux_sys_bitops_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_SYS_BITOPS_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_SYS_BITOPS_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_sys_bitops;

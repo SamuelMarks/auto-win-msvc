@@ -77,7 +77,7 @@ endif()
 
 add_library(posix-dlfcn src/posix-dlfcn.c)
 set_target_properties(posix-dlfcn PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-dlfcn PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-dlfcn PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 

@@ -19,12 +19,12 @@
 /**
  * @brief Initializes and validates the posix-regex module.
  */
-enum posix_regex_error_code posix_regex_init(int *out_status) {
+auto_win_msvc_error_t posix_regex_init(int *out_status) {
   if (out_status == NULL) {
-    return POSIX_REGEX_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return POSIX_REGEX_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
@@ -135,7 +135,9 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size) {
   const char *msg = "Regex error";
   size_t msg_len;
-  (void)preg;
+  if (preg != NULL) {
+    /* preg provided */
+  }
 
   if (errcode == REG_NOMATCH)
     msg = "No match";

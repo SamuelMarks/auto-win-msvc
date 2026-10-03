@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(posix-netdb STATIC src/posix-netdb.c)
 set_target_properties(posix-netdb PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-netdb PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-netdb PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if(MSVC)
     target_compile_definitions(posix-netdb PRIVATE )

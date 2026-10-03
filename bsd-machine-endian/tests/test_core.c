@@ -7,18 +7,18 @@
 /* clang-format on */
 
 TEST test_bsd_machine_endian_byte_order(void) {
-  enum bsd_machine_endian_error_code rc;
+  auto_win_msvc_error_t rc;
   int order;
 
   order = 0;
   rc = bsd_machine_endian_get_byte_order(NULL);
-  if (rc != BSD_MACHINE_ENDIAN_ERROR_NULL_POINTER) {
-    printf("Expected BSD_MACHINE_ENDIAN_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_machine_endian_get_byte_order(&order);
-  if (rc != BSD_MACHINE_ENDIAN_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_machine_endian_get_byte_order failed with rc=%d\n", (int)rc);
     FAIL();
   }

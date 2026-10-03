@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(__MINGW32__)
 #include <malloc.h>
 #else
@@ -28,22 +29,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-alloca functions.
- */
-enum posix_alloca_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_ALLOCA_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_ALLOCA_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on alloca availability.
  * @param[out] out_available Pointer to an integer set to 1 if alloca is
  * available.
- * @return POSIX_ALLOCA_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_alloca_error_code posix_alloca_get_info(int *out_available);
+auto_win_msvc_error_t posix_alloca_get_info(int *out_available);
 
 #ifdef __cplusplus
 }

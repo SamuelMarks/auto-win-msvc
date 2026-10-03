@@ -23,12 +23,12 @@
 /**
  * @brief Retrieves information on posix-netdb availability.
  */
-enum posix_netdb_error_code posix_netdb_get_info(int *out_available) {
+auto_win_msvc_error_t posix_netdb_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_NETDB_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_NETDB_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 int posix_getaddrinfo(const char *nodename, const char *servname,

@@ -16,12 +16,9 @@ int kqueue(void) {
 int kevent(int kq, const struct kevent *changelist, int nchanges,
            struct kevent *eventlist, int nevents,
            const struct timespec *timeout) {
-  (void)kq;
-  (void)changelist;
-  (void)nchanges;
-  (void)eventlist;
-  (void)nevents;
-  (void)timeout;
+  if (kq || changelist || nchanges || eventlist || nevents || timeout) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 }
@@ -29,9 +26,9 @@ int kevent(int kq, const struct kevent *changelist, int nchanges,
 
 /** @brief Retrieves whether kqueue is natively supported on the host platform.
  */
-enum bsd_sys_event_error_code bsd_sys_event_get_support(int *out_supported) {
+auto_win_msvc_error_t bsd_sys_event_get_support(int *out_supported) {
   if (out_supported == NULL) {
-    return BSD_SYS_EVENT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||      \
     defined(__NetBSD__)
@@ -39,7 +36,7 @@ enum bsd_sys_event_error_code bsd_sys_event_get_support(int *out_supported) {
 #else
   *out_supported = 0;
 #endif
-  return BSD_SYS_EVENT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_event;

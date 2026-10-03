@@ -10,6 +10,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if !defined(_MSC_VER) && !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #include <sched.h>
@@ -122,23 +123,13 @@ typedef struct cpu_set {
 #endif /* cpu_set macros */
 
 /**
- * @brief Error codes returned by posix-sched functions.
- */
-enum posix_sched_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_SCHED_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_SCHED_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-sched availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_SCHED_SUCCESS on success, or POSIX_SCHED_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_sched_error_code posix_sched_get_info(int *out_available);
+auto_win_msvc_error_t posix_sched_get_info(int *out_available);
 
 /**
  * @brief Relinquish the CPU.

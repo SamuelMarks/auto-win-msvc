@@ -21,14 +21,14 @@
  * @brief Initializes and validates the macos-mach module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return MACOS_MACH_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum macos_mach_error_code macos_mach_init(int *out_status) {
+auto_win_msvc_error_t macos_mach_init(int *out_status) {
   if (out_status == NULL) {
-    return MACOS_MACH_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return MACOS_MACH_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -97,10 +97,11 @@ kern_return_t task_info(task_t target_task, task_flavor_t flavor,
     return KERN_SUCCESS;
   }
 #else
-  (void)target_task;
-  (void)flavor;
-  (void)task_info_out;
-  (void)task_info_outCnt;
+  if (target_task == 0 || flavor < 0 || task_info_out == NULL ||
+      task_info_outCnt == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 #endif
   errno = ENOSYS;
   return -1;
@@ -124,8 +125,7 @@ task_t mach_task_self(void) {
 kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
 #if defined(_WIN32)
   HANDLE hProcess;
-  (void)target_tport;
-  if (!t) {
+  if (!t || target_tport == 0) {
     errno = EINVAL;
     return -1;
   }
@@ -136,9 +136,10 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
     return KERN_SUCCESS;
   }
 #else
-  (void)target_tport;
-  (void)pid;
-  (void)t;
+  if (target_tport == 0 || pid < 0 || !t) {
+    errno = EINVAL;
+    return -1;
+  }
 #endif
   errno = ENOSYS;
   return -1;

@@ -7,13 +7,15 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #else
-#include <poll.h>
+#include <sys/poll.h>
+#include <sys/signal.h>
 #endif
 #include <stddef.h>
 /* clang-format on */
@@ -38,6 +40,18 @@ struct pollfd {
 #endif
 #endif
 
+#if defined(_WIN32)
+#ifndef _NFDS_T_DEFINED
+#define _NFDS_T_DEFINED
+typedef unsigned long nfds_t;
+#endif
+
+#ifndef _SIGSET_T_DEFINED
+#define _SIGSET_T_DEFINED
+typedef unsigned long sigset_t;
+#endif
+#endif
+
 #ifndef POLLIN
 /** @brief There is data to read. */
 #define POLLIN 0x01
@@ -54,23 +68,13 @@ struct pollfd {
 #endif
 
 /**
- * @brief Error codes returned by posix-poll functions.
- */
-enum posix_poll_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_POLL_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_POLL_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-poll availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_POLL_SUCCESS on success, or POSIX_POLL_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_poll_error_code posix_poll_get_info(int *out_available);
+auto_win_msvc_error_t posix_poll_get_info(int *out_available);
 
 /**
  * @brief Poll a set of file descriptors for I/O readiness.
@@ -78,11 +82,19 @@ enum posix_poll_error_code posix_poll_get_info(int *out_available);
  */
 int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
+struct timespec;
+
+int posix_ppoll(struct pollfd *fds, unsigned long nfds,
+                const struct timespec *tmo_p, const sigset_t *sigmask);
+
 #ifndef poll
 #define poll posix_poll
 #endif
 #ifndef WSAPoll
 #define WSAPoll posix_poll
+#endif
+#ifndef ppoll
+#define ppoll posix_ppoll
 #endif
 
 #ifdef __cplusplus

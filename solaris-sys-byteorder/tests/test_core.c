@@ -7,19 +7,18 @@
 /* clang-format on */
 
 TEST test_solaris_sys_byteorder_get_order(void) {
-  enum solaris_sys_byteorder_error_code rc;
+  auto_win_msvc_error_t rc;
   int order;
 
   order = 0;
   rc = solaris_sys_byteorder_get_byte_order(NULL);
-  if (rc != SOLARIS_SYS_BYTEORDER_ERROR_NULL_POINTER) {
-    printf("Expected SOLARIS_SYS_BYTEORDER_ERROR_NULL_POINTER, got %d\n",
-           (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = solaris_sys_byteorder_get_byte_order(&order);
-  if (rc != SOLARIS_SYS_BYTEORDER_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("solaris_sys_byteorder_get_byte_order failed with rc=%d\n", (int)rc);
     FAIL();
   }

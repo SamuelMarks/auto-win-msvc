@@ -6,12 +6,12 @@
 /**
  * @brief Initializes and validates the features polyfill.
  */
-enum linux_features_error_code linux_features_init(int *out_status) {
+auto_win_msvc_error_t linux_features_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_FEATURES_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_FEATURES_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_features;

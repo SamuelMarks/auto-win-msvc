@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -23,26 +24,12 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by linux-sys-prctl functions.
- */
-enum linux_sys_prctl_error_code {
-  /** @brief Successful operation. */
-  LINUX_SYS_PRCTL_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  LINUX_SYS_PRCTL_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument or option passed to function. */
-  LINUX_SYS_PRCTL_ERROR_INVALID_ARGUMENT = 2,
-  /** @brief Operation not supported on this platform. */
-  LINUX_SYS_PRCTL_ERROR_NOT_SUPPORTED = 3
-};
-
-/**
  * @brief Initializes and validates the linux-sys-prctl module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_SYS_PRCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_sys_prctl_error_code linux_sys_prctl_init(int *out_status);
+auto_win_msvc_error_t linux_sys_prctl_init(int *out_status);
 
 /** @brief Option to set the name of the calling thread. */
 #define PR_SET_NAME 15

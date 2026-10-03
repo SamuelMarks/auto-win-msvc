@@ -39,38 +39,22 @@
 #include <unistd.h>
 #endif
 #endif
-/* clang-format on */
+#include "auto-win-msvc-error.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Error codes returned by posix-stat module functions.
- */
-enum posix_stat_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_STAT_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_STAT_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument was provided. */
-  POSIX_STAT_ERROR_INVALID_ARGUMENT = 2,
-  /** @brief Path resolution failed. */
-  POSIX_STAT_ERROR_PATH_RESOLUTION = 3,
-  /** @brief IO or file system operation failed. */
-  POSIX_STAT_ERROR_IO = 4,
-  /** @brief Operation not supported on this platform. */
-  POSIX_STAT_ERROR_NOT_SUPPORTED = 5
-};
+
 
 /**
  * @brief Retrieves information on posix-stat module availability and status.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_STAT_SUCCESS on success, or POSIX_STAT_ERROR_NULL_POINTER on
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on
  * NULL pointer.
  */
-enum posix_stat_error_code posix_stat_get_info(int *out_available);
+auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 
 #if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC) &&           \
     !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC)
@@ -333,10 +317,10 @@ typedef unsigned short mode_t;
  * @brief Safely retrieves the OS file handle for a given CRT file descriptor.
  * @param[in] fd File descriptor.
  * @param[out] out_handle Pointer to ptrdiff_t receiving the handle or -1.
- * @return POSIX_STAT_SUCCESS on success, POSIX_STAT_ERROR_NULL_POINTER or
+ * @return AUTO_WIN_MSVC_SUCCESS on success, AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT or
  * POSIX_STAT_ERROR_INVALID_ARGUMENT on failure.
  */
-enum posix_stat_error_code posix_stat_safe_get_osfhandle(int fd,
+auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
                                                          ptrdiff_t *out_handle);
 
 /**
@@ -346,9 +330,9 @@ enum posix_stat_error_code posix_stat_safe_get_osfhandle(int fd,
  * @param[in] pathname Relative or absolute path.
  * @param[out] out_path Output buffer receiving resolved path.
  * @param[in] out_size Size of output buffer in bytes.
- * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
-enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
+auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
                                                       const char *pathname,
                                                       char *out_path,
                                                       size_t out_size);
@@ -360,9 +344,9 @@ enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
  * converted timestamp.
  * @param[out] out_omit Pointer to integer receiving 1 if time should be
  * omitted, 0 otherwise.
- * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
-enum posix_stat_error_code posix_stat_fill_filetime(const struct timespec *ts,
+auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
                                                     void *out_filetime,
                                                     int *out_omit);
 

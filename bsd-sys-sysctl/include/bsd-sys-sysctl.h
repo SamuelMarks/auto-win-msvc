@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -23,31 +24,19 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by bsd-sys-sysctl functions.
- */
-enum bsd_sys_sysctl_error_code {
-  /** @brief Successful operation. */
-  BSD_SYS_SYSCTL_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_SYS_SYSCTL_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed to function. */
-  BSD_SYS_SYSCTL_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the bsd-sys-sysctl module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_sysctl_error_code bsd_sys_sysctl_init(int *out_status);
+auto_win_msvc_error_t bsd_sys_sysctl_init(int *out_status);
 
 /**
  * @brief Retrieves the number of CPUs via sysctl.
  * @param[out] out_ncpu Pointer to an integer receiving the CPU count.
- * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_sysctl_error_code bsd_sys_sysctl_get_ncpu(int *out_ncpu);
+auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu);
 
 #ifndef CTL_KERN
 /** @brief Kernel management control name. */

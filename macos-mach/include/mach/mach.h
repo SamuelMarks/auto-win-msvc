@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #include <posix-stdint.h>
 /* clang-format on */
@@ -39,24 +40,12 @@ struct task_basic_info {
 #define KERN_SUCCESS 0
 
 /**
- * @brief Error codes returned by macos-mach functions.
- */
-enum macos_mach_error_code {
-  /** @brief Successful operation. */
-  MACOS_MACH_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  MACOS_MACH_ERROR_NULL_POINTER = 1,
-  /** @brief Operation not supported on this platform. */
-  MACOS_MACH_ERROR_NOT_SUPPORTED = 2
-};
-
-/**
  * @brief Initializes and validates the macos-mach module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return MACOS_MACH_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum macos_mach_error_code macos_mach_init(int *out_status);
+auto_win_msvc_error_t macos_mach_init(int *out_status);
 
 /**
  * @brief Returns the current absolute time in nanoseconds.

@@ -6,13 +6,12 @@
 /**
  * @brief Initializes and validates the feature tests polyfill.
  */
-enum solaris_sys_feature_tests_error_code
-solaris_sys_feature_tests_init(int *out_status) {
+auto_win_msvc_error_t solaris_sys_feature_tests_init(int *out_status) {
   if (out_status == NULL) {
-    return SOLARIS_SYS_FEATURE_TESTS_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return SOLARIS_SYS_FEATURE_TESTS_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_solaris_sys_feature_tests;

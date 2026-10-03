@@ -22,6 +22,14 @@ size_t strlcpy(char *dst, const char *src, size_t size);
  */
 size_t strlcat(char *dst, const char *src, size_t size);
 
+/**
+ * @brief Locate a substring ignoring case.
+ * @param[in] haystack String to search in.
+ * @param[in] needle Substring to look for.
+ * @return Pointer to the beginning of the substring, or NULL if not found.
+ */
+char *strcasestr(const char *haystack, const char *needle);
+
 #ifdef __cplusplus
 }
 #endif

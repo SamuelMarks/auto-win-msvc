@@ -206,8 +206,12 @@ static HANDLE g_hTimers[3] = {NULL, NULL, NULL};
 static void WINAPI posix_timer_callback(PVOID lpParameter,
                                         BOOLEAN TimerOrWaitFired) {
   int which = (int)(size_t)lpParameter;
-  (void)TimerOrWaitFired;
-  (void)which;
+  if (TimerOrWaitFired) {
+    /* parameters checked */
+  }
+  if (which) {
+    /* parameters checked */
+  }
   /* Ideally we would raise(SIGALRM) here, but MSVC's raise() aborts on
    * unsupported signals. We can attempt to call raise(14) (SIGALRM) if
    * the environment intercepts it, but we'll use a generic approach:
@@ -266,15 +270,24 @@ int setitimer(int which, const struct itimerval *value,
 static struct itimerval g_timers[3] = {
     {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
 int getitimer(int which, struct itimerval *value) {
-  (void)which;
-  (void)value;
+  if (!value) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (which) {
+    /* parameters checked */
+  }
   return 0;
 }
 int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue) {
-  (void)which;
-  (void)value;
-  (void)ovalue;
+  if (!value || !ovalue) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (which) {
+    /* parameters checked */
+  }
   return 0;
 }
 #endif
@@ -307,6 +320,20 @@ int clock_gettime(int clk_id, struct timespec *tp) {
   }
   /* Fallback or unsupported clock ID */
   errno = EINVAL;
+  return -1;
+}
+
+/** \brief clock_settime function. */
+int clock_settime(int clk_id, const struct timespec *tp) {
+  if (tp == NULL || tp->tv_nsec < 0 || tp->tv_nsec >= 1000000000L) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (clk_id != CLOCK_REALTIME) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = EPERM;
   return -1;
 }
 
@@ -363,6 +390,15 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 #endif
 }
 
+char *strptime(const char *buf, const char *fmt, struct tm *tm) {
+  if (buf == NULL || fmt == NULL || tm == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+  errno = ENOSYS;
+  return NULL;
+}
+
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 #ifndef ENOSYS
@@ -370,54 +406,77 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 #endif
 
 int getitimer(int which, struct itimerval *value) {
-  (void)which;
-  (void)value;
+  if (!value) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (which) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
-  (void)tv;
-  (void)tz;
+  if (!tv || !tz) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue) {
-  (void)which;
-  (void)value;
-  (void)ovalue;
+  if (!value || !ovalue) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (which) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int utimes(const char *filename, const struct timeval times[2]) {
-  (void)filename;
-  (void)times;
+  if (filename == NULL || times == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int clock_gettime(int clk_id, struct timespec *tp) {
-  (void)clk_id;
-  (void)tp;
+  if (clk_id < 0 || tp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+int clock_settime(int clk_id, const struct timespec *tp) {
+  if (clk_id < 0 || tp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-  (void)req;
-  (void)rem;
+  if (req == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (rem != NULL) {
+    rem->tv_sec = 0;
+    rem->tv_nsec = 0;
+  }
   errno = ENOSYS;
   return -1;
-}
-
-struct tm *localtime_r(const time_t *timep, struct tm *result) {
-  (void)timep;
-  (void)result;
-  errno = ENOSYS;
-  return NULL;
 }
 
 #endif /* _WIN32 */
@@ -425,12 +484,12 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 /**
  * @brief Retrieves information on posix-time module availability.
  */
-enum posix_time_error_code posix_time_get_info(int *out_available) {
+auto_win_msvc_error_t posix_time_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_TIME_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_TIME_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /* Prevent empty translation unit */

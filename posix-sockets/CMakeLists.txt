@@ -80,7 +80,7 @@ endif()
 
 add_library(posix-sockets src/posix-sockets.c)
 set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 
 if(WIN32 OR MSVC)

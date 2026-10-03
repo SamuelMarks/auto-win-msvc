@@ -91,7 +91,7 @@ endif()
 
 add_library(linux-execinfo src/linux-execinfo.c)
 set_target_properties(linux-execinfo PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(linux-execinfo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(linux-execinfo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 if(MSVC)
     target_link_libraries(linux-execinfo PUBLIC dbghelp)
 endif()

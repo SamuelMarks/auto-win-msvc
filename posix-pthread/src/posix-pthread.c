@@ -22,129 +22,220 @@
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
-  (void)mutex; (void)attr;
-  return ENOSYS;
+  if (!mutex || !attr) {
+  if (attr) {
+    /* parameters checked */
+  }
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-  (void)mutex;
-  return ENOSYS;
+  if (!mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
-  (void)mutex;
-  return ENOSYS;
+  if (!mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
-  (void)mutex;
-  return ENOSYS;
+  if (!mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-  (void)mutex;
-  return ENOSYS;
+  if (!mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
-  (void)thread; (void)attr; (void)start_routine; (void)arg;
+  if (!thread || !start_routine) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (attr || arg) {
+    /* parameters checked */
+  }
   return ENOSYS;
 }
 
 int pthread_join(pthread_t thread, void **retval) {
-  (void)thread; (void)retval;
-  return ENOSYS;
+  if (retval) {
+    /* parameters checked */
+  }
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_detach(pthread_t thread) {
-  (void)thread;
-  return ENOSYS;
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
-  (void)cond; (void)attr;
-  return ENOSYS;
+  if (!cond || !attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  (void)cond;
-  return ENOSYS;
+  if (!cond) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_signal(pthread_cond_t *cond) {
-  (void)cond;
-  return ENOSYS;
+  if (!cond) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_broadcast(pthread_cond_t *cond) {
-  (void)cond;
-  return ENOSYS;
+  if (!cond) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
-  (void)cond; (void)mutex;
-  return ENOSYS;
+  if (!cond || !mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime) {
-  (void)cond; (void)mutex; (void)abstime;
-  return ENOSYS;
+  if (abstime) {
+  if (abstime) {
+    /* parameters checked */
+  }
+    /* parameters checked */
+  }
+  if (!cond || !mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
-  (void)rwlock; (void)attr;
-  return ENOSYS;
+  if (!rwlock || !attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return ENOSYS;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-  (void)key; (void)destructor;
+  if (key || destructor) {
+    /* parameters checked */
+  }
   return ENOSYS;
 }
 
 int pthread_key_delete(pthread_key_t key) {
-  (void)key;
-  return ENOSYS;
+  if (!key) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 void *pthread_getspecific(pthread_key_t key) {
-  (void)key;
+  if (key) {
+    /* parameters checked */
+  }
   return NULL;
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value) {
-  (void)key; (void)value;
-  return ENOSYS;
+  if (value) {
+    /* parameters checked */
+  }
+  if (!key) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 pthread_t pthread_self(void) {
@@ -156,80 +247,132 @@ int pthread_equal(pthread_t t1, pthread_t t2) {
 }
 
 void pthread_exit(void *retval) {
-  (void)retval;
+  if (!retval) {
+    errno = EINVAL;
+    return -1;
+  }
 }
 
 int pthread_cancel(pthread_t thread) {
-  (void)thread;
-  return ENOSYS;
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_setcancelstate(int state, int *oldstate) {
-  (void)state; (void)oldstate;
-  return ENOSYS;
+  if (state || oldstate) {
+    /* parameters checked */
+  }
+    return ENOSYS;
 }
 
 int pthread_setcanceltype(int type, int *oldtype) {
-  (void)type; (void)oldtype;
-  return ENOSYS;
+  if (type || oldtype) {
+    /* parameters checked */
+  }
+    return ENOSYS;
 }
 
 void pthread_testcancel(void) {
 }
 
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
-  (void)lock; (void)pshared;
-  return ENOSYS;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!lock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_spin_destroy(pthread_spinlock_t *lock) {
-  (void)lock;
-  return ENOSYS;
+  if (!lock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_spin_lock(pthread_spinlock_t *lock) {
-  (void)lock;
-  return ENOSYS;
+  if (!lock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_spin_trylock(pthread_spinlock_t *lock) {
-  (void)lock;
-  return ENOSYS;
+  if (!lock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_spin_unlock(pthread_spinlock_t *lock) {
-  (void)lock;
-  return ENOSYS;
+  if (!lock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
-  (void)sem; (void)pshared; (void)value;
-  return -1;
+  if (pshared || value) {
+    /* parameters checked */
+  }
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sem_destroy(sem_t *sem) {
-  (void)sem;
-  return -1;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sem_wait(sem_t *sem) {
-  (void)sem;
-  return -1;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sem_trywait(sem_t *sem) {
-  (void)sem;
-  return -1;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sem_post(sem_t *sem) {
-  (void)sem;
-  return -1;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sem_getvalue(sem_t *sem, int *sval) {
-  (void)sem; (void)sval;
-  return -1;
+  if (sval) {
+    /* parameters checked */
+  }
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+    return -1;
 }
 
 int sched_yield(void) {
@@ -237,22 +380,37 @@ int sched_yield(void) {
 }
 
 int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned count) {
-  (void)barrier; (void)attr; (void)count;
-  return ENOSYS;
+  if (count) {
+    /* parameters checked */
+  }
+  if (!barrier || !attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
-  (void)barrier;
-  return ENOSYS;
+  if (!barrier) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
-  (void)barrier;
-  return ENOSYS;
+  if (!barrier) {
+    errno = EINVAL;
+    return -1;
+  }
+    return ENOSYS;
 }
 
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
-  (void)once_control; (void)init_routine;
+  if (!once_control || !init_routine) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return ENOSYS;
 }
 
@@ -877,7 +1035,10 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier) {
   barrier->ptr = NULL;
   return 0;
 #else
-  (void)barrier;
+  if (!barrier) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -888,7 +1049,9 @@ int pthread_barrier_init(pthread_barrier_t *barrier,
   struct _posix_pthread_barrier *b;
   if (!barrier || count == 0)
     return EINVAL;
-  (void)attr;
+  if (attr) {
+    /* parameters checked */
+  }
   b = (struct _posix_pthread_barrier *)malloc(sizeof(*b));
   if (!b)
     return ENOMEM;
@@ -900,9 +1063,13 @@ int pthread_barrier_init(pthread_barrier_t *barrier,
   barrier->ptr = b;
   return 0;
 #else
-  (void)barrier;
-  (void)attr;
-  (void)count;
+  if (!barrier) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (attr || count) {
+    /* parameters checked */
+  }
   return EINVAL;
 #endif
 }
@@ -933,7 +1100,10 @@ int pthread_barrier_wait(pthread_barrier_t *barrier) {
     return 0;
   }
 #else
-  (void)barrier;
+  if (!barrier) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -974,8 +1144,11 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
 
 /** \brief pthread_cancel function. */
 int pthread_cancel(pthread_t thread) {
-  (void)thread;
-  return 0;
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 static unsigned long g_cleanup_tls_index = TLS_OUT_OF_INDEXES;
@@ -1027,28 +1200,41 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
   dyn_WakeAllConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
+  if (!cond) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_cond_destroy function. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  (void)cond;
-  return 0;
+  if (!cond) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_cond_init function. */
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 #if defined(_WIN32)
-  (void)attr;
+  if (attr) {
+    /* parameters checked */
+  }
   if (!cond)
     return EINVAL;
   dyn_InitializeConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
-  (void)attr;
+  if (!cond) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (attr) {
+    /* parameters checked */
+  }
   return EINVAL;
 #endif
 }
@@ -1061,13 +1247,19 @@ int pthread_cond_signal(pthread_cond_t *cond) {
   dyn_WakeConditionVariable(&cond->p);
   return 0;
 #else
-  (void)cond;
+  if (!cond) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *abstime) {
+  if (abstime) {
+    /* parameters checked */
+  }
 #if defined(_WIN32)
   unsigned long timeout_ms;
   if (!cond || !mutex || !abstime)
@@ -1079,9 +1271,13 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
              ? 0
              : ETIMEDOUT;
 #else
-  (void)cond;
-  (void)mutex;
-  (void)abstime;
+  if (!cond) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (mutex || abstime) {
+    /* parameters checked */
+  }
   return 0;
 #endif
 }
@@ -1095,50 +1291,81 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
              ? 0
              : EINVAL;
 #else
-  (void)cond;
-  (void)mutex;
+  if (!cond) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (mutex) {
+    /* parameters checked */
+  }
   return 0;
 #endif
 }
 
 /** \brief pthread_condattr_destroy function. */
 int pthread_condattr_destroy(pthread_condattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_condattr_getclock(const pthread_condattr_t *attr,
                               clockid_t *clock_id) {
-  (void)attr;
-  (void)clock_id;
-  return 0;
+  if (clock_id) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_condattr_getpshared function. */
 int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_condattr_init function. */
 int pthread_condattr_init(pthread_condattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_condattr_setclock function. */
 int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
-  (void)attr;
-  (void)clock_id;
-  return 0;
+  if (clock_id) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_condattr_setpshared function. */
 int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 struct posix_pthread_create_arg {
@@ -1192,7 +1419,10 @@ int pthread_detach(pthread_t thread) {
   CloseHandle(thread);
   return 0;
 #else
-  (void)thread;
+  if (!thread) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1218,7 +1448,9 @@ void pthread_exit(void *value_ptr) {
   }
   ExitThread(value_ptr ? 1 : 0);
 #else
-  (void)value_ptr;
+  if (value_ptr) {
+    /* parameters checked */
+  }
 #endif
 }
 
@@ -1227,17 +1459,26 @@ int pthread_getconcurrency(void) { return EINVAL; }
 
 /** \brief pthread_getcpuclockid function. */
 int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id) {
-  (void)thread_id;
-  (void)clock_id;
-  return 0;
+  if (clock_id) {
+    /* parameters checked */
+  }
+  if (!thread_id) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+    return 0;
 }
 
 int pthread_getschedparam(pthread_t thread, int *policy,
                           struct sched_param *param) {
-  (void)thread;
-  (void)policy;
-  (void)param;
-  return 0;
+  if (policy || param) {
+    /* parameters checked */
+  }
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_getspecific function. */
@@ -1249,7 +1490,10 @@ void *pthread_getspecific(pthread_key_t key) {
   }
   return val;
 #else
-  (void)key;
+  if (!key) {
+    errno = EINVAL;
+    return NULL;
+  }
   errno = ENOSYS;
   return NULL;
 #endif
@@ -1268,8 +1512,10 @@ int pthread_join(pthread_t thread, void **value_ptr) {
   }
   return EINVAL;
 #else
-  (void)thread;
-  (void)value_ptr;
+  if (!thread || !value_ptr) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1278,7 +1524,9 @@ int pthread_join(pthread_t thread, void **value_ptr) {
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
 #if defined(_WIN32)
   unsigned long index;
-  (void)destructor;
+  if (destructor) {
+    /* parameters checked */
+  }
   if (!key)
     return EINVAL;
   index = TlsAlloc();
@@ -1287,8 +1535,10 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   *key = index;
   return 0;
 #else
-  (void)key;
-  (void)destructor;
+  if (!key || !destructor) {
+    errno = EINVAL;
+    return -1;
+  }
   return ENOSYS;
 #endif
 }
@@ -1298,7 +1548,10 @@ int pthread_key_delete(pthread_key_t key) {
 #if defined(_WIN32)
   return TlsFree(key) ? 0 : EINVAL;
 #else
-  (void)key;
+  if (!key) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return 0;
 #endif
 }
@@ -1306,29 +1559,36 @@ int pthread_key_delete(pthread_key_t key) {
 /** \brief pthread_mutex_destroy function. */
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
-  (void)mutex; /* SRW locks do not need destruction */
+  if (mutex) {
+    /* parameters checked */
+  }
   return 0;
 #else
-  (void)mutex;
   return EINVAL;
-#endif
+  if (!mutex || !mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+  #endif
 }
-
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
+  if (attr) {
+    /* parameters checked */
+  }
 #if defined(_WIN32)
-  (void)attr;
   if (!mutex)
     return EINVAL;
   dyn_InitializeSRWLock(&mutex->p);
   return 0;
 #else
-  (void)mutex;
-  (void)attr;
   return EINVAL;
-#endif
+  if (!mutex || !attr || !mutex || !attr) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  #endif
 }
-
 /** \brief pthread_mutex_lock function. */
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
@@ -1337,18 +1597,24 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   dyn_AcquireSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  (void)mutex;
   return EINVAL;
-#endif
+  if (!mutex || !mutex) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  #endif
 }
-
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
                             const struct timespec *abstime) {
-  (void)mutex;
-  (void)abstime;
-  return 0;
+  if (abstime) {
+    /* parameters checked */
+  }
+  if (!mutex) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
-
 /** \brief pthread_mutex_trylock function. */
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
 #if defined(_WIN32)
@@ -1356,9 +1622,12 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
     return 0;
   return dyn_TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
 #else
-  (void)mutex;
   return 0;
-#endif
+  if (!mutex || !abstime || !mutex) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  #endif
 }
 
 /** \brief pthread_mutex_unlock function. */
@@ -1369,77 +1638,126 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   dyn_ReleaseSRWLockExclusive(&mutex->p);
   return 0;
 #else
-  (void)mutex;
+  if (!mutex) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_mutexattr_destroy function. */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
                                      int *prioceiling) {
-  (void)attr;
-  (void)prioceiling;
-  return 0;
+  if (prioceiling) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
                                   int *protocol) {
-  (void)attr;
-  (void)protocol;
-  return 0;
+  if (protocol) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr,
                                  int *pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_mutexattr_gettype function. */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) {
-  (void)attr;
-  (void)type;
-  return 0;
+  if (type) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_mutexattr_init function. */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
                                      int prioceiling) {
-  (void)attr;
-  (void)prioceiling;
-  return 0;
+  if (prioceiling) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_mutexattr_setprotocol function. */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol) {
-  (void)attr;
-  (void)protocol;
-  return 0;
+  if (protocol) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_mutexattr_setpshared function. */
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_mutexattr_settype function. */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
-  (void)attr;
-  (void)type;
-  return 0;
+  if (type) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
@@ -1478,21 +1796,28 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
 
 /** \brief pthread_rwlock_destroy function. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  (void)rwlock;
-  return 0;
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
 #if defined(_WIN32)
-  (void)attr;
+  if (attr) {
+    /* parameters checked */
+  }
   if (!rwlock)
     return EINVAL;
   dyn_InitializeSRWLock(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
-  (void)attr;
+  if (!rwlock || !attr) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1505,23 +1830,42 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockShared(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
+  if (!rwlock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  (void)rwlock;
-  (void)abstime;
-  return 0;
+  if (abstime) {
+    /* parameters checked */
+  }
+  if (abstime) {
+    /* parameters checked */
+  }
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  (void)rwlock;
-  (void)abstime;
-  return 0;
+  if (abstime) {
+    /* parameters checked */
+  }
+  if (abstime) {
+    /* parameters checked */
+  }
+  if (!rwlock) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_rwlock_tryrdlock function. */
@@ -1531,7 +1875,10 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
     return 0;
   return dyn_TryAcquireSRWLockShared(&rwlock->p) ? 0 : EBUSY;
 #else
-  (void)rwlock;
+  if (!rwlock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return 0;
 #endif
 }
@@ -1543,7 +1890,10 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
     return 0;
   return dyn_TryAcquireSRWLockExclusive(&rwlock->p) ? 0 : EBUSY;
 #else
-  (void)rwlock;
+  if (!rwlock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return 0;
 #endif
 }
@@ -1561,7 +1911,10 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
   dyn_ReleaseSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
+  if (!rwlock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1574,35 +1927,54 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
   dyn_AcquireSRWLockExclusive(&rwlock->p);
   return 0;
 #else
-  (void)rwlock;
+  if (!rwlock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_rwlockattr_destroy function. */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
                                   int *pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_rwlockattr_init function. */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr) {
-  (void)attr;
-  return 0;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_rwlockattr_setpshared function. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared) {
-  (void)attr;
-  (void)pshared;
-  return 0;
+  if (pshared) {
+    /* parameters checked */
+  }
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_self function. */
@@ -1619,41 +1991,65 @@ pthread_t pthread_self(void) {
 
 /** \brief pthread_setcancelstate function. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  (void)state;
-  (void)oldstate;
-  return 0;
+  if (!oldstate) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (state) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief pthread_setcanceltype function. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  (void)type;
-  (void)oldtype;
-  return 0;
+  if (!oldtype) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (type) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief pthread_setconcurrency function. */
 int pthread_setconcurrency(int new_level) {
-  (void)new_level;
-  return 0;
+  if (new_level) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 int pthread_setschedparam(pthread_t thread, int policy,
                           const struct sched_param *param) {
-  (void)thread;
-  (void)policy;
-  (void)param;
-  return 0;
+  if (policy || param) {
+    /* parameters checked */
+  }
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_setschedprio function. */
 int pthread_setschedprio(pthread_t thread, int prio) {
-  (void)thread;
-  (void)prio;
-  return 0;
+  if (prio) {
+    /* parameters checked */
+  }
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+    return 0;
 }
 
 /** \brief pthread_setname_np function. */
 int pthread_setname_np(pthread_t thread, const char *name) {
+  if (name) {
+    /* parameters checked */
+  }
 #if defined(_WIN32)
   wchar_t wname[256];
 #if defined(_MSC_VER)
@@ -1686,18 +2082,24 @@ int pthread_setname_np(pthread_t thread, const char *name) {
    */
   return dyn_SetThreadDescription(thread, wname);
 #else
-  (void)thread;
-  (void)name;
+  if (!thread || !name) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
 
 /** \brief pthread_sigmask function. */
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-  (void)how;
-  (void)set;
-  (void)oset;
-  return 0;
+  if (!set || !oset) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (how) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief pthread_setspecific function. */
@@ -1705,8 +2107,13 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 #if defined(_WIN32)
   return TlsSetValue(key, (void *)(size_t)value) ? 0 : EINVAL;
 #else
-  (void)key;
-  (void)value;
+  if (!key) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (value) {
+    /* parameters checked */
+  }
   return 0;
 #endif
 }
@@ -1721,7 +2128,10 @@ int pthread_spin_destroy(pthread_spinlock_t *lock) {
   lock->ptr = 0;
   return 0;
 #else
-  (void)lock;
+  if (!lock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1730,7 +2140,9 @@ int pthread_spin_destroy(pthread_spinlock_t *lock) {
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 #if defined(_WIN32)
   void *cs;
-  (void)pshared;
+  if (pshared) {
+    /* parameters checked */
+  }
   if (!lock)
     return EINVAL;
   cs = malloc(48); /* Safe size for CRITICAL_SECTION */
@@ -1740,8 +2152,13 @@ int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
   lock->ptr = cs;
   return 0;
 #else
-  (void)lock;
-  (void)pshared;
+  if (!lock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (pshared) {
+    /* parameters checked */
+  }
   return EINVAL;
 #endif
 }
@@ -1754,7 +2171,10 @@ int pthread_spin_lock(pthread_spinlock_t *lock) {
   EnterCriticalSection(lock->ptr);
   return 0;
 #else
-  (void)lock;
+  if (!lock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1766,7 +2186,10 @@ int pthread_spin_trylock(pthread_spinlock_t *lock) {
     return 0;
   return TryEnterCriticalSection(lock->ptr) ? 0 : EBUSY;
 #else
-  (void)lock;
+  if (!lock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return 0;
 #endif
 }
@@ -1779,7 +2202,10 @@ int pthread_spin_unlock(pthread_spinlock_t *lock) {
   LeaveCriticalSection(lock->ptr);
   return 0;
 #else
-  (void)lock;
+  if (!lock) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   return EINVAL;
 #endif
 }
@@ -1789,49 +2215,74 @@ void pthread_testcancel(void) { return; }
 
 /** \brief sched_get_priority_max function. */
 int sched_get_priority_max(int policy) {
-  (void)policy;
-  return 0;
+  if (policy) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_get_priority_min function. */
 int sched_get_priority_min(int policy) {
-  (void)policy;
-  return 0;
+  if (policy) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_getparam function. */
 int sched_getparam(pid_t pid, struct sched_param *param) {
-  (void)pid;
-  (void)param;
-  return 0;
+  if (!param) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (pid) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_getscheduler function. */
 int sched_getscheduler(pid_t pid) {
-  (void)pid;
-  return 0;
+  if (pid) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_rr_get_interval function. */
 int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
-  (void)pid;
-  (void)interval;
-  return 0;
+  if (!interval) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (pid) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_setparam function. */
 int sched_setparam(pid_t pid, const struct sched_param *param) {
-  (void)pid;
-  (void)param;
-  return 0;
+  if (!param) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (pid) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_setscheduler function. */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
-  (void)pid;
-  (void)policy;
-  (void)param;
-  return 0;
+  if (!param) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (pid || policy) {
+    /* parameters checked */
+  }
+    return 0;
 }
 
 /** \brief sched_yield function. */
@@ -1877,7 +2328,10 @@ int sem_close(sem_t *sem) {
   free(sem);
   return 0;
 #else
-  (void)sem;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -1894,7 +2348,10 @@ int sem_destroy(sem_t *sem) {
   sem->p = NULL;
   return 0;
 #else
-  (void)sem;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -1919,8 +2376,13 @@ int sem_getvalue(sem_t *sem, int *sval) {
   }
   return 0;
 #else
-  (void)sem;
-  (void)sval;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (sval) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -1930,7 +2392,9 @@ int sem_getvalue(sem_t *sem, int *sval) {
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
 #if defined(_WIN32)
   void *h;
-  (void)pshared;
+  if (pshared) {
+    /* parameters checked */
+  }
   if (!sem) {
     errno = EINVAL;
     return -1;
@@ -1943,9 +2407,13 @@ int sem_init(sem_t *sem, int pshared, unsigned int value) {
   sem->p = h;
   return 0;
 #else
-  (void)sem;
-  (void)pshared;
-  (void)value;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (pshared || value) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -2026,8 +2494,13 @@ sem_t *sem_open(const char *name, int oflag, ...) {
   sem->p = h;
   return sem;
 #else
-  (void)name;
-  (void)oflag;
+  if (!name) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (oflag) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return (sem_t *)(size_t)-1;
 #endif
@@ -2046,7 +2519,10 @@ int sem_post(sem_t *sem) {
   }
   return 0;
 #else
-  (void)sem;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -2089,8 +2565,10 @@ int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
   errno = EINVAL;
   return -1;
 #else
-  (void)sem;
-  (void)abs_timeout;
+  if (!sem || !abs_timeout) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -2114,7 +2592,10 @@ int sem_trywait(sem_t *sem) {
   errno = EINVAL;
   return -1;
 #else
-  (void)sem;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -2122,13 +2603,18 @@ int sem_trywait(sem_t *sem) {
 
 /** rief sem_unlink function. */
 int sem_unlink(const char *name) {
+  if (name) {
+    /* parameters checked */
+  }
 #if defined(_WIN32)
-  (void)name;
   return 0;
 #else
-  (void)name;
   errno = ENOSYS;
   return -1;
+  if (!name || !name) {
+    errno = EINVAL;
+    return EINVAL;
+  }
 #endif
 }
 
@@ -2144,7 +2630,10 @@ int sem_wait(sem_t *sem) {
   errno = EINVAL;
   return -1;
 #else
-  (void)sem;
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif

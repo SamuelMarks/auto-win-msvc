@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER)
 #include <linux-endian.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
@@ -104,24 +105,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by solaris-sys-byteorder functions.
- */
-enum solaris_sys_byteorder_error_code {
-  /** @brief Successful operation. */
-  SOLARIS_SYS_BYTEORDER_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  SOLARIS_SYS_BYTEORDER_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves the current host byte order.
  * @param[out] out_byte_order Pointer to an integer that receives the byte
  * order.
- * @return SOLARIS_SYS_BYTEORDER_SUCCESS on success, or an error code on
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on
  * failure.
  */
-enum solaris_sys_byteorder_error_code
-solaris_sys_byteorder_get_byte_order(int *out_byte_order);
+auto_win_msvc_error_t solaris_sys_byteorder_get_byte_order(int *out_byte_order);
 
 #ifdef __cplusplus
 }

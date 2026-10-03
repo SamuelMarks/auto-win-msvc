@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -23,26 +24,12 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by linux-sys-syscall functions.
- */
-enum linux_sys_syscall_error_code {
-  /** @brief Successful operation. */
-  LINUX_SYS_SYSCALL_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  LINUX_SYS_SYSCALL_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument or unknown syscall number. */
-  LINUX_SYS_SYSCALL_ERROR_INVALID_ARGUMENT = 2,
-  /** @brief System call not implemented. */
-  LINUX_SYS_SYSCALL_ERROR_NOT_IMPLEMENTED = 3
-};
-
-/**
  * @brief Initializes and validates the linux-sys-syscall module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_SYS_SYSCALL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_sys_syscall_error_code linux_sys_syscall_init(int *out_status);
+auto_win_msvc_error_t linux_sys_syscall_init(int *out_status);
 
 #if defined(_MSC_VER) && !defined(__clang__)
 

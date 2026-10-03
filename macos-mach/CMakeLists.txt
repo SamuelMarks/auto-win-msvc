@@ -63,7 +63,7 @@ endif()
 
 add_library(macos-mach src/macos-mach.c)
 set_target_properties(macos-mach PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(macos-mach PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(macos-mach PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 target_link_libraries(macos-mach PUBLIC posix-stdint posix-stdbool)
 
 if(WIN32)

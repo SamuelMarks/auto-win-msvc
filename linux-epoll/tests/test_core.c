@@ -8,18 +8,18 @@
 /* clang-format on */
 
 TEST test_linux_epoll_init(void) {
-  enum linux_epoll_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = linux_epoll_init(NULL);
-  if (rc != LINUX_EPOLL_ERROR_NULL_POINTER) {
-    printf("Expected LINUX_EPOLL_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = linux_epoll_init(&status);
-  if (rc != LINUX_EPOLL_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("linux_epoll_init failed with rc=%d\n", (int)rc);
     FAIL();
   }

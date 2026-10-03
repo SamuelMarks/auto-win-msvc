@@ -31,11 +31,9 @@ static void null_invalid_param_handler(const wchar_t *expression,
                                        const wchar_t *function,
                                        const wchar_t *file, unsigned int line,
                                        uintptr_t pReserved) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression || function || file || line || pReserved) {
+    /* parameters checked */
+  }
 }
 #endif
 
@@ -135,15 +133,15 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
  * @brief Retrieves information on posix-stat module availability and status.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_STAT_SUCCESS on success, or POSIX_STAT_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_stat_error_code posix_stat_get_info(int *out_available) {
+auto_win_msvc_error_t posix_stat_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_STAT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_STAT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #ifdef _WIN32
@@ -152,18 +150,19 @@ enum posix_stat_error_code posix_stat_get_info(int *out_available) {
  * @brief Safely retrieves the OS file handle for a given CRT file descriptor.
  * @param[in] fd File descriptor.
  * @param[out] out_handle Pointer to ptrdiff_t receiving the handle or -1.
- * @return POSIX_STAT_SUCCESS on success, POSIX_STAT_ERROR_NULL_POINTER or
- * POSIX_STAT_ERROR_INVALID_ARGUMENT on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success,
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT or AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT
+ * on failure.
  */
-enum posix_stat_error_code
-posix_stat_safe_get_osfhandle(int fd, ptrdiff_t *out_handle) {
+auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
+                                                    ptrdiff_t *out_handle) {
   ptrdiff_t h;
   if (out_handle == NULL) {
-    return POSIX_STAT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   if (fd < 0 || fd >= 2048) {
     *out_handle = -1;
-    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   {
@@ -177,9 +176,9 @@ posix_stat_safe_get_osfhandle(int fd, ptrdiff_t *out_handle) {
 #endif
   *out_handle = h;
   if (h == -1) {
-    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
-  return POSIX_STAT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -189,12 +188,12 @@ posix_stat_safe_get_osfhandle(int fd, ptrdiff_t *out_handle) {
  * @param[in] pathname Relative or absolute path.
  * @param[out] out_path Output buffer receiving resolved path.
  * @param[in] out_size Size of output buffer in bytes.
- * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
-enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
-                                                      const char *pathname,
-                                                      char *out_path,
-                                                      size_t out_size) {
+auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
+                                                 const char *pathname,
+                                                 char *out_path,
+                                                 size_t out_size) {
   HANDLE hFile;
   HMODULE hKernel32;
   typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
@@ -202,11 +201,11 @@ enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
   GetFinalPathNameByHandleA_t pGetFinalPathName;
   DWORD len;
   ptrdiff_t osfh;
-  enum posix_stat_error_code osf_rc;
+  auto_win_msvc_error_t osf_rc;
 
   if (pathname == NULL || out_path == NULL || out_size == 0) {
     errno = EINVAL;
-    return POSIX_STAT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 
   if (IS_ABSOLUTE_PATH(pathname) || dirfd == AT_FDCWD) {
@@ -216,39 +215,39 @@ enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
     strncpy(out_path, pathname, out_size - 1);
     out_path[out_size - 1] = '\0';
 #endif
-    return POSIX_STAT_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   if (dirfd < 0) {
     errno = EBADF;
-    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 
   osf_rc = posix_stat_safe_get_osfhandle(dirfd, &osfh);
-  if (osf_rc != POSIX_STAT_SUCCESS ||
+  if (osf_rc != AUTO_WIN_MSVC_SUCCESS ||
       (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
     errno = EBADF;
-    return POSIX_STAT_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   hFile = (HANDLE)(size_t)osfh;
 
   hKernel32 = GetModuleHandleA("kernel32.dll");
   if (!hKernel32) {
     errno = EINVAL;
-    return POSIX_STAT_ERROR_PATH_RESOLUTION;
+    return AUTO_WIN_MSVC_ERROR_NOT_FOUND;
   }
 
   pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
       hKernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathName) {
     errno = ENOSYS;
-    return POSIX_STAT_ERROR_NOT_SUPPORTED;
+    return AUTO_WIN_MSVC_ERROR_NOT_IMPLEMENTED;
   }
 
   len = pGetFinalPathName(hFile, out_path, (DWORD)out_size, 0);
   if (len == 0 || len >= out_size) {
     errno = EACCES;
-    return POSIX_STAT_ERROR_PATH_RESOLUTION;
+    return AUTO_WIN_MSVC_ERROR_NOT_FOUND;
   }
 
   /* Strip \\?\ prefix if present */
@@ -271,7 +270,7 @@ enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
   strncat(out_path, pathname, out_size - len - 1);
 #endif
 
-  return POSIX_STAT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -281,14 +280,14 @@ enum posix_stat_error_code posix_stat_resolve_at_path(int dirfd,
  * converted timestamp.
  * @param[out] out_omit Pointer to integer receiving 1 if time should be
  * omitted, 0 otherwise.
- * @return POSIX_STAT_SUCCESS on success, or error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
-enum posix_stat_error_code posix_stat_fill_filetime(const struct timespec *ts,
-                                                    void *out_filetime,
-                                                    int *out_omit) {
+auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
+                                               void *out_filetime,
+                                               int *out_omit) {
   FILETIME *ft;
   if (out_filetime == NULL || out_omit == NULL) {
-    return POSIX_STAT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   ft = (FILETIME *)out_filetime;
   if (ts == NULL) {
@@ -311,7 +310,7 @@ enum posix_stat_error_code posix_stat_fill_filetime(const struct timespec *ts,
     ft->dwHighDateTime = (DWORD)(t >> 32);
     *out_omit = 0;
   }
-  return POSIX_STAT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -329,10 +328,10 @@ int fchmod(int fd, mode_t mode) {
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
   ptrdiff_t osfh;
-  enum posix_stat_error_code osf_rc;
+  auto_win_msvc_error_t osf_rc;
 
   osf_rc = posix_stat_safe_get_osfhandle(fd, &osfh);
-  if (osf_rc != POSIX_STAT_SUCCESS ||
+  if (osf_rc != AUTO_WIN_MSVC_SUCCESS ||
       (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -387,10 +386,11 @@ int fchmod(int fd, mode_t mode) {
  */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   char fullpath[MAX_PATH];
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
-  if (rc != POSIX_STAT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
@@ -410,10 +410,11 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
 int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
             int flags) {
   char fullpath[MAX_PATH];
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
-  if (rc != POSIX_STAT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
@@ -436,7 +437,7 @@ int futimens(int fd, const struct timespec times[2]) {
   int omit_a;
   int omit_m;
   ptrdiff_t osfh;
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   pAtime = NULL;
   pMtime = NULL;
@@ -444,7 +445,7 @@ int futimens(int fd, const struct timespec times[2]) {
   omit_m = 0;
 
   rc = posix_stat_safe_get_osfhandle(fd, &osfh);
-  if (rc != POSIX_STAT_SUCCESS ||
+  if (rc != AUTO_WIN_MSVC_SUCCESS ||
       (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
@@ -453,14 +454,16 @@ int futimens(int fd, const struct timespec times[2]) {
 
   if (times != NULL) {
     rc = posix_stat_fill_filetime(&times[0], &atime, &omit_a);
-    if (rc != POSIX_STAT_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
+      errno = auto_win_msvc_error_to_errno(rc);
       return -1;
     }
     if (!omit_a) {
       pAtime = &atime;
     }
     rc = posix_stat_fill_filetime(&times[1], &mtime, &omit_m);
-    if (rc != POSIX_STAT_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
+      errno = auto_win_msvc_error_to_errno(rc);
       return -1;
     }
     if (!omit_m) {
@@ -542,7 +545,9 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
  */
 int mknod(const char *pathname, mode_t mode, unsigned int dev) {
   HANDLE hFile;
-  (void)dev;
+  if (dev) {
+    /* parameters checked */
+  }
 
   if (pathname == NULL) {
     errno = EINVAL;
@@ -579,10 +584,11 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
  */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
   char fullpath[MAX_PATH];
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
-  if (rc != POSIX_STAT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
   return mknod(fullpath, mode, dev);
@@ -606,7 +612,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   int omit_a;
   int omit_m;
   char fullpath[MAX_PATH];
-  enum posix_stat_error_code rc;
+  auto_win_msvc_error_t rc;
 
   attrs = FILE_FLAG_BACKUP_SEMANTICS;
   pAtime = NULL;
@@ -615,7 +621,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   omit_m = 0;
 
   rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
-  if (rc != POSIX_STAT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
 
@@ -633,16 +640,18 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 
   if (times != NULL) {
     rc = posix_stat_fill_filetime(&times[0], &atime, &omit_a);
-    if (rc != POSIX_STAT_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       CloseHandle(hFile);
+      errno = auto_win_msvc_error_to_errno(rc);
       return -1;
     }
     if (!omit_a) {
       pAtime = &atime;
     }
     rc = posix_stat_fill_filetime(&times[1], &mtime, &omit_m);
-    if (rc != POSIX_STAT_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       CloseHandle(hFile);
+      errno = auto_win_msvc_error_to_errno(rc);
       return -1;
     }
     if (!omit_m) {

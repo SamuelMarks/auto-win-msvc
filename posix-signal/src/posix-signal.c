@@ -17,29 +17,29 @@
  * @brief Retrieves information on posix-signal availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_SIGNAL_SUCCESS on success, or POSIX_SIGNAL_ERROR_NULL_POINTER
- * on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_signal_error_code posix_signal_get_info(int *out_available) {
+auto_win_msvc_error_t posix_signal_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
  * @brief Initializes and validates the posix-signal module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_init(int *out_status) {
+auto_win_msvc_error_t posix_signal_init(int *out_status) {
   if (out_status == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32)
@@ -139,12 +139,11 @@ static int g_signal_flags[32] = {0};
  * @brief Checks whether a signal is natively supported by the C runtime.
  * @param[in] signum Signal number to check.
  * @param[out] out_is_crt Pointer receiving 1 if native CRT signal, 0 otherwise.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_is_crt_signal(int signum,
-                                                        int *out_is_crt) {
+auto_win_msvc_error_t posix_signal_is_crt_signal(int signum, int *out_is_crt) {
   if (out_is_crt == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_is_crt = (signum == SIGINT || signum == SIGILL || signum == SIGFPE ||
                  signum == SIGSEGV || signum == SIGTERM || signum == SIGABRT
@@ -154,7 +153,7 @@ enum posix_signal_error_code posix_signal_is_crt_signal(int signum,
                  )
                     ? 1
                     : 0;
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 #endif
 
@@ -283,9 +282,9 @@ static void internal_signal_handler(int signum) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
   {
     int is_crt = 0;
-    enum posix_signal_error_code sig_rc;
+    auto_win_msvc_error_t sig_rc;
     sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
-    if (sig_rc == POSIX_SIGNAL_SUCCESS && is_crt) {
+    if (sig_rc == AUTO_WIN_MSVC_SUCCESS && is_crt) {
       (signal)(signum, internal_signal_handler);
     }
   }
@@ -425,9 +424,9 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
 #if defined(_MSC_VER) || defined(__MINGW32__)
   {
     int is_crt = 0;
-    enum posix_signal_error_code sig_rc;
+    auto_win_msvc_error_t sig_rc;
     sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
-    if (sig_rc != POSIX_SIGNAL_SUCCESS) {
+    if (sig_rc != AUTO_WIN_MSVC_SUCCESS) {
       errno = EINVAL;
       return -1;
     }
@@ -525,9 +524,9 @@ posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
   {
     int is_crt = 0;
-    enum posix_signal_error_code sig_rc;
+    auto_win_msvc_error_t sig_rc;
     sig_rc = posix_signal_is_crt_signal(signum, &is_crt);
-    if (sig_rc != POSIX_SIGNAL_SUCCESS) {
+    if (sig_rc != AUTO_WIN_MSVC_SUCCESS) {
       errno = EINVAL;
       return SIG_ERR;
     }
@@ -618,38 +617,38 @@ int sigblock(int mask) {
 /**
  * @brief Retrieves the current process ID.
  * @param[out] out_pid Pointer to pid_t receiving current PID.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_get_current_pid(pid_t *out_pid) {
+auto_win_msvc_error_t posix_signal_get_current_pid(pid_t *out_pid) {
   if (out_pid == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_pid = (pid_t)GetCurrentProcessId();
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
  * @brief Simulates exception handling for posix-signal testing.
  * @param[in] code Exception code to simulate.
  * @param[out] out_result Pointer to receive the handler result.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_simulate_exception(unsigned long code,
-                                                             long *out_result) {
+auto_win_msvc_error_t posix_signal_simulate_exception(unsigned long code,
+                                                      long *out_result) {
   EXCEPTION_RECORD rec;
   EXCEPTION_POINTERS ep;
   if (out_result == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   if (code == 0) {
     *out_result = veh_handler(NULL);
-    return POSIX_SIGNAL_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
   if (code == 1) {
     ep.ExceptionRecord = NULL;
     ep.ContextRecord = NULL;
     *out_result = veh_handler(&ep);
-    return POSIX_SIGNAL_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
   memset(&rec, 0, sizeof(rec));
   rec.ExceptionCode = code;
@@ -657,34 +656,34 @@ enum posix_signal_error_code posix_signal_simulate_exception(unsigned long code,
   ep.ExceptionRecord = &rec;
   ep.ContextRecord = NULL;
   *out_result = veh_handler(&ep);
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
  * @brief Simulates signal handling for posix-signal testing.
  * @param[in] signum Signal number to simulate.
  * @param[out] out_status Pointer to receive completion status.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_simulate_signal(int signum,
-                                                          int *out_status) {
+auto_win_msvc_error_t posix_signal_simulate_signal(int signum,
+                                                   int *out_status) {
   if (out_status == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   internal_signal_handler(signum);
   *out_status = 1;
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
  * @brief Resets all internal signal handler state.
  * @param[out] out_status Pointer to integer receiving status (1).
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_reset(int *out_status) {
+auto_win_msvc_error_t posix_signal_reset(int *out_status) {
   int i;
   if (out_status == NULL) {
-    return POSIX_SIGNAL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   for (i = 0; i < 32; ++i) {
     g_signal_handlers[i] = NULL;
@@ -694,7 +693,7 @@ enum posix_signal_error_code posix_signal_reset(int *out_status) {
   g_blocked_signals = 0;
   g_pending_signals = 0;
   *out_status = 1;
-  return POSIX_SIGNAL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
@@ -734,44 +733,62 @@ int posix_signal_sigismember(const sigset_t *set, int signum) {
 }
 
 int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oset) {
-  (void)how;
-  (void)set;
-  (void)oset;
+  if (how < 0 || set == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (oset != NULL) {
+    *oset = 0;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int posix_signal_sigpending(sigset_t *set) {
-  (void)set;
+  if (set == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int posix_signal_sigsuspend(const sigset_t *mask) {
-  (void)mask;
+  if (mask == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int posix_signal_sigaction(int sig, const struct sigaction *act,
                            struct sigaction *oact) {
-  (void)sig;
-  (void)act;
-  (void)oact;
+  if (sig <= 0 || act == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (oact != NULL) {
+    /* oact valid */
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int posix_signal_kill(pid_t pid, int sig) {
-  (void)pid;
-  (void)sig;
+  if (pid == 0 || sig < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int posix_signal_killpg(pid_t pgrp, int sig) {
-  (void)pgrp;
-  (void)sig;
+  if (pgrp <= 0 || sig < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }

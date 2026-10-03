@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(_MSC_VER)
 #include <posix-stdint.h>
@@ -161,22 +162,12 @@ extern "C" {
 #endif /* defined(_MSC_VER) */
 
 /**
- * @brief Error codes returned by posix-inttypes functions.
- */
-enum posix_inttypes_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_INTTYPES_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_INTTYPES_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on inttypes polyfill availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_INTTYPES_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_inttypes_error_code posix_inttypes_get_info(int *out_available);
+auto_win_msvc_error_t posix_inttypes_get_info(int *out_available);
 
 #ifdef __cplusplus
 }

@@ -2,32 +2,23 @@
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
 
+/* clang-format off */
+#include "auto-win-msvc-error.h"
+/* clang-format on */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-time module functions.
- */
-enum posix_time_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_TIME_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_TIME_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument was provided. */
-  POSIX_TIME_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Retrieves information on posix-time module availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_TIME_SUCCESS on success, or POSIX_TIME_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_time_error_code posix_time_get_info(int *out_available);
+auto_win_msvc_error_t posix_time_get_info(int *out_available);
 
-/* clang-format off */
 #include <time.h>
 
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
@@ -91,14 +82,14 @@ struct itimerval {
 /**
  * @brief Adds timeval structures: result = a + b.
  */
-#define timeradd(a, b, result)                                                \
-  do {                                                                        \
-    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;                            \
-    (result)->tv_usec = (a)->tv_usec + (b)->tv_usec;                          \
-    if ((result)->tv_usec >= 1000000L) {                                      \
-      ++(result)->tv_sec;                                                     \
-      (result)->tv_usec -= 1000000L;                                          \
-    }                                                                         \
+#define timeradd(a, b, result)                                                 \
+  do {                                                                         \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;                              \
+    (result)->tv_usec = (a)->tv_usec + (b)->tv_usec;                           \
+    if ((result)->tv_usec >= 1000000L) {                                       \
+      ++(result)->tv_sec;                                                      \
+      (result)->tv_usec -= 1000000L;                                           \
+    }                                                                          \
   } while (0)
 #endif
 
@@ -106,14 +97,14 @@ struct itimerval {
 /**
  * @brief Subtracts timeval structures: result = a - b.
  */
-#define timersub(a, b, result)                                                \
-  do {                                                                        \
-    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                            \
-    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                          \
-    if ((result)->tv_usec < 0L) {                                             \
-      --(result)->tv_sec;                                                     \
-      (result)->tv_usec += 1000000L;                                          \
-    }                                                                         \
+#define timersub(a, b, result)                                                 \
+  do {                                                                         \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                              \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                           \
+    if ((result)->tv_usec < 0L) {                                              \
+      --(result)->tv_sec;                                                      \
+      (result)->tv_usec += 1000000L;                                           \
+    }                                                                          \
   } while (0)
 #endif
 
@@ -135,9 +126,9 @@ struct itimerval {
 /**
  * @brief Compares two timeval structures using comparison operator CMP.
  */
-#define timercmp(a, b, CMP)                                                   \
-  (((a)->tv_sec == (b)->tv_sec) ? ((a)->tv_usec CMP (b)->tv_usec)             \
-                                : ((a)->tv_sec CMP (b)->tv_sec))
+#define timercmp(a, b, CMP)                                                    \
+  (((a)->tv_sec == (b)->tv_sec) ? ((a)->tv_usec CMP(b)->tv_usec)               \
+                                : ((a)->tv_sec CMP(b)->tv_sec))
 #endif
 
 /* Interval timer definitions */
@@ -164,7 +155,9 @@ struct itimerval {
 #define CLOCK_THREAD_CPUTIME_ID 3
 #endif
 
-#define utime _utime     /**< Map utime to _utime on Windows */
+#if defined(_MSC_VER)
+#include <sys/utime.h>
+#endif
 #define tzset _tzset     /**< Map tzset to _tzset on Windows */
 #define utimbuf _utimbuf /**< Map utimbuf to _utimbuf on Windows */
 
@@ -173,7 +166,6 @@ struct itimerval {
 /**
  * @brief Format string for 64-bit integers, accommodating different compilers.
  */
-
 
 /**
  * @brief Gets the value of an interval timer.
@@ -220,6 +212,14 @@ int utimes(const char *filename, const struct timeval times[2]);
  * @return 0 on success, -1 on error.
  */
 int clock_gettime(int clk_id, struct timespec *tp);
+
+/**
+ * @brief Set the time of the specified clock.
+ * @param clk_id The clock ID (e.g., CLOCK_REALTIME).
+ * @param tp A pointer to a timespec structure containing the new time.
+ * @return 0 on success, -1 on error.
+ */
+int clock_settime(int clk_id, const struct timespec *tp);
 
 /**
  * @brief High-resolution sleep with nanosecond precision.

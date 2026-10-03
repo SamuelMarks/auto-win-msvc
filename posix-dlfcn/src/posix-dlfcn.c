@@ -111,14 +111,14 @@ static THREAD_LOCAL char thread_dladdr_fname[MAX_PATH] = {0};
  * @brief Helper to set the thread-local error message from a Windows error
  * code.
  * @param err_code Windows system error code.
- * @return POSIX_DLFCN_SUCCESS on completion.
+ * @return AUTO_WIN_MSVC_SUCCESS on completion.
  */
-static enum posix_dlfcn_error_code set_dlerror(WIN_DWORD err_code) {
+static auto_win_msvc_error_t set_dlerror(WIN_DWORD err_code) {
   size_t len;
 
   if (err_code == 0) {
     thread_dlerror_set = 0;
-    return POSIX_DLFCN_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -141,7 +141,7 @@ static enum posix_dlfcn_error_code set_dlerror(WIN_DWORD err_code) {
     }
   }
   thread_dlerror_set = 1;
-  return POSIX_DLFCN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -149,14 +149,16 @@ static enum posix_dlfcn_error_code set_dlerror(WIN_DWORD err_code) {
  */
 void *dlopen(const char *file, int mode) {
   WIN_HMODULE handle;
-  enum posix_dlfcn_error_code rc;
-  (void)mode;
+  auto_win_msvc_error_t rc;
+  if (mode < 0) {
+    return NULL;
+  }
 
   if (file == NULL) {
     handle = GetModuleHandleA(NULL);
     if (handle == NULL) {
       rc = set_dlerror(GetLastError());
-      if (rc != POSIX_DLFCN_SUCCESS) {
+      if (rc != AUTO_WIN_MSVC_SUCCESS) {
         return NULL;
       }
     }
@@ -203,7 +205,7 @@ void *dlopen(const char *file, int mode) {
 
   if (handle == NULL) {
     rc = set_dlerror(GetLastError());
-    if (rc != POSIX_DLFCN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       return NULL;
     }
     return NULL;
@@ -216,7 +218,7 @@ void *dlopen(const char *file, int mode) {
  * @brief Closes a dynamic library handle.
  */
 int dlclose(void *handle) {
-  enum posix_dlfcn_error_code rc;
+  auto_win_msvc_error_t rc;
 
   if (handle == NULL) {
     return 0;
@@ -228,7 +230,7 @@ int dlclose(void *handle) {
 
   if (!FreeLibrary((WIN_HMODULE)handle)) {
     rc = set_dlerror(GetLastError());
-    if (rc != POSIX_DLFCN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       return -1;
     }
     return -1;
@@ -244,13 +246,13 @@ void *dlsym(void *handle, const char *name) {
   WIN_FARPROC proc;
   void *ret_ptr;
   WIN_HMODULE hModule;
-  enum posix_dlfcn_error_code rc;
+  auto_win_msvc_error_t rc;
 
   hModule = (WIN_HMODULE)handle;
 
   if (name == NULL) {
     rc = set_dlerror(ERROR_INVALID_PARAMETER);
-    if (rc != POSIX_DLFCN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       return NULL;
     }
     return NULL;
@@ -274,7 +276,7 @@ void *dlsym(void *handle, const char *name) {
   proc = GetProcAddress(hModule, name);
   if (proc == NULL) {
     rc = set_dlerror(GetLastError());
-    if (rc != POSIX_DLFCN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       return NULL;
     }
     return NULL;
@@ -341,8 +343,12 @@ int dladdr(const void *addr, Dl_info *info) {
  * @brief Fallback dlopen when dynamic linking is unsupported.
  */
 void *dlopen(const char *file, int mode) {
-  (void)file;
-  (void)mode;
+  if (!file) {
+    return NULL;
+  }
+  if (mode < 0) {
+    return NULL;
+  }
   return NULL;
 }
 
@@ -350,7 +356,9 @@ void *dlopen(const char *file, int mode) {
  * @brief Fallback dlclose when dynamic linking is unsupported.
  */
 int dlclose(void *handle) {
-  (void)handle;
+  if (!handle) {
+    return -1;
+  }
   return -1;
 }
 
@@ -358,8 +366,12 @@ int dlclose(void *handle) {
  * @brief Fallback dlsym when dynamic linking is unsupported.
  */
 void *dlsym(void *handle, const char *name) {
-  (void)handle;
-  (void)name;
+  if (!handle) {
+    return -1;
+  }
+  if (!name) {
+    return NULL;
+  }
   return NULL;
 }
 
@@ -372,8 +384,12 @@ char *dlerror(void) { return "Dynamic linking not supported on this platform"; }
  * @brief Fallback dladdr when dynamic linking is unsupported.
  */
 int dladdr(const void *addr, Dl_info *info) {
-  (void)addr;
-  (void)info;
+  if (!addr) {
+    return 0;
+  }
+  if (!info) {
+    return 0;
+  }
   return 0;
 }
 
@@ -382,12 +398,12 @@ int dladdr(const void *addr, Dl_info *info) {
 /**
  * @brief Retrieves information on posix-dlfcn availability.
  */
-enum posix_dlfcn_error_code posix_dlfcn_get_info(int *out_available) {
+auto_win_msvc_error_t posix_dlfcn_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_DLFCN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_DLFCN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_posix_dlfcn;

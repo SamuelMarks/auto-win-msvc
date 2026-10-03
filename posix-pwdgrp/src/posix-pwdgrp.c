@@ -612,6 +612,22 @@ struct passwd *getpwuid(uid_t uid) {
   return NULL;
 }
 
+/** \brief getgrouplist function. */
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
+  if (user == NULL || ngroups == NULL) {
+    return -1;
+  }
+  if (*ngroups < 1) {
+    *ngroups = 1;
+    return -1;
+  }
+  if (groups != NULL) {
+    groups[0] = group;
+  }
+  *ngroups = 1;
+  return 1;
+}
+
 #else /* _WIN32 */
 
 /* Prevent 'empty translation unit' warning on strictly compliant compilers */

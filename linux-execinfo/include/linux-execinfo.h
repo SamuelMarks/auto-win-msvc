@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -23,24 +24,12 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by linux-execinfo functions.
- */
-enum linux_execinfo_error_code {
-  /** @brief Successful operation. */
-  LINUX_EXECINFO_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  LINUX_EXECINFO_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed to function. */
-  LINUX_EXECINFO_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the linux-execinfo module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_EXECINFO_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_execinfo_error_code linux_execinfo_init(int *out_status);
+auto_win_msvc_error_t linux_execinfo_init(int *out_status);
 
 /**
  * @brief Captures a stack backtrace.

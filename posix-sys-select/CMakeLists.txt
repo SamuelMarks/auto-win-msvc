@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(posix-sys-select STATIC src/posix-sys-select.c)
 set_target_properties(posix-sys-select PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-sys-select PUBLIC include)
+target_include_directories(posix-sys-select PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if(MSVC)
     target_compile_definitions(posix-sys-select PRIVATE )

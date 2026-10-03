@@ -83,7 +83,7 @@ endif()
 
 add_library(solaris-sys-byteorder src/solaris-sys-byteorder.c)
 set_target_properties(solaris-sys-byteorder PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(solaris-sys-byteorder PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
+target_include_directories(solaris-sys-byteorder PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()

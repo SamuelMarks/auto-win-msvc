@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -15,22 +16,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by linux-features functions.
- */
-enum linux_features_error_code {
-  /** @brief Successful operation. */
-  LINUX_FEATURES_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  LINUX_FEATURES_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Initializes and validates the linux-features module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return LINUX_FEATURES_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_features_error_code linux_features_init(int *out_status);
+auto_win_msvc_error_t linux_features_init(int *out_status);
 
 #ifdef __cplusplus
 }

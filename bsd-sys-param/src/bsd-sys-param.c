@@ -6,12 +6,12 @@
 /**
  * @brief Retrieves the maximum path length.
  */
-enum bsd_sys_param_error_code bsd_sys_param_get_maxpathlen(size_t *out_maxlen) {
+auto_win_msvc_error_t bsd_sys_param_get_maxpathlen(size_t *out_maxlen) {
   if (out_maxlen == NULL) {
-    return BSD_SYS_PARAM_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_maxlen = (size_t)MAXPATHLEN;
-  return BSD_SYS_PARAM_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_param;

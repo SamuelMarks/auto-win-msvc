@@ -27,13 +27,12 @@
 /**
  * @brief Retrieves information on posix-sys-resource availability.
  */
-enum posix_sys_resource_error_code
-posix_sys_resource_get_info(int *out_available) {
+auto_win_msvc_error_t posix_sys_resource_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SYS_RESOURCE_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SYS_RESOURCE_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -145,7 +144,10 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
     defined(__CYGWIN__)
   return getrlimit(resource, (struct rlimit *)rlp);
 #else
-  (void)resource;
+  if (resource < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   rlp->rlim_cur = RLIM_INFINITY;
   rlp->rlim_max = RLIM_INFINITY;
   return 0;
@@ -161,7 +163,10 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
     defined(__CYGWIN__)
   return setrlimit(resource, (const struct rlimit *)rlp);
 #else
-  (void)resource;
+  if (resource < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 #endif
 }

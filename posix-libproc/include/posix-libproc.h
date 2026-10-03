@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -15,25 +16,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-libproc functions.
- */
-enum posix_libproc_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_LIBPROC_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_LIBPROC_ERROR_NULL_POINTER = 1,
-  /** @brief Provided buffer is insufficient to store path. */
-  POSIX_LIBPROC_ERROR_BUFFER_TOO_SMALL = 2
-};
-
-/**
  * @brief Retrieves information on posix-libproc availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_LIBPROC_SUCCESS on success, or
- * POSIX_LIBPROC_ERROR_NULL_POINTER on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_libproc_error_code posix_libproc_get_info(int *out_available);
+auto_win_msvc_error_t posix_libproc_get_info(int *out_available);
 
 /**
  * @brief Retrieves the filesystem path for the given process ID.

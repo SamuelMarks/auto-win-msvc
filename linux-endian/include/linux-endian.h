@@ -8,6 +8,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER)
 #include <stdlib.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
@@ -172,22 +173,12 @@ extern "C" {
 #endif /* _MSC_VER */
 
 /**
- * @brief Error codes returned by linux-endian functions.
- */
-enum linux_endian_error_code {
-  /** @brief Successful operation. */
-  LINUX_ENDIAN_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  LINUX_ENDIAN_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves the current host byte order.
  * @param[out] out_byte_order Pointer to an integer that receives the byte
  * order.
- * @return LINUX_ENDIAN_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_endian_error_code linux_endian_get_byte_order(int *out_byte_order);
+auto_win_msvc_error_t linux_endian_get_byte_order(int *out_byte_order);
 
 #ifdef __cplusplus
 }

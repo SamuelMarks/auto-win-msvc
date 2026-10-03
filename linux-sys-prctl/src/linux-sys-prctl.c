@@ -128,7 +128,8 @@ static int g_pdeathsig_signum = 0;
  *
  * \param option The operation to perform.
  * \param ... Variable arguments based on the option.
- * eturn 0 on success, or non-zero error code.
+ *
+eturn 0 on success, or non-zero error code.
  */
 error_type_t prctl(int option, ...) {
   va_list ap;
@@ -330,7 +331,10 @@ error_type_t prctl(int option, ...) {
 #elif defined(_WIN32)
 
 error_type_t prctl(int option, ...) {
-  (void)option;
+  if (option < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   return ENOSYS;
 }
 
@@ -340,14 +344,14 @@ error_type_t prctl(int option, ...) {
  * @brief Initializes and validates the linux-sys-prctl module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_SYS_PRCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_sys_prctl_error_code linux_sys_prctl_init(int *out_status) {
+auto_win_msvc_error_t linux_sys_prctl_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_SYS_PRCTL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_SYS_PRCTL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_sys_prctl;

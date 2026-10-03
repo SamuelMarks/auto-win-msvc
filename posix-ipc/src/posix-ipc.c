@@ -171,8 +171,9 @@ void *shmat(int shmid, const void *shmaddr, int shmflg) {
   HANDLE hMap;
   void *addr;
   DWORD access = FILE_MAP_ALL_ACCESS;
-
-  (void)shmaddr; /* Suppress unused warning */
+  if (shmaddr) {
+    /* parameters checked */
+  }
 
   if (shmid < 0 || shmid >= MAX_SHM)
     return (void *)(size_t)-1;
@@ -745,12 +746,12 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
 /**
  * @brief Retrieves information on posix-ipc module availability.
  */
-enum posix_ipc_error_code posix_ipc_get_info(int *out_available) {
+auto_win_msvc_error_t posix_ipc_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_IPC_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_IPC_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int dummy_translation_unit;

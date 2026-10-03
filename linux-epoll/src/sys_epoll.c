@@ -4,25 +4,34 @@
 
 #if defined(_MSC_VER) || defined(_WIN32)
 #include <errno.h>
+#include <stddef.h>
 
 int epoll_pwait(int epfd, struct epoll_event *events, int maxevents,
                 int timeout, const void *sigmask) {
-  (void)epfd;
-  (void)events;
-  (void)maxevents;
-  (void)timeout;
-  (void)sigmask;
+  if (epfd < 0 || events == NULL || maxevents <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (timeout < -1) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (sigmask != NULL) {
+    /* sigmask provided */
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents,
                  const void *timeout, const void *sigmask) {
-  (void)epfd;
-  (void)events;
-  (void)maxevents;
-  (void)timeout;
-  (void)sigmask;
+  if (epfd < 0 || events == NULL || maxevents <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (timeout != NULL || sigmask != NULL) {
+    /* valid */
+  }
   errno = ENOSYS;
   return -1;
 }

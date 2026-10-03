@@ -56,25 +56,13 @@ typedef int error_type_t;
 #include <unistd.h>
 #endif
 #endif
-/* clang-format on */
+#include "auto-win-msvc-error.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Error codes returned by posix-core operations.
- */
-enum posix_core_error_code {
-  /** @brief Successful operation. */
-  POSIX_CORE_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  POSIX_CORE_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed. */
-  POSIX_CORE_ERROR_INVALID_ARGUMENT = 2,
-  /** @brief Operation failed or system error. */
-  POSIX_CORE_ERROR_OPERATION_FAILED = 3
-};
+
 
 /**
  * @brief Initializes and validates the posix-core module.
@@ -82,7 +70,7 @@ enum posix_core_error_code {
  * status.
  * @return POSIX_CORE_SUCCESS on success, or an error code on failure.
  */
-enum posix_core_error_code posix_core_init(int *out_status);
+auto_win_msvc_error_t posix_core_init(int *out_status);
 
 #ifndef NUM_FORMAT_CAST
 #if defined(_MSC_VER)
@@ -167,6 +155,11 @@ typedef unsigned short mode_t;
 #define _OFF_T_DEFINED
 typedef long _off_t;
 typedef _off_t off_t;
+#elif !defined(_OFF_T_POSIX_DEFINED)
+#define _OFF_T_POSIX_DEFINED
+#if defined(_MSC_VER) && !defined(off_t)
+typedef _off_t off_t;
+#endif
 #endif
 
 #ifndef _USECONDS_T_DEFINED
@@ -460,6 +453,19 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
 /** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...);
 
+/**
+ * @brief Create a file with POSIX semantics.
+ * @param[in] pathname Path to the file to create.
+ * @param[in] mode Permissions for the new file.
+ * @return File descriptor on success, -1 on failure.
+ */
+int posix_creat(const char *pathname, mode_t mode);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef creat
+#define creat posix_creat
+#endif
+#endif
+
 /** @brief lseek */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef lseek
@@ -498,7 +504,11 @@ int posix_dup2(int oldfd, int newfd);
 /** @brief ftruncate */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef ftruncate
-#define ftruncate(fd, size) _chsize(fd, (long)(size))
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define ftruncate(fd, size) _chsize_s((fd), (__int64)(size))
+#else
+#define ftruncate(fd, size) _chsize((fd), (long)(size))
+#endif
 #endif
 #else
 /* ftruncate */
@@ -687,6 +697,89 @@ int fcntl(intptr_t fd, int cmd, ...);
 #ifndef AT_REMOVEDIR
 #define AT_REMOVEDIR 0x200
 #endif
+
+/**
+ * @brief Sets an environment variable.
+ * @param[in] name Variable name.
+ * @param[in] value Variable value.
+ * @param[in] overwrite Flag whether to overwrite existing variable.
+ * @return 0 on success, -1 on failure.
+ */
+int setenv(const char *name, const char *value, int overwrite);
+
+/**
+ * @brief Unsets an environment variable.
+ * @param[in] name Variable name.
+ * @return 0 on success, -1 on failure.
+ */
+int unsetenv(const char *name);
+
+/**
+ * @brief Clears the environment.
+ * @return 0 on success, -1 on failure.
+ */
+int clearenv(void);
+
+/**
+ * @brief Duplicates at most n bytes of a string.
+ * @param[in] s String to duplicate.
+ * @param[in] n Maximum number of bytes to copy.
+ * @return Pointer to newly allocated duplicate string, or NULL on error.
+ */
+char *strndup(const char *s, size_t n);
+
+/**
+ * @brief Allocates and prints to a string buffer using va_list.
+ * @param[out] strp Pointer to output string buffer.
+ * @param[in] fmt Format string.
+ * @param[in] ap Argument list.
+ * @return Number of characters printed on success, -1 on error.
+ */
+int vasprintf(char **strp, const char *fmt, va_list ap);
+
+/**
+ * @brief Allocates and prints to a string buffer.
+ * @param[out] strp Pointer to output string buffer.
+ * @param[in] fmt Format string.
+ * @return Number of characters printed on success, -1 on error.
+ */
+int asprintf(char **strp, const char *fmt, ...);
+
+/**
+ * @brief Prints formatted output to a file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[in] fmt Format string.
+ * @return Number of characters printed on success, -1 on error.
+ */
+int dprintf(int fd, const char *fmt, ...);
+
+/**
+ * @brief Gets the memory page size.
+ * @return System page size in bytes.
+ */
+int getpagesize(void);
+
+/**
+ * @brief Resolves an absolute or canonical path.
+ * @param[in] path Input pathname.
+ * @param[out] resolved_path Buffer to store resolved path, or NULL to allocate.
+ * @return Pointer to resolved path, or NULL on error.
+ */
+char *realpath(const char *path, char *resolved_path);
+
+/**
+ * @brief Changes working directory given an open directory file descriptor.
+ * @param[in] fd Open directory file descriptor.
+ * @return 0 on success, -1 on error.
+ */
+int fchdir(int fd);
+
+/**
+ * @brief Changes the root directory.
+ * @param[in] path Pathname of the new root directory.
+ * @return 0 on success, -1 on error.
+ */
+int chroot(const char *path);
 
 /** \brief Flag to follow symlinks for linkat. */
 #ifndef AT_SYMLINK_FOLLOW
@@ -1209,6 +1302,18 @@ int posix_mkstemp(char *tmpl);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef mkstemp
 #define mkstemp posix_mkstemp
+#endif
+#endif
+
+/**
+ * @brief mkdtemp creates a unique temporary directory from a template.
+ * @param[in,out] tmpl Directory name template ending with XXXXXX.
+ * @return Pointer to modified tmpl on success, NULL on failure with errno set.
+ */
+char *posix_mkdtemp(char *tmpl);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef mkdtemp
+#define mkdtemp posix_mkdtemp
 #endif
 #endif
 

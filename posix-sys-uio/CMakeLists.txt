@@ -91,7 +91,7 @@ endif()
 
 add_library(posix-sys-uio src/posix-sys-uio.c)
 set_target_properties(posix-sys-uio PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-sys-uio PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-sys-uio PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if(MSVC OR WIN32)
     target_link_libraries(posix-sys-uio PUBLIC ws2_32)

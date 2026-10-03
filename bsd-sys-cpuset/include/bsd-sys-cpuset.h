@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
     defined(__NetBSD__) || defined(__linux__) || defined(__CYGWIN__)
@@ -27,24 +28,12 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by bsd-sys-cpuset functions.
- */
-enum bsd_sys_cpuset_error_code {
-  /** @brief Successful operation. */
-  BSD_SYS_CPUSET_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_SYS_CPUSET_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed to function. */
-  BSD_SYS_CPUSET_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the bsd-sys-cpuset module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return BSD_SYS_CPUSET_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_cpuset_error_code bsd_sys_cpuset_init(int *out_status);
+auto_win_msvc_error_t bsd_sys_cpuset_init(int *out_status);
 
 #ifndef CPU_SETSIZE
 /** @brief Maximum number of CPUs in a cpuset. */

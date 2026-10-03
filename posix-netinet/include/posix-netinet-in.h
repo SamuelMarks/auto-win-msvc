@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -47,23 +48,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-netinet functions.
- */
-enum posix_netinet_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_NETINET_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_NETINET_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-netinet availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_NETINET_SUCCESS on success, or
- * POSIX_NETINET_ERROR_NULL_POINTER on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_netinet_error_code posix_netinet_get_info(int *out_available);
+auto_win_msvc_error_t posix_netinet_get_info(int *out_available);
 
 /**
  * @brief Checks if an IPv4 address (in host byte order) is in the loopback
@@ -71,11 +62,11 @@ enum posix_netinet_error_code posix_netinet_get_info(int *out_available);
  * @param[in] addr IPv4 address in host byte order.
  * @param[out] out_is_loopback Pointer to integer receiving 1 if loopback, 0
  * otherwise.
- * @return POSIX_NETINET_SUCCESS on success, or
- * POSIX_NETINET_ERROR_NULL_POINTER on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_netinet_error_code
-posix_netinet_is_ipv4_loopback(unsigned long addr, int *out_is_loopback);
+auto_win_msvc_error_t posix_netinet_is_ipv4_loopback(unsigned long addr,
+                                                     int *out_is_loopback);
 
 #ifdef __cplusplus
 }

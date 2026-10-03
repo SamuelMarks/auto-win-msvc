@@ -12,16 +12,18 @@
 
 static int g_test_handler_called = 0;
 static void test_custom_handler(int signum) {
-  (void)signum;
+  if (signum) {
+    /* parameters checked */
+  }
   g_test_handler_called++;
 }
 
 #if defined(_WIN32) || defined(_MSC_VER)
 static int g_test_sigaction_called = 0;
 static void test_custom_sigaction(int signum, siginfo_t *si, void *ctx) {
-  (void)signum;
-  (void)si;
-  (void)ctx;
+  if (signum || si || ctx) {
+    /* parameters checked */
+  }
   g_test_sigaction_called++;
 }
 
@@ -63,30 +65,30 @@ __declspec(dllimport) int __stdcall CloseHandle(void *hObject);
 #endif
 
 TEST test_posix_signal_get_info(void) {
-  enum posix_signal_error_code rc;
+  auto_win_msvc_error_t rc;
   int avail;
 
   avail = 0;
   rc = posix_signal_get_info(NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_get_info(&avail);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, avail);
 
   PASS();
 }
 
 TEST test_posix_signal_init(void) {
-  enum posix_signal_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = posix_signal_init(NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_init(&status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, status);
 
   PASS();
@@ -413,14 +415,14 @@ TEST test_posix_signal_kill(void) {
   int res;
 #if defined(_WIN32) || defined(_MSC_VER)
   pid_t cur_pid;
-  enum posix_signal_error_code rc;
+  auto_win_msvc_error_t rc;
 
   cur_pid = 0;
   rc = posix_signal_get_current_pid(NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_get_current_pid(&cur_pid);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT(cur_pid > 0);
 
   res = kill(0, 0);
@@ -492,30 +494,30 @@ TEST test_sigsetmask_and_sigblock(void) {
 
 #if defined(_WIN32) || defined(_MSC_VER)
 TEST test_posix_signal_is_crt_signal(void) {
-  enum posix_signal_error_code rc;
+  auto_win_msvc_error_t rc;
   int is_crt;
 
   is_crt = 0;
   rc = posix_signal_is_crt_signal(SIGINT, NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_is_crt_signal(SIGINT, &is_crt);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, is_crt);
 
   rc = posix_signal_is_crt_signal(SIGSEGV, &is_crt);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, is_crt);
 
   rc = posix_signal_is_crt_signal(SIGUSR1, &is_crt);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, is_crt);
 
   PASS();
 }
 
 TEST test_posix_signal_simulations(void) {
-  enum posix_signal_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
   long result;
   sigset_t set;
@@ -523,21 +525,21 @@ TEST test_posix_signal_simulations(void) {
 
   /* Reset test */
   rc = posix_signal_reset(NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_reset(&status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, status);
 
   /* Simulate signal test */
   rc = posix_signal_simulate_signal(SIGINT, NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_signal_simulate_signal(0, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   rc = posix_signal_simulate_signal(32, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   /* Signal blocked in simulation */
   sigemptyset(&set);
@@ -545,7 +547,7 @@ TEST test_posix_signal_simulations(void) {
   sigprocmask(SIG_SETMASK, &set, NULL);
 
   rc = posix_signal_simulate_signal(SIGUSR1, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   /* Verify it became pending */
   sigemptyset(&set);
@@ -570,7 +572,7 @@ TEST test_posix_signal_simulations(void) {
   sigprocmask(SIG_SETMASK, &set, NULL);
 
   rc = posix_signal_simulate_signal(SIGUSR2, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   g_test_sigaction_called = 0;
   sigemptyset(&set);
@@ -580,37 +582,37 @@ TEST test_posix_signal_simulations(void) {
   /* Direct simulation unblocked with SA_SIGINFO */
   g_test_sigaction_called = 0;
   rc = posix_signal_simulate_signal(SIGUSR2, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_sigaction_called);
 
   /* Direct simulation unblocked with handler */
   g_test_handler_called = 0;
   rc = posix_signal_simulate_signal(SIGUSR1, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_handler_called);
 
   /* Direct simulation with default/ignore handler */
   signal(SIGUSR1, SIG_DFL);
   rc = posix_signal_simulate_signal(SIGUSR1, &status);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   /* Test VEH simulations */
   rc = posix_signal_simulate_exception(0, NULL);
-  ASSERT_EQ(POSIX_SIGNAL_ERROR_NULL_POINTER, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   /* Null ExceptionInfo */
   rc = posix_signal_simulate_exception(0, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, result);
 
   /* Null ExceptionRecord */
   rc = posix_signal_simulate_exception(1, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, result);
 
   /* Unknown code */
   rc = posix_signal_simulate_exception(0x12345678UL, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, result); /* EXCEPTION_CONTINUE_SEARCH */
 
   /* Block SIGSEGV and simulate ACCESS_VIOLATION */
@@ -618,7 +620,7 @@ TEST test_posix_signal_simulations(void) {
   sigaddset(&set, SIGSEGV);
   sigprocmask(SIG_SETMASK, &set, NULL);
   rc = posix_signal_simulate_exception(0xC0000005UL, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(0, result);
 
   /* Unblock SIGSEGV */
@@ -633,7 +635,7 @@ TEST test_posix_signal_simulations(void) {
 
   g_test_sigaction_called = 0;
   rc = posix_signal_simulate_exception(0xC0000005UL, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_sigaction_called);
 
   /* Setup regular handler on SIGILL */
@@ -644,7 +646,7 @@ TEST test_posix_signal_simulations(void) {
 
   g_test_handler_called = 0;
   rc = posix_signal_simulate_exception(0xC000001DUL, &result);
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_handler_called);
 
   /* Test SIGFPE exceptions */
@@ -656,13 +658,13 @@ TEST test_posix_signal_simulations(void) {
   g_test_handler_called = 0;
   rc = posix_signal_simulate_exception(0xC0000094UL,
                                        &result); /* INT_DIVIDE_BY_ZERO */
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_handler_called);
 
   g_test_handler_called = 0;
   rc = posix_signal_simulate_exception(0xC000008EUL,
                                        &result); /* FLT_DIVIDE_BY_ZERO */
-  ASSERT_EQ(POSIX_SIGNAL_SUCCESS, rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_handler_called);
 
   /* Cleanup */

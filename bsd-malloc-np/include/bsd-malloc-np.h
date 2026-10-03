@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -23,24 +24,12 @@ typedef int error_type_t;
 #endif
 
 /**
- * @brief Error codes returned by bsd-malloc-np functions.
- */
-enum bsd_malloc_np_error_code {
-  /** @brief Successful operation. */
-  BSD_MALLOC_NP_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_MALLOC_NP_ERROR_NULL_POINTER = 1,
-  /** @brief I/O or formatting error occurred. */
-  BSD_MALLOC_NP_ERROR_IO = 2
-};
-
-/**
  * @brief Validates or initializes the bsd-malloc-np module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return BSD_MALLOC_NP_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_malloc_np_error_code bsd_malloc_np_init(int *out_status);
+auto_win_msvc_error_t bsd_malloc_np_init(int *out_status);
 
 /**
  * @brief jemalloc stats print polyfill function.

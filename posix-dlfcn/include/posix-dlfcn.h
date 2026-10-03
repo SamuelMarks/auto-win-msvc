@@ -8,6 +8,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
 #include <dlfcn.h>
 #endif
@@ -19,23 +20,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-dlfcn functions.
- */
-enum posix_dlfcn_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_DLFCN_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_DLFCN_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-dlfcn availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_DLFCN_SUCCESS on success, or POSIX_DLFCN_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_dlfcn_error_code posix_dlfcn_get_info(int *out_available);
+auto_win_msvc_error_t posix_dlfcn_get_info(int *out_available);
 
 #if !defined(__linux__) && !defined(__CYGWIN__) && !defined(__APPLE__) &&      \
     !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) &&  \

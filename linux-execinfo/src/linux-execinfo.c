@@ -227,7 +227,9 @@ char **backtrace_symbols(void *const *buffer, int size) {
 }
 
 error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
-  (void)fd;
+  if (fd < 0) {
+    return -1;
+  }
   if (size <= 0 || !buffer)
     return -1;
   return ERR_NONE;
@@ -236,12 +238,12 @@ error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 #endif /* _MSC_VER */
 
 /** @brief Initializes and validates the linux-execinfo module. */
-enum linux_execinfo_error_code linux_execinfo_init(int *out_status) {
+auto_win_msvc_error_t linux_execinfo_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_EXECINFO_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_EXECINFO_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_execinfo;

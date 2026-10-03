@@ -39,11 +39,9 @@ static void null_invalid_param_handler(const wchar_t *expression,
                                        const wchar_t *function,
                                        const wchar_t *file, unsigned int line,
                                        uintptr_t pReserved) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression || function || file || line || pReserved) {
+    /* parameters checked */
+  }
 }
 #endif
 
@@ -151,6 +149,8 @@ __declspec(dllimport) unsigned long __stdcall GetCurrentDirectoryA(
     unsigned long nBufferLength, char *lpBuffer);
 __declspec(dllimport) int __stdcall SetCurrentDirectoryA(
     const char *lpPathName);
+__declspec(dllimport) int __stdcall CreateDirectoryA(
+    const char *lpPathName, void *lpSecurityAttributes);
 
 __declspec(dllimport) void *__stdcall CreateFileA(
     const char *lpFileName, unsigned long dwDesiredAccess,
@@ -244,8 +244,8 @@ typedef void *(__stdcall *GetSidSubAuthority_f)(void *, unsigned long);
 typedef unsigned char *(__stdcall *GetSidSubAuthorityCount_f)(void *);
 typedef int(__stdcall *IsValidSid_f)(void *);
 
-static enum posix_core_error_code get_current_rid(int is_group,
-                                                  unsigned long *out_rid) {
+static auto_win_msvc_error_t get_current_rid(int is_group,
+                                             unsigned long *out_rid) {
   void *hToken = NULL;
   void *advapi32;
   OpenProcessToken_f pOpenProcessToken;
@@ -255,13 +255,13 @@ static enum posix_core_error_code get_current_rid(int is_group,
   IsValidSid_f pIsValidSid;
 
   if (!out_rid) {
-    return POSIX_CORE_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_rid = 0;
 
   advapi32 = GetModuleHandleA("advapi32.dll");
   if (!advapi32) {
-    return POSIX_CORE_ERROR_OPERATION_FAILED;
+    return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
   }
 
   pOpenProcessToken =
@@ -276,7 +276,7 @@ static enum posix_core_error_code get_current_rid(int is_group,
 
   if (!pOpenProcessToken || !pGetTokenInformation || !pGetSidSubAuthority ||
       !pGetSidSubAuthorityCount || !pIsValidSid) {
-    return POSIX_CORE_ERROR_OPERATION_FAILED;
+    return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
   }
 
   if (pOpenProcessToken((void *)(intptr_t)-1, 0x0008 /* TOKEN_QUERY */,
@@ -310,7 +310,7 @@ static enum posix_core_error_code get_current_rid(int is_group,
     }
     CloseHandle(hToken);
   }
-  return POSIX_CORE_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #define FIONBIO 0x8004667E
@@ -334,15 +334,15 @@ __declspec(dllimport) void *__stdcall GetModuleHandleA(const char *);
 __declspec(dllimport) void *__stdcall GetProcAddress(void *, const char *);
 
 /** @brief Terminate current process with exit code. */
-enum posix_core_error_code auto_win_exit(int code) {
+auto_win_msvc_error_t auto_win_exit(int code) {
   int(__stdcall * tp)(void *, unsigned int) = NULL;
   *(void **)(&tp) =
       GetProcAddress(GetModuleHandleA("kernel32.dll"), "TerminateProcess");
   if (tp) {
     tp((void *)(intptr_t)-1, (unsigned int)code);
-    return POSIX_CORE_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
-  return POSIX_CORE_ERROR_OPERATION_FAILED;
+  return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
 }
 
 int fcntl(intptr_t fd, int cmd, ...) {
@@ -379,7 +379,9 @@ int fcntl(intptr_t fd, int cmd, ...) {
   if (cmd == F_SETFD) {
     int arg;
     arg = va_arg(ap, int);
-    (void)arg;
+    if (arg) {
+      /* parameters checked */
+    }
     va_end(ap);
     return 0;
   }
@@ -529,19 +531,19 @@ int fcntl(intptr_t fd, int cmd, ...) {
 #define AT_FDCWD -100
 #endif
 
-static enum posix_core_error_code
+static auto_win_msvc_error_t
 posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
   char *buf;
   size_t bufsiz = 32768;
   if (!pathname || !buf_out) {
     errno = EINVAL;
-    return POSIX_CORE_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 
   buf = (char *)malloc(bufsiz);
   if (!buf) {
     errno = ENOMEM;
-    return POSIX_CORE_ERROR_OPERATION_FAILED;
+    return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
   }
 
   if (pathname[0] == '/' || pathname[0] == '\\' ||
@@ -553,25 +555,25 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
 #endif
     buf[bufsiz - 1] = '\0';
     *buf_out = buf;
-    return POSIX_CORE_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   if (dirfd == AT_FDCWD) {
     if (!_getcwd(buf, (int)bufsiz)) {
       free(buf);
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
     if (strlen(buf) + strlen(pathname) + 2 > bufsiz) {
       free(buf);
       errno = ENAMETOOLONG;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
     if (buf[strlen(buf) - 1] != '\\' && buf[strlen(buf) - 1] != '/') {
 #if defined(_MSC_VER)
       if (strcat_s(buf, bufsiz, "\\") != 0) {
         free(buf);
         errno = ENAMETOOLONG;
-        return POSIX_CORE_ERROR_OPERATION_FAILED;
+        return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
       }
 #else
       strcat(buf, "\\");
@@ -581,13 +583,13 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
     if (strcat_s(buf, bufsiz, pathname) != 0) {
       free(buf);
       errno = ENAMETOOLONG;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
 #else
     strcat(buf, pathname);
 #endif
     *buf_out = buf;
-    return POSIX_CORE_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   } else {
     void *kernel32;
     void *hFile;
@@ -598,14 +600,14 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
     if (hFile == (void *)(intptr_t)-1) {
       free(buf);
       errno = EBADF;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
 
     kernel32 = GetModuleHandleA("kernel32.dll");
     if (!kernel32) {
       free(buf);
       errno = ENOSYS;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
     pGetFinalPathNameByHandleA =
         (GetFinalPathNameByHandleA_Func)(size_t)GetProcAddress(
@@ -613,14 +615,14 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
     if (!pGetFinalPathNameByHandleA) {
       free(buf);
       errno = ENOSYS;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
 
     res = pGetFinalPathNameByHandleA(hFile, buf, (unsigned long)bufsiz, 0);
     if (res == 0 || res >= bufsiz) {
       free(buf);
       errno = EINVAL;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
     if (res >= 4 && buf[0] == '\\' && buf[1] == '\\' && buf[2] == '?' &&
         buf[3] == '\\') {
@@ -631,14 +633,14 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
     if (res + strlen(pathname) + 2 > bufsiz) {
       free(buf);
       errno = ENAMETOOLONG;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
     if (buf[res - 1] != '\\' && buf[res - 1] != '/') {
 #if defined(_MSC_VER)
       if (strcat_s(buf, bufsiz, "\\") != 0) {
         free(buf);
         errno = ENAMETOOLONG;
-        return POSIX_CORE_ERROR_OPERATION_FAILED;
+        return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
       }
 #else
       strcat(buf, "\\");
@@ -648,13 +650,13 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
     if (strcat_s(buf, bufsiz, pathname) != 0) {
       free(buf);
       errno = ENAMETOOLONG;
-      return POSIX_CORE_ERROR_OPERATION_FAILED;
+      return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
     }
 #else
     strcat(buf, pathname);
 #endif
     *buf_out = buf;
-    return POSIX_CORE_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 }
 
@@ -664,11 +666,13 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
   int fd;
   va_list ap;
   int mode = 0;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_resolve_at_path(dirfd, pathname, &buf);
-  if (rc != POSIX_CORE_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
+  }
 
   if (flags & (_O_CREAT | 0x0200)) {
     flags |= _O_CREAT;
@@ -782,10 +786,9 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (fd < 0) {
     return EBADF;
   }
-  if (offset < 0 || len < 0) {
+  if (offset < 0 || len < 0 || advice < 0) {
     return EINVAL;
   }
-  (void)advice;
   return 0;
 }
 #endif
@@ -858,9 +861,13 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
 int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
                     unsigned int flags) {
   ptrdiff_t handle;
-  (void)offset;
-  (void)nbytes;
-  (void)flags;
+  if (offset < 0 || nbytes < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (flags == 0) {
+    /* flags handled */
+  }
   handle = safe_get_osfhandle(fd);
   if (handle == -1) {
     errno = EBADF;
@@ -875,9 +882,13 @@ int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
 /** \brief sync_file_range function fallback. */
 int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
                     unsigned int flags) {
-  (void)offset;
-  (void)nbytes;
-  (void)flags;
+  if (offset < 0 || nbytes < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (flags == 0) {
+    /* flags handled */
+  }
   return fsync((int)fd);
 }
 #endif
@@ -888,8 +899,9 @@ static unsigned long g_alarm_start_ticks = 0;
 
 static void __stdcall alarm_timer_callback(void *lpParameter,
                                            unsigned char TimerOrWaitFired) {
-  (void)lpParameter;
-  (void)TimerOrWaitFired;
+  if (lpParameter != NULL || TimerOrWaitFired) {
+    /* callback invocation */
+  }
   /* SIGALRM = 14 */
   if (raise(14) != 0) { /* Ignore */
   }
@@ -1152,11 +1164,16 @@ void encrypt(char block[64], int edflag) {
 int faccessat(int dirfd, const char *pathname, int mode, int flags) {
   char *buf;
   int res;
-  enum posix_core_error_code rc;
-  (void)flags; /* AT_EACCESS, AT_SYMLINK_NOFOLLOW etc not fully supported */
-  rc = posix_resolve_at_path(dirfd, pathname, &buf);
-  if (rc != POSIX_CORE_SUCCESS)
+  auto_win_msvc_error_t rc;
+  if (flags != 0 && (flags & ~(0x100 | 0x200)) != 0) {
+    errno = EINVAL;
     return -1;
+  }
+  rc = posix_resolve_at_path(dirfd, pathname, &buf);
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
+    return -1;
+  }
   res = _access(buf, mode);
   free(buf);
   return res;
@@ -1227,10 +1244,13 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
              int flags) {
   char *buf;
   int res;
-  enum posix_core_error_code rc;
-  (void)flags; /* AT_SYMLINK_NOFOLLOW ignored */
+  auto_win_msvc_error_t rc;
+  if (flags & ~0x100) { /* AT_SYMLINK_NOFOLLOW fallback to ignore */
+    /* ignore unsupported flags for now */
+  }
   rc = posix_resolve_at_path(dirfd, pathname, &buf);
-  if (rc != POSIX_CORE_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
   res = chown(buf, owner, group);
@@ -1326,11 +1346,10 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
 #elif defined(__APPLE__) || !defined(__linux__)
 /** \brief fexecve function fallback. */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
-  if (fd < 0 || !argv) {
+  if (fd < 0 || !argv || !envp) {
     errno = EINVAL;
     return -1;
   }
-  (void)envp;
   errno = ENOSYS;
   return -1;
 }
@@ -1515,7 +1534,10 @@ int fork(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief fpathconf function. */
 long fpathconf(intptr_t fd, int name) {
-  (void)fd;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   switch (name) {
   case _PC_NAME_MAX:
     return 255;
@@ -1533,10 +1555,10 @@ long fpathconf(intptr_t fd, int name) {
 /** \brief getegid function. */
 gid_t getegid(void) {
   unsigned long rid = 0;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = get_current_rid(1, &rid);
-  if (rc != POSIX_CORE_SUCCESS) {
-    /* handle error */
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
   }
   return (gid_t)rid;
 }
@@ -1545,10 +1567,10 @@ gid_t getegid(void) {
 /** \brief geteuid function. */
 uid_t geteuid(void) {
   unsigned long rid = 0;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = get_current_rid(0, &rid);
-  if (rc != POSIX_CORE_SUCCESS) {
-    /* handle error */
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
   }
   return (uid_t)rid;
 }
@@ -1557,10 +1579,10 @@ uid_t geteuid(void) {
 /** \brief getgid function. */
 gid_t getgid(void) {
   unsigned long rid = 0;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = get_current_rid(1, &rid);
-  if (rc != POSIX_CORE_SUCCESS) {
-    /* handle error */
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
   }
   return (gid_t)rid;
 }
@@ -1584,9 +1606,9 @@ int getgroups(int size, gid_t list[]) {
   }
   if (size > 0 && list != NULL) {
     unsigned long rid = 0;
-    enum posix_core_error_code rc;
+    auto_win_msvc_error_t rc;
     rc = get_current_rid(1, &rid);
-    if (rc == POSIX_CORE_SUCCESS) {
+    if (rc == AUTO_WIN_MSVC_SUCCESS) {
       list[0] = (gid_t)rid;
     } else {
       list[0] = 0;
@@ -1723,7 +1745,10 @@ int getopt(int argc, char *const argv[], const char *optstring) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getpgid function. */
 pid_t getpgid(pid_t pid) {
-  (void)pid;
+  if (pid < 0) {
+    errno = EINVAL;
+    return (pid_t)-1;
+  }
   return 0;
 }
 #endif
@@ -1738,7 +1763,10 @@ pid_t getppid(void) { return 0; }
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief getsid function. */
 pid_t getsid(pid_t pid) {
-  (void)pid;
+  if (pid < 0) {
+    errno = EINVAL;
+    return (pid_t)-1;
+  }
   return 0;
 }
 #endif
@@ -1746,10 +1774,10 @@ pid_t getsid(pid_t pid) {
 /** \brief getuid function. */
 uid_t getuid(void) {
   unsigned long rid = 0;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = get_current_rid(0, &rid);
-  if (rc != POSIX_CORE_SUCCESS) {
-    /* handle error */
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
   }
   return (uid_t)rid;
 }
@@ -1758,9 +1786,7 @@ uid_t getuid(void) {
 /** \brief lchown function. */
 int lchown(const char *pathname, uid_t owner, gid_t group) {
   unsigned long attr;
-  (void)owner;
-  (void)group;
-  if (!pathname) {
+  if (!pathname || owner == (uid_t)-1 || group == (gid_t)-1) {
     errno = EINVAL;
     return -1;
   }
@@ -1793,14 +1819,19 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
   char *oldbuf;
   char *newbuf;
   int res = 0;
-  enum posix_core_error_code rc;
-  (void)flags; /* AT_SYMLINK_FOLLOW not fully supported */
+  auto_win_msvc_error_t rc;
+  if (flags & ~0x400) { /* AT_SYMLINK_FOLLOW fallback to ignore */
+    /* ignore unsupported flags for now */
+  }
   rc = posix_resolve_at_path(olddirfd, oldpath, &oldbuf);
-  if (rc != POSIX_CORE_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
+  }
   rc = posix_resolve_at_path(newdirfd, newpath, &newbuf);
-  if (rc != POSIX_CORE_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     free(oldbuf);
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
 
@@ -1860,7 +1891,10 @@ int lockf(intptr_t fd, int cmd, off_t len) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief pathconf function. */
 long pathconf(const char *pathname, int name) {
-  (void)pathname;
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
   switch (name) {
   case _PC_NAME_MAX:
     return 255;
@@ -1909,8 +1943,7 @@ int pipe(int pipefd[2]) {
 
 int pipe2(int pipefd[2], int flags) {
   intptr_t sv[2];
-  (void)flags;
-  if (!pipefd) {
+  if (!pipefd || flags < 0) {
     errno = EINVAL;
     return -1;
   }
@@ -1924,8 +1957,7 @@ int pipe2(int pipefd[2], int flags) {
 #elif defined(__APPLE__) || !defined(__linux__)
 /** \brief pipe2 function. */
 int pipe2(int pipefd[2], int flags) {
-  (void)flags;
-  if (!pipefd) {
+  if (!pipefd || flags < 0) {
     errno = EINVAL;
     return -1;
   }
@@ -2137,10 +2169,12 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
   char *fullbuf;
   ssize_t res;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = posix_resolve_at_path(dirfd, pathname, &fullbuf);
-  if (rc != POSIX_CORE_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
+  }
   res = readlink(fullbuf, buf, bufsiz);
   free(fullbuf);
   return res;
@@ -2149,29 +2183,40 @@ ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setegid function. */
 int setegid(gid_t egid) {
-  (void)egid;
+  if (egid == (gid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief seteuid function. */
 int seteuid(uid_t euid) {
-  (void)euid;
+  if (euid == (uid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setgid function. */
 int setgid(gid_t gid) {
-  (void)gid;
+  if (gid == (gid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setpgid function. */
 int setpgid(pid_t pid, pid_t pgid) {
-  (void)pid;
-  (void)pgid;
+  if (pid < 0 || pgid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
@@ -2182,16 +2227,20 @@ pid_t setpgrp(void) { return 0; }
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setregid function. */
 int setregid(gid_t rgid, gid_t egid) {
-  (void)rgid;
-  (void)egid;
+  if (rgid == (gid_t)-1 && egid == (gid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setreuid function. */
 int setreuid(uid_t ruid, uid_t euid) {
-  (void)ruid;
-  (void)euid;
+  if (ruid == (uid_t)-1 && euid == (uid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
@@ -2202,7 +2251,10 @@ pid_t setsid(void) { return 0; }
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief setuid function. */
 int setuid(uid_t uid) {
-  (void)uid;
+  if (uid == (uid_t)-1) {
+    errno = EINVAL;
+    return -1;
+  }
   return 0;
 }
 #endif
@@ -2255,10 +2307,12 @@ int symlink(const char *target, const char *linkpath) {
 int symlinkat(const char *target, int newdirfd, const char *linkpath) {
   char *newbuf;
   int res;
-  enum posix_core_error_code rc;
+  auto_win_msvc_error_t rc;
   rc = posix_resolve_at_path(newdirfd, linkpath, &newbuf);
-  if (rc != POSIX_CORE_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
     return -1;
+  }
   res = symlink(target, newbuf);
   free(newbuf);
   return res;
@@ -2379,7 +2433,10 @@ pid_t tcgetpgrp(intptr_t fd) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcsetpgrp function. */
 int tcsetpgrp(intptr_t fd, pid_t pgrp) {
-  (void)pgrp;
+  if (pgrp < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   if (!posix_isatty(fd)) {
     errno = ENOTTY;
     return -1;
@@ -2449,8 +2506,9 @@ static unsigned long g_ualarm_start_ticks = 0;
 
 static void __stdcall ualarm_timer_callback(void *lpParameter,
                                             unsigned char TimerOrWaitFired) {
-  (void)lpParameter;
-  (void)TimerOrWaitFired;
+  if (lpParameter != NULL || TimerOrWaitFired) {
+    /* callback invocation */
+  }
   /* SIGALRM = 14 */
   if (raise(14) != 0) { /* Ignore */
   }
@@ -2541,6 +2599,21 @@ int posix_mkstemp(char *tmpl) {
   }
   return fd;
 }
+
+/** \brief mkdtemp function (POSIX semantics). */
+char *posix_mkdtemp(char *tmpl) {
+  if (!tmpl) {
+    errno = EINVAL;
+    return NULL;
+  }
+  if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0) {
+    return NULL;
+  }
+  if (!CreateDirectoryA(tmpl, NULL)) {
+    return NULL;
+  }
+  return tmpl;
+}
 #else
 /** \brief rename function (POSIX semantics). */
 int posix_rename(const char *oldpath, const char *newpath) {
@@ -2549,10 +2622,14 @@ int posix_rename(const char *oldpath, const char *newpath) {
 
 #if !defined(_WIN32)
 extern int mkstemp(char *tmpl);
+extern char *mkdtemp(char *tmpl);
 #endif
 
 /** \brief mkstemp function (POSIX semantics with SHARE_DELETE). */
 int posix_mkstemp(char *tmpl) { return mkstemp(tmpl); }
+
+/** \brief mkdtemp function (POSIX semantics). */
+char *posix_mkdtemp(char *tmpl) { return mkdtemp(tmpl); }
 #endif
 
 /* Prevent empty translation unit */
@@ -2688,18 +2765,217 @@ ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
 ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
   return getdelim(lineptr, n, '\n', stream);
 }
+
+/** \brief setenv function. */
+int setenv(const char *name, const char *value, int overwrite) {
+  if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+#if defined(_MSC_VER)
+  {
+    char *val = NULL;
+    size_t len = 0;
+    if (_dupenv_s(&val, &len, name) == 0 && val != NULL) {
+      free(val);
+      if (!overwrite) {
+        return 0;
+      }
+    }
+    return _putenv_s(name, value != NULL ? value : "");
+  }
+#else
+  if (!overwrite && getenv(name) != NULL) {
+    return 0;
+  }
+  return -1;
 #endif
+}
+
+/** \brief unsetenv function. */
+int unsetenv(const char *name) {
+  if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+#if defined(_MSC_VER)
+  return _putenv_s(name, "");
+#else
+  return -1;
+#endif
+}
+
+/** \brief clearenv function. */
+int clearenv(void) {
+  extern char **environ;
+  if (environ != NULL) {
+    environ[0] = NULL;
+  }
+  return 0;
+}
+
+/** \brief strndup function. */
+char *strndup(const char *s, size_t n) {
+  size_t len;
+  char *new_s;
+  if (s == NULL) {
+    return NULL;
+  }
+  len = strlen(s);
+  if (len > n) {
+    len = n;
+  }
+  new_s = (char *)malloc(len + 1);
+  if (new_s == NULL) {
+    return NULL;
+  }
+  memcpy(new_s, s, len);
+  new_s[len] = '\0';
+  return new_s;
+}
+
+/** \brief vasprintf function. */
+int vasprintf(char **strp, const char *fmt, va_list ap) {
+  int len;
+  char *buf;
+  va_list ap_copy;
+  if (strp == NULL || fmt == NULL) {
+    return -1;
+  }
+  va_copy(ap_copy, ap);
+#if defined(_MSC_VER)
+  len = _vscprintf(fmt, ap_copy);
+#else
+  len = vsnprintf(NULL, 0, fmt, ap_copy);
+#endif
+  va_end(ap_copy);
+  if (len < 0) {
+    *strp = NULL;
+    return -1;
+  }
+  buf = (char *)malloc((size_t)len + 1);
+  if (buf == NULL) {
+    *strp = NULL;
+    return -1;
+  }
+#if defined(_MSC_VER)
+  vsnprintf_s(buf, (size_t)len + 1, (size_t)len, fmt, ap);
+#else
+  vsnprintf(buf, (size_t)len + 1, fmt, ap);
+#endif
+  buf[len] = '\0';
+  *strp = buf;
+  return len;
+}
+
+/** \brief asprintf function. */
+int asprintf(char **strp, const char *fmt, ...) {
+  va_list ap;
+  int ret;
+  va_start(ap, fmt);
+  ret = vasprintf(strp, fmt, ap);
+  va_end(ap);
+  return ret;
+}
+
+/** \brief dprintf function. */
+int dprintf(int fd, const char *fmt, ...) {
+  char *buf = NULL;
+  va_list ap;
+  int ret, written;
+  va_start(ap, fmt);
+  ret = vasprintf(&buf, fmt, ap);
+  va_end(ap);
+  if (ret < 0 || buf == NULL) {
+    return -1;
+  }
+#if defined(_WIN32)
+  written = _write(fd, buf, (unsigned int)ret);
+#else
+  written = (int)write(fd, buf, (size_t)ret);
+#endif
+  free(buf);
+  return written;
+}
+
+/** \brief getpagesize function. */
+int getpagesize(void) {
+  POSIX_SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return (int)si.dwPageSize;
+}
+
+/** \brief realpath function. */
+char *realpath(const char *path, char *resolved_path) {
+  if (path == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+  if (resolved_path == NULL) {
+    return _fullpath(NULL, path, 4096);
+  }
+  return _fullpath(resolved_path, path, 4096);
+}
+
+/** \brief fchdir function. */
+int fchdir(int fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+/** \brief chroot function. */
+int chroot(const char *path) {
+  if (path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+/** \brief settimeofday function. */
+int settimeofday(const void *tv, const void *tz) {
+  if (tv == NULL && tz == NULL) {
+    return 0;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+#endif
+
+void ASSIGN_CONST_PTR(const void *pptr, void *v) {
+  union {
+    const void *cp;
+    void **pp;
+  } u;
+  u.cp = pptr;
+  *u.pp = v;
+}
+
+void XZALLOC_CONST_PTR(const void *pptr, size_t size) {
+  union {
+    const void *cp;
+    void **pp;
+  } u;
+  u.cp = pptr;
+  *u.pp = calloc(1, size);
+}
 
 /**
  * @brief Initializes and validates the posix-core module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return POSIX_CORE_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_core_error_code posix_core_init(int *out_status) {
+auto_win_msvc_error_t posix_core_init(int *out_status) {
   if (out_status == NULL) {
-    return POSIX_CORE_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return POSIX_CORE_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }

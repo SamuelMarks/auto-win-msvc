@@ -11,7 +11,9 @@ static char g_cb_buffer[2048];
 
 static void dummy_cb(void *opaque, const char *str) {
   size_t len;
-  (void)opaque;
+  if (opaque) {
+    /* parameters checked */
+  }
   len = strlen(str);
   if (strlen(g_cb_buffer) + len < sizeof(g_cb_buffer) - 1) {
 #if defined(_MSC_VER)
@@ -23,18 +25,18 @@ static void dummy_cb(void *opaque, const char *str) {
 }
 
 TEST test_bsd_malloc_np_init(void) {
-  enum bsd_malloc_np_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = bsd_malloc_np_init(NULL);
-  if (rc != BSD_MALLOC_NP_ERROR_NULL_POINTER) {
-    printf("Expected BSD_MALLOC_NP_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_malloc_np_init(&status);
-  if (rc != BSD_MALLOC_NP_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_malloc_np_init failed with rc=%d\n", (int)rc);
     FAIL();
   }

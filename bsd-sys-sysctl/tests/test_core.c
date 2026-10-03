@@ -8,18 +8,18 @@
 /* clang-format on */
 
 TEST test_bsd_sys_sysctl_init(void) {
-  enum bsd_sys_sysctl_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = bsd_sys_sysctl_init(NULL);
-  if (rc != BSD_SYS_SYSCTL_ERROR_NULL_POINTER) {
-    printf("Expected BSD_SYS_SYSCTL_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_sys_sysctl_init(&status);
-  if (rc != BSD_SYS_SYSCTL_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_sys_sysctl_init failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -29,18 +29,18 @@ TEST test_bsd_sys_sysctl_init(void) {
 }
 
 TEST test_bsd_sys_sysctl_get_ncpu(void) {
-  enum bsd_sys_sysctl_error_code rc;
+  auto_win_msvc_error_t rc;
   int ncpu;
 
   ncpu = 0;
   rc = bsd_sys_sysctl_get_ncpu(NULL);
-  if (rc != BSD_SYS_SYSCTL_ERROR_NULL_POINTER) {
-    printf("Expected BSD_SYS_SYSCTL_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_sys_sysctl_get_ncpu(&ncpu);
-  if (rc != BSD_SYS_SYSCTL_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_sys_sysctl_get_ncpu failed with rc=%d\n", (int)rc);
     FAIL();
   }

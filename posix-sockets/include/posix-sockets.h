@@ -6,6 +6,7 @@
 #define NAMESPACE_WIN_SHIM_H
 #endif
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <posix-poll.h>
 #include <posix-sys-ioctl.h>
 
@@ -97,6 +98,16 @@
 #endif
 #ifndef ENOTEMPTY
 #define ENOTEMPTY WSAENOTEMPTY
+#endif
+
+#ifndef SHUT_RD
+#define SHUT_RD 0
+#endif
+#ifndef SHUT_WR
+#define SHUT_WR 1
+#endif
+#ifndef SHUT_RDWR
+#define SHUT_RDWR 2
 #endif
 
 #else
@@ -493,24 +504,13 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
 int posix_close(intptr_t fd);
 
 /**
- * @enum posix_sockets_error_code
- * @brief Error codes returned by posix-sockets functions.
- */
-enum posix_sockets_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_SOCKETS_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_SOCKETS_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-sockets availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_SOCKETS_SUCCESS on success, or POSIX_SOCKETS_ERROR_NULL_POINTER
- * on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_sockets_error_code posix_sockets_get_info(int *out_available);
+auto_win_msvc_error_t posix_sockets_get_info(int *out_available);
 
 #define win_compat_sendmsg posix_sendmsg_native
 #define win_compat_recvmsg posix_recvmsg_native

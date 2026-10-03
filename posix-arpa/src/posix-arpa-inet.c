@@ -9,10 +9,10 @@
  * @param cp The input IP address string.
  * @param[out] out_addr Pointer to struct in_addr receiving the parsed binary
  * address.
- * @return POSIX_ARPA_INET_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_arpa_inet_error_code
-posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
+auto_win_msvc_error_t posix_arpa_inet_parse_ipv4(const char *cp,
+                                                 struct in_addr *out_addr) {
   unsigned long val;
   int base;
   char c;
@@ -22,7 +22,7 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
   int digit_val;
 
   if (cp == NULL || out_addr == NULL) {
-    return POSIX_ARPA_INET_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 
   pp = 0;
@@ -58,7 +58,7 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
 
       if (val >
           (0xffffffffUL - (unsigned long)digit_val) / (unsigned long)base) {
-        return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+        return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
       }
 
       val = (val * (unsigned long)base) + (unsigned long)digit_val;
@@ -67,12 +67,12 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
     }
 
     if (n_digits == 0) {
-      return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
     }
 
     if (*cp == '.') {
       if (pp >= 3) {
-        return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+        return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
       }
       parts[pp++] = val;
       cp++;
@@ -82,7 +82,7 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
   }
 
   if (*cp != '\0') {
-    return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 
   parts[pp] = val;
@@ -93,26 +93,26 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
   } else if (pp == 1) {
     /* 2 parts (a.b): a is 8 bits, b is 24 bits */
     if (parts[0] > 0xffUL || parts[1] > 0xffffffUL) {
-      return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
     }
     val = (parts[0] << 24) | (parts[1] & 0xffffffUL);
   } else if (pp == 2) {
     /* 3 parts (a.b.c): a is 8 bits, b is 8 bits, c is 16 bits */
     if (parts[0] > 0xffUL || parts[1] > 0xffUL || parts[2] > 0xffffUL) {
-      return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
     }
     val = (parts[0] << 24) | (parts[1] << 16) | (parts[2] & 0xffffUL);
   } else {
     /* 4 parts (a.b.c.d): each is 8 bits */
     if (parts[0] > 0xffUL || parts[1] > 0xffUL || parts[2] > 0xffUL ||
         parts[3] > 0xffUL) {
-      return POSIX_ARPA_INET_ERROR_INVALID_ARGUMENT;
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
     }
     val = (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
   }
 
   out_addr->s_addr = (unsigned long)htonl((unsigned long)val);
-  return POSIX_ARPA_INET_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -123,10 +123,10 @@ posix_arpa_inet_parse_ipv4(const char *cp, struct in_addr *out_addr) {
  * @return 1 if the address is valid, or 0 if invalid.
  */
 int posix_inet_aton(const char *cp, struct in_addr *inp) {
-  enum posix_arpa_inet_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_arpa_inet_parse_ipv4(cp, inp);
-  if (rc != POSIX_ARPA_INET_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return 0;
   }
   return 1;
@@ -140,10 +140,10 @@ int posix_inet_aton(const char *cp, struct in_addr *inp) {
  */
 unsigned long posix_inet_addr(const char *cp) {
   struct in_addr val;
-  enum posix_arpa_inet_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_arpa_inet_parse_ipv4(cp, &val);
-  if (rc != POSIX_ARPA_INET_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return 0xffffffffUL; /* INADDR_NONE */
   }
   return val.s_addr;

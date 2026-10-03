@@ -282,8 +282,10 @@ static unsigned long convert_cpuset_to_mask(const cpuset_t *set) {
 /** \brief cpuset_getaffinity fallback function. */
 error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, cpuset_t *mask) {
-  (void)which;
-  (void)id;
+  if (which < 0 || id == (id_t)-2) {
+    errno = EINVAL;
+    return -1;
+  }
   if (!mask || setsize < sizeof(cpuset_t)) {
     errno = EINVAL;
     return -1;
@@ -301,8 +303,10 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 /** \brief cpuset_setaffinity fallback function. */
 error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, const cpuset_t *mask) {
-  (void)which;
-  (void)id;
+  if (which < 0 || id == (id_t)-2) {
+    errno = EINVAL;
+    return -1;
+  }
   if (!mask || setsize < sizeof(cpuset_t)) {
     errno = EINVAL;
     return -1;
@@ -328,14 +332,14 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
  * @brief Initializes and validates the bsd-sys-cpuset module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return BSD_SYS_CPUSET_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_cpuset_error_code bsd_sys_cpuset_init(int *out_status) {
+auto_win_msvc_error_t bsd_sys_cpuset_init(int *out_status) {
   if (out_status == NULL) {
-    return BSD_SYS_CPUSET_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return BSD_SYS_CPUSET_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef error_type_t make_iso_compilers_happy_tu_bsd_sys_cpuset;

@@ -81,7 +81,7 @@ endif()
 
 add_library(posix-glob src/posix-glob.c)
 set_target_properties(posix-glob PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-glob PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-glob PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

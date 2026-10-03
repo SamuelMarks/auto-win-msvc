@@ -148,33 +148,50 @@ int posix_epoll_close(int epfd) {
     (defined(_WIN32) && !defined(_MSC_VER) && !defined(__MINGW32__) &&         \
      !defined(__MINGW64__))
 int posix_epoll_create(int size) {
-  (void)size;
+  if (size <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 int posix_epoll_create1(int flags) {
-  (void)flags;
+  if (flags < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 int posix_epoll_ctl(int epfd, int op, int fd, void *event) {
-  (void)epfd;
-  (void)op;
-  (void)fd;
-  (void)event;
+  if (epfd < 0 || fd < 0 || event == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (op != 1 && op != 2 && op != 3) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 int posix_epoll_wait(int epfd, void *events, int maxevents, int timeout) {
-  (void)epfd;
-  (void)events;
-  (void)maxevents;
-  (void)timeout;
+  if (epfd < 0 || events == NULL || maxevents <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (timeout < -1) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 int posix_epoll_close(int epfd) {
-  (void)epfd;
+  if (epfd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
@@ -186,14 +203,14 @@ int posix_epoll_close(int epfd) {
  * @brief Initializes and validates the linux-epoll module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_EPOLL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_epoll_error_code linux_epoll_init(int *out_status) {
+auto_win_msvc_error_t linux_epoll_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_EPOLL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_EPOLL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_epoll;

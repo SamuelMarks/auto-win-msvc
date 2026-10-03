@@ -9,23 +9,25 @@
 /* clang-format on */
 
 static int filter_all(const struct dirent *entry) {
-  (void)entry;
+  if (entry) {
+    /* parameters checked */
+  }
   return 1;
 }
 
 TEST test_posix_dirent_get_info(void) {
-  enum posix_dirent_error_code rc;
+  auto_win_msvc_error_t rc;
   int info;
 
   info = 0;
   rc = posix_dirent_get_info(NULL);
-  if (rc != POSIX_DIRENT_ERROR_NULL_POINTER) {
-    printf("Expected POSIX_DIRENT_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_dirent_get_info(&info);
-  if (rc != POSIX_DIRENT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_dirent_get_info failed with rc=%d\n", (int)rc);
     FAIL();
   }

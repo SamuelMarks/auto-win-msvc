@@ -6,25 +6,32 @@
 #include <errno.h>
 
 int timerfd_create(int clockid, int flags) {
-  (void)clockid;
-  (void)flags;
+  if (clockid < 0 || flags < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int timerfd_gettime(int fd, struct itimerspec *curr_value) {
-  (void)fd;
-  (void)curr_value;
+  if (fd < 0 || curr_value == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int timerfd_settime(int fd, int flags, const struct itimerspec *new_value,
                     struct itimerspec *old_value) {
-  (void)fd;
-  (void)flags;
-  (void)new_value;
-  (void)old_value;
+  if (fd < 0 || flags < 0 || new_value == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (old_value != NULL) {
+    /* old_value provided */
+  }
   errno = ENOSYS;
   return -1;
 }

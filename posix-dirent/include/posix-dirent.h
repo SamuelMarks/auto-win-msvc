@@ -4,32 +4,23 @@
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
 
+/* clang-format off */
+#include "auto-win-msvc-error.h"
+/* clang-format on */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-dirent module functions.
- */
-enum posix_dirent_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_DIRENT_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_DIRENT_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument was provided. */
-  POSIX_DIRENT_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Retrieves information on posix-dirent module availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_DIRENT_SUCCESS on success, or POSIX_DIRENT_ERROR_NULL_POINTER
- * on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_dirent_error_code posix_dirent_get_info(int *out_available);
+auto_win_msvc_error_t posix_dirent_get_info(int *out_available);
 
-/* clang-format off */
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
 /* On non-Windows platforms, simply include the standard dirent.h */
@@ -43,7 +34,8 @@ enum posix_dirent_error_code posix_dirent_get_info(int *out_available);
 #if defined(__linux__) && !defined(__USE_MISC) && !defined(__USE_XOPEN2K8)
 extern int scandir(const char *dir, struct dirent ***namelist,
                    int (*filter)(const struct dirent *),
-                   int (*compar)(const struct dirent **, const struct dirent **));
+                   int (*compar)(const struct dirent **,
+                                 const struct dirent **));
 extern int alphasort(const struct dirent **a, const struct dirent **b);
 #endif
 

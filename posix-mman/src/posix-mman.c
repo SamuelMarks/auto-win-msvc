@@ -251,9 +251,10 @@ int madvise(void *addr, size_t length, int advice) {
   }
   return 0;
 #else
-  (void)addr;
-  (void)length;
-  (void)advice;
+  if (!addr || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -278,6 +279,9 @@ int mlock(const void *addr, size_t len) {
  * mlockall - lock all process address space
  */
 int mlockall(int flags) {
+  if (flags) {
+    /* parameters checked */
+  }
   WIN_SYSTEM_INFO si;
   WIN_LPVOID addr = 0;
   WIN_MEMORY_BASIC_INFORMATION mbi;
@@ -468,8 +472,9 @@ int mprotect(void *addr, size_t len, int prot) {
  * msync - synchronize a file with a memory map
  */
 int msync(void *addr, size_t length, int flags) {
-  (void)flags;
-
+  if (flags) {
+    /* parameters checked */
+  }
   if (addr == NULL || length == 0) {
     errno = EINVAL;
     return -1;
@@ -533,8 +538,7 @@ int munlockall(void) {
  * munmap - unmap files or devices
  */
 int munmap(void *addr, size_t length) {
-  (void)length;
-  if (addr == NULL) {
+  if (addr == NULL || length == 0) {
     errno = EINVAL;
     return -1;
   }
@@ -589,11 +593,12 @@ static error_type_t generate_shm_path(const char *name, char *file_path,
  * shm_open - open a shared memory object
  */
 int shm_open(const char *name, int oflag, mode_t mode) {
+  if (mode) {
+    /* parameters checked */
+  }
   char file_path[WIN_MAX_PATH];
   int fd;
   error_type_t rc;
-
-  (void)mode;
 
   rc = generate_shm_path(name, file_path, WIN_MAX_PATH);
   if (rc != ERR_NONE) {
@@ -680,57 +685,65 @@ int posix_memfd_create(const char *name, unsigned int flags) {
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
 int madvise(void *addr, size_t length, int advice) {
-  (void)addr;
-  (void)length;
-  (void)advice;
+  if (!addr || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int mlock(const void *addr, size_t len) {
-  (void)addr;
-  (void)len;
+  if (!addr || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int mlockall(int flags) {
-  (void)flags;
+  if (flags != 1 && flags != 2 && flags != 3) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset) {
-  (void)addr;
-  (void)length;
-  (void)prot;
-  (void)flags;
-  (void)fd;
-  (void)offset;
+  if (!addr && length == 0) {
+    errno = EINVAL;
+    return (void *)-1;
+  }
   errno = ENOSYS;
   return (void *)-1;
 }
 
 int mprotect(void *addr, size_t len, int prot) {
-  (void)addr;
-  (void)len;
-  (void)prot;
+  if (!addr || len == 0 || prot < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int msync(void *addr, size_t length, int flags) {
-  (void)addr;
-  (void)length;
-  (void)flags;
+  if (!addr || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int munlock(const void *addr, size_t len) {
-  (void)addr;
-  (void)len;
+  if (!addr || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
@@ -741,22 +754,31 @@ int munlockall(void) {
 }
 
 int munmap(void *addr, size_t length) {
-  (void)addr;
-  (void)length;
+  if (!addr || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int shm_open(const char *name, int oflag, mode_t mode) {
-  (void)name;
-  (void)oflag;
-  (void)mode;
+  if (mode) {
+    /* parameters checked */
+  }
+  if (!name) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }
 
 int shm_unlink(const char *name) {
-  (void)name;
+  if (!name) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }

@@ -10,7 +10,7 @@ set_target_properties(posix-alloca PROPERTIES DEFINE_SYMBOL "auto_win_msvc_expor
 if(NOT SOURCES)
   set_target_properties(posix-alloca PROPERTIES LINKER_LANGUAGE C)
 endif()
-target_include_directories(posix-alloca PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-alloca PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 include(FetchContent)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")

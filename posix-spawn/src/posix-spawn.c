@@ -21,12 +21,12 @@
 /**
  * @brief Initializes and validates the posix-spawn module.
  */
-enum posix_spawn_error_code posix_spawn_init(int *out_status) {
+auto_win_msvc_error_t posix_spawn_init(int *out_status) {
   if (out_status == NULL) {
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_WIN32)
@@ -36,11 +36,9 @@ static void spawn_null_invalid_param_handler(const wchar_t *expression,
                                              const wchar_t *file,
                                              unsigned int line,
                                              uintptr_t pReserved) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression || function || file || line || pReserved) {
+    /* parameters checked */
+  }
 }
 #endif
 
@@ -194,15 +192,15 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
 }
 
 /** \brief add_action function. */
-static enum posix_spawn_error_code
+static auto_win_msvc_error_t
 add_action(posix_spawn_file_actions_t *file_actions,
            posix_spawn_action_t **out_action) {
   posix_spawn_action_t *new_action;
   if (!file_actions || !out_action)
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   new_action = (posix_spawn_action_t *)malloc(sizeof(posix_spawn_action_t));
   if (!new_action)
-    return POSIX_SPAWN_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   new_action->next = NULL;
   new_action->path = NULL;
 
@@ -216,20 +214,20 @@ add_action(posix_spawn_file_actions_t *file_actions,
     curr->next = new_action;
   }
   *out_action = new_action;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** \brief posix_spawn_file_actions_addclose function. */
 int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
                                       int fildes) {
   posix_spawn_action_t *action = NULL;
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
   if (fildes < 0)
     return EBADF;
   if (!file_actions)
     return EINVAL;
   rc = add_action(file_actions, &action);
-  if (rc != POSIX_SPAWN_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS)
     return EINVAL;
   action->type = POSIX_SPAWN_ACTION_CLOSE;
   action->fd = fildes;
@@ -240,13 +238,13 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
 int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
                                      int fildes, int newfildes) {
   posix_spawn_action_t *action = NULL;
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
   if (fildes < 0 || newfildes < 0)
     return EBADF;
   if (!file_actions)
     return EINVAL;
   rc = add_action(file_actions, &action);
-  if (rc != POSIX_SPAWN_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS)
     return EINVAL;
   action->type = POSIX_SPAWN_ACTION_DUP2;
   action->fd = fildes;
@@ -259,13 +257,13 @@ int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
                                      int fildes, const char *path, int oflag,
                                      mode_t mode) {
   posix_spawn_action_t *action = NULL;
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
   if (fildes < 0)
     return EBADF;
   if (!path || !file_actions)
     return EINVAL;
   rc = add_action(file_actions, &action);
-  if (rc != POSIX_SPAWN_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS)
     return EINVAL;
   action->type = POSIX_SPAWN_ACTION_OPEN;
   action->fd = fildes;
@@ -405,18 +403,18 @@ int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
 /** \brief get_quoted_arg_len function. */
-static enum posix_spawn_error_code get_quoted_arg_len(const char *arg,
-                                                      size_t *out_len) {
+static auto_win_msvc_error_t get_quoted_arg_len(const char *arg,
+                                                size_t *out_len) {
   size_t len = 0;
   int needs_quotes = 0;
   const char *p;
 
   if (!arg || !out_len)
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   if (!*arg) {
     *out_len = 2; /* "" */
-    return POSIX_SPAWN_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   for (p = arg; *p; ++p) {
@@ -427,7 +425,7 @@ static enum posix_spawn_error_code get_quoted_arg_len(const char *arg,
 
   if (!needs_quotes) {
     *out_len = strlen(arg);
-    return POSIX_SPAWN_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   len += 2;
@@ -451,17 +449,17 @@ static enum posix_spawn_error_code get_quoted_arg_len(const char *arg,
     }
   }
   *out_len = len;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** \brief quote_arg function. */
-static enum posix_spawn_error_code quote_arg(char **dest, const char *arg) {
+static auto_win_msvc_error_t quote_arg(char **dest, const char *arg) {
   int needs_quotes = 0;
   const char *p;
   char *d;
 
   if (!dest || !*dest || !arg)
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   d = *dest;
 
@@ -469,7 +467,7 @@ static enum posix_spawn_error_code quote_arg(char **dest, const char *arg) {
     *d++ = '\"';
     *d++ = '\"';
     *dest = d;
-    return POSIX_SPAWN_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   for (p = arg; *p; ++p) {
@@ -483,7 +481,7 @@ static enum posix_spawn_error_code quote_arg(char **dest, const char *arg) {
       *d++ = *arg++;
     }
     *dest = d;
-    return POSIX_SPAWN_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 
   *d++ = '\"';
@@ -516,36 +514,36 @@ static enum posix_spawn_error_code quote_arg(char **dest, const char *arg) {
   }
   *d++ = '\"';
   *dest = d;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** \brief create_cmdline function. */
-static enum posix_spawn_error_code create_cmdline(char *const argv[],
-                                                  char **out_cmdline) {
+static auto_win_msvc_error_t create_cmdline(char *const argv[],
+                                            char **out_cmdline) {
   size_t total_len = 0;
   int i;
   char *cmdline, *p;
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
 
   if (!argv || !argv[0] || !out_cmdline)
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   for (i = 0; argv[i]; ++i) {
     size_t len = 0;
     rc = get_quoted_arg_len(argv[i], &len);
-    if (rc != POSIX_SPAWN_SUCCESS)
+    if (rc != AUTO_WIN_MSVC_SUCCESS)
       return rc;
     total_len += len + 1;
   }
 
   cmdline = (char *)malloc(total_len + 1);
   if (!cmdline)
-    return POSIX_SPAWN_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   p = cmdline;
   for (i = 0; argv[i]; ++i) {
     rc = quote_arg(&p, argv[i]);
-    if (rc != POSIX_SPAWN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       free(cmdline);
       return rc;
     }
@@ -556,18 +554,18 @@ static enum posix_spawn_error_code create_cmdline(char *const argv[],
   *p = '\0';
 
   *out_cmdline = cmdline;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** \brief create_envblock function. */
-static enum posix_spawn_error_code create_envblock(char *const envp[],
-                                                   char **out_envblock) {
+static auto_win_msvc_error_t create_envblock(char *const envp[],
+                                             char **out_envblock) {
   size_t total_len = 0;
   int i;
   char *envblock, *p;
 
   if (!envp || !out_envblock)
-    return POSIX_SPAWN_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   for (i = 0; envp[i]; ++i) {
     total_len += strlen(envp[i]) + 1;
@@ -576,7 +574,7 @@ static enum posix_spawn_error_code create_envblock(char *const envp[],
 
   envblock = (char *)malloc(total_len);
   if (!envblock)
-    return POSIX_SPAWN_ERROR_INVALID_ARGUMENT;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   p = envblock;
   for (i = 0; envp[i]; ++i) {
@@ -592,7 +590,7 @@ static enum posix_spawn_error_code create_envblock(char *const envp[],
   *p = '\0';
 
   *out_envblock = envblock;
-  return POSIX_SPAWN_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** \brief internal_posix_spawn function. */
@@ -611,7 +609,7 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
   HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
   SECURITY_ATTRIBUTES sa;
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
 
   sa.nLength = sizeof(SECURITY_ATTRIBUTES);
   sa.bInheritHandle = TRUE;
@@ -633,12 +631,12 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
   }
 
   rc = create_cmdline(argv, &cmdline);
-  if (rc != POSIX_SPAWN_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS)
     return ENOMEM;
 
   if (envp) {
     rc = create_envblock(envp, &envblock);
-    if (rc != POSIX_SPAWN_SUCCESS) {
+    if (rc != AUTO_WIN_MSVC_SUCCESS) {
       free(cmdline);
       return ENOMEM;
     }
@@ -779,12 +777,10 @@ int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp, char *const argv[],
                 char *const envp[]) {
-  (void)pid;
-  (void)path;
-  (void)file_actions;
-  (void)attrp;
-  (void)argv;
-  (void)envp;
+  if (!path || !argv || !envp) {
+    errno = EINVAL;
+    return -1;
+  }
   return ENOSYS;
 }
 
@@ -793,12 +789,10 @@ int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp, char *const argv[],
                  char *const envp[]) {
-  (void)pid;
-  (void)file;
-  (void)file_actions;
-  (void)attrp;
-  (void)argv;
-  (void)envp;
+  if (!file || !argv || !envp) {
+    errno = EINVAL;
+    return -1;
+  }
   return ENOSYS;
 }
 

@@ -83,7 +83,7 @@ endif()
 
 add_library(linux-sys-prctl src/linux-sys-prctl.c)
 set_target_properties(linux-sys-prctl PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(linux-sys-prctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(linux-sys-prctl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

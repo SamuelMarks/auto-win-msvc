@@ -46,12 +46,12 @@ static int g_LogMask = 0xFF;
 /**
  * @brief Retrieves information on posix-syslog availability.
  */
-enum posix_syslog_error_code posix_syslog_get_info(int *out_available) {
+auto_win_msvc_error_t posix_syslog_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SYSLOG_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SYSLOG_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 void closelog(void) {

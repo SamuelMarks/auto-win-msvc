@@ -23,12 +23,12 @@
 /**
  * @brief Retrieves information on posix-sched availability.
  */
-enum posix_sched_error_code posix_sched_get_info(int *out_available) {
+auto_win_msvc_error_t posix_sched_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SCHED_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SCHED_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -126,20 +126,18 @@ int posix_sched_yield(void) {
 }
 
 int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
-  if (mask == NULL || cpusetsize < sizeof(cpu_set_t)) {
+  if (pid < 0 || mask == NULL || cpusetsize < sizeof(cpu_set_t)) {
     errno = EINVAL;
     return -1;
   }
-  (void)pid;
   return 0;
 }
 
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
-  if (mask == NULL || cpusetsize < sizeof(cpu_set_t)) {
+  if (pid < 0 || mask == NULL || cpusetsize < sizeof(cpu_set_t)) {
     errno = EINVAL;
     return -1;
   }
-  (void)pid;
   CPU_ZERO(mask);
   CPU_SET(0, mask);
   return 0;

@@ -73,12 +73,12 @@ int ffsll(posix_strings_llong i) {
 /**
  * @brief Retrieves information on posix-strings polyfill availability.
  */
-enum posix_strings_error_code posix_strings_get_info(int *out_available) {
+auto_win_msvc_error_t posix_strings_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_STRINGS_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_STRINGS_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /** @brief Copies src to dest, returning pointer to '\0'. */
@@ -196,5 +196,23 @@ char *posix_strsignal(int sig) {
 #endif
   return unknown_buf;
 }
+
+#if defined(_WIN32)
+#undef mempcpy
+void *mempcpy(void *dest, const void *src, size_t n) {
+  return posix_mempcpy(dest, src, n);
+}
+
+#undef strchrnul
+char *strchrnul(const char *s, int c) { return posix_strchrnul(s, c); }
+
+#undef stpcpy
+char *stpcpy(char *dest, const char *src) { return posix_stpcpy(dest, src); }
+
+#undef stpncpy
+char *stpncpy(char *dest, const char *src, size_t n) {
+  return posix_stpncpy(dest, src, n);
+}
+#endif
 
 typedef int make_iso_compilers_happy_tu_posix_strings;

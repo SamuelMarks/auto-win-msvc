@@ -16,7 +16,7 @@
 #endif
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -111,20 +111,97 @@ int fstatfs(int fd, struct statfs *buf) {
   return statfs(path, buf);
 }
 
-#endif /* _MSC_VER */
+/** @brief POSIX statvfs function. */
+int statvfs(const char *path, struct statvfs *buf) {
+  ULARGE_INTEGER freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes;
+
+  if (!buf || !path) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  if (GetDiskFreeSpaceExA(path, &freeBytesAvailable, &totalNumberOfBytes,
+                          &totalNumberOfFreeBytes)) {
+    buf->f_bsize = 4096;
+    buf->f_frsize = 4096;
+    buf->f_blocks = (unsigned long long)(totalNumberOfBytes.QuadPart / 4096);
+    buf->f_bfree = (unsigned long long)(totalNumberOfFreeBytes.QuadPart / 4096);
+    buf->f_bavail = (unsigned long long)(freeBytesAvailable.QuadPart / 4096);
+    buf->f_files = 0;
+    buf->f_ffree = 0;
+    buf->f_favail = 0;
+    buf->f_fsid = 0;
+    buf->f_flag = 0;
+    buf->f_namemax = 255;
+    return 0;
+  }
+
+  errno = ENOENT;
+  return -1;
+}
+
+/** @brief POSIX fstatvfs function. */
+int fstatvfs(int fd, struct statvfs *buf) {
+  HANDLE hFile;
+  HMODULE hKernel32;
+  GetFinalPathNameByHandleA_t pGetFinalPathNameByHandleA;
+  char path[MAX_PATH];
+  DWORD res;
+
+  if (!buf) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
+  hFile = (HANDLE)(size_t)safe_get_osfhandle(fd);
+  if (hFile == INVALID_HANDLE_VALUE) {
+    errno = EBADF;
+    return -1;
+  }
+
+  hKernel32 = GetModuleHandleA("kernel32.dll");
+  if (!hKernel32) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  pGetFinalPathNameByHandleA =
+      (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
+          hKernel32, "GetFinalPathNameByHandleA");
+
+  if (!pGetFinalPathNameByHandleA) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  res = pGetFinalPathNameByHandleA(hFile, path, MAX_PATH, FILE_NAME_NORMALIZED);
+  if (res == 0 || res >= MAX_PATH) {
+    errno = ENOENT;
+    return -1;
+  }
+
+  return statvfs(path, buf);
+}
+
+#endif /* _MSC_VER || _WIN32 */
 
 /**
  * @brief Initializes and validates the linux-sys-statfs module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_SYS_STATFS_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_sys_statfs_error_code linux_sys_statfs_init(int *out_status) {
+auto_win_msvc_error_t linux_sys_statfs_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_SYS_STATFS_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_SYS_STATFS_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_sys_statfs;

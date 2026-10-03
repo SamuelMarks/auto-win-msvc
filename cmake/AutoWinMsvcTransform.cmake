@@ -34,7 +34,14 @@ function(auto_win_msvc_transform_sources)
     foreach(src IN LISTS TRANSFORM_SOURCES)
         get_filename_component(src_abs "${src}" ABSOLUTE)
         get_filename_component(src_name "${src}" NAME)
+        get_filename_component(src_dir "${src_abs}" DIRECTORY)
+        get_filename_component(parent_name "${src_dir}" NAME)
+
         set(out_src "${TRANSFORM_OUTPUT_DIR}/${src_name}")
+        if(DEFINED _seen_target_${src_name})
+            set(out_src "${TRANSFORM_OUTPUT_DIR}/${parent_name}_${src_name}")
+        endif()
+        set(_seen_target_${src_name} 1)
 
         # Transform immediately at configure time so headers/sources exist for tooling
         execute_process(

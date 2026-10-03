@@ -210,24 +210,24 @@ error_type_t sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
  * @brief Initializes and validates the bsd-sys-sysctl module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_sysctl_error_code bsd_sys_sysctl_init(int *out_status) {
+auto_win_msvc_error_t bsd_sys_sysctl_init(int *out_status) {
   if (out_status == NULL) {
-    return BSD_SYS_SYSCTL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return BSD_SYS_SYSCTL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
  * @brief Retrieves the number of CPUs via sysctl.
  * @param[out] out_ncpu Pointer to an integer receiving the CPU count.
- * @return BSD_SYS_SYSCTL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_sysctl_error_code bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
+auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
   if (out_ncpu == NULL) {
-    return BSD_SYS_SYSCTL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
 #if defined(_WIN32)
   {
@@ -235,10 +235,10 @@ enum bsd_sys_sysctl_error_code bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
     size_t len = sizeof(ncpu);
     error_type_t rc = sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0);
     if (rc != ERR_NONE) {
-      return BSD_SYS_SYSCTL_ERROR_INVALID_ARGUMENT;
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
     }
     *out_ncpu = ncpu;
-    return BSD_SYS_SYSCTL_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 #elif defined(_SC_NPROCESSORS_ONLN)
   {
@@ -246,14 +246,14 @@ enum bsd_sys_sysctl_error_code bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
     n = sysconf(_SC_NPROCESSORS_ONLN);
     if (n > 0) {
       *out_ncpu = (int)n;
-      return BSD_SYS_SYSCTL_SUCCESS;
+      return AUTO_WIN_MSVC_SUCCESS;
     }
     *out_ncpu = 1;
-    return BSD_SYS_SYSCTL_SUCCESS;
+    return AUTO_WIN_MSVC_SUCCESS;
   }
 #else
   *out_ncpu = 1;
-  return BSD_SYS_SYSCTL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 #endif
 }
 

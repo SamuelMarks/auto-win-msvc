@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -30,23 +31,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-netdb functions.
- */
-enum posix_netdb_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_NETDB_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_NETDB_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-netdb availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_NETDB_SUCCESS on success, or POSIX_NETDB_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_netdb_error_code posix_netdb_get_info(int *out_available);
+auto_win_msvc_error_t posix_netdb_get_info(int *out_available);
 
 /**
  * @brief Translate network host and service name to address info.

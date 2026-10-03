@@ -137,11 +137,9 @@ static void __cdecl null_invalid_parameter_handler(
     unsigned int line,
     size_t pReserved /* Changed from uintptr_t to size_t to avoid stdint.h */
 ) {
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression || function || file || line || pReserved) {
+    /* parameters checked */
+  }
 }
 #endif
 
@@ -232,7 +230,10 @@ int tcdrain(int fd) {
   format_error_msg(errbuf, sizeof(errbuf), fd);
   return -1;
 #else
-  (void)fd;
+  if (!fd) {
+    errno = EINVAL;
+    return -1;
+  }
   return -1;
 #endif
 }
@@ -268,8 +269,13 @@ int tcflow(int fd, int action) {
   errno = EBADF;
   return -1;
 #else
-  (void)fd;
-  (void)action;
+  if (!fd) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (action) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -289,8 +295,13 @@ int tcflush(int fd, int queue_selector) {
   }
   return -1;
 #else
-  (void)fd;
-  (void)queue_selector;
+  if (!fd) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (queue_selector) {
+    /* parameters checked */
+  }
   return -1;
 #endif
 }
@@ -331,7 +342,9 @@ int tcgetattr(int fd, struct termios *termios_p) {
   }
   return -1;
 #else
-  (void)fd;
+  if (fd) {
+    /* parameters checked */
+  }
   if (termios_p) {
     termios_p->c_iflag = 0;
     termios_p->c_oflag = 0;
@@ -346,7 +359,9 @@ int tcgetattr(int fd, struct termios *termios_p) {
 
 /** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
-  (void)fd;
+  if (fd) {
+    /* parameters checked */
+  }
   return -1;
 }
 
@@ -371,8 +386,13 @@ int tcsendbreak(int fd, int duration) {
   errno = EBADF;
   return -1;
 #else
-  (void)fd;
-  (void)duration;
+  if (!fd) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (duration) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 #endif
@@ -385,7 +405,9 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
   HANDLE h;
   DWORD mode;
 
-  (void)optional_actions;
+  if (optional_actions) {
+    /* parameters checked */
+  }
 
   if (!termios_p) {
     return -1;
@@ -420,9 +442,16 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
   }
   return -1;
 #else
-  (void)fd;
-  (void)optional_actions;
-  (void)termios_p;
+  if (!fd) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (optional_actions) {
+    /* parameters checked */
+  }
+  if (termios_p) {
+    /* parameters checked */
+  }
   return -1;
 #endif
 }
@@ -430,12 +459,12 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 /**
  * @brief Retrieves information on posix-termios module availability.
  */
-enum posix_termios_error_code posix_termios_get_info(int *out_available) {
+auto_win_msvc_error_t posix_termios_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_TERMIOS_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_TERMIOS_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /* Prevent empty translation unit */

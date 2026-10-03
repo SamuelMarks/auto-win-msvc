@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__MINGW64__) && \
     !defined(__MSDOS__) && !defined(__WATCOMC__)
@@ -29,25 +30,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-regex operations.
- */
-enum posix_regex_error_code {
-  /** @brief Successful operation. */
-  POSIX_REGEX_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  POSIX_REGEX_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed. */
-  POSIX_REGEX_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the posix-regex module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return POSIX_REGEX_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-POSIX_REGEX_EXPORT enum posix_regex_error_code
-posix_regex_init(int *out_status);
+POSIX_REGEX_EXPORT auto_win_msvc_error_t posix_regex_init(int *out_status);
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||       \
     defined(__MSDOS__) || defined(__WATCOMC__)

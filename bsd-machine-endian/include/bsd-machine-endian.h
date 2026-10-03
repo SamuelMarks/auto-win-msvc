@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER)
 #include <linux-endian.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
@@ -117,23 +118,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by bsd-machine-endian functions.
- */
-enum bsd_machine_endian_error_code {
-  /** @brief Successful operation. */
-  BSD_MACHINE_ENDIAN_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  BSD_MACHINE_ENDIAN_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves the current host byte order.
  * @param[out] out_byte_order Pointer to an integer that receives the byte
  * order.
- * @return BSD_MACHINE_ENDIAN_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_machine_endian_error_code
-bsd_machine_endian_get_byte_order(int *out_byte_order);
+auto_win_msvc_error_t bsd_machine_endian_get_byte_order(int *out_byte_order);
 
 #ifdef __cplusplus
 }

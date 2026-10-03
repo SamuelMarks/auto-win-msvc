@@ -7,18 +7,18 @@
 /* clang-format on */
 
 TEST test_linux_sys_procfs_init(void) {
-  enum linux_sys_procfs_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = linux_sys_procfs_init(NULL);
-  if (rc != LINUX_SYS_PROCFS_ERROR_NULL_POINTER) {
-    printf("Expected LINUX_SYS_PROCFS_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = linux_sys_procfs_init(&status);
-  if (rc != LINUX_SYS_PROCFS_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("linux_sys_procfs_init failed with rc=%d\n", (int)rc);
     FAIL();
   }

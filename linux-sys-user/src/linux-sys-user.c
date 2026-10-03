@@ -7,14 +7,14 @@
  * @brief Initializes and validates the linux-sys-user module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return LINUX_SYS_USER_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum linux_sys_user_error_code linux_sys_user_init(int *out_status) {
+auto_win_msvc_error_t linux_sys_user_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_SYS_USER_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return LINUX_SYS_USER_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_sys_user;

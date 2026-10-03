@@ -8,18 +8,19 @@
 /* clang-format on */
 
 TEST test_linux_getopt_init(void) {
-  enum linux_getopt_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = linux_getopt_init(NULL);
-  if (rc != LINUX_GETOPT_ERROR_NULL_POINTER) {
-    printf("Expected LINUX_GETOPT_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = linux_getopt_init(&status);
-  if (rc != LINUX_GETOPT_SUCCESS) {
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("linux_getopt_init failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -35,9 +36,11 @@ TEST test_linux_getopt_parsing(void) {
   char *argv4[] = {"prog", "-bbar", NULL};
   int status;
   int opt;
+  auto_win_msvc_error_t rc;
 
   /* Test 1: standard sequence with '--' */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt(7, argv1, "ab:c");
   ASSERT_EQ('a', opt);
   opt = linux_getopt(7, argv1, "ab:c");
@@ -49,21 +52,25 @@ TEST test_linux_getopt_parsing(void) {
   ASSERT_EQ(-1, opt);
 
   /* Test 2: missing argument */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt(2, argv2, ":b:");
   ASSERT_EQ(':', opt);
 
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt(2, argv2, "b:");
   ASSERT_EQ('?', opt);
 
   /* Test 3: illegal option */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt(2, argv3, "ab:c");
   ASSERT_EQ('?', opt);
 
   /* Test 4: concatenated argument */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt(2, argv4, "b:");
   ASSERT_EQ('b', opt);
   ASSERT_STR_EQ("bar", linux_get_optarg());
@@ -83,6 +90,7 @@ TEST test_linux_getopt_long_parsing(void) {
   int status;
   int longindex;
   int opt;
+  auto_win_msvc_error_t rc;
 
   flag_var = 0;
   longindex = -1;
@@ -113,7 +121,8 @@ TEST test_linux_getopt_long_parsing(void) {
   longopts[4].val = 0;
 
   /* Test 1: long options with flag */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   flag_var = 0;
   opt = linux_getopt_long(5, argv1, "hf:o:", longopts, &longindex);
   ASSERT_EQ('h', opt);
@@ -135,7 +144,8 @@ TEST test_linux_getopt_long_parsing(void) {
   ASSERT_EQ(42, flag_var);
 
   /* Test 2: separated required arg and optional with '=' */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt_long(4, argv2, "f:o:", longopts, &longindex);
   ASSERT_EQ('f', opt);
   ASSERT_STR_EQ("bar.txt", linux_get_optarg());
@@ -145,28 +155,33 @@ TEST test_linux_getopt_long_parsing(void) {
   ASSERT_STR_EQ("baz.txt", linux_get_optarg());
 
   /* Test 3: unknown long option */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt_long(2, argv3, "hf:", longopts, NULL);
   ASSERT_EQ('?', opt);
 
   /* Test 4: unexpected argument on no_argument */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt_long(2, argv4, "hf:", longopts, NULL);
   ASSERT_EQ('?', opt);
 
   /* Test 5: missing required argument */
-  linux_getopt_init(&status);
+  rc = linux_getopt_init(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   opt = linux_getopt_long(2, argv5, "hf:", longopts, NULL);
   ASSERT_EQ('?', opt);
 
 #if defined(_WIN32) || defined(_MSC_VER)
   {
     char *argv_alias[] = {"prog", "-h", "-f", "foo.txt", NULL};
-    linux_getopt_init(&status);
+    rc = linux_getopt_init(&status);
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
     opt = getopt(4, argv_alias, "hf:o:");
     ASSERT_EQ('h', opt);
 
-    linux_getopt_init(&status);
+    rc = linux_getopt_init(&status);
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
     opt = getopt_long(5, argv1, "hf:o:", longopts, &longindex);
     ASSERT_EQ('h', opt);
   }

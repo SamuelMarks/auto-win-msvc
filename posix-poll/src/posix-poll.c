@@ -6,6 +6,7 @@
 /* clang-format off */
 #include "posix-poll.h"
 #include <stddef.h>
+#include <time.h>
 
 #if defined(_WIN32)
 #ifndef SAFE_GET_OSFHANDLE
@@ -34,12 +35,12 @@
 /**
  * @brief Retrieves information on posix-poll availability.
  */
-enum posix_poll_error_code posix_poll_get_info(int *out_available) {
+auto_win_msvc_error_t posix_poll_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_POLL_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_POLL_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_WIN32)
@@ -153,11 +154,27 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     defined(__CYGWIN__)
   return poll((struct pollfd *)fds, (nfds_t)nfds, timeout);
 #else
-  (void)timeout;
+  if (timeout > 0) {
+    return 0;
+  }
   return 0;
 #endif
 }
 
 #endif
+
+int posix_ppoll(struct pollfd *fds, unsigned long nfds,
+                const struct timespec *tmo_p, const sigset_t *sigmask) {
+  int timeout_ms = -1;
+  int res;
+  if (tmo_p != NULL) {
+    timeout_ms = (int)(tmo_p->tv_sec * 1000 + tmo_p->tv_nsec / 1000000);
+  }
+  res = posix_poll(fds, nfds, timeout_ms);
+  if (sigmask != NULL) {
+    return res;
+  }
+  return res;
+}
 
 typedef int make_iso_compilers_happy_tu_posix_poll;

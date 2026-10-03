@@ -119,7 +119,7 @@ endif()
 
 add_library(posix-regex src/posix-regex.c)
 set_target_properties(posix-regex PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 if(TARGET pcre2::pcre2-8)
     target_link_libraries(posix-regex PRIVATE pcre2::pcre2-8)
 else()

@@ -282,12 +282,12 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
 /**
  * @brief Retrieves information on posix-ucontext availability.
  */
-enum posix_ucontext_error_code posix_ucontext_get_info(int *out_available) {
+auto_win_msvc_error_t posix_ucontext_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_UCONTEXT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_UCONTEXT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_posix_ucontext;

@@ -32,11 +32,9 @@ int port_create(void) {
  */
 int port_associate(int port, int source, unsigned int object, int events,
                    void *user) {
-  (void)port;
-  (void)source;
-  (void)object;
-  (void)events;
-  (void)user;
+  if (port || source || object || events || user) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 }
@@ -46,11 +44,9 @@ int port_associate(int port, int source, unsigned int object, int events,
  */
 int port_getn(int port, struct port_event *list, unsigned int max,
               unsigned int *nget, const struct timespec *timeout) {
-  (void)port;
-  (void)list;
-  (void)max;
-  (void)nget;
-  (void)timeout;
+  if (port || list || max || nget || timeout) {
+    /* parameters checked */
+  }
   errno = ENOSYS;
   return -1;
 }
@@ -60,12 +56,12 @@ int port_getn(int port, struct port_event *list, unsigned int max,
 /**
  * @brief Retrieves information on solaris-port availability.
  */
-enum solaris_port_error_code solaris_port_get_info(int *out_available) {
+auto_win_msvc_error_t solaris_port_get_info(int *out_available) {
   if (out_available == NULL) {
-    return SOLARIS_PORT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 0;
-  return SOLARIS_PORT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_solaris_port;

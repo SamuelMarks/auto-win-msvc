@@ -7,18 +7,18 @@
 /* clang-format on */
 
 TEST test_linux_sys_bitops_init(void) {
-  enum linux_sys_bitops_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = linux_sys_bitops_init(NULL);
-  if (rc != LINUX_SYS_BITOPS_ERROR_NULL_POINTER) {
-    printf("Expected LINUX_SYS_BITOPS_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = linux_sys_bitops_init(&status);
-  if (rc != LINUX_SYS_BITOPS_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("linux_sys_bitops_init failed with rc=%d\n", (int)rc);
     FAIL();
   }

@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||                defined(__DOS__)
 #include <stdlib.h>
@@ -71,21 +72,11 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by bsd-sys-param functions.
- */
-enum bsd_sys_param_error_code {
-  /** @brief Successful operation. */
-  BSD_SYS_PARAM_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_SYS_PARAM_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves the maximum path length defined in sys/param.h.
  * @param[out] out_maxlen Pointer to a size_t that receives the max path length.
- * @return BSD_SYS_PARAM_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_param_error_code bsd_sys_param_get_maxpathlen(size_t *out_maxlen);
+auto_win_msvc_error_t bsd_sys_param_get_maxpathlen(size_t *out_maxlen);
 
 #ifdef __cplusplus
 }

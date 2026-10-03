@@ -753,7 +753,9 @@ typedef enum greatest_test_res {
     size_t len = strlen(name), size = sizeof(g->name_buf);                     \
     memset(g->name_buf, 0x00, size);                                           \
                                                                                \
-    (void)strncat_s_else_insec(g->name_buf, size, name, size - 1);             \
+    if (strncat_s_else_insec(g->name_buf, size, name, size - 1) != 0) {        \
+      g->name_buf[size - 1] = '\0';                                            \
+    }                                                                          \
     if (g->name_suffix && (len + 1 < size)) {                                  \
       g->name_buf[len] = '_';                                                  \
       strncat_s_else_insec(&g->name_buf[len + 1], size - (len + 1),            \

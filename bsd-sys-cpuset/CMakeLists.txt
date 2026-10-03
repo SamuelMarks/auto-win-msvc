@@ -83,7 +83,7 @@ endif()
 
 add_library(bsd-sys-cpuset src/bsd-sys-cpuset.c)
 set_target_properties(bsd-sys-cpuset PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(bsd-sys-cpuset PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(bsd-sys-cpuset PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

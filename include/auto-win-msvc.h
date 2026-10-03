@@ -9,6 +9,7 @@
 
 /* clang-format off */
 #include "auto-win-msvc-configure.h"
+#include "auto-win-msvc-error.h"
 /* clang-format on */
 
 #ifdef __cplusplus

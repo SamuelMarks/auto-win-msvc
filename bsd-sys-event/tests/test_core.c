@@ -11,18 +11,18 @@
 /* clang-format on */
 
 TEST test_bsd_sys_event_get_support(void) {
-  enum bsd_sys_event_error_code rc;
+  auto_win_msvc_error_t rc;
   int supported;
 
   supported = 0;
   rc = bsd_sys_event_get_support(NULL);
-  if (rc != BSD_SYS_EVENT_ERROR_NULL_POINTER) {
-    printf("Expected BSD_SYS_EVENT_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_sys_event_get_support(&supported);
-  if (rc != BSD_SYS_EVENT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_sys_event_get_support failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -31,14 +31,14 @@ TEST test_bsd_sys_event_get_support(void) {
 }
 
 TEST test_kqueue_and_kevent(void) {
-  enum bsd_sys_event_error_code rc;
+  auto_win_msvc_error_t rc;
   int supported;
   int kq;
   int ret;
 
   supported = 0;
   rc = bsd_sys_event_get_support(&supported);
-  if (rc != BSD_SYS_EVENT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     FAIL();
   }
 

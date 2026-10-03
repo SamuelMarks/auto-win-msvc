@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -70,23 +71,13 @@ struct winsize {
 #endif
 
 /**
- * @brief Error codes returned by posix-sys-ioctl functions.
- */
-enum posix_sys_ioctl_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_SYS_IOCTL_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_SYS_IOCTL_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on posix-sys-ioctl availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_SYS_IOCTL_SUCCESS on success, or
- * POSIX_SYS_IOCTL_ERROR_NULL_POINTER on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_sys_ioctl_error_code posix_sys_ioctl_get_info(int *out_available);
+auto_win_msvc_error_t posix_sys_ioctl_get_info(int *out_available);
 
 /**
  * @brief Performs device-specific control functions on a socket or file.

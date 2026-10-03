@@ -194,12 +194,12 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
 #endif
 
 /** @brief Validates or initializes the bsd-malloc-np module. */
-enum bsd_malloc_np_error_code bsd_malloc_np_init(int *out_status) {
+auto_win_msvc_error_t bsd_malloc_np_init(int *out_status) {
   if (out_status == NULL) {
-    return BSD_MALLOC_NP_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return BSD_MALLOC_NP_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_malloc_np;

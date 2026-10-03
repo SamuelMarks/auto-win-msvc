@@ -11,12 +11,12 @@
 /**
  * @brief Retrieves information on posix-sys-select availability.
  */
-enum posix_sys_select_error_code posix_sys_select_get_info(int *out_available) {
+auto_win_msvc_error_t posix_sys_select_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_SYS_SELECT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_SYS_SELECT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if defined(_WIN32) || defined(_MSC_VER)

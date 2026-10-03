@@ -11,18 +11,18 @@
 /* clang-format on */
 
 TEST test_posix_netinet_get_info(void) {
-  enum posix_netinet_error_code rc;
+  auto_win_msvc_error_t rc;
   int info;
 
   info = 0;
   rc = posix_netinet_get_info(NULL);
-  if (rc != POSIX_NETINET_ERROR_NULL_POINTER) {
-    printf("Expected POSIX_NETINET_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_netinet_get_info(&info);
-  if (rc != POSIX_NETINET_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_netinet_get_info failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -32,25 +32,25 @@ TEST test_posix_netinet_get_info(void) {
 }
 
 TEST test_posix_netinet_is_ipv4_loopback(void) {
-  enum posix_netinet_error_code rc;
+  auto_win_msvc_error_t rc;
   int is_loopback;
 
   is_loopback = -1;
   rc = posix_netinet_is_ipv4_loopback(0x7F000001UL, NULL);
-  if (rc != POSIX_NETINET_ERROR_NULL_POINTER) {
-    printf("Expected POSIX_NETINET_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_netinet_is_ipv4_loopback(0x7F000001UL, &is_loopback);
-  if (rc != POSIX_NETINET_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_netinet_is_ipv4_loopback failed with rc=%d\n", (int)rc);
     FAIL();
   }
   ASSERT_EQ(1, is_loopback);
 
   rc = posix_netinet_is_ipv4_loopback(0xC0A80101UL, &is_loopback);
-  if (rc != POSIX_NETINET_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_netinet_is_ipv4_loopback failed with rc=%d\n", (int)rc);
     FAIL();
   }

@@ -18,10 +18,18 @@
 #endif
 #endif
 #include "posix-core.h"
+#include <sys/types.h>
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef _OFF_T_POSIX_DEFINED
+#define _OFF_T_POSIX_DEFINED
+#if defined(_MSC_VER) && !defined(off_t)
+typedef long off_t;
+#endif
 #endif
 
 #if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
@@ -32,6 +40,7 @@ extern "C" {
 typedef unsigned short mode_t;
 #endif
 
+#if defined(_WIN32)
 #ifndef creat
 #define creat posix_creat
 #endif
@@ -40,7 +49,7 @@ int posix_creat(const char *pathname, mode_t mode);
 #ifndef fcntl
 #define fcntl posix_fcntl
 #endif
-int posix_fcntl(int fd, int cmd, ...);
+int posix_fcntl(intptr_t fd, int cmd, ...);
 
 #ifndef open
 #define open posix_open
@@ -60,6 +69,7 @@ int posix_posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #define posix_fallocate posix_posix_fallocate
 #endif
 int posix_posix_fallocate(intptr_t fd, off_t offset, off_t len);
+#endif
 
 #define __dependencies__ posix - core
 

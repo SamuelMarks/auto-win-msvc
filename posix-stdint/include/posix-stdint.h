@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <vcruntime.h>
@@ -463,22 +464,12 @@ typedef uint64_t uintmax_t;
 #endif
 
 /**
- * @brief Error codes returned by posix-stdint functions.
- */
-enum posix_stdint_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_STDINT_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_STDINT_ERROR_NULL_POINTER = 1
-};
-
-/**
  * @brief Retrieves information on stdint polyfill availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_STDINT_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_stdint_error_code posix_stdint_get_info(int *out_available);
+auto_win_msvc_error_t posix_stdint_get_info(int *out_available);
 
 #ifdef __cplusplus
 }

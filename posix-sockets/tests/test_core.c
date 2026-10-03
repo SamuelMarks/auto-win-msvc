@@ -19,16 +19,16 @@ extern int dummy_posix_sockets(void);
 
 TEST test_posix_sockets_get_info(void) {
   int info = 0;
-  enum posix_sockets_error_code rc;
+  auto_win_msvc_error_t rc;
 
   rc = posix_sockets_get_info(NULL);
-  if (rc != POSIX_SOCKETS_ERROR_NULL_POINTER) {
-    printf("Expected POSIX_SOCKETS_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_sockets_get_info(&info);
-  if (rc != POSIX_SOCKETS_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_sockets_get_info failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -191,7 +191,7 @@ TEST test_posix_setservent(void) {
 TEST test_posix_poll(void) {
   int rc;
   rc = posix_poll(NULL, 0, 0);
-  (void)rc;
+  ASSERT_EQ(0, rc);
   PASS();
 }
 
@@ -209,7 +209,7 @@ TEST test_posix_select(void) {
   tv.tv_usec = 1000;
   FD_ZERO(&rfds);
   rc = posix_select(0, &rfds, NULL, NULL, &tv);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 
@@ -240,7 +240,7 @@ TEST test_posix_socket(void) {
 TEST test_posix_socketpair(void) {
   intptr_t sv[2];
   int rc = posix_socketpair(-1, -1, -1, sv);
-  (void)rc;
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 

@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #include <sys/event.h>
@@ -19,24 +20,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by bsd-sys-event functions.
- */
-enum bsd_sys_event_error_code {
-  /** @brief Successful operation. */
-  BSD_SYS_EVENT_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_SYS_EVENT_ERROR_NULL_POINTER = 1,
-  /** @brief Operation not supported on this platform. */
-  BSD_SYS_EVENT_ERROR_NOT_SUPPORTED = 2
-};
-
-/**
  * @brief Retrieves whether kqueue is natively supported on the host platform.
  * @param[out] out_supported Pointer to an integer receiving 1 if supported, 0
  * otherwise.
- * @return BSD_SYS_EVENT_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_event_error_code bsd_sys_event_get_support(int *out_supported);
+auto_win_msvc_error_t bsd_sys_event_get_support(int *out_supported);
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
     !defined(__NetBSD__)

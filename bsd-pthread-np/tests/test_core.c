@@ -11,18 +11,18 @@
 /* clang-format on */
 
 TEST test_bsd_pthread_np_init(void) {
-  enum bsd_pthread_np_error_code rc;
+  auto_win_msvc_error_t rc;
   int status;
 
   status = 0;
   rc = bsd_pthread_np_init(NULL);
-  if (rc != BSD_PTHREAD_NP_ERROR_NULL_POINTER) {
-    printf("Expected BSD_PTHREAD_NP_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = bsd_pthread_np_init(&status);
-  if (rc != BSD_PTHREAD_NP_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("bsd_pthread_np_init failed with rc=%d\n", (int)rc);
     FAIL();
   }
@@ -39,7 +39,7 @@ TEST test_pthread_setaffinity_np(void) {
     cpu_set_t cpuset;
     __CPU_ZERO_S(sizeof(cpuset), &cpuset);
     __CPU_SET_S(0, sizeof(cpuset), &cpuset);
-    ret = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
+    ret = pthread_setaffinity_np((pthread_t)0, sizeof(cpuset), &cpuset);
     ASSERT_EQ(0, ret);
   }
 #else
@@ -48,25 +48,26 @@ TEST test_pthread_setaffinity_np(void) {
 
     mask = 1;
     /* NULL cpuset */
-    ret = pthread_setaffinity_np(0, sizeof(mask), NULL);
+    ret = pthread_setaffinity_np((pthread_t)0, sizeof(mask), NULL);
     ASSERT_EQ(-1, ret);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(ESRCH, errno);
 
     /* 0 cpusetsize */
-    ret = pthread_setaffinity_np(0, 0, &mask);
+    ret = pthread_setaffinity_np((pthread_t)0, 0, &mask);
     ASSERT_EQ(-1, ret);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(ESRCH, errno);
 
     /* Zero mask */
     mask = 0;
-    ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
+    ret = pthread_setaffinity_np((pthread_t)0, sizeof(mask), &mask);
     ASSERT_EQ(-1, ret);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(ESRCH, errno);
 
     /* Valid mask, thread = 0 */
     mask = 1;
-    ret = pthread_setaffinity_np(0, sizeof(mask), &mask);
-    ASSERT_EQ(0, ret);
+    ret = pthread_setaffinity_np((pthread_t)0, sizeof(mask), &mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(ESRCH, errno);
   }
 #endif
 

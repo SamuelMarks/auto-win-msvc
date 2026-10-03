@@ -6,8 +6,14 @@
 #include <errno.h>
 
 int eventfd(unsigned int initval, int flags) {
-  (void)initval;
-  (void)flags;
+  if (flags < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (initval == 0xFFFFFFFFU) {
+    errno = EINVAL;
+    return -1;
+  }
   errno = ENOSYS;
   return -1;
 }

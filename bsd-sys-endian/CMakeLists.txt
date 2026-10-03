@@ -83,7 +83,7 @@ endif()
 
 add_library(bsd-sys-endian src/bsd-sys-endian.c)
 set_target_properties(bsd-sys-endian PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(bsd-sys-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
+target_include_directories(bsd-sys-endian PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()

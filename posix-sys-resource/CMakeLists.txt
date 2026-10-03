@@ -91,7 +91,7 @@ endif()
 
 add_library(posix-sys-resource src/posix-sys-resource.c)
 set_target_properties(posix-sys-resource PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-sys-resource PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(posix-sys-resource PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if(MSVC OR WIN32)
     target_link_libraries(posix-sys-resource PUBLIC psapi)

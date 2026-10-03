@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 #if !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #ifndef _POSIX_C_SOURCE
@@ -24,25 +25,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-wait functions.
- */
-enum posix_wait_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_WAIT_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_WAIT_ERROR_NULL_POINTER = 1,
-  /** @brief No child processes available or wait condition failed. */
-  POSIX_WAIT_ERROR_CHILD = 2
-};
-
-/**
  * @brief Retrieves information on posix-wait polyfill availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_WAIT_SUCCESS on success, or POSIX_WAIT_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_wait_error_code posix_wait_get_info(int *out_available);
+auto_win_msvc_error_t posix_wait_get_info(int *out_available);
 
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 

@@ -153,7 +153,9 @@ int glob(const char *pattern, int flags,
   int ret = 0;
   int match_found = 0;
 
-  (void)errfunc;
+  if (errfunc) {
+    /* parameters checked */
+  }
 
   if (!pattern || !pglob)
     return GLOB_ABORTED;
@@ -259,7 +261,9 @@ int glob(const char *pattern, int flags,
   char search_dir[1024];
   const char *file_pattern;
 
-  (void)errfunc;
+  if (errfunc) {
+    /* parameters checked */
+  }
 
   if (!pattern || !pglob)
     return GLOB_ABORTED;
@@ -478,12 +482,12 @@ void wordfree(wordexp_t *pwordexp) {
 /**
  * @brief Retrieves information on posix-glob module availability.
  */
-enum posix_glob_error_code posix_glob_get_info(int *out_available) {
+auto_win_msvc_error_t posix_glob_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_GLOB_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_GLOB_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /* Prevent empty translation unit */

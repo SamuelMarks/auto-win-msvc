@@ -8,17 +8,17 @@
 /* clang-format on */
 
 TEST test_posix_spawn_init(void) {
-  enum posix_spawn_error_code rc;
+  auto_win_msvc_error_t rc;
   int status = 0;
 
   rc = posix_spawn_init(NULL);
-  if (rc != POSIX_SPAWN_ERROR_NULL_POINTER) {
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
     printf("Expected NULL_POINTER, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = posix_spawn_init(&status);
-  if (rc != POSIX_SPAWN_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("posix_spawn_init failed with rc=%d\n", (int)rc);
     FAIL();
   }

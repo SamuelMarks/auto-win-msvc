@@ -8,6 +8,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 
 #if defined(_MSC_VER)
@@ -96,24 +97,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-spawn operations.
- */
-enum posix_spawn_error_code {
-  /** @brief Successful operation. */
-  POSIX_SPAWN_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  POSIX_SPAWN_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument passed. */
-  POSIX_SPAWN_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the posix-spawn module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return POSIX_SPAWN_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_spawn_error_code posix_spawn_init(int *out_status);
+auto_win_msvc_error_t posix_spawn_init(int *out_status);
 
 /** @brief Reset effective user/group IDs flag. */
 #define POSIX_SPAWN_RESETIDS 0x01

@@ -13,12 +13,12 @@
 /* clang-format on */
 
 /** @brief Initializes and validates the bsd-pthread-np module. */
-enum bsd_pthread_np_error_code bsd_pthread_np_init(int *out_status) {
+auto_win_msvc_error_t bsd_pthread_np_init(int *out_status) {
   if (out_status == NULL) {
-    return BSD_PTHREAD_NP_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_status = 1;
-  return BSD_PTHREAD_NP_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) &&    \
@@ -31,6 +31,11 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
   HANDLE hThread;
   size_t i;
   const unsigned char *p = (const unsigned char *)cpuset;
+
+  if (!thread) {
+    errno = ESRCH;
+    return -1;
+  }
 
   if (!cpuset || cpusetsize == 0) {
     errno = EINVAL;
@@ -47,7 +52,8 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
   }
 
   if (!thread) {
-    hThread = GetCurrentThread();
+    errno = ESRCH;
+    return -1;
   } else {
     hThread = (HANDLE)thread;
   }
@@ -67,7 +73,10 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
   unsigned long mask = 0;
   const unsigned char *p = (const unsigned char *)cpuset;
 
-  (void)thread;
+  if (!thread) {
+    errno = ESRCH;
+    return -1;
+  }
   if (!cpuset || cpusetsize == 0) {
     errno = EINVAL;
     return -1;

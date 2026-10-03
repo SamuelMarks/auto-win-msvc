@@ -7,6 +7,7 @@
  */
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||                defined(__DOS__)
 #include <stddef.h>
 #else
@@ -54,24 +55,12 @@ int posix_flock(int fd, int operation);
 #endif
 
 /**
- * @brief Error codes returned by bsd-sys-file operations.
- */
-enum bsd_sys_file_error_code {
-  /** @brief Successful operation. */
-  BSD_SYS_FILE_SUCCESS = 0,
-  /** @brief Null pointer passed as argument. */
-  BSD_SYS_FILE_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument. */
-  BSD_SYS_FILE_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Initializes and validates the bsd-sys-file module.
  * @param[out] out_status Pointer to an integer that receives the initialized
  * status.
- * @return BSD_SYS_FILE_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum bsd_sys_file_error_code bsd_sys_file_init(int *out_status);
+auto_win_msvc_error_t bsd_sys_file_init(int *out_status);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 #define POSIX_GLOB_H
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <stddef.h>
 /* clang-format on */
 
@@ -11,25 +12,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-glob module functions.
- */
-enum posix_glob_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_GLOB_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_GLOB_ERROR_NULL_POINTER = 1,
-  /** @brief Invalid argument was provided. */
-  POSIX_GLOB_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Retrieves information on posix-glob module availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_GLOB_SUCCESS on success, or POSIX_GLOB_ERROR_NULL_POINTER on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_glob_error_code posix_glob_get_info(int *out_available);
+auto_win_msvc_error_t posix_glob_get_info(int *out_available);
 
 /* ------------------------------------------------------------------------- */
 /* Cross-Platform Printf Formatting */

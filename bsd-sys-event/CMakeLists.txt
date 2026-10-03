@@ -83,7 +83,7 @@ endif()
 
 add_library(bsd-sys-event src/bsd-sys-event.c)
 set_target_properties(bsd-sys-event PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(bsd-sys-event PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(bsd-sys-event PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

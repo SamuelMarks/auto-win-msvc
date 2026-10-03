@@ -12,6 +12,7 @@
 #endif
 
 /* clang-format off */
+#include "auto-win-msvc-error.h"
 #include <signal.h>
 #include <stddef.h>
 #include "posix-signal-ext.h"
@@ -22,33 +23,21 @@ extern "C" {
 #endif
 
 /**
- * @brief Error codes returned by posix-signal functions.
- */
-enum posix_signal_error_code {
-  /** @brief Operation completed successfully. */
-  POSIX_SIGNAL_SUCCESS = 0,
-  /** @brief A null pointer was passed as an argument. */
-  POSIX_SIGNAL_ERROR_NULL_POINTER = 1,
-  /** @brief An invalid argument was passed. */
-  POSIX_SIGNAL_ERROR_INVALID_ARGUMENT = 2
-};
-
-/**
  * @brief Retrieves information on posix-signal availability.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return POSIX_SIGNAL_SUCCESS on success, or POSIX_SIGNAL_ERROR_NULL_POINTER
- * on NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
-enum posix_signal_error_code posix_signal_get_info(int *out_available);
+auto_win_msvc_error_t posix_signal_get_info(int *out_available);
 
 /**
  * @brief Initializes and validates the posix-signal module.
  * @param[out] out_status Pointer to an integer receiving the initialized
  * status.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_init(int *out_status);
+auto_win_msvc_error_t posix_signal_init(int *out_status);
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define POSIX_SIGNAL_MSVC 1
@@ -94,6 +83,46 @@ typedef unsigned long sigset_t;
 #ifndef SIGALRM
 /** \brief Alarm clock signal. */
 #define SIGALRM 14
+#endif
+#ifndef SIGBUS
+/** \brief Bus error signal. */
+#define SIGBUS 7
+#endif
+#ifndef SIGURG
+/** \brief Urgent condition on socket. */
+#define SIGURG 23
+#endif
+#ifndef SIGXCPU
+/** \brief CPU time limit exceeded. */
+#define SIGXCPU 24
+#endif
+#ifndef SIGXFSZ
+/** \brief File size limit exceeded. */
+#define SIGXFSZ 25
+#endif
+#ifndef SIGVTALRM
+/** \brief Virtual timer expired. */
+#define SIGVTALRM 26
+#endif
+#ifndef SIGPROF
+/** \brief Profiling timer expired. */
+#define SIGPROF 27
+#endif
+#ifndef SIGWINCH
+/** \brief Window resize signal. */
+#define SIGWINCH 28
+#endif
+#ifndef SIGIO
+/** \brief I/O now possible. */
+#define SIGIO 29
+#endif
+#ifndef SIGPOLL
+/** \brief Pollable event. */
+#define SIGPOLL 29
+#endif
+#ifndef SIGSYS
+/** \brief Bad system call. */
+#define SIGSYS 31
 #endif
 
 /** \brief Signal handler function pointer type. */
@@ -275,42 +304,40 @@ posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler);
  * @brief Checks whether a signal is natively supported by the C runtime.
  * @param[in] signum Signal number to check.
  * @param[out] out_is_crt Pointer receiving 1 if native CRT signal, 0 otherwise.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_is_crt_signal(int signum,
-                                                        int *out_is_crt);
+auto_win_msvc_error_t posix_signal_is_crt_signal(int signum, int *out_is_crt);
 
 /**
  * @brief Retrieves the current process ID.
  * @param[out] out_pid Pointer to pid_t receiving current PID.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_get_current_pid(pid_t *out_pid);
+auto_win_msvc_error_t posix_signal_get_current_pid(pid_t *out_pid);
 
 /**
  * @brief Simulates exception handling for posix-signal testing.
  * @param[in] code Exception code to simulate.
  * @param[out] out_result Pointer to receive the handler result.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_simulate_exception(unsigned long code,
-                                                             long *out_result);
+auto_win_msvc_error_t posix_signal_simulate_exception(unsigned long code,
+                                                      long *out_result);
 
 /**
  * @brief Simulates signal handling for posix-signal testing.
  * @param[in] signum Signal number to simulate.
  * @param[out] out_status Pointer to receive completion status.
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_simulate_signal(int signum,
-                                                          int *out_status);
+auto_win_msvc_error_t posix_signal_simulate_signal(int signum, int *out_status);
 
 /**
  * @brief Resets all internal signal handler state.
  * @param[out] out_status Pointer to integer receiving status (1).
- * @return POSIX_SIGNAL_SUCCESS on success, or an error code on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
-enum posix_signal_error_code posix_signal_reset(int *out_status);
+auto_win_msvc_error_t posix_signal_reset(int *out_status);
 #endif
 
 #ifndef SIG_BLOCK

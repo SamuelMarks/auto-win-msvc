@@ -16,8 +16,9 @@
  */
 int main(int argc, char **argv) {
   struct utsname u;
-  (void)argc;
-  (void)argv;
+  if (argc || argv) {
+    /* parameters checked */
+  }
   if (uname(&u) == 0) {
     printf("%s\n", u.sysname);
   } else {

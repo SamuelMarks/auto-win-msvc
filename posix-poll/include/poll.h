@@ -1,6 +1,4 @@
 #ifndef POSIX_POLL_POLL_H
-#if defined(__GNUC__)
-#endif
 #define POSIX_POLL_POLL_H
 
 /**
@@ -16,9 +14,8 @@
 #else
 #include <poll.h>
 #endif
-#else
-#include "posix-poll.h"
 #endif
+#include "posix-poll.h"
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -30,5 +27,3 @@ extern "C" {
 #endif /* __cplusplus */
 
 #endif /* POSIX_POLL_POLL_H */
-
-/* API Contract symbols: __dependencies__, __include_next__ */

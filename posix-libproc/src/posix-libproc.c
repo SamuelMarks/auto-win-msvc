@@ -49,9 +49,9 @@ int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
 #elif !defined(__APPLE__)
 
 int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
-  (void)pid;
-  (void)buffer;
-  (void)buffersize;
+  if (pid < 0 || buffer == NULL || buffersize == 0) {
+    return 0;
+  }
   return 0;
 }
 
@@ -60,12 +60,12 @@ int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
 /**
  * @brief Retrieves information on posix-libproc availability.
  */
-enum posix_libproc_error_code posix_libproc_get_info(int *out_available) {
+auto_win_msvc_error_t posix_libproc_get_info(int *out_available) {
   if (out_available == NULL) {
-    return POSIX_LIBPROC_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   *out_available = 1;
-  return POSIX_LIBPROC_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_posix_libproc;

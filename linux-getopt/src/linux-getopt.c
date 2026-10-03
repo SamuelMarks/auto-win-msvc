@@ -176,9 +176,9 @@ int linux_get_opterr(void) { return linux_opterr; }
 int linux_get_optopt(void) { return linux_optopt; }
 
 /** @brief Initializes and resets the linux-getopt module state. */
-enum linux_getopt_error_code linux_getopt_init(int *out_status) {
+auto_win_msvc_error_t linux_getopt_init(int *out_status) {
   if (out_status == NULL) {
-    return LINUX_GETOPT_ERROR_NULL_POINTER;
+    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   linux_optarg = NULL;
   linux_optind = 1;
@@ -192,7 +192,7 @@ enum linux_getopt_error_code linux_getopt_init(int *out_status) {
   optopt = 0;
 #endif
   *out_status = 1;
-  return LINUX_GETOPT_SUCCESS;
+  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 typedef int make_iso_compilers_happy_tu_linux_getopt;

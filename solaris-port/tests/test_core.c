@@ -8,18 +8,18 @@
 /* clang-format on */
 
 TEST test_solaris_port_get_info(void) {
-  enum solaris_port_error_code rc;
+  auto_win_msvc_error_t rc;
   int info;
 
   info = 1;
   rc = solaris_port_get_info(NULL);
-  if (rc != SOLARIS_PORT_ERROR_NULL_POINTER) {
-    printf("Expected SOLARIS_PORT_ERROR_NULL_POINTER, got %d\n", (int)rc);
+  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
+    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
     FAIL();
   }
 
   rc = solaris_port_get_info(&info);
-  if (rc != SOLARIS_PORT_SUCCESS) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     printf("solaris_port_get_info failed with rc=%d\n", (int)rc);
     FAIL();
   }
