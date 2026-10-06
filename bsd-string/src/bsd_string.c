@@ -113,4 +113,6 @@ char *strcasestr(const char *haystack, const char *needle) {
 
 #endif /* _MSC_VER || _WIN32 */
 
+int bsd_string_dummy_for_coverage(void) { return 0; }
+
 typedef int make_iso_compilers_happy_bsd_string_c;

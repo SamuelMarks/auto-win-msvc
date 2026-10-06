@@ -26,7 +26,11 @@ TEST test_sys_un(void) {
 }
 
 TEST test_posix_accept(void) {
-  int rc = posix_accept(-1, NULL, NULL);
+  struct sockaddr sa = {0};
+  posix_socklen_t len = 0;
+  int rc = posix_accept(1, &sa, &len);
+  ASSERT_EQ(-1, rc);
+  rc = posix_accept(1, NULL, &len);
   ASSERT_EQ(-1, rc);
   PASS();
 }
@@ -36,7 +40,9 @@ TEST test_posix_bind(void) {
   int rc;
   memset(&sa, 0, sizeof(sa));
   sa.sa_family = AF_INET;
-  rc = posix_bind(-1, &sa, sizeof(sa));
+  rc = posix_bind(1, &sa, sizeof(sa));
+  ASSERT_EQ(-1, rc);
+  rc = posix_bind(1, NULL, sizeof(sa));
   ASSERT_EQ(-1, rc);
   PASS();
 }
@@ -46,7 +52,9 @@ TEST test_posix_connect(void) {
   int rc;
   memset(&sa, 0, sizeof(sa));
   sa.sa_family = AF_INET;
-  rc = posix_connect(-1, &sa, sizeof(sa));
+  rc = posix_connect(1, &sa, sizeof(sa));
+  ASSERT_EQ(-1, rc);
+  rc = posix_connect(1, NULL, sizeof(sa));
   ASSERT_EQ(-1, rc);
   PASS();
 }
@@ -54,37 +62,78 @@ TEST test_posix_connect(void) {
 TEST test_posix_connect_retry(void) {
   int rc;
   /* Test default max_retries <= 0 and delay_ms <= 0 branches */
-  rc = posix_connect_retry(-1, NULL, 0, 0, 0);
+  rc = posix_connect_retry(1, NULL, 0, 0, 0);
   ASSERT_EQ(-1, rc);
 
-#if defined(_WIN32)
   /* Test successful connection branch via listening socket on Windows */
   {
     int listener = posix_socket(AF_INET, SOCK_STREAM, 0);
     if (listener >= 0) {
       struct sockaddr_in addr;
       posix_socklen_t addrlen = (posix_socklen_t)sizeof(addr);
+      int client;
+      int ret;
       memset(&addr, 0, sizeof(addr));
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
       addr.sin_port = 0;
-      if (posix_bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == 0 &&
-          posix_getsockname(listener, (struct sockaddr *)&addr, &addrlen) ==
-              0 &&
-          posix_listen(listener, 1) == 0) {
-        int client = posix_socket(AF_INET, SOCK_STREAM, 0);
-        if (client >= 0) {
-          if (posix_connect_retry(client, (struct sockaddr *)&addr,
-                                  sizeof(addr), 3, 10) == 0) {
-            /* Connected */
-          }
-          closesocket(client);
-        }
-      }
-      closesocket(listener);
+
+      ASSERT_EQ(0,
+                posix_bind(listener, (struct sockaddr *)&addr, sizeof(addr)));
+      ASSERT_EQ(
+          0, posix_getsockname(listener, (struct sockaddr *)&addr, &addrlen));
+      ASSERT_EQ(0, posix_listen(listener, 1));
+
+      client = posix_socket(AF_INET, SOCK_STREAM, 0);
+      ASSERT(client >= 0);
+
+      ret = posix_connect_retry(client, (struct sockaddr *)&addr, sizeof(addr),
+                                3, 10);
+      ASSERT_EQ(0, ret);
+#if defined(_WIN32)
+      closesocket((SOCKET)client);
+#else
+      close(client);
+#endif
+
+#if defined(_WIN32)
+      closesocket((SOCKET)listener);
+#else
+      close(listener);
+#endif
     }
   }
+
+  PASS();
+}
+
+TEST test_posix_socketpair(void) {
+  intptr_t fds[2];
+  int rc;
+
+  /* Valid call */
+  rc = posix_socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+  if (rc == 0) {
+#if defined(_WIN32)
+    closesocket((SOCKET)fds[0]);
+    closesocket((SOCKET)fds[1]);
+#else
+    close((int)fds[0]);
+    close((int)fds[1]);
 #endif
+  }
+
+  /* Domain AF_INET conversion fallback test */
+  rc = posix_socketpair(AF_INET, SOCK_STREAM, 0, fds);
+  if (rc == 0) {
+#if defined(_WIN32)
+    closesocket((SOCKET)fds[0]);
+    closesocket((SOCKET)fds[1]);
+#else
+    close((int)fds[0]);
+    close((int)fds[1]);
+#endif
+  }
 
   PASS();
 }
@@ -101,5 +150,6 @@ SUITE(suite_posix_sockets_conn) {
   RUN_TEST(test_posix_bind);
   RUN_TEST(test_posix_connect);
   RUN_TEST(test_posix_connect_retry);
+  RUN_TEST(test_posix_socketpair);
   RUN_TEST(test_posix_listen);
 }

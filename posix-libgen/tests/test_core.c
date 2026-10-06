@@ -13,16 +13,10 @@ TEST test_posix_libgen_get_info(void) {
 
   info = 0;
   rc = posix_libgen_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_libgen_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_libgen_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, info);
 
   PASS();
@@ -101,6 +95,30 @@ TEST test_basename(void) {
   res = basename(buf);
   ASSERT_STR_EQ("file.txt", res);
 
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "ab");
+#else
+  strcpy(buf, "ab");
+#endif
+  res = basename(buf);
+  ASSERT_STR_EQ("ab", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "foo\\");
+#else
+  strcpy(buf, "foo\\");
+#endif
+  res = basename(buf);
+  ASSERT_STR_EQ("foo", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "c:bar");
+#else
+  strcpy(buf, "c:bar");
+#endif
+  res = basename(buf);
+  ASSERT_STR_EQ("bar", res);
+
   /* Normal UNIX path */
 #if defined(_MSC_VER)
   strcpy_s(buf, sizeof(buf), "/usr/bin");
@@ -158,6 +176,46 @@ TEST test_dirname(void) {
 #endif
   res = dirname(buf);
   ASSERT_STR_EQ(".", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "a");
+#else
+  strcpy(buf, "a");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ(".", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "foo\\");
+#else
+  strcpy(buf, "foo\\");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ(".", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "ab/cd");
+#else
+  strcpy(buf, "ab/cd");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ("ab", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "\\foo");
+#else
+  strcpy(buf, "\\foo");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ("\\", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "a\\b");
+#else
+  strcpy(buf, "a\\b");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ("a", res);
 
   /* Relative path with slash */
 #if defined(_MSC_VER)
@@ -228,6 +286,14 @@ TEST test_dirname(void) {
 #endif
   res = dirname(buf);
   ASSERT_STR_EQ("C:", res);
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "foo:bar");
+#else
+  strcpy(buf, "foo:bar");
+#endif
+  res = dirname(buf);
+  ASSERT_STR_EQ(".", res);
 
   PASS();
 }

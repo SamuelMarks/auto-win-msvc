@@ -4,6 +4,14 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
+#if defined(_MSC_VER)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <intrin.h>
+#endif
 /* clang-format on */
 
 #ifndef _ERROR_TYPE_T_DEFINED
@@ -13,17 +21,6 @@ typedef int error_type_t;
 #endif
 
 #if defined(_MSC_VER)
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-/* clang-format off */
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-#include <intrin.h>
-/* clang-format on */
-
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 #if defined(_WIN64)
@@ -82,10 +79,9 @@ LINUX_SYS_BITOPS_INLINE error_type_t posix___ffs(unsigned long word,
                                                  unsigned long *out_index) {
   unsigned long index;
   unsigned char res = _BitScanForward(&index, word);
+  (void)res;
   if (out_index) {
     *out_index = index;
-  }
-  if (res) { /* unused */
   }
   return ERR_NONE;
 }
@@ -94,10 +90,9 @@ LINUX_SYS_BITOPS_INLINE error_type_t posix_ffz(unsigned long word,
                                                unsigned long *out_index) {
   unsigned long index;
   unsigned char res = _BitScanForward(&index, ~word);
+  (void)res;
   if (out_index) {
     *out_index = index;
-  }
-  if (res) { /* unused */
   }
   return ERR_NONE;
 }
@@ -175,24 +170,21 @@ posix_test_and_change_bit(int nr, volatile unsigned long *addr) {
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___set_bit(int nr, volatile unsigned long *addr) {
   unsigned char res = _bittestandset((long *)addr, nr);
-  if (res) { /* unused */
-  }
+  (void)res;
   return ERR_NONE;
 }
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___clear_bit(int nr, volatile unsigned long *addr) {
   unsigned char res = _bittestandreset((long *)addr, nr);
-  if (res) { /* unused */
-  }
+  (void)res;
   return ERR_NONE;
 }
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___change_bit(int nr, volatile unsigned long *addr) {
   unsigned char res = _bittestandcomplement((long *)addr, nr);
-  if (res) { /* unused */
-  }
+  (void)res;
   return ERR_NONE;
 }
 
@@ -286,9 +278,8 @@ posix_fls64(unsigned long long x) {
 LINUX_SYS_BITOPS_INLINE error_type_t posix___ffs(unsigned long word,
                                                  unsigned long *out_index) {
 #if defined(__GNUC__) || defined(__clang__)
-  if (out_index) {
+  if (out_index)
     *out_index = (unsigned long)__builtin_ctzl(word);
-  }
   return ERR_NONE;
 #else
   int i;
@@ -316,8 +307,7 @@ posix_set_bit(int nr, volatile unsigned long *addr) {
   volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_or(p, mask);
-  if (old) { /* unused */
-  }
+  (void)old;
 #else
   *p |= mask;
 #endif
@@ -330,8 +320,7 @@ posix_clear_bit(int nr, volatile unsigned long *addr) {
   volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_and(p, mask);
-  if (old) { /* unused */
-  }
+  (void)old;
 #else
   *p &= mask;
 #endif
@@ -344,8 +333,7 @@ posix_change_bit(int nr, volatile unsigned long *addr) {
   volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_xor(p, mask);
-  if (old) { /* unused */
-  }
+  (void)old;
 #else
   *p ^= mask;
 #endif

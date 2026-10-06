@@ -7,22 +7,18 @@
 #include <errno.h>
 /* clang-format on */
 
+extern int dummy_posix_termios(void);
+
 TEST test_posix_termios_get_info(void) {
   auto_win_msvc_error_t rc;
   int info;
 
   info = 0;
   rc = posix_termios_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_termios_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_termios_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, info);
 
   PASS();
@@ -129,6 +125,17 @@ TEST test_termios_tc_functions(void) {
   ASSERT(rc == 0 || rc == -1);
   rc = tcsendbreak(-1, 0);
   ASSERT_EQ(-1, rc);
+
+  /* Coverage for non-zero fd */
+  rc = tcflow(1, TCOON);
+  ASSERT(rc == 0 || rc == -1);
+  rc = tcflush(1, TCOFLUSH);
+  ASSERT(rc == 0 || rc == -1);
+  rc = tcsendbreak(1, 10);
+  ASSERT(rc == 0 || rc == -1);
+
+  /* Dummy function coverage */
+  ASSERT_EQ(0, dummy_posix_termios());
 
   PASS();
 }

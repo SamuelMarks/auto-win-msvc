@@ -8,6 +8,7 @@ SUITE_EXTERN(suite_posix_spawn_spawn);
 SUITE_EXTERN(suite_posix_spawn_spawnp);
 SUITE_EXTERN(suite_posix_spawn_spawnattr);
 SUITE_EXTERN(suite_posix_spawn_header);
+SUITE_EXTERN(suite_posix_spawn_mock_oom);
 
 GREATEST_MAIN_DEFS();
 
@@ -17,5 +18,6 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_posix_spawn_spawnp);
   RUN_SUITE(suite_posix_spawn_spawnattr);
   RUN_SUITE(suite_posix_spawn_header);
+  RUN_SUITE(suite_posix_spawn_mock_oom);
   GREATEST_MAIN_END();
 }

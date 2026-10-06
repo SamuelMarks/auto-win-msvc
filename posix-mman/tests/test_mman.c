@@ -47,4 +47,3 @@ SUITE(suite_posix_mman_mman) {
   RUN_TEST(test_mman);
   RUN_TEST(test_memfd_create);
 }
-void test_posix_memfd_create(void) {}

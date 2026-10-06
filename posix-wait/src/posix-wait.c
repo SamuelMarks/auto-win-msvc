@@ -308,8 +308,7 @@ pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
 
 /* Non-standard Microsoft-compatible cwait */
 pid_t cwait(int *termstat, pid_t pid, int action) {
-  if (action) {
-  }
+  (void)action;
   return waitpid(pid, termstat, 0);
 }
 

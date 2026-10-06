@@ -713,7 +713,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (handle == -1) {
     return EBADF;
   }
-  if (offset < 0 || len < 0) {
+  if (offset < 0 || len < 0 || advice < 0) {
     return EINVAL;
   }
 

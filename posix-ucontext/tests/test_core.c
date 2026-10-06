@@ -9,12 +9,21 @@
 #if defined(_WIN32)
 
 static int g_fiber_ran = 0;
+static int g_fiber_args_ran = 0;
 static ucontext_t g_main_ctx;
 static ucontext_t g_fiber_ctx;
+static ucontext_t g_fiber_ctx_args;
 
 static void fiber_entry(void) {
   g_fiber_ran = 1;
   swapcontext(&g_fiber_ctx, &g_main_ctx);
+}
+
+static void fiber_entry_args(int a, int b) {
+  if (a == 42 && b == 84) {
+    g_fiber_args_ran = 1;
+  }
+  swapcontext(&g_fiber_ctx_args, &g_main_ctx);
 }
 
 #endif /* defined(_WIN32) */
@@ -44,11 +53,14 @@ TEST test_ucontext_null_args(void) {
 #if defined(_WIN32)
   ucontext_t ctx;
 
+  memset(&ctx, 0, sizeof(ctx));
   ASSERT_EQ(-1, getcontext(NULL));
   ASSERT_EQ(-1, setcontext(NULL));
+  ASSERT_EQ(-1, setcontext(&ctx)); /* Invalid fiber */
   ASSERT_EQ(-1, swapcontext(NULL, NULL));
   ASSERT_EQ(-1, swapcontext(&ctx, NULL));
   ASSERT_EQ(-1, swapcontext(NULL, &ctx));
+  ASSERT_EQ(-1, swapcontext(&g_main_ctx, &ctx)); /* Invalid fiber */
 #endif
 
   PASS();
@@ -57,6 +69,7 @@ TEST test_ucontext_null_args(void) {
 TEST test_ucontext_switching(void) {
 #if defined(_WIN32)
   char stack[16384];
+  char stack_args[16384];
   int ret;
 
   g_fiber_ran = 0;
@@ -68,6 +81,17 @@ TEST test_ucontext_switching(void) {
     makecontext(&g_fiber_ctx, fiber_entry, 0);
     swapcontext(&g_main_ctx, &g_fiber_ctx);
     ASSERT_EQ(1, g_fiber_ran);
+  }
+
+  g_fiber_args_ran = 0;
+  ret = getcontext(&g_fiber_ctx_args);
+  if (ret == 0) {
+    g_fiber_ctx_args.uc_stack.ss_sp = stack_args;
+    g_fiber_ctx_args.uc_stack.ss_size = sizeof(stack_args);
+    g_fiber_ctx_args.uc_link = &g_main_ctx;
+    makecontext(&g_fiber_ctx_args, (void (*)(void))fiber_entry_args, 2, 42, 84);
+    swapcontext(&g_main_ctx, &g_fiber_ctx_args);
+    ASSERT_EQ(1, g_fiber_args_ran);
   }
 #endif
 

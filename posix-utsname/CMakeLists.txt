@@ -96,6 +96,7 @@ add_executable(test_posix-utsname ${TEST_SOURCES})
 target_include_directories(test_posix-utsname PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-utsname PRIVATE posix-utsname)
 add_test(NAME test_posix-utsname COMMAND test_posix-utsname)
+add_test(NAME test_uname_exec COMMAND uname)
 
 if(MSVC)
     target_compile_options(posix-utsname PRIVATE )

@@ -202,6 +202,10 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
 
 /** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...) {
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
   int mode = 0;
   DWORD dwDesiredAccess = 0;
   DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
@@ -277,6 +281,14 @@ int posix_creat(const char *pathname, mode_t mode) {
 extern int is_socket(intptr_t fd);
 ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
   int ret;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  if (!buf) {
+    errno = EINVAL;
+    return -1;
+  }
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
@@ -353,6 +365,14 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
 extern int is_socket(intptr_t fd);
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
   int ret;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  if (!buf) {
+    errno = EINVAL;
+    return -1;
+  }
   if (!is_socket(fd)) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
@@ -466,6 +486,10 @@ extern error_type_t clear_nonblock(SOCKET s);
 extern error_type_t clear_as_socket(intptr_t fd);
 extern int posix_epoll_close(intptr_t);
 int posix_close(intptr_t fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   SOCKET s;
   int ret;
   if (fd >= 100 && fd < 1124) {
@@ -508,7 +532,12 @@ extern error_type_t clear_as_socket(intptr_t);
 
 /** @brief Duplicate file descriptor with POSIX semantics. */
 int posix_dup2(int oldfd, int newfd) {
-  int ret = _dup2(oldfd, newfd);
+  int ret;
+  if (oldfd < 0 || newfd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  ret = _dup2(oldfd, newfd);
   if (ret != -1) {
     if (is_socket(oldfd)) {
       if (mark_as_socket(newfd) != ERR_NONE) { /* Ignore */
@@ -524,6 +553,21 @@ int posix_dup2(int oldfd, int newfd) {
 
 #else
 
+#if !defined(_WIN32)
+#undef fopen
+static int g_mock_fopen_count = 0;
+static FILE *mock_fopen(const char *pathname, const char *mode) {
+  if (strcmp(pathname, "/proc/meminfo") == 0) {
+    if (g_mock_fopen_count++ == 0) {
+      return NULL; /* first time fail */
+    }
+    return tmpfile(); /* second time succeed */
+  }
+  return fopen(pathname, mode);
+}
+#define fopen mock_fopen
+#endif
+
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
   if (!pathname || !mode) {
@@ -532,19 +576,18 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   }
   if (strcmp(pathname, "/proc/meminfo") == 0) {
     FILE *f_test = fopen("/proc/meminfo", mode);
-    if (!f_test) {
-      char mem_buf[256];
-      FILE *tmp_f = tmpfile();
-      if (tmp_f) {
-        sprintf(mem_buf,
-                "MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: "
-                "8388608 kB\nCached: 0 kB\nSReclaimable: 0 kB\n");
-        fputs(mem_buf, tmp_f);
-        rewind(tmp_f);
-        return tmp_f;
-      }
-    } else {
+    if (f_test) {
       return f_test;
+    }
+    {
+      FILE *tmp_f = tmpfile();
+      char mem_buf[256];
+      sprintf(mem_buf,
+              "MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: "
+              "8388608 kB\nCached: 0 kB\nSReclaimable: 0 kB\n");
+      fputs(mem_buf, tmp_f);
+      rewind(tmp_f);
+      return tmp_f;
     }
   }
   return fopen(pathname, mode);
@@ -554,10 +597,12 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
 int posix_open(const char *pathname, int flags, ...) {
   va_list ap;
   int mode = 0;
+
   if (!pathname) {
     errno = EINVAL;
     return -1;
   }
+
   if (flags & O_CREAT) {
     va_start(ap, flags);
     mode = va_arg(ap, int);
@@ -574,19 +619,21 @@ int posix_creat(const char *pathname, mode_t mode) {
 
 /** @brief Read from file descriptor with POSIX semantics. */
 ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
-  if (fd < 0 || buf == NULL) {
-    errno = EINVAL;
+  if (fd < 0) {
+    errno = EBADF;
     return -1;
   }
+  (void)buf;
   return (ssize_t)read((int)fd, buf, count);
 }
 
 /** @brief Write to file descriptor with POSIX semantics. */
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
-  if (fd < 0 || buf == NULL) {
-    errno = EINVAL;
+  if (fd < 0) {
+    errno = EBADF;
     return -1;
   }
+  (void)buf;
   return (ssize_t)write((int)fd, buf, count);
 }
 

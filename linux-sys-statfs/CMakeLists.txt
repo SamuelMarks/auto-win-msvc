@@ -81,8 +81,8 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
-add_library(linux-sys-statfs src/linux-sys-statfs.c src/mntent.c)
-set_target_properties(linux-sys-statfs PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+add_library(linux-sys-statfs STATIC src/linux-sys-statfs.c src/mntent.c)
+
 target_include_directories(linux-sys-statfs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

@@ -162,6 +162,11 @@ int posix_wait_kill(pid_t pid, int sig);
 
 #endif /* defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__) */
 
+/**
+ * @brief Microsoft-compatible cwait.
+ */
+pid_t cwait(int *termstat, pid_t pid, int action);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

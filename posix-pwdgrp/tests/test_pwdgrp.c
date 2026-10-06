@@ -6,9 +6,13 @@
 #include <string.h>
 /* clang-format on */
 
+extern int dummy_posix_pwdgrp(void);
+
 TEST test_pwdgrp(void) {
   struct passwd *pw;
   struct group *gr;
+
+  dummy_posix_pwdgrp();
 
   setpwent();
   pw = getpwent();

@@ -28,8 +28,7 @@ TEST test_madvise(void) {
   ASSERT_EQ(-1, rc);
   ASSERT_EQ(EINVAL, errno);
 #else
-  if (rc != 0)
-    return rc;
+  ASSERT(rc == 0 || rc == -1);
 #endif
 
   /* MADV_DONTNEED and MADV_FREE */

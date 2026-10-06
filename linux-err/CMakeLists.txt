@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.14)
+
 
 project(linux-err LANGUAGES C)
 
@@ -8,4 +10,19 @@ if(SOURCES)
 else()
     add_library(linux-err INTERFACE)
     target_include_directories(linux-err INTERFACE "include")
+endif()
+
+enable_testing()
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-err ${TEST_SOURCES})
+if(TARGET linux-err)
+    target_link_libraries(test_linux-err PRIVATE linux-err greatest)
+else()
+    target_link_libraries(test_linux-err PRIVATE greatest)
+endif()
+add_test(NAME test_linux-err COMMAND test_linux-err)
+if(NOT TARGET greatest)
+    include(FetchContent)
+    FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+    FetchContent_MakeAvailable(greatest)
 endif()

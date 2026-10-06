@@ -6,262 +6,155 @@
 #include <stdio.h>
 /* clang-format on */
 
-TEST test_posix_arpa_null_arguments(void) {
+TEST test_posix_arpa_init(void) {
   auto_win_msvc_error_t rc;
-  struct in_addr addr;
 
-  rc = posix_arpa_inet_parse_ipv4(NULL, &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  rc = posix_arpa_inet_parse_ipv4("127.0.0.1", NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
+  rc = posix_arpa_inet_parse_ipv4(NULL, NULL);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
   PASS();
 }
 
-TEST test_posix_arpa_invalid_formats(void) {
-  auto_win_msvc_error_t rc;
+TEST test_inet_parse_ipv4(void) {
   struct in_addr addr;
-
-  /* Empty string */
-  rc = posix_arpa_inet_parse_ipv4("", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Hex prefix without digits */
-  rc = posix_arpa_inet_parse_ipv4("0x", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Trailing dot */
-  rc = posix_arpa_inet_parse_ipv4("127.0.0.", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Too many parts */
-  rc = posix_arpa_inet_parse_ipv4("1.2.3.4.5", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Trailing characters */
-  rc = posix_arpa_inet_parse_ipv4("127.0.0.1 extra", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Invalid octal digit */
-  rc = posix_arpa_inet_parse_ipv4("08.0.0.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* Hex digits out of range */
-  rc = posix_arpa_inet_parse_ipv4("0x7g", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\\n", (int)rc);
-    FAIL();
-  }
-
-  rc = posix_arpa_inet_parse_ipv4("0X7G", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\\n", (int)rc);
-    FAIL();
-  }
-
-  /* 4 parts overflow */
-  rc = posix_arpa_inet_parse_ipv4("256.0.0.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.256.0.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.0.256.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.0.0.256", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* 3 parts overflow */
-  rc = posix_arpa_inet_parse_ipv4("256.0.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.256.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.0.65536", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* 1 part overflow */
-  rc = posix_arpa_inet_parse_ipv4("4294967296", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  /* 2 parts overflow */
-  rc = posix_arpa_inet_parse_ipv4("256.1", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-  rc = posix_arpa_inet_parse_ipv4("1.16777216", &addr);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  PASS();
-}
-
-TEST test_posix_arpa_valid_formats(void) {
   auto_win_msvc_error_t rc;
-  struct in_addr addr;
-  struct in_addr ref_addr;
 
-  /* 4 parts standard */
-  rc = posix_arpa_inet_parse_ipv4("127.0.0.1", &ref_addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
-  /* 4 parts hex lowercase */
-  rc = posix_arpa_inet_parse_ipv4("0x7f.0x0.0x0.0x1", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
+  rc = posix_arpa_inet_parse_ipv4("0x7f.0.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
-  /* Hex string containing all lowercase hex letters */
-  rc = posix_arpa_inet_parse_ipv4("0x0a.0x0b.0x0c.0x0d", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\\n", (int)rc);
-    FAIL();
-  }
+  rc = posix_arpa_inet_parse_ipv4("0177.0.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
-  /* Hex string containing all uppercase hex letters */
-  rc = posix_arpa_inet_parse_ipv4("0X0A.0X0B.0X0C.0X0D", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\\n", (int)rc);
-    FAIL();
-  }
+  rc = posix_arpa_inet_parse_ipv4("0xffffffff", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
-  /* 4 parts hex uppercase */
-  rc = posix_arpa_inet_parse_ipv4("0X7F.0X0.0X0.0X1", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
+  rc = posix_arpa_inet_parse_ipv4("0X7F.0X00.0X00.0X01", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
-  /* 4 parts octal */
-  rc = posix_arpa_inet_parse_ipv4("0177.0.0.01", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
-
-  /* 1 part decimal */
-  rc = posix_arpa_inet_parse_ipv4("2130706433", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
-
-  /* 1 part hex */
-  rc = posix_arpa_inet_parse_ipv4("0x7f000001", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
-
-  /* 3 parts */
-  rc = posix_arpa_inet_parse_ipv4("127.0.1", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
-
-  /* 2 parts */
   rc = posix_arpa_inet_parse_ipv4("127.1", &addr);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_arpa_inet_parse_ipv4 failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(ref_addr.s_addr, addr.s_addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+
+  /* Overflows and invalid */
+  rc = posix_arpa_inet_parse_ipv4("256.0.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* test 2 part branch failure limit */
+  rc = posix_arpa_inet_parse_ipv4("256.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0x1000000", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.0x100", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.256", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0x10000.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.1.5", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.1.5.", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("foo.bar", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.1foo", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  rc = posix_arpa_inet_parse_ipv4("9999999999999999999999999999999", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   PASS();
 }
 
-TEST test_posix_inet_aton(void) {
+TEST test_inet_parse_ipv4_more(void) {
   struct in_addr addr;
-  int ret;
+  auto_win_msvc_error_t rc;
 
-  ret = posix_inet_aton("127.0.0.1", &addr);
-  ASSERT_EQ(1, ret);
+  /* null check */
+  rc = posix_arpa_inet_parse_ipv4(NULL, &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("127.0.0.1", NULL);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
-  ret = posix_inet_aton(NULL, &addr);
-  ASSERT_EQ(0, ret);
+  /* hex parsing with non-hex alpha */
+  rc = posix_arpa_inet_parse_ipv4("0x1z", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("0x1Z", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
-  ret = posix_inet_aton("invalid.ip", &addr);
-  ASSERT_EQ(0, ret);
+  /* digit_val >= base */
+  rc = posix_arpa_inet_parse_ipv4("019", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* 2 parts (a.b) limits */
+  rc = posix_arpa_inet_parse_ipv4("256.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("127.16777216", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* 3 parts (a.b.c) limits */
+  rc = posix_arpa_inet_parse_ipv4("256.0.0", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("127.256.0", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("127.0.65536", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* 4 parts (a.b.c.d) limits */
+  rc = posix_arpa_inet_parse_ipv4("127.256.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+  rc = posix_arpa_inet_parse_ipv4("127.0.256.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* overflow value check */
+  rc = posix_arpa_inet_parse_ipv4("4294967296", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
+
+  /* 1 part success */
+  rc = posix_arpa_inet_parse_ipv4("2130706433", &addr); /* 127.0.0.1 */
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+
+  /* 2 parts success */
+  rc = posix_arpa_inet_parse_ipv4("127.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+
+  /* 3 parts success */
+  rc = posix_arpa_inet_parse_ipv4("127.0.1", &addr);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
   PASS();
 }
 
-TEST test_posix_inet_addr(void) {
-  unsigned long addr;
+TEST test_inet_addr(void) {
+  ASSERT_EQ(0x0100007f, posix_inet_addr("127.0.0.1"));
+  ASSERT_EQ(INADDR_NONE, posix_inet_addr("256.256.256.256"));
+  PASS();
+}
 
-  addr = posix_inet_addr("127.0.0.1");
-  ASSERT_NEQ((unsigned long)INADDR_NONE, addr);
+TEST test_inet_aton(void) {
+  struct in_addr addr;
+  ASSERT_EQ(1, posix_inet_aton("127.0.0.1", &addr));
+  ASSERT_EQ(0x0100007f, addr.s_addr);
 
-  addr = posix_inet_addr("invalid.ip");
-  ASSERT_EQ((unsigned long)INADDR_NONE, addr);
-
+  ASSERT_EQ(0, posix_inet_aton("invalid", &addr));
   PASS();
 }
 
 SUITE(suite_posix_arpa_core) {
-  RUN_TEST(test_posix_arpa_null_arguments);
-  RUN_TEST(test_posix_arpa_invalid_formats);
-  RUN_TEST(test_posix_arpa_valid_formats);
-  RUN_TEST(test_posix_inet_aton);
-  RUN_TEST(test_posix_inet_addr);
+  RUN_TEST(test_posix_arpa_init);
+  RUN_TEST(test_inet_parse_ipv4);
+  RUN_TEST(test_inet_parse_ipv4_more);
+  RUN_TEST(test_inet_addr);
+  RUN_TEST(test_inet_aton);
 }

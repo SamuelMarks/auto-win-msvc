@@ -269,13 +269,8 @@ int tcflow(int fd, int action) {
   errno = EBADF;
   return -1;
 #else
-  if (!fd) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (action) {
-    /* parameters checked */
-  }
+  (void)fd;
+  (void)action;
   errno = ENOSYS;
   return -1;
 #endif
@@ -295,13 +290,8 @@ int tcflush(int fd, int queue_selector) {
   }
   return -1;
 #else
-  if (!fd) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (queue_selector) {
-    /* parameters checked */
-  }
+  (void)fd;
+  (void)queue_selector;
   return -1;
 #endif
 }
@@ -342,9 +332,7 @@ int tcgetattr(int fd, struct termios *termios_p) {
   }
   return -1;
 #else
-  if (fd) {
-    /* parameters checked */
-  }
+  (void)fd;
   if (termios_p) {
     termios_p->c_iflag = 0;
     termios_p->c_oflag = 0;
@@ -359,9 +347,7 @@ int tcgetattr(int fd, struct termios *termios_p) {
 
 /** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
-  if (fd) {
-    /* parameters checked */
-  }
+  (void)fd;
   return -1;
 }
 
@@ -386,13 +372,8 @@ int tcsendbreak(int fd, int duration) {
   errno = EBADF;
   return -1;
 #else
-  if (!fd) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (duration) {
-    /* parameters checked */
-  }
+  (void)fd;
+  (void)duration;
   errno = ENOSYS;
   return -1;
 #endif
@@ -442,16 +423,9 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
   }
   return -1;
 #else
-  if (!fd) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (optional_actions) {
-    /* parameters checked */
-  }
-  if (termios_p) {
-    /* parameters checked */
-  }
+  (void)fd;
+  (void)optional_actions;
+  (void)termios_p;
   return -1;
 #endif
 }

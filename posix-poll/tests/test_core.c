@@ -5,6 +5,7 @@
 #include "poll.h"
 #include "posix-poll.h"
 #include <stdio.h>
+#include <signal.h>
 /* clang-format on */
 
 TEST test_posix_poll_get_info(void) {
@@ -85,8 +86,51 @@ TEST test_posix_poll_constants(void) {
   PASS();
 }
 
+TEST test_posix_ppoll(void) {
+  struct pollfd pfd;
+  int res;
+  struct timespec ts;
+  sigset_t sigmask;
+#if defined(_WIN32)
+  sigmask = 0;
+#else
+  sigemptyset(&sigmask);
+#endif
+
+#if defined(_WIN32) || defined(_MSC_VER)
+  WSADATA wsa;
+  WSAStartup(MAKEWORD(2, 2), &wsa);
+  pfd.fd = (SOCKET)INVALID_SOCKET;
+#else
+  pfd.fd = -1;
+#endif
+
+  pfd.events = POLLIN;
+  pfd.revents = 0;
+
+  ts.tv_sec = 0;
+  ts.tv_nsec = 10000000; /* 10 ms */
+
+  res = posix_ppoll(&pfd, 1, &ts, NULL);
+  ASSERT(res >= 0);
+
+  /* with sigmask */
+  res = posix_ppoll(&pfd, 1, &ts, &sigmask);
+  ASSERT(res >= 0);
+
+  /* with null timespec */
+  res = posix_ppoll(NULL, 1, NULL, NULL);
+  ASSERT_EQ(-1, res);
+
+#if defined(_WIN32) || defined(_MSC_VER)
+  WSACleanup();
+#endif
+  PASS();
+}
+
 SUITE(suite_posix_poll_core) {
   RUN_TEST(test_posix_poll_get_info);
   RUN_TEST(test_posix_poll_args);
   RUN_TEST(test_posix_poll_constants);
+  RUN_TEST(test_posix_ppoll);
 }

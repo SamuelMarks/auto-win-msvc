@@ -63,6 +63,11 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
   WSABUF *bufs;
   int i;
 
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
   if (iovcnt < 0 || iovcnt > 1024) {
     errno = EINVAL;
     return -1;
@@ -143,6 +148,11 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   WSABUF *bufs;
   int i;
 
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
   if (iovcnt < 0 || iovcnt > 1024) {
     errno = EINVAL;
     return -1;
@@ -220,8 +230,15 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
 /** \brief posix_preadv function. */
 long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
                   posix_uio_off_t offset) {
-  __int64 old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
+  __int64 old_pos;
   long res;
+
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
+  old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
   if (old_pos == -1 && errno != 0) {
     return posix_readv(fd, iov, iovcnt);
   }
@@ -236,8 +253,15 @@ long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
 /** \brief posix_pwritev function. */
 long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
                    posix_uio_off_t offset) {
-  __int64 old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
+  __int64 old_pos;
   long res;
+
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
+  old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
   if (old_pos == -1 && errno != 0) {
     return posix_writev(fd, iov, iovcnt);
   }

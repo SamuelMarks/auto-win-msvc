@@ -15,6 +15,7 @@ SUITE_EXTERN(suite_posix_mman_msync);
 SUITE_EXTERN(suite_posix_mman_munlock);
 SUITE_EXTERN(suite_posix_mman_munmap);
 SUITE_EXTERN(suite_posix_mman_shm);
+SUITE_EXTERN(suite_posix_mman_memfd_create);
 
 GREATEST_MAIN_DEFS();
 
@@ -31,5 +32,6 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_posix_mman_munlock);
   RUN_SUITE(suite_posix_mman_munmap);
   RUN_SUITE(suite_posix_mman_shm);
+  RUN_SUITE(suite_posix_mman_memfd_create);
   GREATEST_MAIN_END();
 }

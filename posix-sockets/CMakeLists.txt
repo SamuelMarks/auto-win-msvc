@@ -79,7 +79,7 @@ FetchContent_MakeAvailable(greatest)
 endif()
 
 add_library(posix-sockets src/posix-sockets.c)
-set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 

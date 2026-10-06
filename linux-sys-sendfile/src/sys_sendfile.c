@@ -4,7 +4,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #if defined(_MSC_VER) || defined(_WIN32)
+#if !defined(MOCK_IO_FOR_TEST)
 #include <io.h>
+#endif
 #endif
 /* clang-format on */
 

@@ -5,8 +5,22 @@
 #if defined(__GNUC__) || defined(__clang__)
 #endif
 
+#if defined(_MSC_VER)
+
+#endif
+#ifndef DEFINED_MSC_VER_FOR_TEST
 #include "posix-types.h"
-#include <sys/types.h>
+#endif
+#if defined(_WIN32)
+
+#ifndef _OFF_T
+typedef long off_t;
+#endif
+#if !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED)
+typedef long ssize_t;
+#endif
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {

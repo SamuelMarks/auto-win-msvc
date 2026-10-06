@@ -40,19 +40,18 @@
 #endif
 #endif
 #include "auto-win-msvc-error.h"
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-
 /**
  * @brief Retrieves information on posix-stat module availability and status.
  * @param[out] out_available Pointer to integer receiving availability status
  * (1).
- * @return AUTO_WIN_MSVC_SUCCESS on success, or AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on
- * NULL pointer.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
 auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 
@@ -317,11 +316,12 @@ typedef unsigned short mode_t;
  * @brief Safely retrieves the OS file handle for a given CRT file descriptor.
  * @param[in] fd File descriptor.
  * @param[out] out_handle Pointer to ptrdiff_t receiving the handle or -1.
- * @return AUTO_WIN_MSVC_SUCCESS on success, AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT or
- * POSIX_STAT_ERROR_INVALID_ARGUMENT on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success,
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT or POSIX_STAT_ERROR_INVALID_ARGUMENT on
+ * failure.
  */
 auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
-                                                         ptrdiff_t *out_handle);
+                                                    ptrdiff_t *out_handle);
 
 /**
  * @brief Resolves a pathname relative to a directory file descriptor on
@@ -333,9 +333,9 @@ auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
 auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
-                                                      const char *pathname,
-                                                      char *out_path,
-                                                      size_t out_size);
+                                                 const char *pathname,
+                                                 char *out_path,
+                                                 size_t out_size);
 
 /**
  * @brief Converts timespec structure to Win32 FILETIME.
@@ -347,8 +347,8 @@ auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
 auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
-                                                    void *out_filetime,
-                                                    int *out_omit);
+                                               void *out_filetime,
+                                               int *out_omit);
 
 /**
  * @brief Changes permissions of a file descriptor.

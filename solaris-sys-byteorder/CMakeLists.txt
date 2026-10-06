@@ -85,7 +85,6 @@ add_library(solaris-sys-byteorder src/solaris-sys-byteorder.c)
 set_target_properties(solaris-sys-byteorder PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(solaris-sys-byteorder PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include> ${CMAKE_CURRENT_SOURCE_DIR}/../linux-endian/include)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_solaris-sys-byteorder ${TEST_SOURCES})
@@ -94,7 +93,6 @@ target_include_directories(test_solaris-sys-byteorder PRIVATE ${greatest_SOURCE_
 
 target_link_libraries(test_solaris-sys-byteorder PRIVATE solaris-sys-byteorder)
 add_test(NAME test_solaris-sys-byteorder COMMAND test_solaris-sys-byteorder)
-endif()
 
 if(MSVC)
     target_compile_options(solaris-sys-byteorder PRIVATE )

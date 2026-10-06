@@ -125,6 +125,15 @@ include(FetchContent)
 FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/greatest")
 FetchContent_MakeAvailable(greatest)
 if(NOT TARGET bsd-machine-endian)
+# --- Code Coverage Configuration ---
+option(AUTO_WIN_MSVC_COVERAGE "Enable code coverage reporting" OFF)
+if(AUTO_WIN_MSVC_COVERAGE)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(--coverage)
+        add_link_options(--coverage)
+    endif()
+endif()
+
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bsd-machine-endian)
     add_subdirectory(bsd-machine-endian)
     endif()
@@ -901,13 +910,6 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/posix-unwind/include)
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-unwind/include")
 endif()
 
-# --- Code Coverage Configuration ---
-option(AUTO_WIN_MSVC_COVERAGE "Enable code coverage reporting" OFF)
-if(AUTO_WIN_MSVC_COVERAGE)
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        add_link_options(--coverage)
-    endif()
-endif()
 
 if(AUTO_WIN_MSVC_COVERAGE)
     if(MSVC)
@@ -918,8 +920,9 @@ if(AUTO_WIN_MSVC_COVERAGE)
         )
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         add_custom_target(coverage
-            COMMAND lcov --capture --directory . --output-file coverage.info
-            COMMAND genhtml coverage.info --output-directory coverage_html
+            COMMAND lcov --rc branch_coverage=1 --ignore-errors inconsistent --capture --directory . --output-file coverage.info
+            COMMAND lcov --rc branch_coverage=1 --ignore-errors inconsistent --ignore-errors unused --remove coverage.info '*/tests/*' '*/_deps/*' -o coverage.info
+            COMMAND genhtml --rc branch_coverage=1 coverage.info --output-directory coverage_html
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Running lcov..."
         )
@@ -1073,4 +1076,6 @@ endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bsd-stdlib)
     add_subdirectory(bsd-stdlib)
+    add_subdirectory(bsd-sys-cdefs)
+
 endif()

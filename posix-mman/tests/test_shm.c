@@ -69,12 +69,7 @@ TEST test_shm_open(void) {
   close(fd);
 #endif
 
-#if defined(_MSC_VER)
   PASS();
-#else
-  PASS();
-  return GREATEST_TEST_RES_PASS;
-#endif
 }
 
 TEST test_shm_unlink(void) {

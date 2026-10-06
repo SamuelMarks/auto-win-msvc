@@ -24,9 +24,7 @@ TEST test_msg_queue(void) {
 
   /* Create private queue */
   msqid = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
-  if (msqid == -1) {
-    PASS();
-  }
+  ASSERT_NEQ(-1, msqid);
 
   /* Status */
   memset(&ds, 0, sizeof(ds));

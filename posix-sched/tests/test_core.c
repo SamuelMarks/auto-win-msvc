@@ -98,6 +98,15 @@ TEST test_posix_sched_affinity(void) {
   ASSERT_EQ(-1, res);
   ASSERT_EQ(EINVAL, errno);
 
+  /* Error: invalid pid < 0 */
+  errno = 0;
+  res = posix_sched_getaffinity(-1, sizeof(cpu_set_t), &set);
+  ASSERT_EQ(-1, res);
+
+  errno = 0;
+  res = posix_sched_setaffinity(-1, sizeof(cpu_set_t), &set);
+  ASSERT_EQ(-1, res);
+
 #if defined(_WIN32) || defined(_MSC_VER)
   /* Error: invalid pid */
   errno = 0;

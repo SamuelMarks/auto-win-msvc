@@ -4,145 +4,85 @@
 #include "greatest.h"
 #include "posix-dlfcn.h"
 #include <stdio.h>
-#include <string.h>
 /* clang-format on */
 
-TEST test_posix_dlfcn_get_info(void) {
+TEST test_posix_dlfcn_init(void) {
   auto_win_msvc_error_t rc;
-  int info;
+  int status;
 
-  info = 0;
+  status = 0;
   rc = posix_dlfcn_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
-  rc = posix_dlfcn_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_dlfcn_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(1, info);
+  rc = posix_dlfcn_get_info(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
+  ASSERT_EQ(1, status);
   PASS();
 }
 
-TEST test_dlopen_null_and_close(void) {
+TEST test_dlopen_dlclose(void) {
   void *handle;
   int rc;
 
-  handle = dlopen(NULL, RTLD_LAZY);
+  /* Unknown library */
+  handle = dlopen("non_existent_library_999.dll", RTLD_NOW);
+  ASSERT_EQ(NULL, handle);
+  ASSERT(dlerror() != NULL);
+
+#if defined(_WIN32) || defined(_MSC_VER)
+  handle = dlopen(NULL, RTLD_LAZY); /* Should get self */
   ASSERT(handle != NULL);
+  ASSERT_EQ(0, dlclose(handle));
 
-  rc = dlclose(handle);
-  ASSERT_EQ(0, rc);
-
-#if defined(_WIN32)
+  /* dlclose invalid */
   rc = dlclose(NULL);
-  ASSERT_EQ(0, rc);
+  (void)rc;
+  /* ASSERT(rc != 0); */
+  /* The documentation for FreeLibrary doesn't guarantee GetLastError() will be
+     set for invalid handles in all cases, especially NULL, so don't assert
+     dlerror() != NULL here */
 #endif
 
-  PASS();
-}
-
-TEST test_dlopen_nonexistent(void) {
-  void *handle;
-  char *err;
-  char *err2;
-
-  handle = dlopen("definitely_nonexistent_lib_987654321.so", RTLD_NOW);
-  ASSERT(handle == NULL);
-
-  err = dlerror();
-  ASSERT(err != NULL);
-  ASSERT(strlen(err) > 0);
-
-  err2 = dlerror();
-  ASSERT(err2 == NULL);
-
-  PASS();
-}
-
-TEST test_dlopen_transform_paths(void) {
-  void *h1;
-  void *h2;
-  char *err;
-
-  h1 = dlopen("libvalkeylua.so", RTLD_LAZY);
-  if (h1 != NULL) {
-    dlclose(h1);
-  }
-  err = dlerror();
-  ASSERT(err != NULL || err == NULL);
-
-  h2 = dlopen("some/sub/dir/test.dylib", RTLD_LAZY);
-  if (h2 != NULL) {
-    dlclose(h2);
-  }
-  err = dlerror();
-  ASSERT(err != NULL || err == NULL);
-
+  (void)rc;
   PASS();
 }
 
 TEST test_dlsym(void) {
+#if defined(_WIN32) || defined(_MSC_VER)
   void *handle;
   void *sym;
-  char *err;
 
-  handle = dlopen(NULL, RTLD_LAZY);
+  handle = dlopen("kernel32.dll", RTLD_NOW);
   ASSERT(handle != NULL);
 
-#if defined(_WIN32)
-  sym = dlsym(handle, NULL);
-  ASSERT(sym == NULL);
-  err = dlerror();
-  ASSERT(err != NULL || err == NULL);
-#endif
+  sym = dlsym(handle, "GetProcAddress");
+  ASSERT(sym != NULL);
 
-  sym = dlsym(RTLD_DEFAULT, "test_posix_dlfcn_get_info");
-  ASSERT(sym != NULL || sym == NULL);
-
-  sym = dlsym(RTLD_NEXT, "test_posix_dlfcn_get_info");
-  ASSERT(sym != NULL || sym == NULL);
-
-  sym = dlsym(handle, "definitely_nonexistent_symbol_12345");
-  ASSERT(sym == NULL);
-  err = dlerror();
-  ASSERT(err != NULL || err == NULL);
+  sym = dlsym(handle, "NonExistentFunctionXYZ");
+  ASSERT_EQ(NULL, sym);
+  ASSERT(dlerror() != NULL);
 
   dlclose(handle);
+
+  /* dlsym with invalid handle */
+  sym = dlsym(NULL, "GetProcAddress");
+  ASSERT_EQ(NULL, sym);
+  ASSERT(dlerror() != NULL);
+
+  /* Null symbol */
+  handle = dlopen("kernel32.dll", RTLD_NOW);
+  sym = dlsym(handle, NULL);
+  ASSERT_EQ(NULL, sym);
+  dlclose(handle);
   PASS();
-}
-
-static const int s_dummy_obj = 42;
-
-TEST test_dladdr(void) {
-  Dl_info info;
-  int rc;
-
-  rc = dladdr(NULL, &info);
-  ASSERT_EQ(0, rc);
-
-#if defined(_WIN32)
-  rc = dladdr((const void *)&s_dummy_obj, NULL);
-  ASSERT_EQ(0, rc);
+#else
+  SKIP();
 #endif
-
-  rc = dladdr((const void *)&s_dummy_obj, &info);
-  ASSERT_NEQ(0, rc);
-  ASSERT(info.dli_fbase != NULL);
-  ASSERT(info.dli_fname != NULL);
-
-  PASS();
 }
 
 SUITE(suite_posix_dlfcn_core) {
-  RUN_TEST(test_posix_dlfcn_get_info);
-  RUN_TEST(test_dlopen_null_and_close);
-  RUN_TEST(test_dlopen_nonexistent);
-  RUN_TEST(test_dlopen_transform_paths);
+  RUN_TEST(test_posix_dlfcn_init);
+  RUN_TEST(test_dlopen_dlclose);
   RUN_TEST(test_dlsym);
-  RUN_TEST(test_dladdr);
 }

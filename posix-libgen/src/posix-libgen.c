@@ -25,18 +25,13 @@
 #define _MAX_PATH 260
 #endif
 
-/* Helper function returning int (exit code) */
-static int get_path_len(const char *path, size_t *out_len) {
-  if (path == NULL) {
-    *out_len = 0;
-    return 1;
-  }
+/* Helper function returning void */
+static void get_path_len(const char *path, size_t *out_len) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   *out_len = strnlen_s(path, _MAX_PATH);
 #else
   *out_len = strlen(path);
 #endif
-  return 0;
 }
 
 char *basename(char *path) {
@@ -55,14 +50,7 @@ char *basename(char *path) {
     return result;
   }
 
-  if (get_path_len(path, &len) != 0) {
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-    strcpy_s(result, sizeof(result), ".");
-#else
-    strcpy(result, ".");
-#endif
-    return result;
-  }
+  get_path_len(path, &len);
 
   for (i = 0; i < len; ++i) {
     if (path[i] != '/' && path[i] != '\\') {
@@ -81,7 +69,7 @@ char *basename(char *path) {
   }
 
   /* Windows: strip trailing slashes */
-  while (len > 0 && (path[len - 1] == '/' || path[len - 1] == '\\')) {
+  while (path[len - 1] == '/' || path[len - 1] == '\\') {
     path[len - 1] = '\0';
     len--;
   }
@@ -132,14 +120,7 @@ char *dirname(char *path) {
     return result;
   }
 
-  if (get_path_len(path, &len) != 0) {
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-    strcpy_s(result, sizeof(result), ".");
-#else
-    strcpy(result, ".");
-#endif
-    return result;
-  }
+  get_path_len(path, &len);
 
   for (i = 0; i < len; ++i) {
     if (path[i] != '/' && path[i] != '\\') {
@@ -181,18 +162,7 @@ char *dirname(char *path) {
       if (p == path && (*p == '/' || *p == '\\')) {
         *(p + 1) = '\0';
       } else {
-        if (p >= path && (*p == '/' || *p == '\\'))
-          *p = '\0';
-        else
-          *(p + 1) = '\0';
-      }
-      if (path[0] == '\0') {
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-        strcpy_s(result, sizeof(result), ".");
-#else
-        strcpy(result, ".");
-#endif
-        return result;
+        *(p + 1) = '\0';
       }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       strcpy_s(result, sizeof(result), path);

@@ -6,37 +6,59 @@
 /* clang-format on */
 
 TEST test_posix_recv(void) {
-  posix_ssize_t r = posix_recv(-1, NULL, 0, 0);
+  char buf[1];
+  posix_ssize_t r = posix_recv(-1, buf, 1, 1);
   ASSERT_EQ(-1, r);
   PASS();
 }
 
 TEST test_posix_recvfrom(void) {
-  posix_ssize_t r = posix_recvfrom(-1, NULL, 0, 0, NULL, NULL);
+  char buf[1];
+  struct sockaddr sa = {0};
+  posix_socklen_t len = 0;
+  posix_ssize_t r = posix_recvfrom(-1, buf, 1, 1, &sa, &len);
   ASSERT_EQ(-1, r);
   PASS();
 }
 
 TEST test_posix_recvmsg(void) {
-  posix_ssize_t r = posix_recvmsg(-1, NULL, 0);
+  char buf[1];
+  struct iovec iov = {0};
+  struct msghdr msg = {0};
+  posix_ssize_t r;
+  iov.iov_base = buf;
+  iov.iov_len = 1;
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  r = posix_recvmsg(-1, &msg, 1);
   ASSERT_EQ(-1, r);
   PASS();
 }
 
 TEST test_posix_send(void) {
-  posix_ssize_t r = posix_send(-1, NULL, 0, 0);
+  posix_ssize_t r = posix_send(-1, NULL, 0, 1);
   ASSERT_EQ(-1, r);
   PASS();
 }
 
 TEST test_posix_sendmsg(void) {
-  posix_ssize_t r = posix_sendmsg(-1, NULL, 0);
+  char buf[1] = {0};
+  struct iovec iov = {0};
+  struct msghdr msg = {0};
+  posix_ssize_t r;
+  iov.iov_base = buf;
+  iov.iov_len = 1;
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  r = posix_sendmsg(-1, &msg, 1);
   ASSERT_EQ(-1, r);
   PASS();
 }
 
 TEST test_posix_sendto(void) {
-  posix_ssize_t r = posix_sendto(-1, NULL, 0, 0, NULL, 0);
+  char buf[1];
+  struct sockaddr sa = {0};
+  posix_ssize_t r = posix_sendto(-1, buf, 1, 1, &sa, 1);
   ASSERT_EQ(-1, r);
   PASS();
 }

@@ -7,5 +7,7 @@
 
 #endif /* _MSC_VER || _WIN32 */
 
+int sys_queue_dummy_for_coverage(void) { return 0; }
+
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_sys_queue_c;

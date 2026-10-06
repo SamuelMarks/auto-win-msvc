@@ -99,6 +99,16 @@ TEST test_posix_spawn_file_actions_addopen(void) {
   PASS();
 }
 
+TEST test_posix_spawn_file_actions_multiple(void) {
+  posix_spawn_file_actions_t fa;
+  posix_spawn_file_actions_init(&fa);
+  ASSERT_EQ(0, posix_spawn_file_actions_addopen(&fa, 0, "dummy.txt", 0, 0666));
+  ASSERT_EQ(0, posix_spawn_file_actions_adddup2(&fa, 0, 1));
+  ASSERT_EQ(0, posix_spawn_file_actions_addclose(&fa, 2));
+  posix_spawn_file_actions_destroy(&fa);
+  PASS();
+}
+
 SUITE(suite_posix_spawn_spawn) {
   RUN_TEST(test_posix_spawn_init);
   RUN_TEST(test_spawn);
@@ -108,4 +118,5 @@ SUITE(suite_posix_spawn_spawn) {
   RUN_TEST(test_posix_spawn_file_actions_addclose);
   RUN_TEST(test_posix_spawn_file_actions_adddup2);
   RUN_TEST(test_posix_spawn_file_actions_addopen);
+  RUN_TEST(test_posix_spawn_file_actions_multiple);
 }

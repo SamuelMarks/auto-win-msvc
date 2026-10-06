@@ -1,4 +1,5 @@
 /* posix-sockets.c - Strict C89 Implementation */
+#define POSIX_SOCKETS_EXPORTS
 #if defined(_MSC_VER)
 #endif
 /* clang-format off */
@@ -255,8 +256,7 @@ void posix_endservent(void) {
   return;
 }
 void posix_freeaddrinfo(struct addrinfo *ai) {
-  if (!ai)
-    return;
+  (void)ai;
 #ifdef _WIN32
 #undef freeaddrinfo
   freeaddrinfo(ai);
@@ -287,13 +287,10 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
   }
   return ret;
 #else
-  if (hints) {
-    /* parameters checked */
-  }
-  if (!nodename && !servname)
-    return EAI_NONAME;
-  if (!res)
-    return EAI_FAIL;
+  (void)hints;
+  (void)nodename;
+  (void)servname;
+  (void)res;
   errno = EINVAL;
   return -1;
 #endif
@@ -301,9 +298,10 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
 
 struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
                                     int type) {
-  if (addr || len || type) {
-    /* parameters checked */
-  }
+  (void)addr;
+  (void)len;
+  (void)type;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -312,9 +310,8 @@ struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
 }
 
 struct hostent *posix_gethostbyname(const char *name) {
-  if (name) {
-    /* parameters checked */
-  }
+  (void)name;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -338,9 +335,11 @@ int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
     errno = EINVAL;
     return -1;
   }
-  if (salen || nodelen || servicelen || flags) {
-    /* parameters checked */
-  }
+  (void)salen;
+  (void)nodelen;
+  (void)servicelen;
+  (void)flags;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -349,9 +348,9 @@ int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
 }
 
 struct netent *posix_getnetbyaddr(uint32_t net, int type) {
-  if (net || type) {
-    /* parameters checked */
-  }
+  (void)net;
+  (void)type;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -360,9 +359,8 @@ struct netent *posix_getnetbyaddr(uint32_t net, int type) {
 }
 
 struct netent *posix_getnetbyname(const char *name) {
-  if (name) {
-    /* parameters checked */
-  }
+  (void)name;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -379,9 +377,8 @@ struct netent *posix_getnetent(void) {
 }
 
 struct protoent *posix_getprotobyname(const char *name) {
-  if (name) {
-    /* parameters checked */
-  }
+  (void)name;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -390,9 +387,8 @@ struct protoent *posix_getprotobyname(const char *name) {
 }
 
 struct protoent *posix_getprotobynumber(int proto) {
-  if (proto) {
-    /* parameters checked */
-  }
+  (void)proto;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -409,9 +405,9 @@ struct protoent *posix_getprotoent(void) {
 }
 
 struct servent *posix_getservbyname(const char *name, const char *proto) {
-  if (name || proto) {
-    /* parameters checked */
-  }
+  (void)name;
+  (void)proto;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -420,9 +416,9 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
 }
 
 struct servent *posix_getservbyport(int port, const char *proto) {
-  if (port || proto) {
-    /* parameters checked */
-  }
+  (void)port;
+  (void)proto;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -440,9 +436,8 @@ struct servent *posix_getservent(void) {
 
 /** \brief posix_sethostent function. */
 void posix_sethostent(int stayopen) {
-  if (stayopen) {
-    /* parameters checked */
-  }
+  (void)stayopen;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -450,9 +445,8 @@ void posix_sethostent(int stayopen) {
 }
 
 void posix_setnetent(int stayopen) {
-  if (stayopen) {
-    /* parameters checked */
-  }
+  (void)stayopen;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -460,9 +454,8 @@ void posix_setnetent(int stayopen) {
 }
 
 void posix_setprotoent(int stayopen) {
-  if (stayopen) {
-    /* parameters checked */
-  }
+  (void)stayopen;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -470,9 +463,8 @@ void posix_setprotoent(int stayopen) {
 }
 
 void posix_setservent(int stayopen) {
-  if (stayopen) {
-    /* parameters checked */
-  }
+  (void)stayopen;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -486,9 +478,8 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     errno = EINVAL;
     return -1;
   }
-  if (nfds) {
-    /* parameters checked */
-  }
+  (void)nfds;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -561,9 +552,7 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
   unsigned int i;
   int ret;
-  if (nfds) {
-    /* parameters checked */
-  }
+  (void)nfds;
 
   if (readfds) {
 #if defined(_MSC_VER)
@@ -701,13 +690,11 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 
   return ret;
 #else
-  if (!readfds || !writefds || !errorfds || !timeout) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (nfds) {
-    /* parameters checked */
-  }
+  (void)nfds;
+  (void)readfds;
+  (void)writefds;
+  (void)errorfds;
+  (void)timeout;
   errno = EINVAL;
   return -1;
 #endif
@@ -740,13 +727,9 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
     return (int)fd;
   }
 #else
-  if (!address) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || address_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)address;
+  (void)address_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -757,7 +740,7 @@ int posix_bind(intptr_t socket, const struct sockaddr *address,
 #ifdef _WIN32
 #undef bind
   int ret;
-  if (address->sa_family == AF_UNIX) {
+  if (address != NULL && address->sa_family == AF_UNIX) {
     struct sockaddr_in fake_addr;
 
     memset(&fake_addr, 0, sizeof(fake_addr));
@@ -779,13 +762,9 @@ int posix_bind(intptr_t socket, const struct sockaddr *address,
   }
   return 0;
 #else
-  if (!address) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || address_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)address;
+  (void)address_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -795,7 +774,12 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
                   posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef connect
-  int ret = connect(GET_SOCKET(socket), address, address_len);
+  int ret;
+  if (!address) {
+    errno = EFAULT;
+    return -1;
+  }
+  ret = connect(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
     if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY)
@@ -806,13 +790,9 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
   }
   return 0;
 #else
-  if (!address) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || address_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)address;
+  (void)address_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -829,13 +809,9 @@ int posix_getpeername(intptr_t socket, struct sockaddr *address,
   }
   return 0;
 #else
-  if (!address) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || address_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)address;
+  (void)address_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -852,13 +828,9 @@ int posix_getsockname(intptr_t socket, struct sockaddr *address,
   }
   return 0;
 #else
-  if (!address) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || address_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)address;
+  (void)address_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -900,13 +872,11 @@ int posix_getsockopt(intptr_t socket, int level, int option_name,
   }
   return 0;
 #else
-  if (!option_value || !option_len) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || level || option_name) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)level;
+  (void)option_name;
+  (void)option_value;
+  (void)option_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -922,9 +892,9 @@ int posix_listen(intptr_t socket, int backlog) {
   }
   return 0;
 #else
-  if (socket || backlog) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)backlog;
+
   errno = EINVAL;
   return -1;
 #endif
@@ -949,13 +919,13 @@ posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
 posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length,
                              int flags, struct sockaddr *address,
                              posix_socklen_t *address_len) {
-  if (!buffer || !address || !address_len) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || length || flags) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)buffer;
+  (void)length;
+  (void)flags;
+  (void)address;
+  (void)address_len;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -980,6 +950,10 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
   if (!message || message->msg_iovlen < 0 ||
       (message->msg_iovlen > 0 && !message->msg_iov)) {
     errno = EINVAL;
+    return -1;
+  }
+  if (socket < 0) {
+    errno = EBADF;
     return -1;
   }
 
@@ -1060,11 +1034,11 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
   message->msg_flags = (int)dwFlags;
   return (posix_ssize_t)bytes_recvd;
 #else
-  if (!message) {
-    errno = EINVAL;
-    return -1;
-  }
-  return recvmsg((int)socket, (struct msghdr *)message, flags);
+  (void)socket;
+  (void)message;
+  (void)flags;
+  errno = EINVAL;
+  return -1;
 #endif
 }
 
@@ -1099,6 +1073,10 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
   if (!message || message->msg_iovlen < 0 ||
       (message->msg_iovlen > 0 && !message->msg_iov)) {
     errno = EINVAL;
+    return -1;
+  }
+  if (socket < 0) {
+    errno = EBADF;
     return -1;
   }
 
@@ -1166,11 +1144,11 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
   }
   return (posix_ssize_t)bytes_sent;
 #else
-  if (!message) {
-    errno = EINVAL;
-    return -1;
-  }
-  return sendmsg((int)socket, (const struct msghdr *)message, flags);
+  (void)socket;
+  (void)message;
+  (void)flags;
+  errno = EINVAL;
+  return -1;
 #endif
 }
 
@@ -1188,6 +1166,10 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
   if (!message || message->msg_iovlen < 0 ||
       (message->msg_iovlen > 0 && !message->msg_iov)) {
     errno = EINVAL;
+    return -1;
+  }
+  if (socket < 0) {
+    errno = EBADF;
     return -1;
   }
 
@@ -1250,11 +1232,11 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
   }
   return (posix_ssize_t)bytes_sent;
 #else
-  if (!message) {
-    errno = EINVAL;
-    return -1;
-  }
-  return sendmsg((int)s, (const struct msghdr *)message, flags);
+  (void)s;
+  (void)message;
+  (void)flags;
+  errno = EINVAL;
+  return -1;
 #endif
 }
 
@@ -1273,6 +1255,10 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
   if (!message || message->msg_iovlen < 0 ||
       (message->msg_iovlen > 0 && !message->msg_iov)) {
     errno = EINVAL;
+    return -1;
+  }
+  if (socket < 0) {
+    errno = EBADF;
     return -1;
   }
 
@@ -1349,11 +1335,11 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
   message->msg_flags = (int)dwFlags;
   return (posix_ssize_t)bytes_recvd;
 #else
-  if (!message) {
-    errno = EINVAL;
-    return -1;
-  }
-  return recvmsg((int)s, (struct msghdr *)message, flags);
+  (void)s;
+  (void)message;
+  (void)flags;
+  errno = EINVAL;
+  return -1;
 #endif
 }
 
@@ -1373,7 +1359,7 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
   for (i = 0; i < max_retries; ++i) {
     rc = posix_connect(socket, address, address_len);
     if (rc == 0) {
-      return 0;
+      break;
     }
 #if defined(_WIN32)
     if (WSAGetLastError() == WSAECONNREFUSED || errno == 111) {
@@ -1390,13 +1376,13 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
 posix_ssize_t posix_sendto(intptr_t socket, const void *message, size_t length,
                            int flags, const struct sockaddr *dest_addr,
                            posix_socklen_t dest_len) {
-  if (!message || !dest_addr) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || length || flags || dest_len) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)message;
+  (void)length;
+  (void)flags;
+  (void)dest_addr;
+  (void)dest_len;
+
 #ifdef _WIN32
   /** \brief posix_accept function. */
 #endif
@@ -1433,13 +1419,11 @@ int posix_setsockopt(intptr_t socket, int level, int option_name,
   }
   return 0;
 #else
-  if (!option_value || !option_len) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (socket || level || option_name) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)level;
+  (void)option_name;
+  (void)option_value;
+  (void)option_len;
   errno = EINVAL;
   return -1;
 #endif
@@ -1455,9 +1439,9 @@ int posix_shutdown(intptr_t socket, int how) {
   }
   return 0;
 #else
-  if (socket || how) {
-    /* parameters checked */
-  }
+  (void)socket;
+  (void)how;
+
   errno = EINVAL;
   return -1;
 #endif
@@ -1486,9 +1470,10 @@ int posix_socket(int domain, int type, int protocol) {
     return (int)fd;
   }
 #else
-  if (domain || type || protocol) {
-    /* parameters checked */
-  }
+  (void)domain;
+  (void)type;
+  (void)protocol;
+
   errno = EINVAL;
   return -1;
 #endif

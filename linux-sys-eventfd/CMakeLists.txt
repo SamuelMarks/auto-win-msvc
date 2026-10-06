@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.14)
+
 
 project(linux-sys-eventfd LANGUAGES C)
 
@@ -9,3 +11,18 @@ else()
     add_library(linux-sys-eventfd INTERFACE)
     target_include_directories(linux-sys-eventfd INTERFACE "include")
 endif()
+
+if(NOT TARGET greatest)
+    include(FetchContent)
+    FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+    FetchContent_MakeAvailable(greatest)
+endif()
+enable_testing()
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_linux-sys-eventfd ${TEST_SOURCES})
+if(TARGET linux-sys-eventfd)
+    target_link_libraries(test_linux-sys-eventfd PRIVATE linux-sys-eventfd greatest)
+else()
+    target_link_libraries(test_linux-sys-eventfd PRIVATE greatest)
+endif()
+add_test(NAME test_linux-sys-eventfd COMMAND test_linux-sys-eventfd)

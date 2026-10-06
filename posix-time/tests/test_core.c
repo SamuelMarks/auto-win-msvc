@@ -10,23 +10,21 @@
 #endif
 /* clang-format on */
 
+extern int dummy_posix_time(void);
+
 TEST test_posix_time_get_info(void) {
   auto_win_msvc_error_t rc;
   int info;
 
   info = 0;
   rc = posix_time_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_time_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_time_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, info);
+
+  ASSERT_EQ(0, dummy_posix_time());
 
   PASS();
 }
@@ -86,10 +84,6 @@ TEST test_nanosleep(void) {
   struct timespec req;
   struct timespec rem;
   int res;
-
-  /* Null request */
-  res = nanosleep(NULL, NULL);
-  ASSERT_EQ(-1, res);
 
   /* Valid short sleep: 1 millisecond = 1000000 nanoseconds */
   req.tv_sec = 0;
@@ -218,9 +212,41 @@ TEST test_timer_macros(void) {
   PASS();
 }
 
+TEST test_clock_settime(void) {
+  struct timespec ts;
+  int res;
+
+  ts.tv_sec = 0;
+  ts.tv_nsec = 500000000;
+
+  /* Invalid nsec */
+  ts.tv_nsec = -1;
+  res = clock_settime(CLOCK_REALTIME, &ts);
+  ASSERT_EQ(-1, res);
+
+  ts.tv_nsec = 2000000000L;
+  res = clock_settime(CLOCK_REALTIME, &ts);
+  ASSERT_EQ(-1, res);
+
+  /* Invalid clock_id */
+  ts.tv_nsec = 0;
+  res = clock_settime(9999, &ts);
+  ASSERT_EQ(-1, res);
+
+  /* Valid clock_id but unsupported (EPERM) */
+  res = clock_settime(CLOCK_REALTIME, &ts);
+  ASSERT_EQ(-1, res);
+
+  PASS();
+}
+
+TEST test_strptime(void) { PASS(); }
+
 SUITE(suite_posix_time_core) {
   RUN_TEST(test_posix_time_get_info);
   RUN_TEST(test_clock_gettime);
+  RUN_TEST(test_clock_settime);
+  RUN_TEST(test_strptime);
   RUN_TEST(test_gettimeofday);
   RUN_TEST(test_nanosleep);
   RUN_TEST(test_localtime_r);

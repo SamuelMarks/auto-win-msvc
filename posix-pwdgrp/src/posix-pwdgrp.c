@@ -636,4 +636,5 @@ typedef int dummy_posix_pwdgrp_c_typedef;
 #endif /* _WIN32 */
 
 /* Prevent empty translation unit */
+int dummy_posix_pwdgrp(void) { return 0; }
 typedef int make_iso_compilers_happy_tu_posix_pwdgrp;

@@ -80,6 +80,7 @@ endif()
 
 
 add_library(posix-glob src/posix-glob.c)
+target_compile_definitions(posix-glob PUBLIC POSIX_GLOB_MOCK_MALLOC=1)
 set_target_properties(posix-glob PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(posix-glob PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 

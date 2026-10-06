@@ -14,6 +14,21 @@
 #include <string.h>
 
 #include "posix-glob.h"
+#if defined(POSIX_GLOB_MOCK_MALLOC)
+#include <stdlib.h>
+#if defined(_WIN32)
+__declspec(dllexport) void *(*posix_glob_mock_malloc_ptr)(size_t) = NULL;
+__declspec(dllexport) void *(*posix_glob_mock_realloc_ptr)(void *, size_t) = NULL;
+#else
+void *(*posix_glob_mock_malloc_ptr)(size_t) = NULL;
+void *(*posix_glob_mock_realloc_ptr)(void *, size_t) = NULL;
+#endif
+static void *my_malloc(size_t size) { return posix_glob_mock_malloc_ptr ? posix_glob_mock_malloc_ptr(size) : malloc(size); }
+static void *my_realloc(void *ptr, size_t size) { return posix_glob_mock_realloc_ptr ? posix_glob_mock_realloc_ptr(ptr, size) : realloc(ptr, size); }
+#define malloc my_malloc
+#define realloc my_realloc
+#endif
+
 
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(_MSC_VER)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -199,7 +214,15 @@ int glob(const char *pattern, int flags,
   }
 
   handle = _findfirst(pattern, &fileinfo);
-  if (handle != -1) {
+  if (handle == -1) {
+    if (errfunc) {
+      if (errfunc(pattern, errno))
+        return GLOB_ABORTED;
+    }
+    if (flags & GLOB_ERR) {
+      return GLOB_ABORTED;
+    }
+  } else {
     do {
       char full_path[2048];
       if (strcmp(fileinfo.name, ".") == 0 || strcmp(fileinfo.name, "..") == 0)
@@ -232,14 +255,15 @@ int glob(const char *pattern, int flags,
     return ret;
 
   if (!match_found) {
-    if ((flags & GLOB_NOCHECK) || (flags & GLOB_NOMAGIC)) {
+    int has_magic = (strpbrk(pattern, "*?[") != NULL);
+    if ((flags & GLOB_NOCHECK) || ((flags & GLOB_NOMAGIC) && !has_magic)) {
       pglob->gl_flags |= GLOB_NOMAGIC;
       return glob_append(pglob, pattern);
     }
     return GLOB_NOMATCH;
   }
 
-  if (!(flags & GLOB_NOSORT) && pglob->gl_pathc > (size_t)initial_pathc) {
+  if (!(flags & GLOB_NOSORT)) {
     qsort(pglob->gl_pathv + pglob->gl_offs + initial_pathc,
           pglob->gl_pathc - initial_pathc, sizeof(char *), glob_compare);
   }
@@ -315,7 +339,15 @@ int glob(const char *pattern, int flags,
   }
 
   dir = opendir(search_dir);
-  if (dir) {
+  if (!dir) {
+    if (errfunc) {
+      if (errfunc(search_dir, errno))
+        return GLOB_ABORTED;
+    }
+    if (flags & GLOB_ERR) {
+      return GLOB_ABORTED;
+    }
+  } else {
     while ((ent = readdir(dir)) != NULL) {
       if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
         continue;
@@ -349,14 +381,15 @@ int glob(const char *pattern, int flags,
     return ret;
 
   if (!match_found) {
-    if ((flags & GLOB_NOCHECK) || (flags & GLOB_NOMAGIC)) {
+    int has_magic = (strpbrk(pattern, "*?[") != NULL);
+    if ((flags & GLOB_NOCHECK) || ((flags & GLOB_NOMAGIC) && !has_magic)) {
       pglob->gl_flags |= GLOB_NOMAGIC;
       return glob_append(pglob, pattern);
     }
     return GLOB_NOMATCH;
   }
 
-  if (!(flags & GLOB_NOSORT) && pglob->gl_pathc > (size_t)initial_pathc) {
+  if (!(flags & GLOB_NOSORT)) {
     qsort(pglob->gl_pathv + pglob->gl_offs + initial_pathc,
           pglob->gl_pathc - initial_pathc, sizeof(char *), glob_compare);
   }
@@ -371,9 +404,7 @@ void globfree(glob_t *pglob) {
   if (!pglob || !pglob->gl_pathv)
     return;
   for (i = 0; i < pglob->gl_pathc; i++) {
-    if (pglob->gl_pathv[pglob->gl_offs + i]) {
-      free(pglob->gl_pathv[pglob->gl_offs + i]);
-    }
+    free(pglob->gl_pathv[pglob->gl_offs + i]);
   }
   free(pglob->gl_pathv);
   pglob->gl_pathv = NULL;
@@ -470,9 +501,7 @@ void wordfree(wordexp_t *pwordexp) {
   if (!pwordexp || !pwordexp->we_wordv)
     return;
   for (i = 0; i < pwordexp->we_wordc; i++) {
-    if (pwordexp->we_wordv[pwordexp->we_offs + i]) {
-      free(pwordexp->we_wordv[pwordexp->we_offs + i]);
-    }
+    free(pwordexp->we_wordv[pwordexp->we_offs + i]);
   }
   free(pwordexp->we_wordv);
   pwordexp->we_wordv = NULL;
@@ -495,5 +524,11 @@ typedef int make_iso_compilers_happy_tu;
 
 /* Dummy function to prevent empty translation unit */
 int dummy_posix_glob(void) { return 0; }
+
+/* Export for testing */
+int posix_glob_compare_test_internal(const void *a, const void *b);
+int posix_glob_compare_test_internal(const void *a, const void *b) {
+  return glob_compare(a, b);
+}
 
 typedef int make_iso_compilers_happy_tu_posix_glob;

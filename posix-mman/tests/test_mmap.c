@@ -71,9 +71,7 @@ TEST test_mmap(void) {
   rc = munmap(p5, 4096);
   ASSERT_EQ(0, rc);
 #else
-  if (p5 != MAP_FAILED) {
-    munmap(p5, 4096);
-  }
+  ASSERT(p5 == MAP_FAILED || munmap(p5, 4096) == 0);
 #endif
 
   p6 = mmap(NULL, 4096, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -118,9 +116,7 @@ TEST test_mmap(void) {
   munmap(pf, 16);
 
   pf = mmap(NULL, 16, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE, fd, 0);
-  if (pf != MAP_FAILED) {
-    munmap(pf, 16);
-  }
+  ASSERT(pf == MAP_FAILED || munmap(pf, 16) == 0);
 
 #if defined(_WIN32)
   _close(fd);

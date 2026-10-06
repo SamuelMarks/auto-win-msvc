@@ -15,9 +15,7 @@ TEST test_sem_set(void) {
 
   /* Create semaphore set */
   semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0666);
-  if (semid == -1) {
-    PASS();
-  }
+  ASSERT_NEQ(-1, semid);
 
   /* Set value */
   res = semctl(semid, 0, SETVAL, 1);

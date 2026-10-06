@@ -4,6 +4,20 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
+
+#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+#if defined(_WIN32)
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#endif
+#else /* _WIN32 */
+
+
+#endif
+
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -19,14 +33,13 @@ extern "C" {
  */
 auto_win_msvc_error_t posix_time_get_info(int *out_available);
 
-#include <time.h>
-
 #if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
 
 #if defined(_WIN32)
-#include <sys/utime.h>
-#include <winsock2.h>
+
 #endif
+
+#include <time.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* UCRT defines struct timespec in time.h */
@@ -156,7 +169,7 @@ struct itimerval {
 #endif
 
 #if defined(_MSC_VER)
-#include <sys/utime.h>
+
 #endif
 #define tzset _tzset     /**< Map tzset to _tzset on Windows */
 #define utimbuf _utimbuf /**< Map utimbuf to _utimbuf on Windows */
@@ -237,12 +250,19 @@ int nanosleep(const struct timespec *req, struct timespec *rem);
  */
 struct tm *localtime_r(const time_t *timep, struct tm *result);
 
+/**
+ * @brief Parse a time string into a struct tm.
+ * @param buf The string to parse.
+ * @param fmt The format string.
+ * @param tm The tm structure to store the parsed time.
+ * @return A pointer to the first character not processed in buf, or NULL on
+ * error.
+ */
+char *strptime(const char *buf, const char *fmt, struct tm *tm);
+
 #else /* _WIN32 */
 
-#include <sys/time.h>
-#include <utime.h>
 #endif /* _WIN32 */
-/* clang-format on */
 
 #ifdef __cplusplus
 }

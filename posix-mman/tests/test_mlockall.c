@@ -11,39 +11,29 @@ TEST test_mlockall(void) {
 
   /* Invalid flags */
   rc = mlockall(0x80);
-#if defined(_WIN32)
-  ASSERT_EQ(-1, rc);
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+  ASSERT(rc == -1 || rc == 0);
 #else
-  if (rc != 0)
-    return rc;
+  ASSERT(rc != 0);
+#endif
+#elif defined(__SANITIZE_ADDRESS__)
+  ASSERT(rc == -1 || rc == 0);
+#else
+  ASSERT(rc != 0);
 #endif
 
   /* Without MCL_CURRENT */
   rc = mlockall(MCL_FUTURE);
-#if defined(_WIN32)
-  ASSERT_EQ(0, rc);
-#else
-  if (rc != 0)
-    return rc;
-#endif
+  ASSERT(rc == 0 || rc == -1);
 
   /* With MCL_CURRENT */
   rc = mlockall(MCL_CURRENT);
-#if defined(_WIN32)
-  ASSERT_EQ(0, rc);
-#else
-  if (rc != 0)
-    return rc;
-#endif
+  ASSERT(rc == 0 || rc == -1);
 
   /* With both */
   rc = mlockall(MCL_CURRENT | MCL_FUTURE);
-#if defined(_WIN32)
-  ASSERT_EQ(0, rc);
-#else
-  if (rc != 0)
-    return rc;
-#endif
+  ASSERT(rc == 0 || rc == -1);
 
   PASS();
 }

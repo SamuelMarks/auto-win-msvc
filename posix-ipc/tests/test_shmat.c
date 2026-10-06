@@ -25,25 +25,23 @@ TEST test_shm_comprehensive(void) {
 
   /* Create shared memory segment */
   shmid = shmget(IPC_PRIVATE, 4096, IPC_CREAT | 0666);
-  if (shmid == -1) {
-    PASS();
-  }
+  ASSERT_NEQ(-1, shmid);
 
   /* Attach */
   addr = shmat(shmid, NULL, 0);
-  if (addr != (void *)-1) {
-    memcpy(addr, "test_shm_data", 14);
-    ASSERT_STR_EQ("test_shm_data", (char *)addr);
+  ASSERT_NEQ((void *)-1, addr);
 
-    /* Status */
-    memset(&ds, 0, sizeof(ds));
-    res = shmctl(shmid, IPC_STAT, &ds);
-    ASSERT(res == 0 || res == -1);
+  memcpy(addr, "test_shm_data", 14);
+  ASSERT_STR_EQ("test_shm_data", (char *)addr);
 
-    /* Detach */
-    res = shmdt(addr);
-    ASSERT_EQ(0, res);
-  }
+  /* Status */
+  memset(&ds, 0, sizeof(ds));
+  res = shmctl(shmid, IPC_STAT, &ds);
+  ASSERT(res == 0 || res == -1);
+
+  /* Detach */
+  res = shmdt(addr);
+  ASSERT_EQ(0, res);
 
   /* Remove */
   res = shmctl(shmid, IPC_RMID, NULL);

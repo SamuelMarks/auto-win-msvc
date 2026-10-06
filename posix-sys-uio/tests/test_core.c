@@ -19,9 +19,13 @@
 #endif
 /* clang-format on */
 
+extern int dummy_posix_sys_uio(void);
+
 TEST test_posix_sys_uio_get_info(void) {
   auto_win_msvc_error_t rc;
   int info;
+
+  dummy_posix_sys_uio();
 
   info = 0;
   rc = posix_sys_uio_get_info(NULL);
@@ -116,6 +120,20 @@ TEST test_posix_uio_readv_writev_file(void) {
   res = posix_preadv(fd, iov, 1, 0);
   ASSERT_EQ(4, res);
   ASSERT_MEM_EQ("1234", rbuf1, 4);
+
+  /* Test posix_preadv and posix_pwritev failure (invalid fd) */
+  res = posix_preadv(-1, iov, 1, 0);
+  ASSERT_EQ(-1, res);
+
+  res = posix_pwritev(-1, iov, 1, 0);
+  ASSERT_EQ(-1, res);
+
+  /* Test posix_preadv and posix_pwritev failure (invalid offset) */
+  res = posix_preadv(fd, iov, 1, -1);
+  ASSERT_EQ(-1, res);
+
+  res = posix_pwritev(fd, iov, 1, -1);
+  ASSERT_EQ(-1, res);
 
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(fd);

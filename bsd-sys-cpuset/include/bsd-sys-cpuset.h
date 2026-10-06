@@ -48,7 +48,7 @@ auto_win_msvc_error_t bsd_sys_cpuset_init(int *out_status);
  */
 typedef struct {
   /** @brief Bit array representing CPUs. */
-  unsigned long __bits[CPU_SETSIZE / 32];
+  unsigned long __bits[CPU_SETSIZE / (sizeof(unsigned long) * 8)];
 } cpuset_t;
 
 /**

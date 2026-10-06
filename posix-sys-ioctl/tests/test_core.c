@@ -31,6 +31,8 @@ TEST test_posix_sys_ioctl_get_info(void) {
 
 TEST test_posix_ioctl_operations(void) {
   struct winsize ws;
+  unsigned long non_blocking = 1;
+  unsigned long bytes_available = 0;
   int res;
 
   /* Invalid descriptor */
@@ -39,14 +41,47 @@ TEST test_posix_ioctl_operations(void) {
   ASSERT_EQ(-1, res);
   ASSERT(errno == EBADF || errno == ENOTSOCK);
 
-  /* NULL argp on stdin */
+  /* NULL argp on stdin for TIOCGWINSZ */
   errno = 0;
   res = posix_ioctl((intptr_t)0, TIOCGWINSZ, NULL);
   ASSERT(res == -1 || res == 0);
 
-  /* Valid pointer on stdin */
+  /* NULL argp on stdin for TIOCSWINSZ */
+  errno = 0;
+  res = posix_ioctl((intptr_t)0, TIOCSWINSZ, NULL);
+  ASSERT(res == -1 || res == 0);
+
+  /* NULL argp on stdin for FIONREAD */
+  errno = 0;
+  res = posix_ioctl((intptr_t)0, FIONREAD, NULL);
+  ASSERT(res == -1 || res == 0);
+
+  /* NULL argp on stdin for FIONBIO */
+  errno = 0;
+  res = posix_ioctl((intptr_t)0, FIONBIO, NULL);
+  ASSERT(res == -1 || res == 0);
+
+  /* Valid pointer on stdin for TIOCGWINSZ */
   res = posix_ioctl((intptr_t)0, TIOCGWINSZ, &ws);
   ASSERT(res == 0 || res == -1);
+
+  /* Valid pointer on stdin for TIOCSWINSZ */
+  if (res == 0) {
+    res = posix_ioctl((intptr_t)0, TIOCSWINSZ, &ws);
+    ASSERT(res == 0 || res == -1);
+  }
+
+  /* Valid pointer on stdin for FIONREAD */
+  res = posix_ioctl((intptr_t)0, FIONREAD, &bytes_available);
+  ASSERT(res == 0 || res == -1);
+
+  /* Valid pointer on stdin for FIONBIO */
+  res = posix_ioctl((intptr_t)0, FIONBIO, &non_blocking);
+  ASSERT(res == 0 || res == -1);
+
+  /* Invalid request */
+  res = posix_ioctl((intptr_t)0, 0x12345678, NULL);
+  ASSERT_EQ(-1, res);
 
   /* Test macro */
   errno = 0;

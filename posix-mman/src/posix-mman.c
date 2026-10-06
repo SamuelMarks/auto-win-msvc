@@ -828,7 +828,8 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   sprintf_s(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
             (unsigned int)rand());
 #else
-  sprintf(temp_file, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)rand());
+  snprintf(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
+           (unsigned int)rand());
 #endif
   oflags = O_RDWR | O_CREAT | O_EXCL;
 #ifdef O_CLOEXEC

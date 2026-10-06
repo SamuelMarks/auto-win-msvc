@@ -25,6 +25,7 @@ typedef void *WIN_PSID;
 #define WIN_EVENTLOG_WARNING_TYPE 0x0002
 #define WIN_EVENTLOG_INFORMATION_TYPE 0x0004
 
+#if !defined(MOCK_EVENTLOG)
 __declspec(dllimport) WIN_HANDLE __stdcall
 RegisterEventSourceA(WIN_LPCSTR lpUNCServerName, WIN_LPCSTR lpSourceName);
 __declspec(dllimport) int __stdcall DeregisterEventSource(WIN_HANDLE hEventLog);
@@ -32,6 +33,7 @@ __declspec(dllimport) int __stdcall
 ReportEventA(WIN_HANDLE hEventLog, WIN_WORD wType, WIN_WORD wCategory,
              WIN_DWORD dwEventID, WIN_PSID lpUserSid, WIN_WORD wNumStrings,
              WIN_DWORD dwDataSize, WIN_LPCSTR *lpStrings, void *lpRawData);
+#endif
 #endif
 /* clang-format on */
 
@@ -42,6 +44,15 @@ static char *g_Ident = NULL;
 static int g_LogOpt = 0;
 static int g_Facility = LOG_USER;
 static int g_LogMask = 0xFF;
+
+#if defined(_WIN32) && !defined(DEFINED_WIN32_FOR_TEST)
+__declspec(dllexport)
+#endif
+void *(*posix_syslog_mock_malloc_ptr)(size_t) = NULL;
+
+#define LOCAL_MALLOC(size)                                                     \
+  (posix_syslog_mock_malloc_ptr ? posix_syslog_mock_malloc_ptr(size)           \
+                                : malloc(size))
 
 /**
  * @brief Retrieves information on posix-syslog availability.
@@ -73,7 +84,7 @@ void openlog(const char *ident, int option, int facility) {
   if (ident != NULL) {
     size_t len;
     len = strlen(ident);
-    g_Ident = (char *)malloc(len + 1);
+    g_Ident = (char *)LOCAL_MALLOC(len + 1);
     if (g_Ident != NULL) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       strncpy_s(g_Ident, len + 1, ident, _TRUNCATE);
@@ -108,14 +119,12 @@ void syslog(int priority, const char *format, ...) {
   va_list args;
   char buffer[4096];
   int prio;
-  int written;
 #if defined(_WIN32)
   WIN_WORD eventType;
   WIN_LPCSTR strings[1];
 #endif
 
   prio = LOG_PRI(priority);
-  written = 0;
 
   if (!(g_LogMask & LOG_MASK(prio))) {
     return;
@@ -123,17 +132,14 @@ void syslog(int priority, const char *format, ...) {
 
   va_start(args, format);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-  written = vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+  vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 #elif defined(_MSC_VER)
-  written = _vsnprintf(buffer, sizeof(buffer), format, args);
+  _vsnprintf(buffer, sizeof(buffer), format, args);
+  buffer[sizeof(buffer) - 1] = '\0';
 #else
-  written = vsnprintf(buffer, sizeof(buffer), format, args);
+  vsnprintf(buffer, sizeof(buffer), format, args);
 #endif
   va_end(args);
-
-  if (written < 0) {
-    return;
-  }
 
   if (g_LogOpt & LOG_PERROR) {
     fprintf(stderr, "%s%s%s\n", g_Ident != NULL ? g_Ident : "",
@@ -143,22 +149,12 @@ void syslog(int priority, const char *format, ...) {
 #if defined(_WIN32)
   strings[0] = buffer;
 
-  switch (prio) {
-  case LOG_EMERG:
-  case LOG_ALERT:
-  case LOG_CRIT:
-  case LOG_ERR:
+  if (prio <= LOG_ERR) {
     eventType = WIN_EVENTLOG_ERROR_TYPE;
-    break;
-  case LOG_WARNING:
+  } else if (prio == LOG_WARNING) {
     eventType = WIN_EVENTLOG_WARNING_TYPE;
-    break;
-  case LOG_NOTICE:
-  case LOG_INFO:
-  case LOG_DEBUG:
-  default:
+  } else {
     eventType = WIN_EVENTLOG_INFORMATION_TYPE;
-    break;
   }
 
   if (g_EventSource == NULL) {

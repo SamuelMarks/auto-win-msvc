@@ -57,12 +57,11 @@ typedef int error_type_t;
 #endif
 #endif
 #include "auto-win-msvc-error.h"
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 /**
  * @brief Initializes and validates the posix-core module.

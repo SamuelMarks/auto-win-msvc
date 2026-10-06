@@ -9,6 +9,7 @@ endif()
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # --- Advanced Tooling & Strictest Compile Options ---
 include(CheckCCompilerFlag)

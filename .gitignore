@@ -1,3 +1,4 @@
+*.gcov
 build_*
 # Prerequisites
 *.d
@@ -180,7 +181,6 @@ valkey_src/
 docs/
 html/
 latex/
-linux-epoll/include/sys/
 
 # Additional common ignores
 tags

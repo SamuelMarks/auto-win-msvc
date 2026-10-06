@@ -2,6 +2,15 @@
 #include "posix-arpa-inet.h"
 #include <limits.h>
 #include <stddef.h>
+
+/* Redefine htonl locally to avoid system header inline branching (e.g. __builtin_constant_p) in coverage */
+#if defined(htonl) && !defined(_WIN32)
+#undef htonl
+#define posix_arpa_inet_htonl_mock(x) \
+    ((((x) & 0xff000000UL) >> 24) | (((x) & 0x00ff0000UL) >> 8) | \
+     (((x) & 0x0000ff00UL) << 8) | (((x) & 0x000000ffUL) << 24))
+#define htonl(x) posix_arpa_inet_htonl_mock(x)
+#endif
 /* clang-format on */
 
 /**

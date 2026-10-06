@@ -2,6 +2,17 @@
 
 /* clang-format off */
 #include "posix-spawn.h"
+#if defined(POSIX_SPAWN_MOCK_MALLOC)
+#include <stdlib.h>
+#if defined(_WIN32)
+__declspec(dllexport) void *(*posix_spawn_mock_malloc_ptr)(size_t) = NULL;
+#else
+void *(*posix_spawn_mock_malloc_ptr)(size_t) = NULL;
+#endif
+static void *my_malloc(size_t size) { return posix_spawn_mock_malloc_ptr ? posix_spawn_mock_malloc_ptr(size) : malloc(size); }
+#define malloc my_malloc
+#endif
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -196,8 +207,6 @@ static auto_win_msvc_error_t
 add_action(posix_spawn_file_actions_t *file_actions,
            posix_spawn_action_t **out_action) {
   posix_spawn_action_t *new_action;
-  if (!file_actions || !out_action)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   new_action = (posix_spawn_action_t *)malloc(sizeof(posix_spawn_action_t));
   if (!new_action)
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -228,7 +237,7 @@ int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
     return EINVAL;
   rc = add_action(file_actions, &action);
   if (rc != AUTO_WIN_MSVC_SUCCESS)
-    return EINVAL;
+    return ENOMEM;
   action->type = POSIX_SPAWN_ACTION_CLOSE;
   action->fd = fildes;
   return 0;
@@ -245,7 +254,7 @@ int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
     return EINVAL;
   rc = add_action(file_actions, &action);
   if (rc != AUTO_WIN_MSVC_SUCCESS)
-    return EINVAL;
+    return ENOMEM;
   action->type = POSIX_SPAWN_ACTION_DUP2;
   action->fd = fildes;
   action->new_fd = newfildes;
@@ -264,7 +273,7 @@ int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
     return EINVAL;
   rc = add_action(file_actions, &action);
   if (rc != AUTO_WIN_MSVC_SUCCESS)
-    return EINVAL;
+    return ENOMEM;
   action->type = POSIX_SPAWN_ACTION_OPEN;
   action->fd = fildes;
   action->path = (char *)malloc(strlen(path) + 1);

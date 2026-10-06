@@ -10,10 +10,14 @@
 extern "C" {
 #endif
 
+#ifndef DEFINED_WIN32_FOR_TEST
 typedef unsigned long WIN_DWORD;
+#endif
+#if !defined(MOCK_GETLOGICALDRIVESTRINGS)
 __declspec(dllimport)
 WIN_DWORD __stdcall GetLogicalDriveStringsA(WIN_DWORD nBufferLength,
                                             char *lpBuffer);
+#endif
 
 #ifdef __cplusplus
 }
@@ -47,7 +51,7 @@ struct mntent *getmntent(FILE *stream) {
     return NULL;
   }
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST)
   strcpy_s(s_mnt_dir, sizeof(s_mnt_dir), s_drive_ptr);
   strcpy_s(s_mnt_fsname, sizeof(s_mnt_fsname), s_drive_ptr);
   strcpy_s(s_mnt_type, sizeof(s_mnt_type), "ntfs");
@@ -60,8 +64,7 @@ struct mntent *getmntent(FILE *stream) {
 #endif
 
   nlen = strlen(s_mnt_fsname);
-  if (nlen > 0 &&
-      (s_mnt_fsname[nlen - 1] == '\\' || s_mnt_fsname[nlen - 1] == '/')) {
+  if (s_mnt_fsname[nlen - 1] == '\\' || s_mnt_fsname[nlen - 1] == '/') {
     s_mnt_fsname[nlen - 1] = '\0';
   }
 
@@ -94,30 +97,24 @@ char *hasmntopt(const struct mntent *mnt, const char *opt) {
 #else
 
 FILE *setmntent(const char *filename, const char *type) {
-  if (filename == NULL || type == NULL) {
-    return NULL;
-  }
+  (void)filename;
+  (void)type;
   return NULL;
 }
 
 struct mntent *getmntent(FILE *stream) {
-  if (stream == NULL) {
-    return NULL;
-  }
+  (void)stream;
   return NULL;
 }
 
 int endmntent(FILE *stream) {
-  if (stream == NULL) {
-    return 0;
-  }
+  (void)stream;
   return 1;
 }
 
 char *hasmntopt(const struct mntent *mnt, const char *opt) {
-  if (mnt == NULL || opt == NULL) {
-    return NULL;
-  }
+  (void)mnt;
+  (void)opt;
   return NULL;
 }
 

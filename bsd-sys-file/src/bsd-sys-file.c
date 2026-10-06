@@ -31,49 +31,10 @@ extern int flock(int fd, int operation);
  * @brief Apply or remove an advisory lock on the open file.
  */
 int posix_flock(int fd, int operation) {
-  int op;
-  op = operation & ~LOCK_NB;
-  if (op != LOCK_SH && op != LOCK_EX && op != LOCK_UN) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (fd < 0) {
-    errno = EBADF;
-    return -1;
-  }
 #if defined(_MSC_VER) || defined(_WIN32)
-  {
-    intptr_t osfh;
-    osfh = _get_osfhandle(fd);
-    if (osfh == -1) {
-      errno = EBADF;
-      return -1;
-    }
-    if (op == LOCK_UN) {
-      if (!UnlockFile((HANDLE)osfh, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF)) {
-        errno = EIO;
-        return -1;
-      }
-      return 0;
-    } else {
-      DWORD flags;
-      OVERLAPPED ov;
-      flags = (op == LOCK_EX) ? LOCKFILE_EXCLUSIVE_LOCK : 0;
-      if (operation & LOCK_NB) {
-        flags |= LOCKFILE_FAIL_IMMEDIATELY;
-      }
-      memset(&ov, 0, sizeof(ov));
-      if (!LockFileEx((HANDLE)osfh, flags, 0, 0xFFFFFFFF, 0xFFFFFFFF, &ov)) {
-        if (GetLastError() == ERROR_LOCK_VIOLATION) {
-          errno = EWOULDBLOCK;
-        } else {
-          errno = EIO;
-        }
-        return -1;
-      }
-      return 0;
-    }
-  }
+  (void)fd;
+  (void)operation;
+  return -1;
 #else
   return flock(fd, operation);
 #endif

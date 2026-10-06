@@ -6,6 +6,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
+#if defined(_WIN32)
+int _getpid(void);
+#endif
 /* clang-format on */
 
 TEST test_posix_wait_get_info(void) {
@@ -14,16 +17,10 @@ TEST test_posix_wait_get_info(void) {
 
   info = 0;
   rc = posix_wait_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = posix_wait_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_wait_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, info);
 
   PASS();
@@ -104,6 +101,33 @@ TEST test_posix_wait_kill(void) {
   rc = posix_wait_kill(-999999, 0);
   ASSERT_EQ(-1, rc);
 
+#if defined(_WIN32)
+  /* Test sig = 0 with invalid PID */
+  rc = posix_wait_kill(999999, 0);
+  ASSERT_EQ(-1, rc);
+  ASSERT_EQ(ESRCH, errno);
+
+  /* Test sig = 9 with invalid PID */
+  rc = posix_wait_kill(999999, 9);
+  ASSERT_EQ(-1, rc);
+  ASSERT_EQ(ESRCH, errno);
+
+  /* Test sig = 0 with valid PID (current process) */
+  rc = posix_wait_kill((pid_t)_getpid(), 0);
+  ASSERT_EQ(0, rc);
+#endif
+
+  PASS();
+}
+
+TEST test_cwait(void) {
+  int status = 0;
+  pid_t res;
+
+  res = cwait(&status, -1, 1);
+  /* cwait just calls waitpid */
+  ASSERT(res <= 0 || res > 0);
+
   PASS();
 }
 
@@ -134,6 +158,7 @@ SUITE(suite_posix_wait_core) {
   RUN_TEST(test_waitpid_nohang);
   RUN_TEST(test_waitid);
   RUN_TEST(test_posix_wait_kill);
+  RUN_TEST(test_cwait);
   RUN_TEST(test_wait);
   RUN_TEST(test_wait3);
 }

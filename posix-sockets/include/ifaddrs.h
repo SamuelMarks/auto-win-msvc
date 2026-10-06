@@ -41,7 +41,17 @@ struct ifaddrs {
 #define getifaddrs posix_getifaddrs
 #define freeifaddrs posix_freeifaddrs
 
+#if defined(POSIX_SOCKETS_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
 int posix_getifaddrs(struct ifaddrs **ifap);
+#if defined(POSIX_SOCKETS_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
 void posix_freeifaddrs(struct ifaddrs *ifa);
 
 #ifdef __cplusplus

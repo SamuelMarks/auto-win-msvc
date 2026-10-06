@@ -6,6 +6,15 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
+#include <stddef.h>
+#if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
+#if defined(__WATCOMC__)
+#include <direct.h>
+#else
+#include <dirent.h>
+#endif
+#include <sys/types.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -23,14 +32,6 @@ auto_win_msvc_error_t posix_dirent_get_info(int *out_available);
 
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
-/* On non-Windows platforms, simply include the standard dirent.h */
-#if defined(__WATCOMC__)
-#include <direct.h>
-#else
-#include <dirent.h>
-#endif
-#include <sys/types.h>
-
 #if defined(__linux__) && !defined(__USE_MISC) && !defined(__USE_XOPEN2K8)
 extern int scandir(const char *dir, struct dirent ***namelist,
                    int (*filter)(const struct dirent *),
@@ -41,9 +42,7 @@ extern int alphasort(const struct dirent **a, const struct dirent **b);
 
 #else /* _WIN32 */
 
-#include <stddef.h>
 #endif /* _WIN32 */
-/* clang-format on */
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 /* File types for d_type */

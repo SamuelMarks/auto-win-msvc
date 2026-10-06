@@ -1,4 +1,5 @@
 /* clang-format off */
+#define LINUX_GETOPT_EXPORTS
 #include "linux-getopt.h"
 #include <stdio.h>
 #include <string.h>

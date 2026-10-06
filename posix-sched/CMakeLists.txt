@@ -90,7 +90,7 @@ endif()
 
 
 add_library(posix-sched src/posix-sched.c)
-set_target_properties(posix-sched PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-sched PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(posix-sched PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

@@ -1,8 +1,6 @@
 /* clang-format off */
 #include "sys/epoll.h"
-
-
-
+#include "auto-win-msvc-error.h"
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
@@ -31,7 +29,33 @@
 #else
 #include <io.h>
 #endif
+#undef EPOLLIN
+#undef EPOLLPRI
+#undef EPOLLOUT
+#undef EPOLLERR
+#undef EPOLLHUP
+#undef EPOLLRDNORM
+#undef EPOLLRDBAND
+#undef EPOLLWRNORM
+#undef EPOLLWRBAND
+#undef EPOLLMSG
+#undef EPOLLRDHUP
+#undef EPOLLONESHOT
+#undef EPOLL_CTL_ADD
+#undef EPOLL_CTL_DEL
+#undef EPOLL_CTL_MOD
+
+#undef epoll_data
+#undef epoll_event
+#undef epoll_data_t
+#define epoll_data wepoll_epoll_data
+#define epoll_event wepoll_epoll_event
+#define epoll_data_t wepoll_epoll_data_t
 #include <wepoll.h>
+#undef epoll_data
+#undef epoll_event
+#undef epoll_data_t
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -126,13 +150,13 @@ int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
     return -1;
   }
   s = (SOCKET)safe_get_osfhandle(fd);
-  return epoll_ctl(hephnd, op, s, event);
+  return epoll_ctl(hephnd, op, s, (void *)event);
 }
 
 int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
                      int timeout) {
   HANDLE hephnd = epoll_handles[epfd];
-  return epoll_wait(hephnd, events, maxevents, timeout);
+  return epoll_wait(hephnd, (void *)events, maxevents, timeout);
 }
 
 int posix_epoll_close(int epfd) {
@@ -163,7 +187,7 @@ int posix_epoll_create1(int flags) {
   errno = ENOSYS;
   return -1;
 }
-int posix_epoll_ctl(int epfd, int op, int fd, void *event) {
+int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
   if (epfd < 0 || fd < 0 || event == NULL) {
     errno = EINVAL;
     return -1;
@@ -175,7 +199,8 @@ int posix_epoll_ctl(int epfd, int op, int fd, void *event) {
   errno = ENOSYS;
   return -1;
 }
-int posix_epoll_wait(int epfd, void *events, int maxevents, int timeout) {
+int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
+                     int timeout) {
   if (epfd < 0 || events == NULL || maxevents <= 0) {
     errno = EINVAL;
     return -1;

@@ -7,7 +7,21 @@
 
 #include <sys/types.h>
 #include <time.h>
-struct itimerspec;
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST) && _MSC_VER < 1900
+struct timespec {
+  long tv_sec;
+  long tv_nsec;
+};
+#endif
+#if !defined(__linux__)
+#ifndef _ITIMERSPEC_DEFINED
+#define _ITIMERSPEC_DEFINED
+struct itimerspec {
+  struct timespec it_interval;
+  struct timespec it_value;
+};
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {

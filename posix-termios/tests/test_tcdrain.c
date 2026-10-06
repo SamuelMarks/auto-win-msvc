@@ -7,6 +7,8 @@
 
 TEST test_tcdrain(void) {
   int rc;
+  rc = tcdrain(0);
+  ASSERT(rc == 0 || rc == -1);
   rc = tcdrain(1);
   ASSERT(rc == 0 || rc == -1);
   rc = tcdrain(-1);

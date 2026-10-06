@@ -376,7 +376,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
   if (!timep || !result)
     return NULL;
 #if defined(_MSC_VER)
-  if (localtime_s(result, timep) == 0)
+  if (!localtime_s(result, timep))
     return result;
   return NULL;
 #else

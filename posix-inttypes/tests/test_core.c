@@ -4,79 +4,73 @@
 #include "greatest.h"
 #include "posix-inttypes.h"
 #include <stdio.h>
+#include <string.h>
 /* clang-format on */
 
 TEST test_posix_inttypes_get_info(void) {
   auto_win_msvc_error_t rc;
-  int info;
+  int status;
 
-  info = 0;
+  status = 0;
   rc = posix_inttypes_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
-  rc = posix_inttypes_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_inttypes_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(1, info);
+  rc = posix_inttypes_get_info(&status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
 
+  ASSERT_EQ(1, status);
   PASS();
 }
 
-TEST test_inttypes(void) {
-  intmax_t i;
-  uintmax_t u;
+TEST test_imaxabs(void) {
+  ASSERT_EQ(5, imaxabs(5));
+  ASSERT_EQ(5, imaxabs(-5));
+  ASSERT_EQ(0, imaxabs(0));
+  PASS();
+}
+
+TEST test_imaxdiv(void) {
+  imaxdiv_t r = imaxdiv(10, 3);
+  ASSERT_EQ(3, r.quot);
+  ASSERT_EQ(1, r.rem);
+
+  r = imaxdiv(-10, 3);
+  ASSERT_EQ(-3, r.quot);
+  ASSERT_EQ(-1, r.rem);
+  PASS();
+}
+
+TEST test_strtoimax(void) {
+  char *endptr;
+  ASSERT_EQ(12345, strtoimax("12345", &endptr, 10));
+  ASSERT_EQ(-12345, strtoimax("-12345", &endptr, 10));
+  ASSERT_EQ(0x1a, strtoimax("1a", &endptr, 16));
+  PASS();
+}
+
+TEST test_strtoumax(void) {
+  char *endptr;
+  ASSERT_EQ(12345, strtoumax("12345", &endptr, 10));
+  ASSERT_EQ(0x1a, strtoumax("1a", &endptr, 16));
+  PASS();
+}
+
+TEST test_macros(void) {
   char buf[64];
-
-  i = strtoimax("123", NULL, 10);
-  ASSERT_EQ((intmax_t)123, i);
-
-  u = strtoumax("456", NULL, 10);
-  ASSERT_EQ((uintmax_t)456, u);
-
 #if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "%" PRId32, (int32_t)100);
+  sprintf_s(buf, sizeof(buf), "%" PRId64, (int64_t)12345);
 #else
-  sprintf(buf, "%" PRId32, (int32_t)100);
+  sprintf(buf, "%" PRId64, (int64_t)12345);
 #endif
-  ASSERT_STR_EQ("100", buf);
-
-#if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "%" PRIx32, (uint32_t)0xff);
-#else
-  sprintf(buf, "%" PRIx32, (uint32_t)0xff);
-#endif
-  ASSERT_STR_EQ("ff", buf);
-
-#if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "%" PRIX32, (uint32_t)0xff);
-#else
-  sprintf(buf, "%" PRIX32, (uint32_t)0xff);
-#endif
-  ASSERT_STR_EQ("FF", buf);
-
-#if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)789);
-#else
-  sprintf(buf, "%" PRIdMAX, (intmax_t)789);
-#endif
-  ASSERT_STR_EQ("789", buf);
-
-#if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "%" PRIuMAX, (uintmax_t)987);
-#else
-  sprintf(buf, "%" PRIuMAX, (uintmax_t)987);
-#endif
-  ASSERT_STR_EQ("987", buf);
-
+  ASSERT_STR_EQ("12345", buf);
   PASS();
 }
 
 SUITE(suite_posix_inttypes_core) {
   RUN_TEST(test_posix_inttypes_get_info);
-  RUN_TEST(test_inttypes);
+  RUN_TEST(test_imaxabs);
+  RUN_TEST(test_imaxdiv);
+  RUN_TEST(test_strtoimax);
+  RUN_TEST(test_strtoumax);
+  RUN_TEST(test_macros);
 }

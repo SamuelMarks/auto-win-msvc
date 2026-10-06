@@ -21,13 +21,8 @@
  * @return 0 on success
  */
 static error_type_t convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
-  unsigned int idx;
   CPU_ZERO(set);
-  for (idx = 0; idx < sizeof(DWORD_PTR) * 8 && idx < CPU_SETSIZE; idx++) {
-    if (mask & ((DWORD_PTR)1 << idx)) {
-      CPU_SET(idx, set);
-    }
-  }
+  set->__bits[0] = (unsigned long)mask;
   return ERR_NONE;
 }
 
@@ -37,14 +32,7 @@ static error_type_t convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
  * @return The constructed Windows affinity mask
  */
 static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
-  DWORD_PTR newAffinity = 0;
-  unsigned int idx;
-  for (idx = 0; idx < sizeof(DWORD_PTR) * 8 && idx < CPU_SETSIZE; idx++) {
-    if (CPU_ISSET(idx, set)) {
-      newAffinity |= ((DWORD_PTR)1 << idx);
-    }
-  }
-  return newAffinity;
+  return (DWORD_PTR)set->__bits[0];
 }
 
 /** \brief cpuset_getaffinity function. */
@@ -269,14 +257,7 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
  * @return The affinity mask
  */
 static unsigned long convert_cpuset_to_mask(const cpuset_t *set) {
-  unsigned long newAffinity = 0;
-  unsigned int idx;
-  for (idx = 0; idx < sizeof(unsigned long) * 8 && idx < CPU_SETSIZE; idx++) {
-    if (CPU_ISSET(idx, set)) {
-      newAffinity |= ((unsigned long)1 << idx);
-    }
-  }
-  return newAffinity;
+  return set->__bits[0];
 }
 
 /** \brief cpuset_getaffinity fallback function. */
@@ -293,7 +274,7 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   if (level == CPU_LEVEL_ROOT || level == CPU_LEVEL_CPUSET ||
       level == CPU_LEVEL_WHICH) {
     CPU_ZERO(mask);
-    CPU_SET(0, mask);
+    mask->__bits[0] |= 1UL;
     return ERR_NONE;
   }
   errno = ENOSYS;

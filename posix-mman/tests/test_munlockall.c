@@ -7,12 +7,7 @@
 
 TEST test_munlockall(void) {
   int rc = munlockall();
-#if defined(_WIN32)
   ASSERT_EQ(0, rc);
-#else
-  if (rc != 0)
-    return rc;
-#endif
   PASS();
 }
 

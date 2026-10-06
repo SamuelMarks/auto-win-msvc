@@ -6,7 +6,7 @@
 #include <string.h>
 /* clang-format on */
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
 /* We try to avoid <windows.h> by forward declaring the necessary parts from
  * WinBase/DbgHelp */
 typedef unsigned long ULONG;
@@ -235,7 +235,7 @@ error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
   return ERR_NONE;
 }
 
-#endif /* _MSC_VER */
+#endif /* _MSC_VER || _WIN32 */
 
 /** @brief Initializes and validates the linux-execinfo module. */
 auto_win_msvc_error_t linux_execinfo_init(int *out_status) {

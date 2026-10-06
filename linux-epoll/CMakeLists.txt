@@ -106,7 +106,7 @@ FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greates
 FetchContent_MakeAvailable(greatest)
 endif()
 
-add_library(linux-epoll src/linux-epoll.c)
+add_library(linux-epoll src/linux-epoll.c src/sys_epoll.c)
 set_target_properties(linux-epoll PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_compile_options(linux-epoll PRIVATE ${STRICT_C_FLAGS})
 target_include_directories(linux-epoll PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)

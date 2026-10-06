@@ -85,7 +85,6 @@ add_library(linux-features src/linux-features.c)
 set_target_properties(linux-features PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-features PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_linux-features ${TEST_SOURCES})
@@ -94,7 +93,6 @@ target_include_directories(test_linux-features PRIVATE ${greatest_SOURCE_DIR})
 
 target_link_libraries(test_linux-features PRIVATE linux-features)
 add_test(NAME test_linux-features COMMAND test_linux-features)
-endif()
 
 if(MSVC)
     target_compile_options(linux-features PRIVATE )

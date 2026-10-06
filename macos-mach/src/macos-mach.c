@@ -14,6 +14,25 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <psapi.h>
+
+#ifndef MACOS_MACH_MOCK_QueryPerformanceFrequency
+#define MACOS_MACH_MOCK_QueryPerformanceFrequency QueryPerformanceFrequency
+#endif
+#ifndef MACOS_MACH_MOCK_QueryPerformanceCounter
+#define MACOS_MACH_MOCK_QueryPerformanceCounter QueryPerformanceCounter
+#endif
+#ifndef MACOS_MACH_MOCK_GetCurrentProcess
+#define MACOS_MACH_MOCK_GetCurrentProcess GetCurrentProcess
+#endif
+#ifndef MACOS_MACH_MOCK_GetProcessMemoryInfo
+#define MACOS_MACH_MOCK_GetProcessMemoryInfo GetProcessMemoryInfo
+#endif
+#ifndef MACOS_MACH_MOCK_GetProcessTimes
+#define MACOS_MACH_MOCK_GetProcessTimes GetProcessTimes
+#endif
+#ifndef MACOS_MACH_MOCK_OpenProcess
+#define MACOS_MACH_MOCK_OpenProcess OpenProcess
+#endif
 #endif
 /* clang-format on */
 
@@ -39,7 +58,8 @@ uint64_t mach_absolute_time(void) {
 #if defined(_WIN32)
   LARGE_INTEGER count;
   LARGE_INTEGER freq;
-  if (QueryPerformanceFrequency(&freq) && QueryPerformanceCounter(&count)) {
+  if (MACOS_MACH_MOCK_QueryPerformanceFrequency(&freq) &&
+      MACOS_MACH_MOCK_QueryPerformanceCounter(&count)) {
     uint64_t q = (uint64_t)(count.QuadPart / freq.QuadPart);
     uint64_t r = (uint64_t)(count.QuadPart % freq.QuadPart);
     return (q * (uint64_t)1000000000) +
@@ -58,7 +78,13 @@ kern_return_t task_info(task_t target_task, task_flavor_t flavor,
                         task_info_t task_info_out,
                         mach_msg_type_number_t *task_info_outCnt) {
 #if defined(_WIN32)
-  if (flavor == TASK_BASIC_INFO && task_info_out && task_info_outCnt &&
+  if (target_task == 0 || flavor < 0 || task_info_out == NULL ||
+      task_info_outCnt == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (flavor == TASK_BASIC_INFO &&
       *task_info_outCnt >= sizeof(struct task_basic_info) / sizeof(int)) {
     struct task_basic_info *info =
         (struct task_basic_info *)(void *)task_info_out;
@@ -73,19 +99,19 @@ kern_return_t task_info(task_t target_task, task_flavor_t flavor,
     info->policy = 0;
     info->suspend_count = 0;
 
-    if (target_task == (task_t)-1 || target_task == 0) {
-      hProcess = GetCurrentProcess();
+    if (target_task == (task_t)-1) {
+      hProcess = MACOS_MACH_MOCK_GetCurrentProcess();
     } else {
       hProcess = (HANDLE)(size_t)target_task;
     }
 
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+    if (MACOS_MACH_MOCK_GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
       info->resident_size = (int)pmc.WorkingSetSize;
       info->virtual_size = (int)pmc.PagefileUsage;
     }
 
-    if (GetProcessTimes(hProcess, &creation_time, &exit_time, &kernel_time,
-                        &user_time)) {
+    if (MACOS_MACH_MOCK_GetProcessTimes(hProcess, &creation_time, &exit_time,
+                                        &kernel_time, &user_time)) {
       ULARGE_INTEGER ku, uu;
       ku.LowPart = kernel_time.dwLowDateTime;
       ku.HighPart = kernel_time.dwHighDateTime;
@@ -97,11 +123,10 @@ kern_return_t task_info(task_t target_task, task_flavor_t flavor,
     return KERN_SUCCESS;
   }
 #else
-  if (target_task == 0 || flavor < 0 || task_info_out == NULL ||
-      task_info_outCnt == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
+  (void)target_task;
+  (void)flavor;
+  (void)task_info_out;
+  (void)task_info_outCnt;
 #endif
   errno = ENOSYS;
   return -1;
@@ -129,17 +154,16 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
     errno = EINVAL;
     return -1;
   }
-  hProcess =
-      OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, (DWORD)pid);
+  hProcess = MACOS_MACH_MOCK_OpenProcess(
+      PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, (DWORD)pid);
   if (hProcess) {
     *t = (mach_port_t)(size_t)hProcess;
     return KERN_SUCCESS;
   }
 #else
-  if (target_tport == 0 || pid < 0 || !t) {
-    errno = EINVAL;
-    return -1;
-  }
+  (void)target_tport;
+  (void)pid;
+  (void)t;
 #endif
   errno = ENOSYS;
   return -1;
