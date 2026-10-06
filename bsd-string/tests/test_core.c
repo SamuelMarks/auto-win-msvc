@@ -1,6 +1,8 @@
+/* clang-format off */
 #include "bsd/string.h"
 #include "greatest.h"
 #include <string.h>
+/* clang-format on */
 
 TEST test_bsd_string_strlcpy(void) {
 #if defined(_MSC_VER) || defined(_WIN32)

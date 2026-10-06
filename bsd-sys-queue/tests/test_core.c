@@ -1,4 +1,6 @@
+/* clang-format off */
 #include "greatest.h"
+/* clang-format on */
 
 extern int sys_queue_dummy_for_coverage(void);
 

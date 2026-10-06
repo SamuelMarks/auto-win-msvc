@@ -1,8 +1,4 @@
 #ifdef _MSC_VER
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4245)
-#pragma warning(disable : 4702)
-#pragma warning(disable : 4189)
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
@@ -235,7 +231,11 @@ TEST test_posix_setservent(void) {
 TEST test_posix_poll(void) {
   int rc;
   struct pollfd pfd = {0};
+#ifdef _MSC_VER
+  pfd.fd = (SOCKET)-1;
+#else
   pfd.fd = -1;
+#endif
   rc = posix_poll(&pfd, 1, 1);
   /* Some polling implementations fail for fd == -1 */
   (void)rc;
@@ -318,9 +318,8 @@ TEST test_posix_socketpair(void) {
   (void)rc;
   PASS();
 }
-
 TEST test_posix_msg_null(void) {
-  int rc;
+  posix_ssize_t rc;
   rc = posix_recvmsg(0, NULL, 0);
   /* ASSERT_EQ(-1, rc); */
   rc = posix_sendmsg(0, NULL, 0);
@@ -334,19 +333,23 @@ TEST test_posix_msg_null(void) {
 }
 
 TEST test_posix_from_to(void) {
-  int rc;
+  posix_ssize_t rc;
+  int rc2;
   rc = posix_recvfrom(0, NULL, 0, 0, NULL, NULL);
   /* ASSERT_EQ(-1, rc); */
   rc = posix_sendto(0, NULL, 0, 0, NULL, 0);
   /* ASSERT_EQ(-1, rc); */
-  rc = posix_setsockopt(0, 0, 0, NULL, 0);
+  rc2 = posix_setsockopt(0, 0, 0, NULL, 0);
+  /* ASSERT_EQ(-1, rc); */
+  rc2 = posix_getsockopt(0, 0, 0, NULL, NULL);
   /* ASSERT_EQ(-1, rc); */
   (void)rc;
+  (void)rc2;
   PASS();
 }
-
 TEST test_posix_from_to_params(void) {
-  int rc;
+  posix_ssize_t rc;
+  int rc2;
   char buf[1];
   struct sockaddr_in addr;
   posix_socklen_t alen = sizeof(addr);
@@ -354,13 +357,14 @@ TEST test_posix_from_to_params(void) {
   /* ASSERT_EQ(-1, rc); */
   rc = posix_sendto(-1, buf, 1, 0, (struct sockaddr *)&addr, alen);
   /* ASSERT_EQ(-1, rc); */
-  rc = posix_setsockopt(-1, 1, 2, buf, 1);
+  rc2 = posix_setsockopt(-1, 1, 2, buf, 1);
   /* ASSERT_EQ(-1, rc); */
-  rc = posix_shutdown(-1, 1);
+  rc2 = posix_shutdown(-1, 1);
   /* ASSERT_EQ(-1, rc); */
-  rc = posix_socket(-1, 1, 1);
+  rc2 = posix_socket(-1, 1, 1);
   /* ASSERT_EQ(-1, rc); */
   (void)rc;
+  (void)rc2;
   PASS();
 }
 

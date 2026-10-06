@@ -1,6 +1,20 @@
 #ifdef _MSC_VER
 #endif /* _MSC_VER */
 /* clang-format off */
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#ifndef WINAPI
+#if defined(_M_IX86) || defined(__i386__)
+#define WINAPI __stdcall
+#else
+#define WINAPI
+#endif
+#endif
+#include <psapi.h>
+#endif
 #include "greatest.h"
 #include "mach/mach.h"
 #include <errno.h>
@@ -8,12 +22,6 @@
 /* clang-format on */
 
 #if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <psapi.h>
-#include <winsock2.h>
-
 static int g_mock_QueryPerformanceFrequency_ret = 1;
 static int g_mock_QueryPerformanceCounter_ret = 1;
 static int g_mock_GetProcessMemoryInfo_ret = 1;

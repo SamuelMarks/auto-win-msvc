@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "greatest.h"
 #include "sys/cdefs.h"
+/* clang-format on */
 
 extern int sys_cdefs_dummy_for_coverage(void);
 

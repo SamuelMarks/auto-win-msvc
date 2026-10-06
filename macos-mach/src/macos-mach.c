@@ -13,6 +13,13 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#ifndef WINAPI
+#if defined(_M_IX86) || defined(__i386__)
+#define WINAPI __stdcall
+#else
+#define WINAPI
+#endif
+#endif
 #include <psapi.h>
 
 #ifndef MACOS_MACH_MOCK_QueryPerformanceFrequency

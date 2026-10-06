@@ -1,5 +1,4 @@
 #ifdef _MSC_VER
-#pragma warning(disable : 4702)
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
@@ -171,7 +170,9 @@ TEST test_epoll_fallback_branches(void) {
 #else
   SKIP();
 #endif
+#ifndef _WIN32
   PASS();
+#endif
 }
 
 extern int sys_epoll_dummy_for_coverage(void);

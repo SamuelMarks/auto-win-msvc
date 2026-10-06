@@ -6,6 +6,13 @@
  * @brief Central error enumeration for auto-win-msvc.
  */
 
+/* clang-format off */
+#include <errno.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1700
+#include <sal.h>
+#endif
+/* clang-format on */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,7 +22,6 @@ extern "C" {
 #elif defined(__GNUC__) || defined(__clang__)
 #define NO_DISCARD __attribute__((warn_unused_result))
 #elif defined(_MSC_VER) && _MSC_VER >= 1700
-#include <sal.h>
 #define NO_DISCARD _Check_return_
 #else
 #define NO_DISCARD
@@ -74,8 +80,6 @@ auto_win_msvc_error_string(auto_win_msvc_error_t err) {
     return "Unknown error";
   }
 }
-
-#include <errno.h>
 
 /**
  * @brief Translates an auto_win_msvc_error_t to a standard errno value.

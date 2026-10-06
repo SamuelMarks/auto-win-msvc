@@ -1,4 +1,6 @@
+/* clang-format off */
 #include "greatest.h"
+/* clang-format on */
 
 SUITE_EXTERN(suite_bsd_stdlib_core);
 

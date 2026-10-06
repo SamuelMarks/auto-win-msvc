@@ -1,5 +1,7 @@
+/* clang-format off */
 #include "bsd/stdlib.h"
 #include "greatest.h"
+/* clang-format on */
 
 extern int bsd_stdlib_dummy_for_coverage(void);
 
