@@ -58,9 +58,21 @@ struct mntent *getmntent(FILE *stream) {
   strcpy_s(s_mnt_opts, sizeof(s_mnt_opts), "rw");
 #else
   strcpy(s_mnt_dir, s_drive_ptr);
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST)
+  strcpy_s(s_mnt_fsname, sizeof(s_mnt_fsname), s_drive_ptr);
+#else
   strcpy(s_mnt_fsname, s_drive_ptr);
+#endif
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST)
+  strcpy_s(s_mnt_type, sizeof(s_mnt_type), "ntfs");
+#else
   strcpy(s_mnt_type, "ntfs");
+#endif
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST)
+  strcpy_s(s_mnt_opts, sizeof(s_mnt_opts), "rw");
+#else
   strcpy(s_mnt_opts, "rw");
+#endif
 #endif
 
   nlen = strlen(s_mnt_fsname);

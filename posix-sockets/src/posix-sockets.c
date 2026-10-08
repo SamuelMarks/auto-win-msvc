@@ -271,7 +271,11 @@ const char *posix_gai_strerror(int ecode) {
 #if defined(_MSC_VER)
   sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
+#else
   sprintf(buf, "Unknown error %d", (int)ecode);
+#endif
 #endif
   return buf;
 #endif

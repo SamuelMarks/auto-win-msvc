@@ -60,7 +60,11 @@ TEST test_macros(void) {
 #if defined(_MSC_VER)
   sprintf_s(buf, sizeof(buf), "%" PRId64, (int64_t)12345);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "%" PRId64, (int64_t)12345);
+#else
   sprintf(buf, "%" PRId64, (int64_t)12345);
+#endif
 #endif
   ASSERT_STR_EQ("12345", buf);
   PASS();

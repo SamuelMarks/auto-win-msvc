@@ -233,7 +233,12 @@ int glob(const char *pattern, int flags,
         sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
                   fileinfo.name);
 #else
+#if defined(_MSC_VER)
+        sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
+                  fileinfo.name);
+#else
         sprintf(full_path, "%s%s", dir_prefix, fileinfo.name);
+#endif
 #endif
       } else {
 #if defined(_MSC_VER)
@@ -358,7 +363,12 @@ int glob(const char *pattern, int flags,
 #if defined(_MSC_VER)
           sprintf_s(full_path, MAX_PATH, "%s%s", dir_prefix, ent->d_name);
 #else
+#if defined(_MSC_VER)
+          sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
+                    ent->d_name);
+#else
           sprintf(full_path, "%s%s", dir_prefix, ent->d_name);
+#endif
 #endif
         } else {
 #if defined(_MSC_VER)

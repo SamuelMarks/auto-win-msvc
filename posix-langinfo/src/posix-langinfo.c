@@ -40,7 +40,11 @@ char *posix_langinfo(nl_item item) {
 #if defined(_MSC_VER)
       sprintf_s(codeset_buf, sizeof(codeset_buf), "CP%u", acp);
 #else
+#if defined(_MSC_VER)
+      sprintf_s(codeset_buf, sizeof(codeset_buf), "CP%u", acp);
+#else
       sprintf(codeset_buf, "CP%u", acp);
+#endif
 #endif
     }
     return codeset_buf;

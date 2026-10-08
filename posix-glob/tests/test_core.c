@@ -339,7 +339,11 @@ TEST test_glob_oom(void) {
 #if defined(_MSC_VER)
     sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
 #else
+#if defined(_MSC_VER)
+    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+#else
     sprintf(fname, "glob_test_oom/file%d.txt", i);
+#endif
 #endif
 #if defined(_MSC_VER)
     fopen_s(&f, fname, "w");
@@ -407,7 +411,11 @@ TEST test_glob_oom(void) {
 #if defined(_MSC_VER)
     sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
 #else
+#if defined(_MSC_VER)
+    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+#else
     sprintf(fname, "glob_test_oom/file%d.txt", i);
+#endif
 #endif
     remove(fname);
   }

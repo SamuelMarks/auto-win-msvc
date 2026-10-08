@@ -143,7 +143,12 @@ int shmget(key_t key, size_t size, int shmflg) {
     sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
               (NUM_FORMAT_CAST)key);
 #else
+#if defined(_MSC_VER)
+    sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
+              (NUM_FORMAT_CAST)key);
+#else
     sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (NUM_FORMAT_CAST)key);
+#endif
 #endif
   }
 

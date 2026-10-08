@@ -231,7 +231,12 @@ int uname(struct utsname *name) {
   sprintf_s(name->version, sizeof(name->version), UTS_NUM_FORMAT,
             (unsigned long)osvi.dwBuildNumber);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(name->version, sizeof(name->version), UTS_NUM_FORMAT,
+            (unsigned long)osvi.dwBuildNumber);
+#else
   sprintf(name->version, UTS_NUM_FORMAT, (unsigned long)osvi.dwBuildNumber);
+#endif
 #endif
 #endif
 

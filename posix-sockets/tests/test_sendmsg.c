@@ -32,7 +32,11 @@ TEST test_sendmsg_scatter_gather(void) {
   strcpy_s(part2, sizeof(part2), "World!");
 #else
   strcpy(part1, "Hello ");
+#if defined(_MSC_VER)
+  strcpy_s(part2, sizeof(part2), "World!");
+#else
   strcpy(part2, "World!");
+#endif
 #endif
 
   iov[0].iov_base = part1;

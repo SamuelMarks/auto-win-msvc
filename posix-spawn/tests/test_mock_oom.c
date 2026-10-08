@@ -1,6 +1,8 @@
+/* clang-format off */
 #include "greatest.h"
 #include "posix-spawn.h"
 #include <stdlib.h>
+/* clang-format on */
 
 #if defined(_WIN32)
 __declspec(dllimport)

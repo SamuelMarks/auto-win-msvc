@@ -192,7 +192,11 @@ char *posix_strsignal(int sig) {
 #if defined(_MSC_VER)
   sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
+#else
   sprintf(unknown_buf, "Unknown signal %d", sig);
+#endif
 #endif
   return unknown_buf;
 }

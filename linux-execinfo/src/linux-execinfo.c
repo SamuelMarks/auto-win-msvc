@@ -149,7 +149,11 @@ char **backtrace_symbols(void *const *buffer, int size) {
 #if defined(_MSC_VER)
       printf_rc = sprintf_s(p, line_size, "%s [%p]", symbol->Name, buffer[i]);
 #else
+#if defined(_MSC_VER)
+      printf_rc = sprintf_s(p, sizeof(p), "%s [%p]", symbol->Name, buffer[i]);
+#else
       printf_rc = sprintf(p, "%s [%p]", symbol->Name, buffer[i]);
+#endif
 #endif
       if (printf_rc < 0) {
         free(strings);
@@ -159,7 +163,11 @@ char **backtrace_symbols(void *const *buffer, int size) {
 #if defined(_MSC_VER)
       printf_rc = sprintf_s(p, line_size, "??? [%p]", buffer[i]);
 #else
+#if defined(_MSC_VER)
+      printf_rc = sprintf_s(p, sizeof(p), "??? [%p]", buffer[i]);
+#else
       printf_rc = sprintf(p, "??? [%p]", buffer[i]);
+#endif
 #endif
       if (printf_rc < 0) {
         free(strings);

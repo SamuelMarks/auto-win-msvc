@@ -122,7 +122,12 @@ static int format_error_msg(char *buffer, size_t size, int errcode) {
 #if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
   sprintf_s(buffer, size, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
 #else
+#if defined(_MSC_VER)
+  sprintf_s(buffer, sizeof(buffer), "Error code: " NUM_FORMAT,
+            (NUM_FORMAT_CAST)errcode);
+#else
   sprintf(buffer, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
+#endif
 #endif
   return 0;
 }
