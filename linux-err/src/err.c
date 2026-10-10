@@ -53,14 +53,12 @@ void err(int eval, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   verr(eval, fmt, args);
-  va_end(args);
 }
 
 void errx(int eval, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   verrx(eval, fmt, args);
-  va_end(args);
 }
 
 void warn(const char *fmt, ...) {
