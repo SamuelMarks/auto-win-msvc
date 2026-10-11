@@ -122,7 +122,7 @@ TEST test_posix_wait_kill(void) {
 
 TEST test_cwait(void) {
   int status = 0;
-  pid_t res;
+  intptr_t res;
 
   res = cwait(&status, -1, 1);
   /* cwait just calls waitpid */

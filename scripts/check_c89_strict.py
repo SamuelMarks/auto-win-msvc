@@ -12,6 +12,7 @@ def check_file(filepath):
     repo_root = '.'
     include_dirs = [f'-I{os.path.join(module_dir, "include")}', '-Iinclude', '-I.']
     for root, dirs, files in os.walk(repo_root):
+        dirs[:] = [d for d in dirs if not d.startswith('build') and d != 'downstream_test' and not d.startswith('.')]
         if 'include' in root.split(os.sep):
             # Only add the top-level 'include' directories of modules
             if os.path.basename(root) == 'include':

@@ -1079,3 +1079,4 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bsd-stdlib)
     add_subdirectory(bsd-sys-cdefs)
 
 endif()
+message(STATUS "MEGA_INCLUDES = ${MEGA_INCLUDES}")

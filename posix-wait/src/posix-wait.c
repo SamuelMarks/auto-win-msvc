@@ -307,9 +307,9 @@ pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
 #endif /* MSDOS || WATCOMC */
 
 /* Non-standard Microsoft-compatible cwait */
-pid_t cwait(int *termstat, pid_t pid, int action) {
+intptr_t _cwait(int *termstat, intptr_t pid, int action) {
   (void)action;
-  return waitpid(pid, termstat, 0);
+  return waitpid((pid_t)pid, termstat, 0);
 }
 
 #ifdef __CYGWIN__

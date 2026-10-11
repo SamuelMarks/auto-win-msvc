@@ -450,9 +450,9 @@ TEST test_posix_signal_kill(void) {
     si.cb = sizeof(si);
     memset(&pi, 0, sizeof(pi));
 #if defined(_MSC_VER)
-    strcpy_s(cmd, sizeof(cmd), "cmd.exe /c pause");
+    strcpy_s(cmd, sizeof(cmd), "ping 127.0.0.1 -n 10");
 #else
-    strcpy(cmd, "cmd.exe /c pause");
+    strcpy(cmd, "ping 127.0.0.1 -n 10");
 #endif
 
     created = CreateProcessA(NULL, cmd, NULL, NULL, 0, 0, NULL, NULL, &si, &pi);

@@ -18,6 +18,12 @@
 
 #endif
 
+#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <time.h>
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#include <winsock2.h>
+#endif
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -39,8 +45,6 @@ auto_win_msvc_error_t posix_time_get_info(int *out_available);
 
 #endif
 
-#include <time.h>
-
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* UCRT defines struct timespec in time.h */
 #else
@@ -59,6 +63,8 @@ struct timespec {
 #ifndef _WINSOCK2API_
 #ifndef _TIMEVAL_DEFINED
 #define _TIMEVAL_DEFINED
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#else
 /**
  * @brief Structure for representing time with microsecond precision.
  */
@@ -66,6 +72,7 @@ struct timeval {
   long tv_sec;  /**< Seconds. */
   long tv_usec; /**< Microseconds. */
 };
+#endif
 #endif
 #endif
 

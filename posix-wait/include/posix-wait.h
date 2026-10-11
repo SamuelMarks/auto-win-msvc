@@ -165,7 +165,10 @@ int posix_wait_kill(pid_t pid, int sig);
 /**
  * @brief Microsoft-compatible cwait.
  */
-pid_t cwait(int *termstat, pid_t pid, int action);
+#ifndef _cwait
+intptr_t _cwait(int *termstat, intptr_t pid, int action);
+#define cwait _cwait
+#endif
 
 #ifdef __cplusplus
 }
