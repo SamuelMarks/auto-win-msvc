@@ -1,8 +1,9 @@
 import sys
 
+
 def check_file(filepath):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
@@ -18,20 +19,20 @@ def check_file(filepath):
             escape = False
             i += 1
             continue
-        if content[i] == '\\':
+        if content[i] == "\\":
             escape = True
             i += 1
             continue
 
         if not in_string and not in_char and not in_block:
-            if content[i:i+2] == '/*':
+            if content[i : i + 2] == "/*":
                 in_block = True
                 i += 2
                 continue
-            if content[i:i+2] == '//':
+            if content[i : i + 2] == "//":
                 # Allow // inside http:// inside string, but we are outside strings here.
                 # Just ban it entirely.
-                line_no = content[:i].count('\n') + 1
+                line_no = content[:i].count("\n") + 1
                 print(f"{filepath}:{line_no}: C99-style comment `//` found.")
                 return False
             if content[i] == '"':
@@ -44,7 +45,7 @@ def check_file(filepath):
                 continue
 
         elif in_block:
-            if content[i:i+2] == '*/':
+            if content[i : i + 2] == "*/":
                 in_block = False
                 i += 2
                 continue
@@ -59,7 +60,8 @@ def check_file(filepath):
 
     return True
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     all_ok = True
     for f in sys.argv[1:]:
         if not check_file(f):

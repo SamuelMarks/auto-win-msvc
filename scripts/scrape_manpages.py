@@ -5,24 +5,26 @@ import urllib.request
 import re
 from html import unescape
 
+
 def strip_html(html):
     # Remove HTML tags
-    text = re.sub(r'<[^>]+>', '', html)
+    text = re.sub(r"<[^>]+>", "", html)
     # Remove extra spaces
-    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
+
 
 def scrape_function(func_name, header_name):
     urls_to_try = [
         f"https://man7.org/linux/man-pages/man3/{func_name}.3p.html",
         f"https://man7.org/linux/man-pages/man2/{func_name}.2.html",
-        f"https://man7.org/linux/man-pages/man3/{func_name}.3.html"
+        f"https://man7.org/linux/man-pages/man3/{func_name}.3.html",
     ]
 
     html = None
     for url in urls_to_try:
         try:
-            html = urllib.request.urlopen(url).read().decode('utf-8')
+            html = urllib.request.urlopen(url).read().decode("utf-8")
             break
         except Exception as e:
             continue
@@ -31,7 +33,7 @@ def scrape_function(func_name, header_name):
         print(f"Failed to fetch {func_name} from any known man page URLs.")
         return None
 
-    pres = re.findall(r'<pre>(.*?)</pre>', html, re.DOTALL)
+    pres = re.findall(r"<pre>(.*?)</pre>", html, re.DOTALL)
 
     # Heuristic: the SYNOPSIS is usually the first <pre> block after the SYNOPSIS heading
     # or typically pres[3] in man7.org html.
@@ -39,41 +41,43 @@ def scrape_function(func_name, header_name):
     synopsis = ""
     description = ""
 
-    synopsis_match = re.search(r'<a id="SYNOPSIS".*?</h2>\s*<pre>(.*?)</pre>', html, re.DOTALL)
+    synopsis_match = re.search(
+        r'<a id="SYNOPSIS".*?</h2>\s*<pre>(.*?)</pre>', html, re.DOTALL
+    )
     if synopsis_match:
         raw_syn = unescape(synopsis_match.group(1))
         # Extract the prototype for the function
-        lines = raw_syn.split('\n')
+        lines = raw_syn.split("\n")
         proto_lines = []
         in_func = False
         for line in lines:
-            if func_name + '(' in strip_html(line):
+            if func_name + "(" in strip_html(line):
                 proto_lines.append(line)
                 in_func = True
-                if ';' in line:
+                if ";" in line:
                     break
             elif in_func:
                 proto_lines.append(line)
-                if ';' in line:
+                if ";" in line:
                     break
-        synopsis = ' '.join(strip_html(l) for l in proto_lines)
+        synopsis = " ".join(strip_html(l) for l in proto_lines)
 
-    desc_match = re.search(r'<a id="DESCRIPTION".*?</h2>\s*<pre>(.*?)</pre>', html, re.DOTALL)
+    desc_match = re.search(
+        r'<a id="DESCRIPTION".*?</h2>\s*<pre>(.*?)</pre>', html, re.DOTALL
+    )
     if desc_match:
         raw_desc = unescape(desc_match.group(1))
         # First paragraph: split by double newline
-        paragraphs = raw_desc.split('\n\n')
+        paragraphs = raw_desc.split("\n\n")
         if paragraphs:
             description = strip_html(paragraphs[0])
             # replace newlines with space
-            description = description.replace('\n', ' ')
+            description = description.replace("\n", " ")
 
     if synopsis and description:
-        return {
-            "prototype": synopsis,
-            "description": description
-        }
+        return {"prototype": synopsis, "description": description}
     return None
+
 
 def main():
     if len(sys.argv) < 3:
@@ -83,12 +87,12 @@ def main():
     header = sys.argv[1]
     funcs = sys.argv[2:]
 
-    os.makedirs('specs', exist_ok=True)
-    out_file = os.path.join('specs', header.replace('/', '_').replace('.h', '.json'))
+    os.makedirs("specs", exist_ok=True)
+    out_file = os.path.join("specs", header.replace("/", "_").replace(".h", ".json"))
 
     data = {}
     if os.path.exists(out_file):
-        with open(out_file, 'r') as f:
+        with open(out_file, "r") as f:
             data = json.load(f)
 
     if header not in data:
@@ -103,13 +107,14 @@ def main():
             # Add a stub to avoid failing
             data[header][func] = {
                 "prototype": f"int {func}(void);",
-                "description": f"Documentation for {func} not available."
+                "description": f"Documentation for {func} not available.",
             }
 
-    with open(out_file, 'w') as f:
+    with open(out_file, "w") as f:
         json.dump(data, f, indent=4)
 
     print(f"Saved to {out_file}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

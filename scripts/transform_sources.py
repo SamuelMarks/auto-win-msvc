@@ -22,8 +22,8 @@ def transform_source_content(content: str) -> str:
     #   char svr_addr[MAXPATHLEN + extras_len];
     memcached_vla_pattern = re.compile(
         r'(\s*)size_t\s+extras_len\s*=\s*sizeof\(":unix:"\)\s*\+\s*sizeof\("65535"\);\s*\n'
-        r'\s*char\s+addr\[MAXPATHLEN\s*\+\s*extras_len\];\s*\n'
-        r'\s*char\s+svr_addr\[MAXPATHLEN\s*\+\s*extras_len\];',
+        r"\s*char\s+addr\[MAXPATHLEN\s*\+\s*extras_len\];\s*\n"
+        r"\s*char\s+svr_addr\[MAXPATHLEN\s*\+\s*extras_len\];",
         re.MULTILINE,
     )
     if memcached_vla_pattern.search(content):
@@ -55,7 +55,11 @@ def transform_source_content(content: str) -> str:
         var_name = match.group(3)
         expr = match.group(4).strip()
         # Avoid matching constant expressions (numbers, sizeof, macros, uppercase expressions, compile-time assertions)
-        if re.match(r"^[0-9A-Z_+\-*/ ()\t?:=<>!&|]+$", expr) or "sizeof" in expr or "ARRAY_SIZE" in expr:
+        if (
+            re.match(r"^[0-9A-Z_+\-*/ ()\t?:=<>!&|]+$", expr)
+            or "sizeof" in expr
+            or "ARRAY_SIZE" in expr
+        ):
             return match.group(0)
         has_alloca = True
         return (
@@ -71,10 +75,13 @@ def transform_source_content(content: str) -> str:
     content = generic_vla_pattern.sub(vla_alloca_repl, content)
 
     # Transform xvfork() invocation into inline function call
-    content = re.sub(r'\bxvfork\(\)', 'bb_libbb_xvfork()', content)
+    content = re.sub(r"\bxvfork\(\)", "bb_libbb_xvfork()", content)
 
     if has_alloca and "#include <malloc.h>" not in content:
-        content = "/* clang-format off */\n#include <malloc.h>\n/* clang-format on */\n" + content
+        content = (
+            "/* clang-format off */\n#include <malloc.h>\n/* clang-format on */\n"
+            + content
+        )
 
     # 4. Transform GNU binary ternary (elvis operator) x ?: y into (x ? x : y)
     elvis_pattern = re.compile(
@@ -99,12 +106,12 @@ def transform_source_content(content: str) -> str:
     content = self_init_pattern.sub(self_init_repl, content)
 
     # 6. Add return 0 after fflush_stdout_and_exit calls to satisfy MSVC C4716 / RTC
-    fflush_pattern = re.compile(r'(fflush_stdout_and_exit(?:_SUCCESS)?\s*\([^;]*\);)')
-    content = fflush_pattern.sub(r'\1 return 0;', content)
+    fflush_pattern = re.compile(r"(fflush_stdout_and_exit(?:_SUCCESS)?\s*\([^;]*\);)")
+    content = fflush_pattern.sub(r"\1 return 0;", content)
 
     # 7. Disambiguate Windows SDK typedef collisions in od_bloaty.c (CHAR, SHORT, INT, LONG)
     if "enum size_spec {" in content:
-        content = re.sub(r'\b(CHAR|SHORT|INT|LONG)\b', r'OD_\1', content)
+        content = re.sub(r"\b(CHAR|SHORT|INT|LONG)\b", r"OD_\1", content)
 
     # 8. Transform xargs ISSPACE statement expression
     content = content.replace(
@@ -125,7 +132,9 @@ def transform_source_content(content: str) -> str:
     )
 
     # 11. Fix uninitialized variables and missing return in awk.c
-    content = content.replace("} L = L; /* for compiler */", "} L; memset(&L, 0, sizeof(L));")
+    content = content.replace(
+        "} L = L; /* for compiler */", "} L; memset(&L, 0, sizeof(L));"
+    )
     content = content.replace("} R = R;", "} R; memset(&R, 0, sizeof(R));")
     content = content.replace("double L_d = L_d;", "double L_d = 0;")
     content = content.replace("/*return 0;*/", "return 0;")
@@ -146,31 +155,56 @@ def transform_source_content(content: str) -> str:
 
     # 14. Stat MSVC member compatibility
     if "printf_s(char *pformat" in content:
-        content = re.sub(r'\bprintf_s\(', 'bb_printf_s(', content)
-    content = re.sub(r'human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)atim\)', r'human_time((struct timespec*)&(\1atime))', content)
-    content = re.sub(r'human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)mtim\)', r'human_time((struct timespec*)&(\1mtime))', content)
-    content = re.sub(r'human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)ctim\)', r'human_time((struct timespec*)&(\1ctime))', content)
-    content = re.sub(r'([a-zA-Z0-9_]+(?:->|\.))st_blksize\b', r'4096', content)
-    content = re.sub(r'([a-zA-Z0-9_]+(?:->|\.))st_blocks\b', r'(\1st_size / 512)', content)
+        content = re.sub(r"\bprintf_s\(", "bb_printf_s(", content)
+    content = re.sub(
+        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)atim\)",
+        r"human_time((struct timespec*)&(\1atime))",
+        content,
+    )
+    content = re.sub(
+        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)mtim\)",
+        r"human_time((struct timespec*)&(\1mtime))",
+        content,
+    )
+    content = re.sub(
+        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)ctim\)",
+        r"human_time((struct timespec*)&(\1ctime))",
+        content,
+    )
+    content = re.sub(r"([a-zA-Z0-9_]+(?:->|\.))st_blksize\b", r"4096", content)
+    content = re.sub(
+        r"([a-zA-Z0-9_]+(?:->|\.))st_blocks\b", r"(\1st_size / 512)", content
+    )
 
     # 15. Fix uninitialized variable in df.c
     content = content.replace("char *chp, *opt_t;", "char *chp = NULL, *opt_t = NULL;")
 
     # 17. Prevent bc from reading stdin if quit was encountered in input file
-    content = content.replace("if (IS_BC || (option_mask32 & BC_FLAG_I))", "if (!G_exiting && (IS_BC || (option_mask32 & BC_FLAG_I)))")
+    content = content.replace(
+        "if (IS_BC || (option_mask32 & BC_FLAG_I))",
+        "if (!G_exiting && (IS_BC || (option_mask32 & BC_FLAG_I)))",
+    )
 
     # 18. Map xvfork() in time.c to spawn()
     content = re.sub(
         r"pid\s*=\s*xvfork\(\)\s*;\s*if\s*\(\s*pid\s*==\s*0\s*\)\s*\{\s*/\*\s*Child\s*\*/\s*BB_EXECVP_or_die\(\s*\(char\*\*\)cmd\s*\)\s*;\s*\}",
         "pid = spawn((char**)cmd);",
-        content
+        content,
     )
 
     # 16. Fix missing return in yes.c and uudecode.c
-    content = re.sub(r'(while\s*\(\s*full_write\s*\([^;]*\s*==\s*len\s*\)\s*continue\s*;)', r'\1 return 0;', content)
-    content = content.replace("die_if_ferror(src_stream, fn);", "die_if_ferror(src_stream, fn); return 0;")
-    content = re.sub(r'(bb_perror_nomsg_and_die\([^;]*\);)', r'\1 return 0;', content)
-    content = re.sub(r'(bb_simple_error_msg_and_die\([^;]*\);)', r'\1 return 0;', content)
+    content = re.sub(
+        r"(while\s*\(\s*full_write\s*\([^;]*\s*==\s*len\s*\)\s*continue\s*;)",
+        r"\1 return 0;",
+        content,
+    )
+    content = content.replace(
+        "die_if_ferror(src_stream, fn);", "die_if_ferror(src_stream, fn); return 0;"
+    )
+    content = re.sub(r"(bb_perror_nomsg_and_die\([^;]*\);)", r"\1 return 0;", content)
+    content = re.sub(
+        r"(bb_simple_error_msg_and_die\([^;]*\);)", r"\1 return 0;", content
+    )
 
     return content
 
@@ -214,7 +248,9 @@ def main():
     elif len(args.inputs) == 2 and not os.path.isdir(args.inputs[1]):
         transform_file(args.inputs[0], args.inputs[1])
     else:
-        print("Usage: transform_sources.py <input> <output> OR --out-dir <dir> <files...>")
+        print(
+            "Usage: transform_sources.py <input> <output> OR --out-dir <dir> <files...>"
+        )
         sys.exit(1)
 
 

@@ -1,6 +1,6 @@
 import json
 
-with open('mappings.json') as f:
+with open("mappings.json") as f:
     data = json.load(f)
 
 signatures = {
@@ -89,7 +89,7 @@ signatures = {
     "ttyname": "char *ttyname(int fd)",
     "ttyname_r": "int ttyname_r(int fd, char *buf, size_t buflen)",
     "ualarm": "useconds_t ualarm(useconds_t value, useconds_t interval)",
-    "vfork": "pid_t vfork(void)"
+    "vfork": "pid_t vfork(void)",
 }
 
 test_args = {
@@ -178,7 +178,7 @@ test_args = {
     "ttyname": "(-1)",
     "ttyname_r": "(-1, NULL, 0)",
     "ualarm": "(0, 0)",
-    "vfork": "()"
+    "vfork": "()",
 }
 
 header_h = """/* posix-core.h - Strict C89 Header */
@@ -269,24 +269,27 @@ int main(int argc, char **argv) {
     GREATEST_MAIN_BEGIN();
 """
 
-for m in data['mappings'].get('macros', []):
-    if m.get('shim', {}).get('type') == 'macro':
+for m in data["mappings"].get("macros", []):
+    if m.get("shim", {}).get("type") == "macro":
         header_h += f"#ifdef _MSC_VER\n#ifndef {m['posix']}\n{m['shim']['code']}\n#endif\n#else\n#ifndef {m['posix']}\n#define {m['posix']} {m['posix']}\n#endif\n#endif\n"
 
 header_h += "\n/* Functions */\n"
 
-for f in data['mappings']['functions']:
-    name = f['posix']
+for f in data["mappings"]["functions"]:
+    name = f["posix"]
     sig = signatures.get(name, f"int {name}(void)")
 
     header_h += f"/** @brief {name} */\n"
-    if f.get('shim', {}).get('type') == 'macro':
+    if f.get("shim", {}).get("type") == "macro":
         header_h += f"#ifdef _MSC_VER\n#ifndef {name}\n{f['shim']['code']}\n#endif\n#else\n/* {name} */\n#endif\n"
     else:
-        ret_type = sig.split(' ')[0]
-        if ret_type == "void": dummy_return = ""
-        elif "*" in sig.split('(')[0]: dummy_return = "return NULL;"
-        else: dummy_return = "return -1;"
+        ret_type = sig.split(" ")[0]
+        if ret_type == "void":
+            dummy_return = ""
+        elif "*" in sig.split("(")[0]:
+            dummy_return = "return NULL;"
+        else:
+            dummy_return = "return -1;"
 
         header_h += f"#ifdef _MSC_VER\n{sig};\n#else\n/* {name} */\n#endif\n"
         c_impl += f"#ifdef _MSC_VER\n{sig} {{\n    errno = ENOSYS;\n    {dummy_return}\n}}\n#endif\n"
@@ -307,11 +310,11 @@ test_main += """    GREATEST_MAIN_END();
 
 test_c += test_main
 
-with open('include/posix-core.h', 'w') as f:
+with open("include/posix-core.h", "w") as f:
     f.write(header_h + "\n#ifdef __cplusplus\n}\n#endif\n#endif\n")
 
-with open('src/posix-core.c', 'w') as f:
+with open("src/posix-core.c", "w") as f:
     f.write(c_impl)
 
-with open('tests/test.c', 'w') as f:
+with open("tests/test.c", "w") as f:
     f.write(test_c)

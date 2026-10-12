@@ -1,10 +1,10 @@
 import re
 
-with open('src/posix-pthread.c', 'r') as f:
+with open("src/posix-pthread.c", "r") as f:
     code = f.read()
 
 impls = {
-    'pthread_mutex_init': '''
+    "pthread_mutex_init": """
 #if defined(_WIN32)
     (void)attr;
     if (!mutex) return EINVAL;
@@ -14,8 +14,8 @@ impls = {
     (void)mutex; (void)attr;
     return ENOSYS;
 #endif
-''',
-    'pthread_mutex_destroy': '''
+""",
+    "pthread_mutex_destroy": """
 #if defined(_WIN32)
     (void)mutex;
     /* SRW locks do not need destruction */
@@ -24,8 +24,8 @@ impls = {
     (void)mutex;
     return ENOSYS;
 #endif
-''',
-    'pthread_mutex_lock': '''
+""",
+    "pthread_mutex_lock": """
 #if defined(_WIN32)
     if (!mutex) return EINVAL;
     AcquireSRWLockExclusive(&mutex->p);
@@ -34,8 +34,8 @@ impls = {
     (void)mutex;
     return ENOSYS;
 #endif
-''',
-    'pthread_mutex_trylock': '''
+""",
+    "pthread_mutex_trylock": """
 #if defined(_WIN32)
     if (!mutex) return EINVAL;
     return TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
@@ -43,8 +43,8 @@ impls = {
     (void)mutex;
     return ENOSYS;
 #endif
-''',
-    'pthread_mutex_unlock': '''
+""",
+    "pthread_mutex_unlock": """
 #if defined(_WIN32)
     if (!mutex) return EINVAL;
     ReleaseSRWLockExclusive(&mutex->p);
@@ -53,8 +53,8 @@ impls = {
     (void)mutex;
     return ENOSYS;
 #endif
-''',
-    'pthread_cond_init': '''
+""",
+    "pthread_cond_init": """
 #if defined(_WIN32)
     (void)attr;
     if (!cond) return EINVAL;
@@ -64,8 +64,8 @@ impls = {
     (void)cond; (void)attr;
     return ENOSYS;
 #endif
-''',
-    'pthread_cond_signal': '''
+""",
+    "pthread_cond_signal": """
 #if defined(_WIN32)
     if (!cond) return EINVAL;
     WakeConditionVariable(&cond->p);
@@ -74,8 +74,8 @@ impls = {
     (void)cond;
     return ENOSYS;
 #endif
-''',
-    'pthread_cond_broadcast': '''
+""",
+    "pthread_cond_broadcast": """
 #if defined(_WIN32)
     if (!cond) return EINVAL;
     WakeAllConditionVariable(&cond->p);
@@ -84,8 +84,8 @@ impls = {
     (void)cond;
     return ENOSYS;
 #endif
-''',
-    'pthread_cond_wait': '''
+""",
+    "pthread_cond_wait": """
 #if defined(_WIN32)
     if (!cond || !mutex) return EINVAL;
     return SleepConditionVariableSRW(&cond->p, &mutex->p, INFINITE, 0) ? 0 : EINVAL;
@@ -93,8 +93,8 @@ impls = {
     (void)cond; (void)mutex;
     return ENOSYS;
 #endif
-''',
-    'pthread_cond_timedwait': '''
+""",
+    "pthread_cond_timedwait": """
 #if defined(_WIN32)
     unsigned long timeout_ms;
     if (!cond || !mutex || !abstime) return EINVAL;
@@ -105,8 +105,8 @@ impls = {
     (void)cond; (void)mutex; (void)abstime;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_init': '''
+""",
+    "pthread_rwlock_init": """
 #if defined(_WIN32)
     (void)attr;
     if (!rwlock) return EINVAL;
@@ -116,8 +116,8 @@ impls = {
     (void)rwlock; (void)attr;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_rdlock': '''
+""",
+    "pthread_rwlock_rdlock": """
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
     AcquireSRWLockShared(&rwlock->p);
@@ -126,8 +126,8 @@ impls = {
     (void)rwlock;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_tryrdlock': '''
+""",
+    "pthread_rwlock_tryrdlock": """
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
     return TryAcquireSRWLockShared(&rwlock->p) ? 0 : EBUSY;
@@ -135,8 +135,8 @@ impls = {
     (void)rwlock;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_wrlock': '''
+""",
+    "pthread_rwlock_wrlock": """
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
     AcquireSRWLockExclusive(&rwlock->p);
@@ -145,8 +145,8 @@ impls = {
     (void)rwlock;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_trywrlock': '''
+""",
+    "pthread_rwlock_trywrlock": """
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
     return TryAcquireSRWLockExclusive(&rwlock->p) ? 0 : EBUSY;
@@ -154,22 +154,20 @@ impls = {
     (void)rwlock;
     return ENOSYS;
 #endif
-''',
-    'pthread_rwlock_unlock': '''
+""",
+    "pthread_rwlock_unlock": """
 #if defined(_WIN32)
     if (!rwlock) return EINVAL;
-    /* Can't easily distinguish shared vs exclusive without tracking.
-       Usually SRWLock requires specific release. But pthread doesn't.
-       We will just Release Exclusive for this basic stub or assume it's exclusive if we don't know.
-       Wait, this is an issue. Let's just release exclusive and hope. */
+    /* SRWLock requires separate release functions for shared versus exclusive locks.
+       Without state tracking on the handle, default to releasing exclusive lock. */
     ReleaseSRWLockExclusive(&rwlock->p);
     return 0;
 #else
     (void)rwlock;
     return ENOSYS;
 #endif
-''',
-    'pthread_self': '''
+""",
+    "pthread_self": """
 #if defined(_WIN32)
     pthread_t t;
     t.p = (void*)(size_t)GetCurrentThreadId();
@@ -178,24 +176,24 @@ impls = {
     pthread_t t = {0};
     return t;
 #endif
-''',
-    'pthread_getspecific': '''
+""",
+    "pthread_getspecific": """
 #if defined(_WIN32)
     return TlsGetValue(key);
 #else
     (void)key;
     return 0;
 #endif
-''',
-    'pthread_setspecific': '''
+""",
+    "pthread_setspecific": """
 #if defined(_WIN32)
     return TlsSetValue(key, (void*)value) ? 0 : EINVAL;
 #else
     (void)key; (void)value;
     return ENOSYS;
 #endif
-''',
-    'pthread_key_create': '''
+""",
+    "pthread_key_create": """
 #if defined(_WIN32)
     unsigned long k;
     (void)destructor;
@@ -208,16 +206,16 @@ impls = {
     (void)key; (void)destructor;
     return ENOSYS;
 #endif
-''',
-    'pthread_key_delete': '''
+""",
+    "pthread_key_delete": """
 #if defined(_WIN32)
     return TlsFree(key) ? 0 : EINVAL;
 #else
     (void)key;
     return ENOSYS;
 #endif
-''',
-    'sem_init': '''
+""",
+    "sem_init": """
 #if defined(_WIN32)
     void *h;
     (void)pshared;
@@ -230,8 +228,8 @@ impls = {
     (void)sem; (void)pshared; (void)value;
     return ENOSYS;
 #endif
-''',
-    'sem_destroy': '''
+""",
+    "sem_destroy": """
 #if defined(_WIN32)
     if (!sem || !sem->p) return EINVAL;
     CloseHandle(sem->p);
@@ -241,8 +239,8 @@ impls = {
     (void)sem;
     return ENOSYS;
 #endif
-''',
-    'sem_wait': '''
+""",
+    "sem_wait": """
 #if defined(_WIN32)
     if (!sem || !sem->p) return EINVAL;
     return WaitForSingleObject(sem->p, INFINITE) == WAIT_OBJECT_0 ? 0 : EINVAL;
@@ -250,8 +248,8 @@ impls = {
     (void)sem;
     return ENOSYS;
 #endif
-''',
-    'sem_trywait': '''
+""",
+    "sem_trywait": """
 #if defined(_WIN32)
     if (!sem || !sem->p) return EINVAL;
     return WaitForSingleObject(sem->p, 0) == WAIT_OBJECT_0 ? 0 : EBUSY;
@@ -259,8 +257,8 @@ impls = {
     (void)sem;
     return ENOSYS;
 #endif
-''',
-    'sem_post': '''
+""",
+    "sem_post": """
 #if defined(_WIN32)
     if (!sem || !sem->p) return EINVAL;
     return ReleaseSemaphore(sem->p, 1, 0) ? 0 : EINVAL;
@@ -268,8 +266,8 @@ impls = {
     (void)sem;
     return ENOSYS;
 #endif
-''',
-    'pthread_detach': '''
+""",
+    "pthread_detach": """
 #if defined(_WIN32)
     if (!thread.p) return EINVAL;
     CloseHandle(thread.p);
@@ -278,8 +276,8 @@ impls = {
     (void)thread;
     return ENOSYS;
 #endif
-''',
-    'pthread_join': '''
+""",
+    "pthread_join": """
 #if defined(_WIN32)
     if (!thread.p) return EINVAL;
     if (WaitForSingleObject(thread.p, INFINITE) == WAIT_OBJECT_0) {
@@ -292,8 +290,8 @@ impls = {
     (void)thread; (void)value_ptr;
     return ENOSYS;
 #endif
-''',
-    'pthread_spin_init': '''
+""",
+    "pthread_spin_init": """
 #if defined(_WIN32)
     void *cs;
     (void)pshared;
@@ -307,8 +305,8 @@ impls = {
     (void)lock; (void)pshared;
     return ENOSYS;
 #endif
-''',
-    'pthread_spin_destroy': '''
+""",
+    "pthread_spin_destroy": """
 #if defined(_WIN32)
     if (!lock || !lock->ptr) return EINVAL;
     DeleteCriticalSection(lock->ptr);
@@ -319,8 +317,8 @@ impls = {
     (void)lock;
     return ENOSYS;
 #endif
-''',
-    'pthread_spin_lock': '''
+""",
+    "pthread_spin_lock": """
 #if defined(_WIN32)
     if (!lock || !lock->ptr) return EINVAL;
     EnterCriticalSection(lock->ptr);
@@ -329,8 +327,8 @@ impls = {
     (void)lock;
     return ENOSYS;
 #endif
-''',
-    'pthread_spin_trylock': '''
+""",
+    "pthread_spin_trylock": """
 #if defined(_WIN32)
     if (!lock || !lock->ptr) return EINVAL;
     return TryEnterCriticalSection(lock->ptr) ? 0 : EBUSY;
@@ -338,8 +336,8 @@ impls = {
     (void)lock;
     return ENOSYS;
 #endif
-''',
-    'pthread_spin_unlock': '''
+""",
+    "pthread_spin_unlock": """
 #if defined(_WIN32)
     if (!lock || !lock->ptr) return EINVAL;
     LeaveCriticalSection(lock->ptr);
@@ -348,8 +346,8 @@ impls = {
     (void)lock;
     return ENOSYS;
 #endif
-''',
-    'pthread_once': '''
+""",
+    "pthread_once": """
 #if defined(_WIN32)
     if (!once_control || !init_routine) return EINVAL;
     {
@@ -365,8 +363,8 @@ impls = {
     (void)once_control; (void)init_routine;
     return ENOSYS;
 #endif
-''',
-    'pthread_create': '''
+""",
+    "pthread_create": """
 #if defined(_WIN32)
     thread_params_t *params;
     void *h;
@@ -387,13 +385,17 @@ impls = {
     (void)thread; (void)attr; (void)start_routine; (void)arg;
     return ENOSYS;
 #endif
-'''
+""",
 }
 
 for func, impl in impls.items():
     # Regex to find the function body
     # E.g. int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) { ... }
-    pattern = r"(?s)(^[a-zA-Z_][a-zA-Z0-9_\s\*]*\s+" + re.escape(func) + r"\s*\([^)]*\)\s*\{)(.*?)(^\})"
+    pattern = (
+        r"(?s)(^[a-zA-Z_][a-zA-Z0-9_\s\*]*\s+"
+        + re.escape(func)
+        + r"\s*\([^)]*\)\s*\{)(.*?)(^\})"
+    )
 
     def repl(m):
         return m.group(1) + impl + m.group(3)
@@ -459,9 +461,12 @@ static unsigned long WINAPI thread_start_wrapper(void *arg) {
 """
 
 # Insert right before the first function definition
-code = code.replace("/* TODO: Implement pthread_atfork */", winapi_headers + "\n/* TODO: Implement pthread_atfork */")
+code = code.replace(
+    "/* TODO: Implement pthread_atfork */",
+    winapi_headers + "\n/* TODO: Implement pthread_atfork */",
+)
 
-with open('src/posix-pthread.c', 'w') as f:
+with open("src/posix-pthread.c", "w") as f:
     f.write(code)
 
 print("Done patching.")

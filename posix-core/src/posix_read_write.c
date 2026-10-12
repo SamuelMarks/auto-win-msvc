@@ -98,15 +98,23 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
         avail_kb = mem.ullAvailPhys / 1024;
       }
 #if defined(_MSC_VER)
+#if defined(_MSC_VER)
       sprintf_s(mem_buf, sizeof(mem_buf),
+#else
+      sprintf(mem_buf,
+#endif
                 "MemTotal: %I64u kB\nMemFree: %I64u kB\nMemAvailable: %I64u "
                 "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
                 total_kb, avail_kb, avail_kb);
 #else
+#if defined(_MSC_VER)
+      sprintf_s(mem_buf, sizeof(mem_buf),
+#else
       sprintf(mem_buf,
-              "MemTotal: %llu kB\nMemFree: %llu kB\nMemAvailable: %llu "
-              "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
-              total_kb, avail_kb, avail_kb);
+#endif
+                "MemTotal: %llu kB\nMemFree: %llu kB\nMemAvailable: %llu "
+                "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
+                total_kb, avail_kb, avail_kb);
 #endif
       fputs(mem_buf, tmp_f);
       rewind(tmp_f);
@@ -581,11 +589,9 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
     }
     {
       FILE *tmp_f = tmpfile();
-      char mem_buf[256];
-      sprintf(mem_buf,
-              "MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: "
-              "8388608 kB\nCached: 0 kB\nSReclaimable: 0 kB\n");
-      fputs(mem_buf, tmp_f);
+      fputs("MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: 8388608 "
+            "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
+            tmp_f);
       rewind(tmp_f);
       return tmp_f;
     }

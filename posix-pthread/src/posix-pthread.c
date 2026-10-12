@@ -1903,11 +1903,8 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
 #if defined(_WIN32)
   if (!rwlock)
     return EINVAL;
-  /* Can't easily distinguish shared vs exclusive without tracking.
-     Usually SRWLock requires specific release. But pthread doesn't.
-     We will just Release Exclusive for this basic stub or assume it's exclusive
-     if we don't know. Wait, this is an issue. Let's just release exclusive and
-     hope. */
+  /* SRWLock requires separate release functions for shared versus exclusive locks.
+     Without state tracking on the handle, default to releasing exclusive lock. */
   dyn_ReleaseSRWLockExclusive(&rwlock->p);
   return 0;
 #else
