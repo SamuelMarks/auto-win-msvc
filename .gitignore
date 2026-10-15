@@ -132,6 +132,7 @@ patch*
 !linux-epoll/patch_wepoll.cmake
 fix*
 update*
+!scripts/update_shields.py
 remove*
 rename*
 replace*

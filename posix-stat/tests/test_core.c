@@ -171,6 +171,7 @@ TEST test_posix_stat_internal_helpers(void) {
 
 TEST test_stat_macros(void) {
   mode_t mode;
+  long lval;
 
   mode = S_IFDIR;
   ASSERT(S_ISDIR(mode));
@@ -201,24 +202,40 @@ TEST test_stat_macros(void) {
   ASSERT(!S_ISREG(mode));
 
   /* Check permission macros */
-  ASSERT(S_IRUSR != 0);
-  ASSERT(S_IWUSR != 0);
-  ASSERT(S_IXUSR != 0);
-  ASSERT(S_IRWXU != 0);
-  ASSERT(S_IRGRP != 0);
-  ASSERT(S_IWGRP != 0);
-  ASSERT(S_IXGRP != 0);
-  ASSERT(S_IRWXG != 0);
-  ASSERT(S_IROTH != 0);
-  ASSERT(S_IWOTH != 0);
-  ASSERT(S_IXOTH != 0);
-  ASSERT(S_IRWXO != 0);
+  mode = (mode_t)S_IRUSR;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IWUSR;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IXUSR;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IRWXU;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IRGRP;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IWGRP;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IXGRP;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IRWXG;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IROTH;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IWOTH;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IXOTH;
+  ASSERT(mode != 0);
+  mode = (mode_t)S_IRWXO;
+  ASSERT(mode != 0);
 
   /* Check special value macros */
-  ASSERT(UTIME_NOW != 0);
-  ASSERT(UTIME_OMIT != 0);
-  ASSERT(AT_FDCWD != 0);
-  ASSERT(AT_SYMLINK_NOFOLLOW != 0);
+  lval = (long)UTIME_NOW;
+  ASSERT(lval != 0);
+  lval = (long)UTIME_OMIT;
+  ASSERT(lval != 0);
+  lval = (long)AT_FDCWD;
+  ASSERT(lval != 0);
+  lval = (long)AT_SYMLINK_NOFOLLOW;
+  ASSERT(lval != 0);
 
   PASS();
 }
@@ -737,9 +754,9 @@ TEST test_umask(void) {
   if (hUcrt) {
     p_umask = (pfn_umask)(size_t)GetProcAddress(hUcrt, "_umask");
     if (p_umask) {
-      m1 = (mode_t)p_umask(0022);
+      m1 = (mode_t)p_umask(0200);
       m2 = (mode_t)p_umask((int)m1);
-      ASSERT_EQ(0022, m2);
+      ASSERT_EQ(0200, m2);
     }
   }
 #else

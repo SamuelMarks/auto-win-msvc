@@ -59,7 +59,15 @@ TEST test_memfd_create_fail(void) {
   PASS();
 }
 
+TEST test_posix_memfd_create(void) {
+  int fd;
+  fd = posix_memfd_create(NULL, 0);
+  ASSERT(fd == -1);
+  PASS();
+}
+
 SUITE(suite_posix_mman_memfd_create) {
   RUN_TEST(test_memfd_create);
   RUN_TEST(test_memfd_create_fail);
+  RUN_TEST(test_posix_memfd_create);
 }

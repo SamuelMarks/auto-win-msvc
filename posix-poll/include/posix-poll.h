@@ -84,6 +84,11 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
 struct timespec;
 
+/**
+ * @brief Poll a set of file descriptors for I/O readiness with timespec timeout
+ * and signal mask.
+ * @return Number of ready descriptors, 0 on timeout, or -1 on error.
+ */
 int posix_ppoll(struct pollfd *fds, unsigned long nfds,
                 const struct timespec *tmo_p, const sigset_t *sigmask);
 

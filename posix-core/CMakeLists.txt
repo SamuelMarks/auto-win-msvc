@@ -86,7 +86,7 @@ endif()
 
 if(NOT TARGET posix-sockets)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets/CMakeLists.txt")
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets posix-sockets_build EXCLUDE_FROM_ALL)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets posix-sockets_build)
     else()
         include(FetchContent)
         FetchContent_Declare(
@@ -101,7 +101,7 @@ endif()
 
 if(NOT TARGET linux-epoll)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../linux-epoll/CMakeLists.txt")
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../linux-epoll linux-epoll_build EXCLUDE_FROM_ALL)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../linux-epoll linux-epoll_build)
     else()
         include(FetchContent)
         FetchContent_Declare(

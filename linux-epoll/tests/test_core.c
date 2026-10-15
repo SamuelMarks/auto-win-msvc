@@ -2,6 +2,7 @@
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
+#include "linux-epoll.h"
 #include <sys/epoll.h>
 #include <errno.h>
 #include <stdio.h>
@@ -183,10 +184,50 @@ TEST test_sys_epoll_dummy(void) {
   PASS();
 }
 
+TEST test_epoll_constants_and_pwait(void) {
+  struct epoll_event ev;
+  int op_add = EPOLL_CTL_ADD;
+  int op_mod = EPOLL_CTL_MOD;
+  int op_del = EPOLL_CTL_DEL;
+  int cloexec = EPOLL_CLOEXEC;
+  int dummy_sig = 0;
+
+  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP | EPOLLPRI |
+                         EPOLLRDNORM | EPOLLRDBAND | EPOLLWRNORM | EPOLLWRBAND |
+                         EPOLLMSG | EPOLLRDHUP | EPOLLEXCLUSIVE | EPOLLWAKEUP |
+                         EPOLLONESHOT | EPOLLET);
+  ev.data.fd = 42;
+  ASSERT_EQ(42, ev.data.fd);
+  ASSERT(ev.events != 0);
+  ASSERT(op_add == 1);
+  ASSERT(op_del == 2);
+  ASSERT(op_mod == 3);
+  ASSERT(cloexec != 0);
+
+#if !defined(__linux__)
+  ASSERT_EQ(-1, epoll_pwait(-1, &ev, 1, 0, NULL));
+  ASSERT_EQ(-1, epoll_pwait(0, NULL, 1, 0, NULL));
+  ASSERT_EQ(-1, epoll_pwait(0, &ev, 0, 0, NULL));
+  ASSERT_EQ(-1, epoll_pwait(0, &ev, 1, -2, NULL));
+  ASSERT_EQ(-1, epoll_pwait(0, &ev, 1, 0, NULL));
+  ASSERT_EQ(-1, epoll_pwait(0, &ev, 1, 0, &dummy_sig));
+
+  ASSERT_EQ(-1, epoll_pwait2(-1, &ev, 1, NULL, NULL));
+  ASSERT_EQ(-1, epoll_pwait2(0, NULL, 1, NULL, NULL));
+  ASSERT_EQ(-1, epoll_pwait2(0, &ev, 0, NULL, NULL));
+  ASSERT_EQ(-1, epoll_pwait2(0, &ev, 1, NULL, NULL));
+  ASSERT_EQ(-1, epoll_pwait2(0, &ev, 1, &dummy_sig, &dummy_sig));
+#else
+  (void)dummy_sig;
+#endif
+  PASS();
+}
+
 SUITE(suite_linux_epoll_core) {
   RUN_TEST(test_linux_epoll_init);
   RUN_TEST(test_epoll_lifecycle);
   RUN_TEST(test_epoll_create1);
   RUN_TEST(test_epoll_fallback_branches);
   RUN_TEST(test_sys_epoll_dummy);
+  RUN_TEST(test_epoll_constants_and_pwait);
 }

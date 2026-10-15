@@ -1,11 +1,14 @@
 /* clang-format off */
 #include "sys/epoll.h"
-/* clang-format on */
-
-#if defined(_MSC_VER) || defined(_WIN32)
 #include <errno.h>
 #include <stddef.h>
+/* clang-format on */
 
+#if !defined(__linux__)
+
+/**
+ * @brief Waits for an I/O event on an epoll file descriptor with signal mask.
+ */
 int epoll_pwait(int epfd, struct epoll_event *events, int maxevents,
                 int timeout, const void *sigmask) {
   if (epfd < 0 || events == NULL || maxevents <= 0) {
@@ -23,6 +26,10 @@ int epoll_pwait(int epfd, struct epoll_event *events, int maxevents,
   return -1;
 }
 
+/**
+ * @brief Waits for an I/O event on an epoll file descriptor with timespec
+ * timeout.
+ */
 int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents,
                  const void *timeout, const void *sigmask) {
   if (epfd < 0 || events == NULL || maxevents <= 0) {
@@ -36,7 +43,7 @@ int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents,
   return -1;
 }
 
-#endif /* _MSC_VER || _WIN32 */
+#endif /* !defined(__linux__) */
 
 int sys_epoll_dummy_for_coverage(void) { return 0; }
 

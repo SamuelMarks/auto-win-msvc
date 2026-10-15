@@ -89,7 +89,7 @@ endif()
 
 if(NOT TARGET posix-sys-ioctl)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl/CMakeLists.txt")
-        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl" "posix-sys-ioctl_build" EXCLUDE_FROM_ALL)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl" "posix-sys-ioctl_build")
     else()
         include(FetchContent)
         FetchContent_Declare(
@@ -104,7 +104,7 @@ endif()
 
 if(NOT TARGET posix-poll)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll/CMakeLists.txt")
-        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll" "posix-poll_build" EXCLUDE_FROM_ALL)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll" "posix-poll_build")
     else()
         include(FetchContent)
         FetchContent_Declare(

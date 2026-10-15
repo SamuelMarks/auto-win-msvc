@@ -143,6 +143,64 @@ TEST test_errx(void) {
     PASS();
 }
 
+static void call_my_vwarn(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_vwarn(fmt, ap);
+    va_end(ap);
+}
+
+static void call_my_vwarnx(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_vwarnx(fmt, ap);
+    va_end(ap);
+}
+
+static void call_my_verr(int eval, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_verr(eval, fmt, ap);
+    va_end(ap);
+}
+
+static void call_my_verrx(int eval, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_verrx(eval, fmt, ap);
+    va_end(ap);
+}
+
+TEST test_vwarn(void) {
+    g_mock_stderr_buf[0] = '\0';
+    errno = ENOENT;
+    call_my_vwarn("test %d", 123);
+    PASS();
+}
+
+TEST test_vwarnx(void) {
+    g_mock_stderr_buf[0] = '\0';
+    call_my_vwarnx("test %d", 123);
+    PASS();
+}
+
+TEST test_verr(void) {
+    g_mock_stderr_buf[0] = '\0';
+    errno = ENOENT;
+    if (setjmp(g_mock_exit_env) == 0) {
+        call_my_verr(42, "test %d", 123);
+    }
+    PASS();
+}
+
+TEST test_verrx(void) {
+    g_mock_stderr_buf[0] = '\0';
+    if (setjmp(g_mock_exit_env) == 0) {
+        call_my_verrx(42, "test %d", 123);
+    }
+    PASS();
+}
+
 SUITE(err_suite) {
     RUN_TEST(test_warn);
     RUN_TEST(test_warn_null);
@@ -150,6 +208,10 @@ SUITE(err_suite) {
     RUN_TEST(test_warnx_null);
     RUN_TEST(test_err);
     RUN_TEST(test_errx);
+    RUN_TEST(test_vwarn);
+    RUN_TEST(test_vwarnx);
+    RUN_TEST(test_verr);
+    RUN_TEST(test_verrx);
 }
 
 GREATEST_MAIN_DEFS();

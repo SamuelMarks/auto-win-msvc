@@ -44,11 +44,13 @@ typedef unsigned short mode_t;
 #ifndef creat
 #define creat posix_creat
 #endif
+/** @brief Creates a new file or rewrites an existing one. */
 int posix_creat(const char *pathname, mode_t mode);
 
 #ifndef fcntl
 #define fcntl posix_fcntl
 #endif
+/** @brief Manipulates file descriptor properties. */
 int posix_fcntl(intptr_t fd, int cmd, ...);
 
 #ifndef open
@@ -58,16 +60,19 @@ int posix_fcntl(intptr_t fd, int cmd, ...);
 #ifndef openat
 #define openat posix_openat
 #endif
+/** @brief Opens a file relative to a directory file descriptor. */
 int posix_openat(int dirfd, const char *pathname, int flags, ...);
 
 #ifndef posix_fadvise
 #define posix_fadvise posix_posix_fadvise
 #endif
+/** @brief Predeclares an access pattern for file data. */
 int posix_posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 
 #ifndef posix_fallocate
 #define posix_fallocate posix_posix_fallocate
 #endif
+/** @brief Ensures disk space is allocated for a file. */
 int posix_posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #endif
 

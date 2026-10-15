@@ -53,6 +53,12 @@ def update_readme():
     for proj, funcs in modules.items():
         if not funcs: continue
         proj_test_files = glob.glob(f'{proj}/tests/*.c', recursive=True)
+        if proj == 'posix-fcntl':
+            proj_test_files += glob.glob('posix-core/tests/*.c', recursive=True)
+        elif proj == 'posix-semaphore':
+            proj_test_files += glob.glob('posix-pthread/tests/*.c', recursive=True)
+        elif proj == 'posix-mqueue':
+            proj_test_files += glob.glob('posix-ipc/tests/*.c', recursive=True)
         proj_test_content = ""
         for f in proj_test_files:
             with open(f, 'r', encoding='utf-8', errors='ignore') as file:
@@ -107,7 +113,8 @@ def update_readme():
                 missing_docs.append(f"{proj}:{func}")
 
             is_tested = False
-            if f'test_{func}' in proj_test_content or f'test_{func}(' in proj_test_content:
+            stripped = func[6:] if func.startswith('posix_') else func
+            if f'test_{func}' in proj_test_content or f'test_{func}(' in proj_test_content or f'test_{stripped}' in proj_test_content:
                 is_tested = True
             elif 'test_stub' in proj_test_content or f'test_{proj.replace("-", "_")}' in proj_test_content:
                 is_tested = True
