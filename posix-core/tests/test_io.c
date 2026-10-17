@@ -127,13 +127,13 @@ TEST test_pread(void) {
 
   fd = open("test_pread_unit.tmp", O_RDWR | O_CREAT, 0666);
   if (fd >= 0) {
-    write(fd, "teststring", 10);
+    n = write(fd, "teststring", 10);
     memset(buf, 0, sizeof(buf));
     n = pread(fd, buf, 6, 4);
     close(fd);
     remove("test_pread_unit.tmp");
   }
-  pread(-1, buf, 1, 0);
+  n = pread(-1, buf, 1, 0);
   PASS();
 }
 
@@ -148,7 +148,7 @@ TEST test_pwrite(void) {
     close(fd);
     remove("test_pwrite_unit.tmp");
   }
-  pwrite(-1, "a", 1, 0);
+  n = pwrite(-1, "a", 1, 0);
   PASS();
 }
 
@@ -206,6 +206,37 @@ TEST test_posix_fopen(void) {
     }
     fclose(f);
   }
+#if defined(_WIN32)
+  {
+    const char *vpaths[] = {
+        "/proc/uptime",     "/proc/loadavg",   "/proc/version",
+        "/proc/stat",       "/proc/mounts",    "/proc/filesystems",
+        "/proc/swaps",      "/proc/cpuinfo",   "/proc/1/stat",
+        "/proc/1/cmdline",  "/proc/1/comm",    "/proc/1/status",
+        "/proc/self/stat",  "/proc/self/comm", "/proc/self/cmdline",
+        "/proc/self/status"};
+    size_t idx;
+    for (idx = 0; idx < sizeof(vpaths) / sizeof(vpaths[0]); idx++) {
+      f = posix_fopen(vpaths[idx], "r");
+      ASSERT(f != NULL);
+      fclose(f);
+    }
+  }
+#elif !defined(__linux__)
+  {
+    const char *vpaths[] = {"/proc/uptime",    "/proc/version",
+                            "/proc/1/stat",    "/proc/1/cmdline",
+                            "/proc/1/comm",    "/proc/1/status",
+                            "/proc/self/stat", "/proc/self/cmdline",
+                            "/proc/self/comm", "/proc/self/status"};
+    size_t idx;
+    for (idx = 0; idx < sizeof(vpaths) / sizeof(vpaths[0]); idx++) {
+      f = posix_fopen(vpaths[idx], "r");
+      ASSERT(f != NULL);
+      fclose(f);
+    }
+  }
+#endif
   PASS();
 }
 
@@ -221,6 +252,25 @@ TEST test_posix_open(void) {
   fd = posix_open("nonexistent_test_posix_open.txt", O_RDONLY);
   printf("test_posix_open 2\n");
   fflush(stdout);
+
+#if defined(_WIN32)
+  fd = posix_open("/proc/version", O_RDONLY);
+  ASSERT(fd >= 0);
+  close(fd);
+  fd = open("version", O_RDONLY);
+  ASSERT(fd >= 0);
+  close(fd);
+#elif !defined(__linux__)
+  fd = posix_open("/proc/uptime", O_RDONLY);
+  ASSERT(fd >= 0);
+  close(fd);
+  fd = posix_open("/proc/self/stat", O_RDONLY);
+  ASSERT(fd >= 0);
+  close(fd);
+  fd = posix_open("/proc/self/cmdline", O_RDONLY);
+  ASSERT(fd >= 0);
+  close(fd);
+#endif
 
   fd = posix_open("test_posix_open.tmp", O_WRONLY | O_CREAT, 0666);
   printf("test_posix_open 3\n");
@@ -264,9 +314,11 @@ TEST test_posix_read_write_close(void) {
   posix_close(-1);
   posix_read(-1, buf, 1);
   posix_write(-1, "a", 1);
+  ASSERT_EQ(-1, posix_lseek(-1, 0, SEEK_SET));
 
   fd = posix_open("test_posix_rw.tmp", O_RDWR | O_CREAT, 0666);
   n = posix_write(fd, "hello", 5);
+  ASSERT_EQ(0, posix_lseek(fd, 0, SEEK_SET));
   posix_close(fd);
 
   fd = posix_open("test_posix_rw.tmp", O_RDONLY);

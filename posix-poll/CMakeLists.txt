@@ -24,7 +24,7 @@ add_executable(test_posix-poll ${TEST_SOURCES})
 target_include_directories(test_posix-poll PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-poll PRIVATE posix-poll greatest)
 if(WIN32 AND NOT CYGWIN)
-    target_link_libraries(test_posix-poll PRIVATE ws2_32)
+    target_link_libraries(test_posix-poll PRIVATE posix-sockets ws2_32)
 endif()
 add_test(NAME test_posix-poll COMMAND test_posix-poll)
 

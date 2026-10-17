@@ -33,7 +33,7 @@ TEST test_pthread_setaffinity_np(void) {
     cpu_set_t cpuset;
     __CPU_ZERO_S(sizeof(cpuset), &cpuset);
     __CPU_SET_S(0, sizeof(cpuset), &cpuset);
-    ret = pthread_setaffinity_np((pthread_t)0, sizeof(cpuset), &cpuset);
+    ret = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
     (void)ret;
   }
 #else

@@ -86,7 +86,15 @@ TEST test_posix_write(void) {
 TEST test_posix_fopen(void) {
   FILE *f;
 
+  ASSERT_EQ(0, posix_feof(NULL));
+  ASSERT_EQ(0, posix_ferror(NULL));
+  ASSERT_EQ(-1, posix_fileno(NULL));
+
   f = posix_fopen("test_pfopen.tmp", "w+");
+
+  ASSERT_EQ(0, posix_feof(f));
+  ASSERT_EQ(0, posix_ferror(f));
+  ASSERT(posix_fileno(f) >= 0);
 
   fputs("abc", f);
   fclose(f);

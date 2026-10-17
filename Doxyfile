@@ -1109,6 +1109,8 @@ EXCLUDE_PATTERNS       = */build/* \
                          */doxygen_out/* \
                          */tests/* \
                          */test/* \
+                         */rewritten_src/* \
+                         */downstream_test/* \
                          */build_*/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names

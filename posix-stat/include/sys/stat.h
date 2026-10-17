@@ -17,11 +17,22 @@
 #else
 #include <sys/stat.h>
 #endif
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
+#include "posix-stat.h"
+#endif
 #else
 #if defined(_MSC_VER) && _MSC_VER >= 1900
+#define stat _crt_orig_stat
+#define fstat _crt_orig_fstat
 #include <../ucrt/sys/stat.h>
+#undef stat
+#undef fstat
 #elif defined(_MSC_VER)
+#define stat _crt_orig_stat
+#define fstat _crt_orig_fstat
 #include <../include/sys/stat.h>
+#undef stat
+#undef fstat
 #elif defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <sys/stat.h>

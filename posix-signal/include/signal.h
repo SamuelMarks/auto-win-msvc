@@ -17,6 +17,9 @@
 #else
 #include <signal.h>
 #endif
+#ifndef sigisemptyset
+#define sigisemptyset(set) (*(const unsigned long *)(set) == 0)
+#endif
 #else
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/signal.h>
@@ -24,6 +27,9 @@
 #include <signal.h>
 #endif
 #include "posix-signal.h"
+#ifndef sigisemptyset
+#define sigisemptyset(set) (*(const sigset_t *)(set) == 0)
+#endif
 #endif
 /* clang-format on */
 

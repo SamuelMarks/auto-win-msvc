@@ -6,11 +6,33 @@
 #if defined(_MSC_VER) || defined(_WIN32)
 #if !defined(MOCK_IO_FOR_TEST)
 #include <io.h>
+#include <stdlib.h>
+#include <winsock2.h>
 #endif
 #endif
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
+
+#if !defined(MOCK_IO_FOR_TEST)
+static int sendfile_write_out(int out_fd, const char *buf, unsigned int len) {
+  int saved_err = errno;
+  intptr_t h = -1;
+  if (out_fd >= 0 && out_fd < 2048) {
+    h = _get_osfhandle(out_fd);
+  }
+  errno = saved_err;
+  if (h != -1) {
+    int r = send((SOCKET)h, buf, (int)len, 0);
+    if (r != SOCKET_ERROR) {
+      return r;
+    }
+  }
+  return _write(out_fd, buf, len);
+}
+#else
+#define sendfile_write_out(fd, b, l) _write((fd), (b), (l))
+#endif
 
 ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count) {
   char buf[8192];
@@ -60,7 +82,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count) {
       }
       break;
     }
-    nwritten = _write(out_fd, buf, (unsigned int)nread);
+    nwritten = sendfile_write_out(out_fd, buf, (unsigned int)nread);
     if (nwritten <= 0) {
       if (total == 0) {
         if (restore_pos) {

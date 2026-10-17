@@ -6,9 +6,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
-#if defined(_WIN32)
-int _getpid(void);
-#endif
 /* clang-format on */
 
 TEST test_posix_wait_get_info(void) {

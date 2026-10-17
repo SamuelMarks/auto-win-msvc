@@ -454,7 +454,8 @@ int posix_signal_sigaction(int signum, const struct sigaction *act,
 #endif
 
   if (act) {
-    if (!g_veh_handle) {
+    if (!g_veh_handle &&
+        (signum == SIGSEGV || signum == SIGILL || signum == SIGFPE)) {
       g_veh_handle =
           AddVectoredExceptionHandler(1, (void *)(size_t)veh_handler);
     }

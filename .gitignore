@@ -121,7 +121,7 @@ test_*
 test.*
 !*/tests/
 !*/tests/*
-!scripts/test_downstream.py
+!scripts/test_*.py
 temp_*
 temp.*
 tmp_*
@@ -176,6 +176,7 @@ results_*
 !/UNDERCOVERED.md
 !/DASH_TODO_PLAN.md
 !/BUSYBOX_TODO_PLAN.md
+!/AUTO_WIN_MSVC_TODO_PLAN.md
 
 # External/Generated
 valkey_src/

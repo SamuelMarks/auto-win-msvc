@@ -11,6 +11,7 @@
 /* clang-format off */
 #if defined(__linux__)
 #include <sys/epoll.h>
+#include <unistd.h>
 #else
 #if defined(_MSC_VER) && _MSC_VER < 1600
 #ifndef _UINT32_T_DEFINED
@@ -190,6 +191,13 @@ int posix_epoll_pwait2(int epfd, struct epoll_event *events, int maxevents,
                        const void *timeout, const void *sigmask);
 
 #endif /* !defined(__linux__) */
+
+#if defined(__linux__)
+#ifndef epoll_close
+/** @brief Maps epoll_close to standard close(2) on Linux. */
+#define epoll_close close
+#endif
+#endif
 
 #ifdef __cplusplus
 }

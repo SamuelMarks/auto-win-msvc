@@ -35,3 +35,6 @@ add_test(NAME test_linux-sys-sendfile COMMAND test_linux-sys-sendfile)
 
 target_link_libraries(linux-sys-sendfile PUBLIC posix-types)
 target_link_libraries(test_linux-sys-sendfile PRIVATE posix-types)
+if(WIN32 AND NOT CYGWIN)
+    target_link_libraries(linux-sys-sendfile PUBLIC ws2_32)
+endif()

@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [valkey, redis, rsync, memcached, dash]
+        project: [valkey, redis, rsync, memcached, dash, busybox]
 
     steps:
       - name: Checkout auto-win-msvc
@@ -68,6 +68,22 @@ jobs:
           repository: SamuelMarks/dash
           ref: v0.5.13.5
           path: dash-windows/dash
+
+      - name: Checkout busybox-windows
+        if: matrix.project == 'busybox'
+        uses: actions/checkout@master
+        with:
+          repository: SamuelMarks/busybox-windows
+          ref: master
+          path: busybox-windows
+
+      - name: Checkout busybox
+        if: matrix.project == 'busybox'
+        uses: actions/checkout@master
+        with:
+          repository: mirror/busybox
+          ref: master
+          path: busybox-windows/busybox
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -133,4 +149,18 @@ jobs:
               build\Release\dash.exe -c "echo DASH native Windows build successful"
           ) else (
               build\dash.exe -c "echo DASH native Windows build successful"
+          )
+
+      - name: Build busybox
+        if: matrix.project == 'busybox'
+        shell: cmd
+        run: |
+          cd busybox-windows
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DBUSYBOX_SOURCE_DIR=busybox
+          cmake --build build --config Release
+          ctest --test-dir build -C Release --output-on-failure
+          if exist build\Release\busybox.exe (
+              build\Release\busybox.exe sh -c "echo BusyBox native Windows build successful"
+          ) else (
+              build\busybox.exe sh -c "echo BusyBox native Windows build successful"
           )

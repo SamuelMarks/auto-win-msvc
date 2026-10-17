@@ -11,6 +11,9 @@
 #else
 #include <dirent.h>
 #endif
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
+#include "posix-dirent.h"
+#endif
 #else
 #include "posix-dirent.h"
 #endif

@@ -4,6 +4,7 @@
 #include "greatest.h"
 #include "posix-termios.h"
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 /* clang-format on */
 
@@ -136,6 +137,13 @@ TEST test_termios_tc_functions(void) {
 
   /* Dummy function coverage */
   ASSERT_EQ(0, dummy_posix_termios());
+
+  cfmakeraw(NULL);
+  memset(&t, 0xFF, sizeof(t));
+  cfmakeraw(&t);
+  ASSERT_EQ(0U, t.c_oflag & (tcflag_t)OPOST);
+  ASSERT_EQ(1U, (unsigned int)t.c_cc[VMIN]);
+  ASSERT_EQ(0U, (unsigned int)t.c_cc[VTIME]);
 
   PASS();
 }

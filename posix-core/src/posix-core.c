@@ -47,6 +47,7 @@ static void null_invalid_param_handler(const wchar_t *expression,
 
 static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   ptrdiff_t h = -1;
+  int saved_err = errno;
   if (fd < 0 || fd >= 2048) {
     return -1;
   }
@@ -60,6 +61,10 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
 #else
   h = (ptrdiff_t)_get_osfhandle((int)fd);
 #endif
+  errno = saved_err;
+  if (h == -2) {
+    return -1;
+  }
   return h;
 }
 #endif
@@ -91,6 +96,10 @@ __declspec(dllimport) int __stdcall UnlockFileEx(
     unsigned long nNumberOfBytesToUnlockHigh, void *lpOverlapped);
 __declspec(dllimport) int __stdcall ioctlsocket(uintptr_t s, long cmd,
                                                 unsigned long *argp);
+__declspec(dllimport) int __stdcall WSAGetLastError(void);
+#ifndef WSAENOTSOCK
+#define WSAENOTSOCK 10038
+#endif
 
 typedef struct _POSIX_SYSTEM_INFO {
   union {
@@ -345,6 +354,9 @@ auto_win_msvc_error_t auto_win_exit(int code) {
   return AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED;
 }
 
+extern intptr_t posix_get_dup_socket(intptr_t fd);
+extern intptr_t posix_lookup_crt_socket(intptr_t fd);
+
 int fcntl(intptr_t fd, int cmd, ...) {
   va_list ap;
   SOCKET s;
@@ -360,9 +372,14 @@ int fcntl(intptr_t fd, int cmd, ...) {
       return -1;
     }
 #if defined(_WIN32) && !defined(__CYGWIN__)
+    if (min_fd == 0) {
+      return posix_dup((int)fd);
+    }
     for (target_fd = min_fd; target_fd < 128; target_fd++) {
-      if (_dup2((int)fd, target_fd) == 0) {
-        return target_fd;
+      if (safe_get_osfhandle(target_fd) == -1) {
+        if (posix_dup2((int)fd, target_fd) == target_fd) {
+          return target_fd;
+        }
       }
     }
     errno = EMFILE;
@@ -386,24 +403,43 @@ int fcntl(intptr_t fd, int cmd, ...) {
     return 0;
   }
   if (cmd == F_GETFL) {
+    int nb;
     va_end(ap);
-    s = (SOCKET)safe_get_osfhandle(fd);
-    if (s == (SOCKET)(intptr_t)-1 || s == 0) {
+    s = (SOCKET)posix_get_dup_socket(fd);
+    if (s == 0) {
+      s = (SOCKET)posix_lookup_crt_socket(fd);
+    }
+    if (s == 0) {
       s = (SOCKET)fd;
     }
-    return get_nonblock(s);
+    nb = get_nonblock(s);
+    if (nb == 0 && s != (SOCKET)fd) {
+      nb = get_nonblock((SOCKET)fd);
+    }
+    return nb;
   }
   if (cmd == F_SETFL) {
     int flags = va_arg(ap, int);
-    unsigned long mode = (flags & O_NONBLOCK) ? 1 : 0;
-    s = (SOCKET)safe_get_osfhandle(fd);
-    if (s == (SOCKET)(intptr_t)-1 || s == 0) {
+    unsigned long mode = ((flags & O_NONBLOCK) || (flags & 0x0004)) ? 1 : 0;
+    s = (SOCKET)posix_get_dup_socket(fd);
+    if (s == 0) {
+      s = (SOCKET)posix_lookup_crt_socket(fd);
+    }
+    if (s == 0) {
       s = (SOCKET)fd;
     }
     if (ioctlsocket(s, FIONBIO, &mode) != 0) {
-      va_end(ap);
-      errno = EINVAL;
-      return -1;
+      if (s != (SOCKET)fd && ioctlsocket((SOCKET)fd, FIONBIO, &mode) == 0) {
+        s = (SOCKET)fd;
+      } else {
+        int werr = WSAGetLastError();
+        va_end(ap);
+        if (werr == WSAENOTSOCK) {
+          return 0;
+        }
+        errno = EINVAL;
+        return -1;
+      }
     }
     set_nonblock(s, (int)mode);
     va_end(ap);
@@ -1488,9 +1524,6 @@ int fork(void) {
     if (SetCurrentDirectoryA(parent_cwd) == 0) { /* Ignore */
     }
     posix_pthread_atfork_child();
-    printf("CHILD CLONED\n");
-    if (fflush(stdout) != 0) { /* Ignore */
-    }
     /* Child */
     if (_set_errno(0) != 0) { /* Ignore */
     }
@@ -2393,6 +2426,8 @@ long sysconf(int name) {
   }
   case _SC_CLK_TCK:
     return 1000;
+  case _SC_OPEN_MAX:
+    return 2048;
   default:
     errno = EINVAL;
     return -1;
@@ -2541,6 +2576,98 @@ useconds_t ualarm(useconds_t value, useconds_t interval) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief vfork function. */
 pid_t vfork(void) { return fork(); }
+
+__declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(
+    void *hModule, char *lpFilename, unsigned long nSize);
+__declspec(dllimport) int __stdcall SetStdHandle(unsigned long nStdHandle,
+                                                 void *hHandle);
+
+/**
+ * \brief Synchronizes Windows standard handles with CRT file descriptors 0/1/2
+ * so child processes spawned after dup2() inherit redirected streams.
+ */
+static void sync_win_std_handles(void) {
+  intptr_t h0 = safe_get_osfhandle(0);
+  intptr_t h1 = safe_get_osfhandle(1);
+  intptr_t h2 = safe_get_osfhandle(2);
+  if (h0 != -1) {
+    SetStdHandle((unsigned long)-10 /* STD_INPUT_HANDLE */, (void *)h0);
+  }
+  if (h1 != -1) {
+    SetStdHandle((unsigned long)-11 /* STD_OUTPUT_HANDLE */, (void *)h1);
+  }
+  if (h2 != -1) {
+    SetStdHandle((unsigned long)-12 /* STD_ERROR_HANDLE */, (void *)h2);
+  }
+}
+
+/**
+ * \brief Synchronous POSIX execve wrapper for Windows/Wine.
+ * Runs the target executable via _spawnve(_P_WAIT, ...) and exits with its
+ * exit code so parent waitpid() receives the real exit status.
+ */
+int posix_execve(const char *pathname, char *const argv[], char *const envp[]) {
+  intptr_t rc;
+  char self_buf[512];
+  const char *target = pathname;
+  if (!pathname || !argv) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (strcmp(pathname, "/proc/self/exe") == 0 ||
+      strcmp(pathname, "\\proc\\self\\exe") == 0) {
+    if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
+      target = self_buf;
+    }
+  }
+  fflush(NULL);
+  sync_win_std_handles();
+  if (envp) {
+    rc = _spawnve(_P_WAIT, target, (const char *const *)argv,
+                  (const char *const *)envp);
+  } else {
+    rc = _spawnv(_P_WAIT, target, (const char *const *)argv);
+  }
+  if (rc == -1) {
+    return -1;
+  }
+  auto_win_exit((int)rc);
+  return -1;
+}
+
+/**
+ * \brief Synchronous POSIX execv wrapper for Windows/Wine.
+ */
+int posix_execv(const char *pathname, char *const argv[]) {
+  return posix_execve(pathname, argv, NULL);
+}
+
+/**
+ * \brief Synchronous POSIX execvp wrapper for Windows/Wine.
+ */
+int posix_execvp(const char *file, char *const argv[]) {
+  intptr_t rc;
+  char self_buf[512];
+  const char *target = file;
+  if (!file || !argv) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (strcmp(file, "/proc/self/exe") == 0 ||
+      strcmp(file, "\\proc\\self\\exe") == 0) {
+    if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
+      target = self_buf;
+    }
+  }
+  fflush(NULL);
+  sync_win_std_handles();
+  rc = _spawnvp(_P_WAIT, target, (const char *const *)argv);
+  if (rc == -1) {
+    return -1;
+  }
+  auto_win_exit((int)rc);
+  return -1;
+}
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -2904,9 +3031,6 @@ void XZALLOC_CONST_PTR(const void *pptr, size_t size) {
 
 /**
  * @brief Initializes and validates the posix-core module.
- * @param[out] out_status Pointer to an integer that receives the initialized
- * status.
- * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
 auto_win_msvc_error_t posix_core_init(int *out_status) {
   if (out_status == NULL) {

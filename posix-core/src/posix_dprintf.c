@@ -25,7 +25,7 @@ int dprintf(int fd, const char *fmt, ...) {
     return -1;
   }
 #if defined(_WIN32)
-  written = _write(fd, buf, (unsigned int)ret);
+  written = (int)posix_write(fd, buf, (size_t)ret);
 #else
   written = (int)write(fd, buf, (size_t)ret);
 #endif

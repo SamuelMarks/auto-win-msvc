@@ -24,21 +24,29 @@ TEST test_core_getpid(void) {
 TEST test_fexecve(void) {
   char *argv[2];
   char *envp[2];
+  char *const *null_argv = NULL;
+  char *const *null_envp = NULL;
   envp[0] = "PATH=/bin";
   envp[1] = NULL;
   argv[0] = "test";
   argv[1] = NULL;
 
   /* Hit the error branch */
-  fexecve(-1, NULL, NULL);
-  fexecve(0, NULL, envp);
-  fexecve(0, argv, NULL);
+#if !defined(__linux__)
+  fexecve(-1, null_argv, null_envp);
+  fexecve(0, null_argv, envp);
+  fexecve(0, argv, null_envp);
+#else
+  (void)null_argv;
+  (void)null_envp;
+  fexecve(-1, argv, envp);
+#endif
 
 #if defined(_WIN32) || defined(_MSC_VER)
   /* Windows implementation testing */
 #else
   /* Hit the ENOSYS branch on macOS */
-  fexecve(0, argv, envp);
+  fexecve(-1, argv, envp);
 #endif
 
   PASS();

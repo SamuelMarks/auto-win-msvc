@@ -3,6 +3,7 @@
 /* clang-format off */
 #include "greatest.h"
 #include "linux-sys-statfs.h"
+#include "mntent.h"
 #include <errno.h>
 #include <stdio.h>
 #if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(__CYGWIN__)
@@ -76,10 +77,11 @@ SUITE(suite_linux_sys_statfs_core) {
 #define _WIN32 1
 #endif
 
-#ifndef _MSC_VER
-#define DEFINED_MSC_VER_FOR_TEST
-#define _MSC_VER 1
-#endif
+#define setmntent mock_setmntent
+#define getmntent mock_getmntent
+#define endmntent mock_endmntent
+#define hasmntopt mock_hasmntopt
+#define GetLogicalDriveStringsA mock_GetLogicalDriveStringsA_fn
 
 #define MOCK_GETLOGICALDRIVESTRINGS 1
 typedef unsigned long WIN_DWORD;
@@ -88,7 +90,8 @@ static WIN_DWORD mock_GetLogicalDriveStringsA_ret = 0;
 static const char *mock_GetLogicalDriveStringsA_buf = NULL;
 static WIN_DWORD mock_GetLogicalDriveStringsA_size = 0;
 
-WIN_DWORD GetLogicalDriveStringsA(WIN_DWORD nBufferLength, char *lpBuffer) {
+static WIN_DWORD mock_GetLogicalDriveStringsA_fn(WIN_DWORD nBufferLength,
+                                                 char *lpBuffer) {
   (void)nBufferLength;
   if (mock_GetLogicalDriveStringsA_buf) {
     size_t len = mock_GetLogicalDriveStringsA_size;
@@ -101,12 +104,10 @@ WIN_DWORD GetLogicalDriveStringsA(WIN_DWORD nBufferLength, char *lpBuffer) {
 
 #include "../src/mntent.c"
 
+#undef GetLogicalDriveStringsA
+
 #ifdef DEFINED_WIN32_FOR_TEST
 #undef _WIN32
-#endif
-
-#ifdef DEFINED_MSC_VER_FOR_TEST
-#undef _MSC_VER
 #endif
 
 TEST test_mntent_branches(void) {
@@ -191,4 +192,43 @@ TEST test_mntent_branches(void) {
   PASS();
 }
 
-SUITE(suite_linux_sys_statfs_extra) { RUN_TEST(test_mntent_branches); }
+#undef setmntent
+#undef getmntent
+#undef endmntent
+#undef hasmntopt
+
+TEST test_native_mntent(void) {
+  FILE *f;
+  struct mntent *m;
+
+#if !defined(__linux__) && !defined(__GLIBC__)
+  f = setmntent(NULL, "r");
+  ASSERT(f == NULL);
+  f = setmntent("/etc/mtab", NULL);
+  ASSERT(f == NULL);
+#endif
+
+  f = setmntent("/etc/mtab", "r");
+  if (f != NULL) {
+    m = getmntent(f);
+    if (m != NULL) {
+      ASSERT(m->mnt_dir != NULL);
+      (void)hasmntopt(m, "rw");
+    }
+#if !defined(__linux__) && !defined(__GLIBC__)
+    ASSERT(getmntent(NULL) == NULL);
+    ASSERT(hasmntopt(NULL, "rw") == NULL);
+    ASSERT(hasmntopt(m, NULL) == NULL);
+#endif
+    ASSERT_EQ(1, endmntent(f));
+  }
+#if !defined(__linux__) && !defined(__GLIBC__)
+  ASSERT_EQ(1, endmntent(NULL));
+#endif
+  PASS();
+}
+
+SUITE(suite_linux_sys_statfs_extra) {
+  RUN_TEST(test_mntent_branches);
+  RUN_TEST(test_native_mntent);
+}

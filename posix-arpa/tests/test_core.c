@@ -146,6 +146,8 @@ TEST test_inet_aton(void) {
   struct in_addr addr;
   ASSERT_EQ(1, posix_inet_aton("127.0.0.1", &addr));
   ASSERT_EQ(0x0100007f, addr.s_addr);
+  ASSERT_EQ(1, posix_inet_aton("127.0.0.1", NULL));
+  ASSERT_EQ(0, posix_inet_aton("invalid", NULL));
 
   ASSERT_EQ(0, posix_inet_aton("invalid", &addr));
   PASS();

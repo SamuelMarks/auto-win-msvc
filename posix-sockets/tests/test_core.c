@@ -231,11 +231,7 @@ TEST test_posix_setservent(void) {
 TEST test_posix_poll(void) {
   int rc;
   struct pollfd pfd = {0};
-#ifdef _MSC_VER
-  pfd.fd = (SOCKET)-1;
-#else
   pfd.fd = -1;
-#endif
   rc = posix_poll(&pfd, 1, 1);
   /* Some polling implementations fail for fd == -1 */
   (void)rc;

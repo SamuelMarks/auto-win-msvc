@@ -97,6 +97,58 @@ TEST test_readdir_and_rewind(void) {
   PASS();
 }
 
+TEST test_proc_dirent(void) {
+#if defined(_WIN32) || defined(_MSC_VER)
+  DIR *d;
+  struct dirent *entry;
+  int count = 0;
+
+  d = opendir("/proc");
+  ASSERT(d != NULL);
+  while ((entry = readdir(d)) != NULL) {
+    ASSERT(entry->d_name[0] != '\0');
+    count++;
+    if (count > 3) {
+      break;
+    }
+  }
+  ASSERT(count > 0);
+  rewinddir(d);
+  entry = readdir(d);
+  ASSERT(entry != NULL);
+  ASSERT_EQ(0, closedir(d));
+#else
+  DIR *d;
+  struct dirent *entry;
+  int count = 0;
+
+  ASSERT_EQ(NULL, posix_opendir(NULL));
+  ASSERT_EQ(NULL, posix_readdir(NULL));
+  ASSERT_EQ(-1, posix_closedir(NULL));
+  posix_rewinddir(NULL);
+
+  d = posix_opendir(".");
+  ASSERT(d != NULL);
+  entry = posix_readdir(d);
+  ASSERT(entry != NULL);
+  posix_rewinddir(d);
+  ASSERT_EQ(0, posix_closedir(d));
+
+  d = posix_opendir("/proc");
+  ASSERT(d != NULL);
+  while ((entry = posix_readdir(d)) != NULL) {
+    ASSERT(entry->d_name[0] != '\0');
+    count++;
+  }
+  ASSERT(count > 0);
+  posix_rewinddir(d);
+  entry = posix_readdir(d);
+  ASSERT(entry != NULL);
+  ASSERT_EQ(0, posix_closedir(d));
+#endif
+  PASS();
+}
+
 TEST test_scandir_and_alphasort(void) {
   struct dirent **namelist;
   int n;
@@ -133,5 +185,6 @@ SUITE(suite_posix_dirent_core) {
   RUN_TEST(test_posix_dirent_get_info);
   RUN_TEST(test_opendir_and_closedir);
   RUN_TEST(test_readdir_and_rewind);
+  RUN_TEST(test_proc_dirent);
   RUN_TEST(test_scandir_and_alphasort);
 }

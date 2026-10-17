@@ -132,9 +132,10 @@ auto_win_msvc_error_t posix_arpa_inet_parse_ipv4(const char *cp,
  * @return 1 if the address is valid, or 0 if invalid.
  */
 int posix_inet_aton(const char *cp, struct in_addr *inp) {
+  struct in_addr dummy;
   auto_win_msvc_error_t rc;
 
-  rc = posix_arpa_inet_parse_ipv4(cp, inp);
+  rc = posix_arpa_inet_parse_ipv4(cp, inp != NULL ? inp : &dummy);
   if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return 0;
   }

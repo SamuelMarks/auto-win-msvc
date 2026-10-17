@@ -62,12 +62,31 @@ void posix_freeaddrinfo(struct addrinfo *ai);
  */
 const char *posix_gai_strerror(int ecode);
 
+/**
+ * @brief Return error string for h_errno error code.
+ * @param err Error code (e.g. HOST_NOT_FOUND).
+ * @return Descriptive error string.
+ */
+const char *posix_hstrerror(int err);
+
+/**
+ * @brief Print error message associated with h_errno to stderr.
+ * @param s Prefix string.
+ */
+void posix_herror(const char *s);
+
 #undef getaddrinfo
 #define getaddrinfo posix_getaddrinfo
 #undef freeaddrinfo
 #define freeaddrinfo posix_freeaddrinfo
 #undef gai_strerror
 #define gai_strerror posix_gai_strerror
+#ifndef hstrerror
+#define hstrerror posix_hstrerror
+#endif
+#ifndef herror
+#define herror posix_herror
+#endif
 
 #ifdef __cplusplus
 }

@@ -74,6 +74,10 @@ static ptrdiff_t safe_get_osfhandle(int fd) {
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
+__declspec(selectany) void *g_posix_child_handles[1024] = {0};
+__declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
+__declspec(selectany) int g_posix_child_count = 0;
+
 #ifndef O_ACCMODE
 /** \brief O_ACCMODE macro. */
 #define O_ACCMODE (_O_RDONLY | _O_WRONLY | _O_RDWR)
@@ -754,7 +758,15 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
   }
 
   CloseHandle(pi.hThread);
-  CloseHandle(pi.hProcess);
+  {
+    if (g_posix_child_count < 1024) {
+      g_posix_child_handles[g_posix_child_count] = pi.hProcess;
+      g_posix_child_pids[g_posix_child_count] = pi.dwProcessId;
+      g_posix_child_count++;
+    } else {
+      CloseHandle(pi.hProcess);
+    }
+  }
 
   return 0;
 }

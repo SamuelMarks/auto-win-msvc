@@ -37,15 +37,19 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strsep(char **stringp, const char *delim);
 
 #if defined(_MSC_VER)
+#ifndef strcasecmp
 /**
  * @brief Compare strings ignoring case.
  */
 int strcasecmp(const char *s1, const char *s2);
+#endif
 
+#ifndef strncasecmp
 /**
  * @brief Compare length-limited strings ignoring case.
  */
 int strncasecmp(const char *s1, const char *s2, size_t n);
+#endif
 #endif /* _MSC_VER */
 
 /**

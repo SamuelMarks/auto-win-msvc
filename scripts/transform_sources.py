@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 Automated Source Transformation Engine for MSVC (auto-win-msvc).
-Transforms unsupported C99 constructs (such as Variable Length Arrays)
-into strict C89 / MSVC-compatible constructs at build time.
+Transforms unsupported C99/GNU constructs (such as Variable Length Arrays,
+Elvis operators, self-initialization idioms, GCC statement expressions,
+PACKED structs, and macro/enum collisions) into strict C89 / MSVC-compatible
+constructs at build time.
 """
 
 import argparse
@@ -10,92 +12,147 @@ import os
 import re
 import sys
 
+NL = chr(10)
+TAB = chr(9)
+BS = chr(92)
+
+
+def _transform_packed_structs(content: str) -> str:
+    """
+    Transform GCC PACKED struct/union declarations into MSVC #pragma pack(push, 1).
+
+    Args:
+        content: C source or header content.
+
+    Returns:
+        Content with PACKED structs wrapped in #ifdef _MSC_VER #pragma pack(push, 1).
+    """
+    lines = content.splitlines(keepends=True)
+    result = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+        if re.match(
+            r"^(?:typedef\s+)?(?:struct|union)(?:\s+[a-zA-Z0-9_]+)?\s*(?:\{|$)",
+            stripped,
+        ):
+            depth = line.count("{") - line.count("}")
+            seen_brace = "{" in line
+            block = [line]
+            j = i + 1
+            while j < n and (not seen_brace or depth > 0):
+                if ";" in lines[j] and not seen_brace:
+                    break
+                if "{" in lines[j]:
+                    seen_brace = True
+                depth += lines[j].count("{") - lines[j].count("}")
+                block.append(lines[j])
+                j += 1
+            block_text = "".join(block)
+            if seen_brace and "PACKED" in block_text:
+                result.append(
+                    NL.join(
+                        [
+                            "#ifdef _MSC_VER",
+                            "#pragma pack(push, 1)",
+                            "#endif",
+                            "",
+                        ]
+                    )
+                )
+                result.extend(block)
+                result.append(
+                    NL.join(
+                        [
+                            "#ifdef _MSC_VER",
+                            "#pragma pack(pop)",
+                            "#endif",
+                            "",
+                        ]
+                    )
+                )
+                i = j
+                continue
+        result.append(line)
+        i += 1
+    return "".join(result)
+
 
 def transform_source_content(content: str) -> str:
     """
-    Apply AST-like heuristic regex rewrites to eliminate VLAs and C99 idioms.
+    Apply AST-like heuristic rewrites to eliminate VLAs and GNU C idioms.
+
+    Args:
+        content: Raw C source or header file string.
+
+    Returns:
+        Transformed C source or header string compatible with MSVC and C89.
     """
-    # 1. Transform memcached.c extras_len VLA pattern
-    # Original:
-    #   size_t extras_len = sizeof(":unix:") + sizeof("65535");
-    #   char addr[MAXPATHLEN + extras_len];
-    #   char svr_addr[MAXPATHLEN + extras_len];
-    memcached_vla_pattern = re.compile(
-        r'(\s*)size_t\s+extras_len\s*=\s*sizeof\(":unix:"\)\s*\+\s*sizeof\("65535"\);\s*\n'
-        r"\s*char\s+addr\[MAXPATHLEN\s*\+\s*extras_len\];\s*\n"
-        r"\s*char\s+svr_addr\[MAXPATHLEN\s*\+\s*extras_len\];",
-        re.MULTILINE,
-    )
-    if memcached_vla_pattern.search(content):
-        replacement = (
-            "\\1#ifndef MC_EXTRAS_LEN\n"
-            '\\1#define MC_EXTRAS_LEN (sizeof(":unix:") + sizeof("65535"))\n'
-            "\\1#endif\n"
-            "\\1size_t extras_len = MC_EXTRAS_LEN;\n"
-            "\\1char addr[MAXPATHLEN + MC_EXTRAS_LEN];\n"
-            "\\1char svr_addr[MAXPATHLEN + MC_EXTRAS_LEN];"
-        )
-        content = memcached_vla_pattern.sub(replacement, content)
-
-    # 2. Transform proto_bin.c mech[nkey+1] VLA pattern
-    # Original:
-    #   char mech[nkey+1];
-    proto_bin_vla = re.compile(r"char\s+mech\[nkey\s*\+\s*1\];")
-    content = proto_bin_vla.sub(
-        r"char mech[256]; /* bounded by protocol max key length */", content
-    )
-
-    # 3. Generic VLA pattern: char name[expr] where expr has non-constant identifier
     has_alloca = False
 
-    def vla_alloca_repl(match):
+    def vla_alloca_repl(match: re.Match[str]) -> str:
         nonlocal has_alloca
         indent = match.group(1)
         type_str = match.group(2)
         var_name = match.group(3)
         expr = match.group(4).strip()
-        # Avoid matching constant expressions (numbers, sizeof, macros, uppercase expressions, compile-time assertions)
+        expr_no_comments = re.sub(r"/\*.*?\*/", "", expr).strip()
         if (
-            re.match(r"^[0-9A-Z_+\-*/ ()\t?:=<>!&|]+$", expr)
-            or "sizeof" in expr
-            or "ARRAY_SIZE" in expr
+            re.match(
+                r"^(?:0x[0-9a-fA-F]+|[0-9A-Z_+\-*/ ()\t?:=<>!&|~])+$",
+                expr_no_comments,
+            )
+            or "sizeof" in expr_no_comments
+            or "ARRAY_SIZE" in expr_no_comments
         ):
             return match.group(0)
         has_alloca = True
         return (
             f"{indent}{type_str} *{var_name} = "
-            f"({type_str} *)_alloca(({expr}) * sizeof({type_str}));"
+            f"({type_str} *)alloca(({expr}) * sizeof({type_str}));"
         )
 
-    # Transform local variable arrays: e.g. "    char temp[len + 1];" or "    char *tmp_argv[argc + 1];"
     generic_vla_pattern = re.compile(
-        r"^(\s+)((?:unsigned\s+)?(?:char|int|uint8_t|uint16_t|uint32_t|int32_t)(?:\s*\*+)?)\s*([a-zA-Z0-9_]+)\[([^\]\n]+)\];",
+        r"^(\s+)((?:unsigned\s+)?(?:char|int|uint8_t|uint16_t|uint32_t|int32_t|const\s+char\s*\*|struct\s+[a-zA-Z0-9_]+\s*\*)(?:\s*\*+)?)\s*([a-zA-Z0-9_]+)\[([^\x0a\]]+)\];",
         re.MULTILINE,
     )
     content = generic_vla_pattern.sub(vla_alloca_repl, content)
 
-    # Transform xvfork() invocation into inline function call
-    content = re.sub(r"\bxvfork\(\)", "bb_libbb_xvfork()", content)
-
     if has_alloca and "#include <malloc.h>" not in content:
         content = (
-            "/* clang-format off */\n#include <malloc.h>\n/* clang-format on */\n"
+            NL.join(
+                [
+                    "/* clang-format off */",
+                    "#if defined(_MSC_VER) || defined(_WIN32)",
+                    "#include <malloc.h>",
+                    "#else",
+                    "#include <alloca.h>",
+                    "#endif",
+                    "/* clang-format on */",
+                    "",
+                ]
+            )
             + content
         )
 
-    # 4. Transform GNU binary ternary (elvis operator) x ?: y into (x ? x : y)
     elvis_pattern = re.compile(
-        r"([a-zA-Z0-9_]+(?:\([^)]*\)|(?:\s*(?:->|\.)\s*[a-zA-Z0-9_]+))*)\s*\?\s*:\s*([^,\);]+)"
+        r'("(?:\\.|[^"\\\x0a])*"|/\*[\s\S]*?\*/|//[^\x0a]*)|(\([a-zA-Z0-9_ %+\-*/&|^~<>!=]+\)|[a-zA-Z0-9_]+(?:\([^;\x0a?]*\)|(?:\s*(?:->|\.)\s*[a-zA-Z0-9_]+))*)\s*\?\s*:\s*([a-zA-Z0-9_]+\([^;\x0a()]*\)|[^,\);\x0a]+)'
     )
-    content = elvis_pattern.sub(r"(\1 ? \1 : \2)", content)
 
-    # 5. Transform GNU self-initializing dummy warning suppressors (var = var) into (var = 0)
-    # This prevents MSVC /RTC1 runtime failure for reading uninitialized stack memory.
+    def elvis_repl(m: re.Match[str]) -> str:
+        if m.group(1) is not None:
+            return m.group(1)
+        return f"({m.group(2)} ? {m.group(2)} : {m.group(3)})"
+
+    content = elvis_pattern.sub(elvis_repl, content)
+
     self_init_pattern = re.compile(
         r"\b((?:(?:const|unsigned|signed|struct|enum|long|short)\s+)*[a-zA-Z0-9_]+)(?:\s+(\*+)?|\s*(\*+))\s*([a-zA-Z0-9_]+)\s*=\s*\4\s*;"
     )
 
-    def self_init_repl(m):
+    def self_init_repl(m: re.Match[str]) -> str:
         prefix = m.group(1)
         stars = (m.group(2) or "") + (m.group(3) or "")
         var = m.group(4)
@@ -105,130 +162,981 @@ def transform_source_content(content: str) -> str:
 
     content = self_init_pattern.sub(self_init_repl, content)
 
-    # 6. Add return 0 after fflush_stdout_and_exit calls to satisfy MSVC C4716 / RTC
-    fflush_pattern = re.compile(r"(fflush_stdout_and_exit(?:_SUCCESS)?\s*\([^;]*\);)")
-    content = fflush_pattern.sub(r"\1 return 0;", content)
-
-    # 7. Disambiguate Windows SDK typedef collisions in od_bloaty.c (CHAR, SHORT, INT, LONG)
-    if "enum size_spec {" in content:
-        content = re.sub(r"\b(CHAR|SHORT|INT|LONG)\b", r"OD_\1", content)
-
-    # 8. Transform xargs ISSPACE statement expression
     content = content.replace(
-        "#define ISSPACE(a) ({ unsigned char xargs__isspace = (a) - 9; xargs__isspace == (\x27 \x27 - 9) || xargs__isspace <= (13 - 9); })",
+        "# define UNINITIALIZED_VAR(var,zero) var = var",
+        "# define UNINITIALIZED_VAR(var,zero) var = 0",
+    )
+    content = content.replace(
+        "#if UINT_MAX == 0xffffffff" + NL + '# define PRIu32 "u"',
+        '#ifndef PRIu32'
+        + NL
+        + '# define PRIu32 "u"'
+        + NL
+        + '# define PRId32 "d"'
+        + NL
+        + '# define PRIx32 "x"'
+        + NL
+        + '# define PRIX32 "X"'
+        + NL
+        + '# define PRIo32 "o"'
+        + NL
+        + '#endif'
+        + NL
+        + "#if UINT_MAX == 0xffffffff"
+        + NL
+        + '# define PRIu32 "u"',
+    )
+    content = content.replace(
+        "#elif defined(__i386__)" + NL + "# define BB_BIG_ENDIAN 0",
+        "#elif defined(__i386__) || defined(_WIN32) || defined(_MSC_VER)"
+        + NL
+        + "# define BB_BIG_ENDIAN 0",
+    )
+    content = content.replace(
+        "#define get_unaligned_le32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_LE32(v); })"
+        + NL
+        + "#define get_unaligned_be32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_BE32(v); })",
+        NL.join(
+            [
+                "static ALWAYS_INLINE uint32_t bb_get_unaligned_le32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_LE32(v); }",
+                "static ALWAYS_INLINE uint32_t bb_get_unaligned_be32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_BE32(v); }",
+                "#define get_unaligned_le32(buf) bb_get_unaligned_le32(buf)",
+                "#define get_unaligned_be32(buf) bb_get_unaligned_be32(buf)",
+            ]
+        ),
+    )
+    content = content.replace(
+        "#define get_le32(u32p) ({ uint32_t v = *(bb__aliased_uint32_t*)(u32p); SWAP_LE32(v); })",
+        NL.join(
+            [
+                "static ALWAYS_INLINE uint32_t bb_get_le32(const void *u32p) { uint32_t v = *(const bb__aliased_uint32_t*)(u32p); return SWAP_LE32(v); }",
+                "#define get_le32(u32p) bb_get_le32(u32p)",
+            ]
+        ),
+    )
+    content = content.replace(
+        "#define isblank(a) ({ unsigned char bb__isblank = (a); bb__isblank == ' ' || bb__isblank == '"
+        + BS
+        + "t'; })"
+        + NL
+        + "#define iscntrl(a) ({ unsigned char bb__iscntrl = (a); bb__iscntrl < ' ' || bb__iscntrl == 0x7f; })",
+        NL.join(
+            [
+                "static ALWAYS_INLINE int bb_ascii_isblank(unsigned char a) { return a == ' ' || a == '"
+                + BS
+                + "t'; }",
+                "#define isblank(a) bb_ascii_isblank(a)",
+                "static ALWAYS_INLINE int bb_ascii_iscntrl(unsigned char a) { return a < ' ' || a == 0x7f; }",
+                "#define iscntrl(a) bb_ascii_iscntrl(a)",
+            ]
+        ),
+    )
+    content = content.replace(
+        "#define isspace(a) ({ unsigned char bb__isspace = (a) - 9; bb__isspace == (' ' - 9) || bb__isspace <= (13 - 9); })",
+        NL.join(
+            [
+                "static ALWAYS_INLINE int bb_ascii_isspace(unsigned char a) { unsigned char b = a - 9; return b == (' ' - 9) || b <= (13 - 9); }",
+                "#define isspace(a) bb_ascii_isspace(a)",
+            ]
+        ),
+    )
+    xvfork_repl = NL.join(
+        [
+            "void bb_simple_perror_msg_and_die(const char *s) NORETURN FAST_FUNC;",
+            "static ALWAYS_INLINE pid_t bb_xvfork(void) {",
+            TAB + "pid_t bb__xvfork_pid = vfork();",
+            TAB + "if (bb__xvfork_pid < 0)",
+            TAB + TAB + 'bb_simple_perror_msg_and_die("vfork");',
+            TAB + "return bb__xvfork_pid;",
+            "}",
+            "#define xvfork() bb_xvfork()",
+        ]
+    )
+    content = content.replace(
+        NL.join(
+            [
+                "#define xvfork() " + BS,
+                "({",
+                TAB + "pid_t bb__xvfork_pid = vfork(); " + BS,
+                TAB + "if (bb__xvfork_pid < 0) " + BS,
+                TAB + TAB + 'bb_simple_perror_msg_and_die("vfork"); ' + BS,
+                TAB + "bb__xvfork_pid; " + BS,
+                "})",
+            ]
+        ),
+        xvfork_repl,
+    )
+    content = content.replace(
+        NL.join(
+            [
+                "#define xvfork() " + BS,
+                "({ " + BS,
+                TAB + "pid_t bb__xvfork_pid = vfork(); " + BS,
+                TAB + "if (bb__xvfork_pid < 0) " + BS,
+                TAB + TAB + 'bb_simple_perror_msg_and_die("vfork"); ' + BS,
+                TAB + "bb__xvfork_pid; " + BS,
+                "})",
+            ]
+        ),
+        xvfork_repl,
+    )
+    content = content.replace(
+        "static __inline pid_t bb_libbb_xvfork(void) {",
+        "void bb_simple_perror_msg_and_die(const char *s) NORETURN FAST_FUNC;"
+        + NL
+        + "static __inline pid_t bb_libbb_xvfork(void) {",
+    )
+    content = content.replace(
+        '#define barrier() asm volatile ("":::"memory")',
+        NL.join(
+            [
+                "#ifdef _MSC_VER",
+                "void _ReadWriteBarrier(void);",
+                "#pragma intrinsic(_ReadWriteBarrier)",
+                "#define barrier() _ReadWriteBarrier()",
+                "#else",
+                '#define barrier() asm volatile ("":::"memory")',
+                "#endif",
+            ]
+        ),
+    )
+
+    content = _transform_packed_structs(content)
+
+    content = content.replace(
+        TAB + "TRUE, FALSE" + NL,
+        NL.join(["#undef TRUE", "#undef FALSE", TAB + "TRUE, FALSE", ""]),
+    )
+    content = content.replace(
+        TAB + "PIPE_BUF = 4096," + NL,
+        NL.join(["#undef PIPE_BUF", TAB + "PIPE_BUF = 4096,", ""]),
+    )
+    content = content.replace(
+        "#define MAXINT(T)",
+        "#undef MAXINT" + NL + "#undef MININT" + NL + "#define MAXINT(T)",
+    )
+    content = content.replace(
+        "void xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen) FAST_FUNC;",
+        "void xconnect(int s, const struct sockaddr *sa_addr, socklen_t addrlen) FAST_FUNC;",
+    )
+    content = content.replace(
+        "void FAST_FUNC xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen)",
+        "#undef s_addr"
+        + NL
+        + "void FAST_FUNC xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen)",
+    )
+    content = content.replace(
+        "extern char **environ;",
+        "#ifndef environ" + NL + "extern char **environ;" + NL + "#endif",
+    )
+    content = content.replace(
+        "#define getservbyport dont_use_getservbyport_uses_global_buffer",
+        "#undef getservbyport"
+        + NL
+        + "#define getservbyport dont_use_getservbyport_uses_global_buffer",
+    )
+    content = content.replace(
+        "#define getservbyname dont_use_getservbyname_uses_global_buffer",
+        "#undef getservbyname"
+        + NL
+        + "#define getservbyname dont_use_getservbyname_uses_global_buffer",
+    )
+    content = content.replace(
+        "loc = vstr = stackblock() + strloc;",
+        "loc = vstr = (char *)stackblock() + strloc;",
+    )
+    content = content.replace(
+        "typedef struct HFILE {",
+        "#undef HFILE"
+        + NL
+        + "#define HFILE bb_HFILE"
+        + NL
+        + "typedef struct HFILE {",
+    )
+    content = content.replace(
+        "# define fork()          BUG_fork_is_unavailable_on_nommu()",
+        "# if !defined(_WIN32)"
+        + NL
+        + "#  define fork()          BUG_fork_is_unavailable_on_nommu()"
+        + NL
+        + "# endif",
+    )
+    content = content.replace(
+        "if (ENABLE_FEATURE_SEAMLESS_Z"
+        + NL
+        + TAB
+        + " && xstate->magic.b16[0] == COMPRESS_MAGIC"
+        + NL
+        + TAB
+        + ") {"
+        + NL
+        + TAB
+        + TAB
+        + "xstate->xformer = unpack_Z_stream;"
+        + NL
+        + TAB
+        + TAB
+        + 'USE_FOR_NOMMU(xstate->xformer_prog = "uncompress";)'
+        + NL
+        + TAB
+        + TAB
+        + "goto found_magic;"
+        + NL
+        + TAB
+        + "}",
+        "#if ENABLE_FEATURE_SEAMLESS_Z"
+        + NL
+        + TAB
+        + "if (xstate->magic.b16[0] == COMPRESS_MAGIC) {"
+        + NL
+        + TAB
+        + TAB
+        + "xstate->xformer = unpack_Z_stream;"
+        + NL
+        + TAB
+        + TAB
+        + 'USE_FOR_NOMMU(xstate->xformer_prog = "uncompress";)'
+        + NL
+        + TAB
+        + TAB
+        + "goto found_magic;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "const char *cp = strrchr(name, '/');",
+        "#if defined(_WIN32) || defined(_MSC_VER)"
+        + NL
+        + TAB
+        + "const char *cp = auto_win_msvc_strrchr_slash(name);"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + "const char *cp = strrchr(name, '/');"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "const char *slash = strrchr(path, '/');",
+        "#if defined(_WIN32) || defined(_MSC_VER)"
+        + NL
+        + TAB
+        + "const char *slash = auto_win_msvc_strrchr_slash(path);"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + "const char *slash = strrchr(path, '/');"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "pid_t FAST_FUNC spawn(char **argv)" + NL + "{",
+        "pid_t FAST_FUNC spawn(char **argv)"
+        + NL
+        + "{"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "pid_t wpid = -1;"
+        + NL
+        + TAB
+        + "int s_rc;"
+        + NL
+        + TAB
+        + "fflush_all();"
+        + NL
+        + TAB
+        + "s_rc = posix_spawnp(&wpid, argv[0], NULL, NULL, argv, environ);"
+        + NL
+        + TAB
+        + "if (s_rc != 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "char *bb_argv[64];"
+        + NL
+        + TAB
+        + TAB
+        + "char self_exe[512];"
+        + NL
+        + TAB
+        + TAB
+        + "int k = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "extern unsigned long __stdcall GetModuleFileNameA(void *, char *, unsigned long);"
+        + NL
+        + TAB
+        + TAB
+        + "if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "bb_argv[0] = self_exe;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "while (argv[k] && k < 62) { bb_argv[k + 1] = argv[k]; k++; }"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "bb_argv[k + 1] = NULL;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "s_rc = posix_spawnp(&wpid, self_exe, NULL, NULL, bb_argv, environ);"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "if (s_rc != 0) { errno = s_rc; return -1; }"
+        + NL
+        + TAB
+        + "return wpid;"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "#else"
+        + NL
+        + "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)"
+        + NL
+        + "#endif"
+        + NL
+        + "{",
+        "#else"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + "static transformer_state_t *setup_transformer_on_fd(int fd, int die_if_not_compressed);"
+        + NL
+        + "#endif"
+        + NL
+        + "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)"
+        + NL
+        + "#endif"
+        + NL
+        + "{"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "char tmp_name[64];"
+        + NL
+        + TAB
+        + "static unsigned int s_seq = 0;"
+        + NL
+        + TAB
+        + "int tmp_fd;"
+        + NL
+        + TAB
+        + "transformer_state_t *xs;"
+        + NL
+        + TAB
+        + "sprintf(tmp_name, \".bb_xfm_%u_%u.tmp\", (unsigned int)getpid(), ++s_seq);"
+        + NL
+        + TAB
+        + "tmp_fd = open(tmp_name, O_RDWR | O_CREAT | O_TRUNC, 0600);"
+        + NL
+        + TAB
+        + "if (tmp_fd < 0) bb_simple_perror_msg_and_die(\"open tmp\");"
+        + NL
+        + TAB
+        + "xs = setup_transformer_on_fd(fd, 0);"
+        + NL
+        + TAB
+        + "if (xs && xs->xformer) {"
+        + NL
+        + TAB
+        + TAB
+        + "xs->dst_fd = tmp_fd;"
+        + NL
+        + TAB
+        + TAB
+        + "xs->xformer(xs);"
+        + NL
+        + TAB
+        + TAB
+        + "free(xs);"
+        + NL
+        + TAB
+        + TAB
+        + "xlseek(tmp_fd, 0, SEEK_SET);"
+        + NL
+        + TAB
+        + TAB
+        + "xmove_fd(tmp_fd, fd);"
+        + NL
+        + TAB
+        + "} else if (transform_prog && strcmp(transform_prog, \"unlzma\") == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "transformer_state_t lz;"
+        + NL
+        + TAB
+        + TAB
+        + "if (xs) free(xs);"
+        + NL
+        + TAB
+        + TAB
+        + "xlseek(fd, -2, SEEK_CUR);"
+        + NL
+        + TAB
+        + TAB
+        + "init_transformer_state(&lz);"
+        + NL
+        + TAB
+        + TAB
+        + "lz.src_fd = fd;"
+        + NL
+        + TAB
+        + TAB
+        + "lz.dst_fd = tmp_fd;"
+        + NL
+        + TAB
+        + TAB
+        + "unpack_lzma_stream(&lz);"
+        + NL
+        + TAB
+        + TAB
+        + "xlseek(tmp_fd, 0, SEEK_SET);"
+        + NL
+        + TAB
+        + TAB
+        + "xmove_fd(tmp_fd, fd);"
+        + NL
+        + TAB
+        + "} else {"
+        + NL
+        + TAB
+        + TAB
+        + "if (xs) free(xs);"
+        + NL
+        + TAB
+        + TAB
+        + "close(tmp_fd);"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "unlink(tmp_name);"
+        + NL
+        + TAB
+        + "return;"
+        + NL
+        + "#else",
+    )
+    content = content.replace(
+        TAB + "/* parent process */" + NL + TAB + "close(fd_pipe.wr); /* don't want to write to the child */" + NL + TAB + "xmove_fd(fd_pipe.rd, fd);" + NL + "}",
+        TAB + "/* parent process */" + NL + TAB + "close(fd_pipe.wr); /* don't want to write to the child */" + NL + TAB + "xmove_fd(fd_pipe.rd, fd);" + NL + "#endif" + NL + "}",
+    )
+    content = content.replace(
+        "static void log_and_exit(void)" + NL + "{" + NL + TAB + "if (VERBOSE_3)" + NL + TAB + TAB + 'bb_simple_error_msg("closed");' + NL + TAB + "_exit_SUCCESS();" + NL + "}",
+        "static void log_and_exit(void)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "if (VERBOSE_3)"
+        + NL
+        + TAB
+        + TAB
+        + 'bb_simple_error_msg("closed");'
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "if (die_func) die_func();"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + "_exit_SUCCESS();"
+        + NL
+        + "}",
+    )
+    content = content.replace(
+        "//send_headers_and_exit(HTTP_BAD_REQUEST);"
+        + NL
+        + TAB
+        + TAB
+        + "_exit_SUCCESS();",
+        "//send_headers_and_exit(HTTP_BAD_REQUEST);"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + TAB
+        + "if (die_func) die_func();"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + TAB
+        + "_exit_SUCCESS();",
+    )
+    content = content.replace(
+        "static void mini_httpd(int server_socket)" + NL + "{",
+        "#if defined(_WIN32)"
+        + NL
+        + "static jmp_buf httpd_jmp;"
+        + NL
+        + "static void httpd_jump_back(void) { longjmp(httpd_jmp, 1); }"
+        + NL
+        + "#endif"
+        + NL
+        + "static void mini_httpd(int server_socket)"
+        + NL
+        + "{",
+    )
+    content = content.replace(
+        "static void mini_httpd_nommu(int server_socket, int argc, char **argv)" + NL + "{",
+        "#if defined(_WIN32)"
+        + NL
+        + "static jmp_buf httpd_jmp;"
+        + NL
+        + "static void httpd_jump_back(void) { longjmp(httpd_jmp, 1); }"
+        + NL
+        + "#endif"
+        + NL
+        + "static void mini_httpd_nommu(int server_socket, int argc, char **argv)"
+        + NL
+        + "{",
+    )
+    content = content.replace(
+        "#if ULONG_MAX == 0xffffffffUL"
+        + NL
+        + "# define BC_NUM_LONG_LOG10 10"
+        + NL
+        + "#elif ULONG_MAX == 0xffffffffffffffffULL",
+        "#if SIZE_MAX == 0xffffffffUL"
+        + NL
+        + "# define BC_NUM_LONG_LOG10 10"
+        + NL
+        + "#elif SIZE_MAX == 0xffffffffffffffffULL",
+    )
+    content = content.replace(
+        "#if ENABLE_PING6"
+        + NL
+        + TAB
+        + "while ((++argv)[0] && argv[0][0] == '-') {"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == '4') {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "af = AF_INET;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "continue;"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == '6') {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "af = AF_INET6;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "continue;"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "bb_show_usage();"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + "argv++;"
+        + NL
+        + "#endif",
+        "while ((++argv)[0] && argv[0][0] == '-') {"
+        + NL
+        + "#if ENABLE_PING6"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == '4') { af = AF_INET; continue; }"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == '6') { af = AF_INET6; continue; }"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == 'c' || argv[0][1] == 'W' || argv[0][1] == 'w' || argv[0][1] == 's' || argv[0][1] == 't' || argv[0][1] == 'I') {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "if (!argv[0][2] && argv[1]) argv++;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "continue;"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "if (argv[0][1] == 'q' || argv[0][1] == 'v') continue;"
+        + NL
+        + TAB
+        + TAB
+        + "bb_show_usage();"
+        + NL
+        + TAB
+        + "}",
+    )
+    content = content.replace(
+        "xmove_fd(server_socket, 0);"
+        + NL
+        + TAB
+        + "/* NB: it's best to not use xfuncs in this loop before vfork().",
+        "#if !defined(_WIN32)"
+        + NL
+        + TAB
+        + "xmove_fd(server_socket, 0);"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + "/* NB: it's best to not use xfuncs in this loop before vfork().",
+    )
+    content = content.replace(
+        "xmove_fd(server_socket, 0);" + NL + TAB + "/* NB: it's best to not use xfuncs",
+        "#if !defined(_WIN32)"
+        + NL
+        + TAB
+        + "xmove_fd(server_socket, 0);"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + "/* NB: it's best to not use xfuncs",
+    )
+    content = content.replace(
+        "countdown = G.conn_limit;" + NL + TAB + "while (1) {",
+        "countdown = G.conn_limit;"
+        + NL
+        + TAB
+        + "while (1) {"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + TAB
+        + "int s;"
+        + NL
+        + TAB
+        + TAB
+        + "len_and_sockaddr fromAddr;"
+        + NL
+        + TAB
+        + TAB
+        + "fromAddr.len = LSA_SIZEOF_SA;"
+        + NL
+        + TAB
+        + TAB
+        + "s = accept(server_socket, &fromAddr.u.sa, &fromAddr.len);"
+        + NL
+        + TAB
+        + TAB
+        + "if (s < 0) continue;"
+        + NL
+        + TAB
+        + TAB
+        + "xdup2(s, 0); xdup2(s, 1);"
+        + NL
+        + TAB
+        + TAB
+        + "if (s > 1) close(s);"
+        + NL
+        + TAB
+        + TAB
+        + "hdr_cnt = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "if (setjmp(httpd_jmp) == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "die_func = httpd_jump_back;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "handle_incoming_and_exit(&fromAddr);"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "die_func = NULL;"
+        + NL
+        + TAB
+        + TAB
+        + "fflush_all();"
+        + NL
+        + TAB
+        + TAB
+        + "close(0); close(1);"
+        + NL
+        + TAB
+        + TAB
+        + "continue;"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "#if !BB_MMU"
+        + NL
+        + '# error "Do not even bother, ash will not run on NOMMU machine"',
+        "#if !BB_MMU && !defined(_WIN32) && !defined(_MSC_VER)"
+        + NL
+        + '# error "Do not even bother, ash will not run on NOMMU machine"',
+    )
+    content = content.replace(
+        "#if BUILD_AS_NOMMU" + NL,
+        "#if BUILD_AS_NOMMU || defined(_WIN32)" + NL,
+    )
+    content = content.replace(
+        "#define ISSPACE(a) ({ unsigned char xargs__isspace = (a) - 9; xargs__isspace == (' ' - 9) || xargs__isspace <= (13 - 9); })",
         "#define ISSPACE(a) (isspace((unsigned char)(a)))",
     )
-
-    # 9. Support MSVC RAND_MAX (0x7fff) in awk.c
+    content = content.replace(
+        "static void printf_s(char *pformat, const char *msg)",
+        "#undef printf_s"
+        + NL
+        + "#define printf_s bb_local_printf_s"
+        + NL
+        + "static void bb_local_printf_s(char *pformat, const char *msg)",
+    )
+    content = content.replace(
+        "} L = L; /* for compiler */",
+        "} L; memset(&L, 0, sizeof(L));",
+    )
+    content = content.replace(
+        "} R = R;",
+        "} R; memset(&R, 0, sizeof(R));",
+    )
     content = content.replace(
         "# error Not implemented for this value of RAND_MAX",
-        "uint32_t u = ((uint32_t)rand() << 16) | (uint32_t)rand();\n\t\t\t\tR_d = (double)u / 4294967296.0;",
-    )
-
-    # 10. Fix static declaration mismatch in sed.c
-    content = content.replace(
-        "void sed_free_and_close_stuff(void);",
-        "static void sed_free_and_close_stuff(void) {}",
-    )
-
-    # 11. Fix uninitialized variables and missing return in awk.c
-    content = content.replace(
-        "} L = L; /* for compiler */", "} L; memset(&L, 0, sizeof(L));"
-    )
-    content = content.replace("} R = R;", "} R; memset(&R, 0, sizeof(R));")
-    content = content.replace("double L_d = L_d;", "double L_d = 0;")
-    content = content.replace("/*return 0;*/", "return 0;")
-
-    # 12. Pack header union in decompress_gunzip.c for MSVC
-    content = re.sub(
-        r"union\s*\{\s*(?:unsigned\s+char|uint8_t)\s+raw\[8\];",
-        "#if defined(_MSC_VER)\n#pragma pack(push, 1)\n#endif\n\tunion {\n\t\tunsigned char raw[8];",
-        content,
+        "uint32_t u = ((uint32_t)rand() << 16) | (uint32_t)rand();"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "R_d = (double)u / 4294967296.0;",
     )
     content = content.replace(
-        "} PACKED formatted;\n\t} header;",
-        "} PACKED formatted;\n\t} header;\n#if defined(_MSC_VER)\n#pragma pack(pop)\n#endif",
+        "awk_exit();" + NL + TAB + "/*return 0;*/",
+        "awk_exit();" + NL + TAB + "return 0;",
     )
-
-    # 13. Stub out reset_ino_dev_hashtable call in callers when clean up is disabled
-    content = content.replace("reset_ino_dev_hashtable();", "((void)0);")
-
-    # 14. Stat MSVC member compatibility
-    if "printf_s(char *pformat" in content:
-        content = re.sub(r"\bprintf_s\(", "bb_printf_s(", content)
-    content = re.sub(
-        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)atim\)",
-        r"human_time((struct timespec*)&(\1atime))",
-        content,
+    content = content.replace(
+        "fflush_stdout_and_exit_SUCCESS();" + NL + "}" + NL + "#endif",
+        "fflush_stdout_and_exit_SUCCESS();"
+        + NL
+        + TAB
+        + "return 0;"
+        + NL
+        + "}"
+        + NL
+        + "#endif",
     )
-    content = re.sub(
-        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)mtim\)",
-        r"human_time((struct timespec*)&(\1mtime))",
-        content,
+    content = content.replace(
+        "bb_perror_nomsg_and_die();" + NL + "}",
+        "bb_perror_nomsg_and_die();" + NL + TAB + "return 0;" + NL + "}",
     )
-    content = re.sub(
-        r"human_time\(&([a-zA-Z0-9_]+(?:->|\.)st_)ctim\)",
-        r"human_time((struct timespec*)&(\1ctime))",
-        content,
+    content = content.replace(
+        "#else" + NL + "void sed_free_and_close_stuff(void);" + NL + "#endif",
+        "#else"
+        + NL
+        + "static void sed_free_and_close_stuff(void) {}"
+        + NL
+        + "#endif",
     )
-    content = re.sub(r"([a-zA-Z0-9_]+(?:->|\.))st_blksize\b", r"4096", content)
-    content = re.sub(
-        r"([a-zA-Z0-9_]+(?:->|\.))st_blocks\b", r"(\1st_size / 512)", content
+    content = content.replace(
+        "#if ENABLE_FEATURE_CLEAN_UP"
+        + NL
+        + "/* Clear statbuf hash table */"
+        + NL
+        + "void FAST_FUNC reset_ino_dev_hashtable(void)",
+        "#if 1 /* ENABLE_FEATURE_CLEAN_UP */"
+        + NL
+        + "/* Clear statbuf hash table */"
+        + NL
+        + "void FAST_FUNC reset_ino_dev_hashtable(void)",
     )
-
-    # 15. Fix uninitialized variable in df.c
-    content = content.replace("char *chp, *opt_t;", "char *chp = NULL, *opt_t = NULL;")
-
-    # 17. Prevent bc from reading stdin if quit was encountered in input file
+    content = content.replace(
+        "char *chp, *opt_t;",
+        "char *chp = NULL, *opt_t = NULL;",
+    )
+    content = content.replace(
+        "&& st.st_size > (off_t)0xffffffff",
+        "&& st.st_size > 0xffffffffLL",
+    )
     content = content.replace(
         "if (IS_BC || (option_mask32 & BC_FLAG_I))",
         "if (!G_exiting && (IS_BC || (option_mask32 & BC_FLAG_I)))",
     )
-
-    # 18. Map xvfork() in time.c to spawn()
-    content = re.sub(
-        r"pid\s*=\s*xvfork\(\)\s*;\s*if\s*\(\s*pid\s*==\s*0\s*\)\s*\{\s*/\*\s*Child\s*\*/\s*BB_EXECVP_or_die\(\s*\(char\*\*\)cmd\s*\)\s*;\s*\}",
-        "pid = spawn((char**)cmd);",
-        content,
-    )
-
-    # 16. Fix missing return in yes.c and uudecode.c
-    content = re.sub(
-        r"(while\s*\(\s*full_write\s*\([^;]*\s*==\s*len\s*\)\s*continue\s*;)",
-        r"\1 return 0;",
-        content,
+    content = content.replace(
+        TAB
+        + "pid = xvfork();"
+        + NL
+        + TAB
+        + "if (pid == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "/* Child */"
+        + NL
+        + TAB
+        + TAB
+        + "BB_EXECVP_or_die((char**)cmd);"
+        + NL
+        + TAB
+        + "}",
+        TAB + "pid = spawn((char**)cmd);",
     )
     content = content.replace(
-        "die_if_ferror(src_stream, fn);", "die_if_ferror(src_stream, fn); return 0;"
+        "enum size_spec {" + NL + TAB + "NO_SIZE,",
+        "#undef CHAR"
+        + NL
+        + "#undef SHORT"
+        + NL
+        + "#undef INT"
+        + NL
+        + "#undef LONG"
+        + NL
+        + "#define CHAR BB_ENUM_CHAR"
+        + NL
+        + "#define SHORT BB_ENUM_SHORT"
+        + NL
+        + "#define INT BB_ENUM_INT"
+        + NL
+        + "#define LONG BB_ENUM_LONG"
+        + NL
+        + "enum size_spec {"
+        + NL
+        + TAB
+        + "NO_SIZE,",
     )
-    content = re.sub(r"(bb_perror_nomsg_and_die\([^;]*\);)", r"\1 return 0;", content)
-    content = re.sub(
-        r"(bb_simple_error_msg_and_die\([^;]*\);)", r"\1 return 0;", content
+    content = content.replace(
+        "#if defined(__clang_major__) && __clang_major__ >= 9",
+        "#if defined(__clang_major__) && __clang_major__ >= 9 && !defined(_MSC_VER)",
     )
 
     return content
 
 
 def transform_file(input_path: str, output_path: str) -> None:
-    with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
+    """
+    Read an input C source/header file, apply C89/MSVC transformations,
+    rewrite relative local includes if needed, and write to output_path.
+
+    Args:
+        input_path: Path to source file.
+        output_path: Destination path for transformed file.
+    """
+    abs_in = os.path.abspath(input_path)
+    in_dir = os.path.dirname(abs_in)
+    with open(abs_in, "r", encoding="utf-8", errors="ignore") as f:
         original = f.read()
+
+    def resolve_local_include(match: re.Match[str]) -> str:
+        inc_rel = match.group(1)
+        candidate = os.path.normpath(os.path.join(in_dir, inc_rel))
+        if os.path.isfile(candidate):
+            with open(candidate, "r", encoding="utf-8", errors="ignore") as cf:
+                c_text = cf.read()
+            c_trans = transform_source_content(c_text)
+            if c_trans != c_text:
+                out_dir_abs = os.path.dirname(os.path.abspath(output_path))
+                gen_inc = os.path.join(out_dir_abs, inc_rel)
+                os.makedirs(os.path.dirname(gen_inc), exist_ok=True)
+                with open(gen_inc, "w", encoding="utf-8") as gf:
+                    gf.write(c_trans)
+                return f'#include "{gen_inc.replace(BS, "/")}"'
+            return f'#include "{candidate.replace(BS, "/")}"'
+        return match.group(0)
+
+    if abs_in.endswith(".c"):
+        original = re.sub(
+            r'#\s*include\s+"([^"]+)"', resolve_local_include, original
+        )
 
     transformed = transform_source_content(original)
 
     out_dir = os.path.dirname(os.path.abspath(output_path))
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(transformed)
 
 
-def main():
+def main() -> None:
+    """
+    CLI entry point for transform_sources.py.
+    """
     parser = argparse.ArgumentParser(
         description="Transform C source files for MSVC compatibility."
     )
-    parser.add_argument("inputs", nargs="+", help="Input file(s) or input/output pair")
-    parser.add_argument("--output", "-o", help="Output file path (for single input)")
+    parser.add_argument(
+        "inputs", nargs="+", help="Input file(s) or input/output pair"
+    )
+    parser.add_argument(
+        "--output", "-o", help="Output file path (for single input)"
+    )
     parser.add_argument(
         "--out-dir", "-d", help="Output directory for generated sources"
     )
@@ -254,5 +1162,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

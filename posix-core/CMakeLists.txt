@@ -74,6 +74,9 @@ endif()
 add_library(posix-core src/posix-core.c
     src/posix_read_write.c)
 set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(posix-core PRIVATE auto_win_msvc_export_lib_EXPORTS)
+endif()
 target_include_directories(posix-core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

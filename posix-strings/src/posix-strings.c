@@ -192,11 +192,7 @@ char *posix_strsignal(int sig) {
 #if defined(_MSC_VER)
   sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
 #else
-#if defined(_MSC_VER)
-  sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
-#else
   sprintf(unknown_buf, "Unknown signal %d", sig);
-#endif
 #endif
   return unknown_buf;
 }
@@ -217,6 +213,9 @@ char *stpcpy(char *dest, const char *src) { return posix_stpcpy(dest, src); }
 char *stpncpy(char *dest, const char *src, size_t n) {
   return posix_stpncpy(dest, src, n);
 }
+
+#undef memrchr
+void *memrchr(const void *s, int c, size_t n) { return posix_memrchr(s, c, n); }
 #endif
 
 typedef int make_iso_compilers_happy_tu_posix_strings;

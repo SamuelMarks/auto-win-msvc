@@ -30,8 +30,35 @@
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
-#define safe_get_osfhandle(fd)                                                 \
-  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+static void mman_null_invalid_param_handler(const wchar_t *expression,
+                                            const wchar_t *function,
+                                            const wchar_t *file,
+                                            unsigned int line,
+                                            uintptr_t pReserved) {
+  if (expression || function || file || line || pReserved) {
+  }
+}
+#endif
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  int saved_err = errno;
+  if (fd < 0 || fd >= 2048) {
+    return -1;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(mman_null_invalid_param_handler);
+    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)_get_osfhandle((int)fd);
+#endif
+  errno = saved_err;
+  return h;
+}
 #endif
 
 /* Win32 Type Definitions to avoid windows.h inflating binary size */

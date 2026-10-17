@@ -62,6 +62,49 @@ def main():
     env = os.environ.copy()
     env["PATH"] = f"{dummy_bin_dir};C:\\Windows\\System32;{env.get('PATH', '')}"
 
+    # 1. BusyBox
+    busybox_win_path, _ = setup_repo(
+        "busybox-windows",
+        "https://github.com/SamuelMarks/busybox-windows.git",
+        branch="master",
+    )
+    busybox_src_path, _ = setup_repo(
+        "busybox",
+        "https://github.com/mirror/busybox.git",
+        branch="master",
+    )
+    bb_build_dir = os.path.join(busybox_win_path, "build_downstream")
+    if os.path.exists(bb_build_dir):
+        shutil.rmtree(bb_build_dir, ignore_errors=True)
+    bb_cmake_cmd = [
+        "cmake",
+        "-B",
+        bb_build_dir,
+        "-S",
+        busybox_win_path,
+        "-DCMAKE_BUILD_TYPE=Release",
+        f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={current_awm_dir}",
+        f"-DBUSYBOX_SOURCE_DIR={busybox_src_path}",
+    ]
+    run_cmd(bb_cmake_cmd, cwd=busybox_win_path)
+    run_cmd(
+        ["cmake", "--build", bb_build_dir, "--config", "Release", "-j"],
+        cwd=busybox_win_path,
+    )
+    run_cmd(
+        [
+            "ctest",
+            "--test-dir",
+            bb_build_dir,
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "-j",
+        ],
+        cwd=busybox_win_path,
+    )
+    shutil.rmtree(bb_build_dir, ignore_errors=True)
+
     # 3. Rsync
     rsync_path, rsync_is_tmp = setup_repo(
         "rsync", "https://github.com/SamuelMarks/rsync.git", branch="windows"

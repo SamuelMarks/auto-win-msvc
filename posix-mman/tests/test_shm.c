@@ -36,7 +36,7 @@ TEST test_shm_open(void) {
   ASSERT(fd >= 0);
 
 #if !defined(_WIN32)
-  ftruncate(fd, 4096);
+  ASSERT_EQ(0, ftruncate(fd, 4096));
 #else
   _chsize(fd, 4096);
 #endif

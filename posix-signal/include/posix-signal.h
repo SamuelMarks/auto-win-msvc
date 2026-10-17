@@ -127,6 +127,12 @@ typedef unsigned long sigset_t;
 
 /** \brief Signal handler function pointer type. */
 typedef void (*posix_sighandler_t)(int);
+#ifndef _SIGHANDLER_T_DEFINED
+#define _SIGHANDLER_T_DEFINED
+typedef posix_sighandler_t sighandler_t;
+typedef posix_sighandler_t __sighandler_t;
+typedef posix_sighandler_t sig_t;
+#endif
 
 #ifndef _PID_T_DEFINED
 #define _PID_T_DEFINED

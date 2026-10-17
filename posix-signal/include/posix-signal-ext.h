@@ -135,6 +135,12 @@ extern "C" {
 #define SA_RESETHAND 0x80000000
 #endif
 
+/** \brief Number of POSIX signals (1..31 plus 0). */
+#if !defined(NSIG) || (NSIG < 32)
+#undef NSIG
+#define NSIG 32
+#endif
+
 #endif /* defined(POSIX_SIGNAL_MSVC) || defined(_WIN32) || defined(_MSC_VER)   \
         */
 

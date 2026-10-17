@@ -18,6 +18,20 @@
 #include <ws2tcpip.h>
 #include <errno.h>
 
+#define pollfd posix_pollfd
+#undef POLLIN
+#undef POLLPRI
+#undef POLLOUT
+#undef POLLERR
+#undef POLLHUP
+#undef POLLNVAL
+#define POLLIN 0x01
+#define POLLPRI 0x02
+#define POLLOUT 0x04
+#define POLLERR 0x08
+#define POLLHUP 0x10
+#define POLLNVAL 0x20
+
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #endif
@@ -155,6 +169,54 @@ struct msghdr {
   posix_socklen_t msg_controllen;
   int msg_flags;
 };
+
+#ifndef _POSIX_CMSGHDR_DEFINED
+#define _POSIX_CMSGHDR_DEFINED
+struct posix_cmsghdr {
+  size_t cmsg_len;
+  int cmsg_level;
+  int cmsg_type;
+};
+#undef cmsghdr
+#define cmsghdr posix_cmsghdr
+
+#undef CMSG_ALIGN
+#define CMSG_ALIGN(len) (((len) + sizeof(size_t) - 1) & ~(sizeof(size_t) - 1))
+#undef CMSG_DATA
+#define CMSG_DATA(cmsg)                                                        \
+  ((unsigned char *)(cmsg) + CMSG_ALIGN(sizeof(struct posix_cmsghdr)))
+#undef CMSG_SPACE
+#define CMSG_SPACE(len)                                                        \
+  (CMSG_ALIGN(sizeof(struct posix_cmsghdr)) + CMSG_ALIGN(len))
+#undef CMSG_LEN
+#define CMSG_LEN(len) (CMSG_ALIGN(sizeof(struct posix_cmsghdr)) + (len))
+#undef CMSG_FIRSTHDR
+#define CMSG_FIRSTHDR(mhdr)                                                    \
+  ((size_t)(mhdr)->msg_controllen >= sizeof(struct posix_cmsghdr)              \
+       ? (struct posix_cmsghdr *)(mhdr)->msg_control                           \
+       : (struct posix_cmsghdr *)0)
+#undef CMSG_NXTHDR
+#define CMSG_NXTHDR(mhdr, cmsg)                                                \
+  (((cmsg) == 0)                                                               \
+       ? CMSG_FIRSTHDR(mhdr)                                                   \
+       : (((unsigned char *)(cmsg) + CMSG_ALIGN((cmsg)->cmsg_len) +            \
+               CMSG_ALIGN(sizeof(struct posix_cmsghdr)) >                      \
+           (unsigned char *)(mhdr)->msg_control + (mhdr)->msg_controllen)      \
+              ? (struct posix_cmsghdr *)0                                      \
+              : (struct posix_cmsghdr *)((unsigned char *)(cmsg) +             \
+                                         CMSG_ALIGN((cmsg)->cmsg_len))))
+#endif
+
+#ifndef _POSIX_IN_PKTINFO_DEFINED
+#define _POSIX_IN_PKTINFO_DEFINED
+struct posix_in_pktinfo {
+  int ipi_ifindex;
+  struct in_addr ipi_spec_dst;
+  struct in_addr ipi_addr;
+};
+#undef in_pktinfo
+#define in_pktinfo posix_in_pktinfo
+#endif
 #endif /* _WIN32 */
 
 #ifdef _WIN32

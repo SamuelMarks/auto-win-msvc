@@ -60,9 +60,15 @@ pid_t wait(int *stat_loc) { return waitpid(-1, stat_loc, 0); }
 
 /** \brief wait3 function. */
 pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
-  pid_t ret = waitpid(-1, stat_loc, options);
-  if (ret > 0 && rusage != NULL) {
+  pid_t ret;
+  if (rusage != NULL) {
+    unsigned char *p = (unsigned char *)rusage;
+    size_t k;
+    for (k = 0; k < 72; k++) {
+      p[k] = 0;
+    }
   }
+  ret = waitpid(-1, stat_loc, options);
   return ret;
 }
 
@@ -307,7 +313,7 @@ pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
 #endif /* MSDOS || WATCOMC */
 
 /* Non-standard Microsoft-compatible cwait */
-intptr_t _cwait(int *termstat, intptr_t pid, int action) {
+intptr_t posix_cwait(int *termstat, intptr_t pid, int action) {
   (void)action;
   return waitpid((pid_t)pid, termstat, 0);
 }

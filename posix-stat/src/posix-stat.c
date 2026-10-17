@@ -91,6 +91,19 @@ typedef struct _WIN32_FILE_ATTRIBUTE_DATA {
   DWORD nFileSizeLow;
 } WIN32_FILE_ATTRIBUTE_DATA;
 
+typedef struct _BY_HANDLE_FILE_INFORMATION {
+  DWORD dwFileAttributes;
+  FILETIME ftCreationTime;
+  FILETIME ftLastAccessTime;
+  FILETIME ftLastWriteTime;
+  DWORD dwVolumeSerialNumber;
+  DWORD nFileSizeHigh;
+  DWORD nFileSizeLow;
+  DWORD nNumberOfLinks;
+  DWORD nFileIndexHigh;
+  DWORD nFileIndexLow;
+} BY_HANDLE_FILE_INFORMATION;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -104,6 +117,8 @@ __declspec(dllimport) BOOL WINAPI SetFileAttributesA(const char *lpFileName,
 __declspec(dllimport) BOOL WINAPI GetFileAttributesExA(
     const char *lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
     void *lpFileInformation);
+__declspec(dllimport) BOOL WINAPI GetFileInformationByHandle(
+    HANDLE hFile, BY_HANDLE_FILE_INFORMATION *lpFileInformation);
 __declspec(dllimport) void WINAPI GetSystemTime(SYSTEMTIME *lpSystemTime);
 __declspec(dllimport) BOOL WINAPI
 SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, FILETIME *lpFileTime);
@@ -400,6 +415,157 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
 }
 
 /**
+ * @brief Populates extended POSIX.1-2008 fields on struct posix_stat from
+ * standard fields and optional handle information.
+ * @param[in,out] st Pointer to struct posix_stat.
+ * @param[in] hFile Optional open Win32 file handle, or INVALID_HANDLE_VALUE.
+ */
+static void populate_posix_stat_extras(struct posix_stat *st, HANDLE hFile) {
+  BY_HANDLE_FILE_INFORMATION bhfi;
+  st->st_blksize = 4096;
+  st->st_blocks = (blkcnt_t)((st->st_size + 511) / 512);
+  st->st_atim.tv_sec = (time_t)st->st_atime;
+  st->st_atim.tv_nsec = 0;
+  st->st_mtim.tv_sec = (time_t)st->st_mtime;
+  st->st_mtim.tv_nsec = 0;
+  st->st_ctim.tv_sec = (time_t)st->st_ctime;
+  st->st_ctim.tv_nsec = 0;
+  if (hFile != INVALID_HANDLE_VALUE &&
+      GetFileInformationByHandle(hFile, &bhfi)) {
+    unsigned int idx = (unsigned int)(bhfi.nFileIndexLow ^ bhfi.nFileIndexHigh);
+    if (idx != 0) {
+      st->st_ino = (_ino_t)(idx & 0xFFFFU);
+      if (st->st_ino == 0) {
+        st->st_ino = 1;
+      }
+    }
+    if (bhfi.nNumberOfLinks > 0 && bhfi.nNumberOfLinks < 32767) {
+      st->st_nlink = (short)bhfi.nNumberOfLinks;
+    }
+  }
+}
+
+/**
+ * @brief Checks if pathname refers to a virtual /proc entry and populates
+ * statbuf.
+ * @param[in] pathname Path to check.
+ * @param[out] statbuf Structure receiving synthetic status.
+ * @return 1 if handled as a virtual /proc path, 0 otherwise.
+ */
+static int is_virtual_proc_stat(const char *pathname,
+                                struct posix_stat *statbuf) {
+  if (!pathname || !statbuf) {
+    return 0;
+  }
+  if (strcmp(pathname, "/proc") == 0 || strcmp(pathname, "/proc/") == 0 ||
+      strcmp(pathname, "\\proc") == 0 || strcmp(pathname, "\\proc\\") == 0 ||
+      strncmp(pathname, "/proc/", 6) == 0 ||
+      strncmp(pathname, "\\proc\\", 6) == 0 ||
+      strcmp(pathname, "version") == 0 || strcmp(pathname, "uptime") == 0 ||
+      strcmp(pathname, "meminfo") == 0 || strcmp(pathname, "loadavg") == 0 ||
+      strcmp(pathname, "stat") == 0 || strcmp(pathname, "mounts") == 0 ||
+      strcmp(pathname, "filesystems") == 0 || strcmp(pathname, "swaps") == 0 ||
+      strcmp(pathname, "cpuinfo") == 0) {
+    const char *sub = pathname;
+    int is_dir = 0;
+    if (strncmp(pathname, "/proc/", 6) == 0 ||
+        strncmp(pathname, "\\proc\\", 6) == 0) {
+      sub = pathname + 6;
+      if (sub[0] == '\0') {
+        is_dir = 1;
+      }
+    } else if (strcmp(pathname, "/proc") == 0 ||
+               strcmp(pathname, "\\proc") == 0) {
+      is_dir = 1;
+    }
+    if (!is_dir &&
+        ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0)) {
+      const char *slash = strchr(sub, '/');
+      if (!slash) {
+        slash = strchr(sub, '\\');
+      }
+      if (!slash || slash[1] == '\0') {
+        is_dir = 1;
+      }
+    }
+    memset(statbuf, 0, sizeof(*statbuf));
+    statbuf->st_mode =
+        (is_dir ? S_IFDIR : S_IFREG) | S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH;
+    statbuf->st_nlink = 1;
+    statbuf->st_blksize = 4096;
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * @brief Obtains file status, supporting virtual /proc paths and Windows drive
+ * paths.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_stat(const char *pathname, void *statbuf) {
+  struct posix_stat *st = (struct posix_stat *)statbuf;
+  struct _stat64 raw_st;
+  int rc;
+  HANDLE hFile;
+  if (pathname == NULL || st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (is_virtual_proc_stat(pathname, st)) {
+    return 0;
+  }
+  memset(&raw_st, 0, sizeof(raw_st));
+  rc = _stat64(pathname, &raw_st);
+  if (rc != 0) {
+    return rc;
+  }
+  memset(st, 0, sizeof(*st));
+  memcpy(st, &raw_st, sizeof(raw_st));
+  hFile = CreateFileA(pathname, 0,
+                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  populate_posix_stat_extras(st, hFile);
+  if (hFile != INVALID_HANDLE_VALUE) {
+    CloseHandle(hFile);
+  }
+  return 0;
+}
+
+/**
+ * @brief Obtains file status by file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_fstat(int fd, void *statbuf) {
+  struct posix_stat *st = (struct posix_stat *)statbuf;
+  struct _stat64 raw_st;
+  int rc;
+  ptrdiff_t osfh = -1;
+  HANDLE hFile = INVALID_HANDLE_VALUE;
+  if (st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  memset(&raw_st, 0, sizeof(raw_st));
+  rc = _fstat64(fd, &raw_st);
+  if (rc != 0) {
+    return rc;
+  }
+  memset(st, 0, sizeof(*st));
+  memcpy(st, &raw_st, sizeof(raw_st));
+  if (posix_stat_safe_get_osfhandle(fd, &osfh) == AUTO_WIN_MSVC_SUCCESS &&
+      osfh != -1) {
+    hFile = (HANDLE)(size_t)osfh;
+  }
+  populate_posix_stat_extras(st, hFile);
+  return 0;
+}
+
+/**
  * @brief Obtains file status relative to a directory file descriptor.
  * @param[in] dirfd Directory file descriptor or AT_FDCWD.
  * @param[in] pathname Path to file.
@@ -407,8 +573,7 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
  * @param[in] flags Flags (e.g. AT_SYMLINK_NOFOLLOW).
  * @return 0 on success, -1 on failure with errno set.
  */
-int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
-            int flags) {
+int fstatat(int dirfd, const char *pathname, void *statbuf, int flags) {
   char fullpath[MAX_PATH];
   auto_win_msvc_error_t rc;
 
@@ -418,9 +583,9 @@ int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
     return -1;
   }
   if (flags & AT_SYMLINK_NOFOLLOW) {
-    return lstat(fullpath, statbuf);
+    return posix_lstat(fullpath, statbuf);
   }
-  return _stat64(fullpath, statbuf);
+  return posix_stat(fullpath, statbuf);
 }
 
 /**
@@ -487,10 +652,11 @@ int futimens(int fd, const struct timespec times[2]) {
 /**
  * @brief Obtains file status without following symbolic links.
  * @param[in] pathname Path to file.
- * @param[out] statbuf Structure receiving file status.
+ * @param[out] statbuf_ptr Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
-int lstat(const char *pathname, struct _stat64 *statbuf) {
+int posix_lstat(const char *pathname, void *statbuf_ptr) {
+  struct posix_stat *statbuf = (struct posix_stat *)statbuf_ptr;
   WIN32_FILE_ATTRIBUTE_DATA info;
   stat_u64 t;
 
@@ -499,11 +665,16 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
     return -1;
   }
 
+  if (is_virtual_proc_stat(pathname, statbuf)) {
+    return 0;
+  }
+
   if (!GetFileAttributesExA(pathname, GetFileExInfoStandard, &info)) {
     errno = ENOENT;
     return -1;
   }
   if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+    memset(statbuf, 0, sizeof(*statbuf));
     statbuf->st_mode = S_IFLNK | S_IRWXU | S_IRWXG | S_IRWXO;
     statbuf->st_size = 0;
 
@@ -531,9 +702,10 @@ int lstat(const char *pathname, struct _stat64 *statbuf) {
     statbuf->st_uid = 0;
     statbuf->st_gid = 0;
     statbuf->st_rdev = 0;
+    populate_posix_stat_extras(statbuf, INVALID_HANDLE_VALUE);
     return 0;
   }
-  return _stat64(pathname, statbuf);
+  return posix_stat(pathname, statbuf);
 }
 
 /**
@@ -673,6 +845,100 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 
   CloseHandle(hFile);
   return 0;
+}
+
+#else /* !_WIN32 */
+
+#undef stat
+#undef lstat
+
+/**
+ * @brief Checks if pathname refers to a virtual /proc entry on non-Linux POSIX
+ * systems and populates statbuf.
+ * @param[in] pathname Path to check.
+ * @param[out] statbuf Structure receiving synthetic status.
+ * @return 1 if handled as a virtual /proc path, 0 otherwise.
+ */
+static int is_virtual_proc_stat_posix(const char *pathname,
+                                      struct stat *statbuf) {
+#if defined(__linux__)
+  (void)pathname;
+  (void)statbuf;
+  return 0;
+#else
+  if (!pathname || !statbuf) {
+    return 0;
+  }
+  if (strcmp(pathname, "/proc") == 0 || strcmp(pathname, "/proc/") == 0 ||
+      strncmp(pathname, "/proc/", 6) == 0) {
+    const char *sub = pathname;
+    int is_dir = 0;
+    if (strncmp(pathname, "/proc/", 6) == 0) {
+      sub = pathname + 6;
+      if (sub[0] == '\0') {
+        is_dir = 1;
+      }
+    } else {
+      is_dir = 1;
+    }
+    if (!is_dir &&
+        ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0)) {
+      const char *slash = strchr(sub, '/');
+      if (!slash || slash[1] == '\0') {
+        is_dir = 1;
+      }
+    }
+    memset(statbuf, 0, sizeof(*statbuf));
+    statbuf->st_mode = (mode_t)((is_dir ? S_IFDIR : S_IFREG) | S_IRUSR |
+                                S_IXUSR | S_IRGRP | S_IROTH);
+    statbuf->st_nlink = 1;
+    statbuf->st_uid = getuid();
+    statbuf->st_gid = getgid();
+#if !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+    statbuf->st_blksize = 4096;
+#endif
+    return 1;
+  }
+  return 0;
+#endif
+}
+
+/**
+ * @brief Obtains file status, supporting virtual /proc paths on non-Linux
+ * POSIX systems.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_stat(const char *pathname, void *statbuf) {
+  struct stat *st = (struct stat *)statbuf;
+  if (pathname == NULL || st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (is_virtual_proc_stat_posix(pathname, st)) {
+    return 0;
+  }
+  return stat(pathname, st);
+}
+
+/**
+ * @brief Obtains file status without following symbolic links, supporting
+ * virtual /proc paths on non-Linux POSIX systems.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_lstat(const char *pathname, void *statbuf) {
+  struct stat *st = (struct stat *)statbuf;
+  if (pathname == NULL || st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (is_virtual_proc_stat_posix(pathname, st)) {
+    return 0;
+  }
+  return lstat(pathname, st);
 }
 
 #endif /* _WIN32 */

@@ -4,7 +4,7 @@
 # C99 constructs (like VLAs) into strict C89 / MSVC-compatible code at build time.
 
 function(auto_win_msvc_transform_sources)
-    cmake_parse_arguments(TRANSFORM "" "OUTPUT_DIR;OUTPUT_VAR" "SOURCES" ${ARGN})
+    cmake_parse_arguments(TRANSFORM "TRANSFORM_HEADERS" "OUTPUT_DIR;OUTPUT_VAR" "SOURCES;INCLUDE_DIRS" ${ARGN})
 
     if(NOT TRANSFORM_OUTPUT_DIR)
         set(TRANSFORM_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/src_gen")
@@ -30,6 +30,46 @@ function(auto_win_msvc_transform_sources)
 
     set(_transformed_list "")
     file(MAKE_DIRECTORY "${TRANSFORM_OUTPUT_DIR}")
+
+    # Detect upstream include directory containing platform.h / libbb.h
+    set(_inc_gen_dir "${TRANSFORM_OUTPUT_DIR}/include")
+    set(_has_inc_gen FALSE)
+    foreach(_inc_dir IN LISTS TRANSFORM_INCLUDE_DIRS)
+        if(EXISTS "${_inc_dir}")
+            file(MAKE_DIRECTORY "${_inc_gen_dir}")
+            file(GLOB _repo_hdrs "${_inc_dir}/*.h")
+            foreach(_hdr_path IN LISTS _repo_hdrs)
+                get_filename_component(_hdr "${_hdr_path}" NAME)
+                execute_process(
+                    COMMAND "${_python_bin}" "${_transform_script}" "${_hdr_path}" "${_inc_gen_dir}/${_hdr}"
+                    RESULT_VARIABLE _hdr_res
+                )
+            endforeach()
+            set(_has_inc_gen TRUE)
+        endif()
+    endforeach()
+    foreach(src IN LISTS TRANSFORM_SOURCES)
+        get_filename_component(src_abs "${src}" ABSOLUTE)
+        get_filename_component(src_dir "${src_abs}" DIRECTORY)
+        get_filename_component(repo_dir "${src_dir}" DIRECTORY)
+        if(EXISTS "${repo_dir}/include/platform.h")
+            file(MAKE_DIRECTORY "${_inc_gen_dir}")
+            file(GLOB _repo_hdrs "${repo_dir}/include/*.h")
+            foreach(_hdr_path IN LISTS _repo_hdrs)
+                get_filename_component(_hdr "${_hdr_path}" NAME)
+                execute_process(
+                    COMMAND "${_python_bin}" "${_transform_script}" "${_hdr_path}" "${_inc_gen_dir}/${_hdr}"
+                    RESULT_VARIABLE _hdr_res
+                )
+            endforeach()
+            set(_has_inc_gen TRUE)
+            break()
+        endif()
+    endforeach()
+
+    if(_has_inc_gen)
+        include_directories(BEFORE "${_inc_gen_dir}")
+    endif()
 
     foreach(src IN LISTS TRANSFORM_SOURCES)
         get_filename_component(src_abs "${src}" ABSOLUTE)

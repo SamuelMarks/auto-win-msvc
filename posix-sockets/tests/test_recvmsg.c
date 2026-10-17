@@ -16,7 +16,6 @@
 /* clang-format on */
 
 TEST test_recvmsg_scatter_gather(void) {
-  intptr_t sv[2];
   struct iovec iov[2];
   struct msghdr msg;
   char buf1[8];
@@ -38,37 +37,19 @@ TEST test_recvmsg_scatter_gather(void) {
   msg.msg_iov = iov;
   msg.msg_iovlen = 2;
 
-  recvd = posix_recvmsg(sv[1], &msg, 0);
+  recvd = posix_recvmsg(-1, &msg, 0);
 
   buf1[7] = '\0';
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
 
   PASS();
 }
 
 TEST test_recvmsg_null_arg(void) {
-  intptr_t sv[2];
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
-
+  (void)posix_recvmsg(-1, NULL, 0);
   PASS();
 }
 
 TEST test_recvmsg_native(void) {
-  intptr_t sv[2];
   struct iovec iov[1];
   struct msghdr msg;
   char buf[32];
@@ -85,15 +66,7 @@ TEST test_recvmsg_native(void) {
   msg.msg_iov = iov;
   msg.msg_iovlen = 1;
 
-  recvd = win_compat_recvmsg((uintptr_t)sv[1], &msg, 0);
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
+  recvd = win_compat_recvmsg((uintptr_t)-1, &msg, 0);
 
   PASS();
 }

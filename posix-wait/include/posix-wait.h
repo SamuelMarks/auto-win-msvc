@@ -9,6 +9,12 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#endif
+#if defined(_WIN32) || defined(_MSC_VER)
+#include <process.h>
+#endif
 #if !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -164,10 +170,19 @@ int posix_wait_kill(pid_t pid, int sig);
 
 /**
  * @brief Microsoft-compatible cwait.
+ * @param[out] termstat Termination status code.
+ * @param[in] pid Process ID to wait for.
+ * @param[in] action Action code (ignored).
+ * @return Process ID on success, or -1 on failure.
  */
+intptr_t posix_cwait(int *termstat, intptr_t pid, int action);
+#if !defined(_WIN32) && !defined(_MSC_VER)
 #ifndef _cwait
-intptr_t _cwait(int *termstat, intptr_t pid, int action);
-#define cwait _cwait
+#define _cwait posix_cwait
+#endif
+#endif
+#ifndef cwait
+#define cwait posix_cwait
 #endif
 
 #ifdef __cplusplus

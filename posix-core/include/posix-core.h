@@ -106,9 +106,8 @@ auto_win_msvc_error_t posix_core_init(int *out_status);
 #ifndef EALREADY
 #define EALREADY 103
 #endif
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK 140
-#endif
+#undef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
 
 #ifndef ENOTSOCK
 #define ENOTSOCK 128
@@ -363,6 +362,19 @@ struct flock {
 #define F_OK 0
 #endif
 #ifndef X_OK
+#define X_OK 0
+#endif
+#ifndef W_OK
+#define W_OK 2
+#endif
+#ifndef R_OK
+#define R_OK 4
+#endif
+#else
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifndef X_OK
 #define X_OK 1
 #endif
 #ifndef W_OK
@@ -376,11 +388,13 @@ struct flock {
 /* NUM_FORMAT macro for cross-platform printf of 64-bit integers */
 
 /* Functions */
+/** @brief Open file descriptor with POSIX semantics. */
+int posix_open(const char *pathname, int flags, ...);
+
 /** @brief open */
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef open
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
-  int fd = -1;
   int pmode = 0;
   oflag |= _O_BINARY;
   if (oflag & _O_CREAT) {
@@ -388,33 +402,21 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
     va_start(ap, oflag);
     pmode = va_arg(ap, int) & (_S_IREAD | _S_IWRITE);
     va_end(ap);
-  }
-#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
-    _MSC_VER >= 1400
-  if (_sopen_s(&fd, filename, oflag, _SH_DENYNO, pmode) != 0) {
-    if (errno == EACCES) {
-      struct _stat st;
-      if (_stat(filename, &st) == 0 && (st.st_mode & _S_IFDIR)) {
-        errno = EISDIR;
-      }
-    }
-    return -1;
-  }
-  return fd;
-#else
-  int ret = _open(filename, oflag, pmode);
-  if (ret == -1 && errno == EACCES) {
-    struct _stat st;
-    if (_stat(filename, &st) == 0 && (st.st_mode & _S_IFDIR)) {
-      errno = EISDIR;
+    if ((pmode & _S_IWRITE) == 0) {
+      pmode |= (_S_IREAD | _S_IWRITE);
     }
   }
-  return ret;
-#endif
+  return posix_open(filename, oflag, pmode);
 }
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define open posix_core_open
 #endif
+#endif
+#elif (defined(__APPLE__) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&         \
+    (defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&              \
+    !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
+#ifndef open
+#define open posix_open
 #endif
 #else
 /* open */
@@ -423,9 +425,8 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 int posix_close(intptr_t fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
-#ifndef close
+#undef close
 #define close posix_close
-#endif
 #endif
 #endif
 
@@ -433,9 +434,8 @@ int posix_close(intptr_t fd);
 ssize_t posix_read(intptr_t fd, void *buf, size_t count);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
-#ifndef read
+#undef read
 #define read posix_read
-#endif
 #endif
 #endif
 
@@ -443,9 +443,8 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count);
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
-#ifndef write
+#undef write
 #define write posix_write
-#endif
 #endif
 #endif
 
@@ -466,17 +465,27 @@ int posix_creat(const char *pathname, mode_t mode);
 #endif
 
 /** @brief lseek */
+#if defined(_MSC_VER)
+__int64 posix_lseek(int fd, __int64 offset, int whence);
+#else
+off_t posix_lseek(int fd, off_t offset, int whence);
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef lseek
-#define lseek _lseek
+#define lseek posix_lseek
+#endif
 #endif
 #else
 /* lseek */
 #endif
 /** @brief dup */
+int posix_dup(int oldfd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef dup
-#define dup _dup
+#define dup posix_dup
+#endif
 #endif
 #else
 /* dup */
@@ -484,11 +493,14 @@ int posix_creat(const char *pathname, mode_t mode);
 /** @brief dup2 */
 int posix_dup2(int oldfd, int newfd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef dup2
 #define dup2 posix_dup2
 #endif
 #endif
-/** @brief fsync */
+#else
+/* dup2 */
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef tell
 #define tell _tell
@@ -554,24 +566,31 @@ int posix_dup2(int oldfd, int newfd);
 #endif
 /** @brief execve */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef execve
-#define execve _execve
+int posix_execve(const char *pathname, char *const argv[], char *const envp[]);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef execve
+#define execve(p, a, e)                                                        \
+  posix_execve((p), (char *const *)(a), (char *const *)(e))
 #endif
 #else
 /* execve */
 #endif
 /** @brief execv */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef execv
-#define execv _execv
+int posix_execv(const char *pathname, char *const argv[]);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef execv
+#define execv(p, a) posix_execv((p), (char *const *)(a))
 #endif
 #else
 /* execv */
 #endif
 /** @brief execvp */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef execvp
-#define execvp _execvp
+int posix_execvp(const char *file, char *const argv[]);
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef execvp
+#define execvp(f, a) posix_execvp((f), (char *const *)(a))
 #endif
 #else
 /* execvp */
@@ -727,6 +746,13 @@ int clearenv(void);
  */
 char *strndup(const char *s, size_t n);
 
+#if defined(__GNUC__) || defined(__clang__)
+#define POSIX_CORE_PRINTF_FORMAT(fmt_idx, arg_idx)                             \
+  __attribute__((format(printf, fmt_idx, arg_idx)))
+#else
+#define POSIX_CORE_PRINTF_FORMAT(fmt_idx, arg_idx)
+#endif
+
 /**
  * @brief Allocates and prints to a string buffer using va_list.
  * @param[out] strp Pointer to output string buffer.
@@ -734,7 +760,8 @@ char *strndup(const char *s, size_t n);
  * @param[in] ap Argument list.
  * @return Number of characters printed on success, -1 on error.
  */
-int vasprintf(char **strp, const char *fmt, va_list ap);
+int vasprintf(char **strp, const char *fmt, va_list ap)
+    POSIX_CORE_PRINTF_FORMAT(2, 0);
 
 /**
  * @brief Allocates and prints to a string buffer.
@@ -742,7 +769,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
  * @param[in] fmt Format string.
  * @return Number of characters printed on success, -1 on error.
  */
-int asprintf(char **strp, const char *fmt, ...);
+int asprintf(char **strp, const char *fmt, ...) POSIX_CORE_PRINTF_FORMAT(2, 3);
 
 /**
  * @brief Prints formatted output to a file descriptor.
@@ -750,7 +777,7 @@ int asprintf(char **strp, const char *fmt, ...);
  * @param[in] fmt Format string.
  * @return Number of characters printed on success, -1 on error.
  */
-int dprintf(int fd, const char *fmt, ...);
+int dprintf(int fd, const char *fmt, ...) POSIX_CORE_PRINTF_FORMAT(2, 3);
 
 /**
  * @brief Gets the memory page size.
@@ -1079,6 +1106,7 @@ int pause(void);
 /* pause */
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#undef pipe
 /** @brief pipe */
 int pipe(int pipefd[2]);
 #else
@@ -1191,6 +1219,10 @@ void sync(void);
 #define _SC_CLK_TCK 4
 #define _SC_PHYS_PAGES 5
 #define _SC_AVPHYS_PAGES 6
+#define _SC_OPEN_MAX 7
+#endif
+#ifndef _SC_OPEN_MAX
+#define _SC_OPEN_MAX 7
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -1332,11 +1364,116 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode);
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) ||                               \
+    ((defined(__APPLE__) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&          \
+     (defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)))
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #ifndef fopen
 #define fopen posix_fopen
 #endif
+#endif
+#endif
+
+/** @brief Associate stream with file descriptor or socket. */
+FILE *posix_fdopen(intptr_t fd, const char *mode);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fdopen
+#define fdopen posix_fdopen
+#endif
+#endif
+
+/** @brief Read a line from stream or socket-backed stream. */
+char *posix_fgets(char *s, int size, FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fgets
+#undef fgets_unlocked
+#define fgets posix_fgets
+#define fgets_unlocked posix_fgets
+#endif
+#endif
+
+/** @brief Write formatted output to stream or socket-backed stream. */
+int posix_fprintf(FILE *stream, const char *format, ...)
+    POSIX_CORE_PRINTF_FORMAT(2, 3);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fprintf
+#define fprintf posix_fprintf
+#endif
+#endif
+
+/** @brief Read binary data from stream or socket-backed stream. */
+size_t posix_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fread
+#define fread posix_fread
+#endif
+#endif
+
+/** @brief Write binary data to stream or socket-backed stream. */
+size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fwrite
+#define fwrite posix_fwrite
+#endif
+#endif
+
+/** @brief Read a character from stream or socket-backed stream. */
+int posix_fgetc(FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fgetc
+#define fgetc posix_fgetc
+#undef getc
+#define getc posix_fgetc
+#undef getc_unlocked
+#define getc_unlocked posix_fgetc
+#endif
+#endif
+
+/** @brief Close stream or socket-backed stream. */
+int posix_fclose(FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fclose
+#define fclose posix_fclose
+#endif
+#endif
+
+/** @brief Test end-of-file indicator on stream or socket-backed stream. */
+int posix_feof(FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef feof
+#undef feof_unlocked
+#define feof posix_feof
+#define feof_unlocked posix_feof
+#endif
+#endif
+
+/** @brief Test error indicator on stream or socket-backed stream. */
+int posix_ferror(FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef ferror
+#undef ferror_unlocked
+#define ferror posix_ferror
+#define ferror_unlocked posix_ferror
+#endif
+#endif
+
+/** @brief Return integer file descriptor or socket for stream. */
+int posix_fileno(FILE *stream);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
+#undef fileno
+#undef fileno_unlocked
+#define fileno posix_fileno
+#define fileno_unlocked posix_fileno
 #endif
 #endif
 

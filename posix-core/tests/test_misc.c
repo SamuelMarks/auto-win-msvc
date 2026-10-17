@@ -158,6 +158,8 @@ TEST test_getsubopt(void) {
   tokens[2] = "name";
   tokens[3] = "rw";
   tokens[4] = NULL;
+  (void)tokens;
+  ASSERT_EQ(0, getsubopt(&opt, tokens, &val));
 
   PASS();
 }
@@ -308,6 +310,8 @@ TEST test_sysconf(void) {
   (void)sc;
 
   sc = sysconf(1);
+  sc = sysconf(_SC_OPEN_MAX);
+  ASSERT(sc > 0);
 
   PASS();
 }

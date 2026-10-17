@@ -14,12 +14,41 @@
 #define SAFE_GET_OSFHANDLE
 #include <stddef.h>
 #if defined(_WIN32)
+#include <stdlib.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
 #include <io.h>
 #endif
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle(fd))
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+static void termios_null_invalid_param_handler(const wchar_t *expression,
+                                               const wchar_t *function,
+                                               const wchar_t *file,
+                                               unsigned int line,
+                                               uintptr_t pReserved) {
+  if (expression || function || file || line || pReserved) {
+  }
+}
+#endif
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  int saved_err = errno;
+  if (fd < 0 || fd >= 2048) {
+    return -1;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(termios_null_invalid_param_handler);
+    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)_get_osfhandle((int)fd);
+#endif
+  errno = saved_err;
+  return h;
+}
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
@@ -433,6 +462,24 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
   (void)termios_p;
   return -1;
 #endif
+}
+
+/**
+ * @brief Set terminal attributes to raw mode.
+ * @param termios_p Pointer to termios structure.
+ */
+void cfmakeraw(struct termios *termios_p) {
+  if (!termios_p) {
+    return;
+  }
+  termios_p->c_iflag &= ~(tcflag_t)(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR |
+                                    IGNCR | ICRNL | IXON);
+  termios_p->c_oflag &= ~(tcflag_t)OPOST;
+  termios_p->c_lflag &= ~(tcflag_t)(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+  termios_p->c_cflag &= ~(tcflag_t)(CSIZE | PARENB);
+  termios_p->c_cflag |= CS8;
+  termios_p->c_cc[VMIN] = 1;
+  termios_p->c_cc[VTIME] = 0;
 }
 
 /**

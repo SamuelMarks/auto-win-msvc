@@ -32,26 +32,49 @@ typedef long off_t;
 #endif
 #endif
 
-#if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
-    !defined(_MODE_T_)
+#if defined(_WIN32) && !defined(_MODE_T_DEFINED) &&                            \
+    !defined(_MODE_T_DEFINED_) && !defined(_MODE_T_) &&                        \
+    !defined(__mode_t_defined)
 #define _MODE_T_DEFINED
 #define _MODE_T_DEFINED_
 #define _MODE_T_
+#define __mode_t_defined
 typedef unsigned short mode_t;
 #endif
 
 #if defined(_WIN32)
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef O_DIRECTORY
+#define O_DIRECTORY 0
+#endif
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x4000
+#endif
+#ifndef O_NDELAY
+#define O_NDELAY O_NONBLOCK
+#endif
+#ifndef O_SYNC
+#define O_SYNC 0
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
+#endif
 #ifndef creat
 #define creat posix_creat
 #endif
 /** @brief Creates a new file or rewrites an existing one. */
 int posix_creat(const char *pathname, mode_t mode);
 
-#ifndef fcntl
-#define fcntl posix_fcntl
-#endif
 /** @brief Manipulates file descriptor properties. */
-int posix_fcntl(intptr_t fd, int cmd, ...);
+int fcntl(intptr_t fd, int cmd, ...);
 
 #ifndef open
 #define open posix_open

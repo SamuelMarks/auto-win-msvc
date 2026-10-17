@@ -68,6 +68,19 @@ int endmntent(FILE *stream);
  */
 char *hasmntopt(const struct mntent *mnt, const char *opt);
 
+#ifndef HAVE_MNTENT_H
+/** @brief Indicates <mntent.h> is available. */
+#define HAVE_MNTENT_H 1
+#endif
+
+/**
+ * @brief Finds the mount table entry for a path or device.
+ * @param[in] name Path or block device name.
+ * @param[in] subdir_too Non-zero to match subdirectories on the mount point.
+ * @return Pointer to mntent structure, or NULL if not found.
+ */
+extern struct mntent *find_mount_point(const char *name, int subdir_too);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

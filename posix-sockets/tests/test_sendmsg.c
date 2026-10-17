@@ -16,7 +16,6 @@
 /* clang-format on */
 
 TEST test_sendmsg_scatter_gather(void) {
-  intptr_t sv[2];
   struct iovec iov[2];
   struct msghdr msg;
   char part1[8];
@@ -32,11 +31,7 @@ TEST test_sendmsg_scatter_gather(void) {
   strcpy_s(part2, sizeof(part2), "World!");
 #else
   strcpy(part1, "Hello ");
-#if defined(_MSC_VER)
-  strcpy_s(part2, sizeof(part2), "World!");
-#else
   strcpy(part2, "World!");
-#endif
 #endif
 
   iov[0].iov_base = part1;
@@ -48,38 +43,20 @@ TEST test_sendmsg_scatter_gather(void) {
   msg.msg_iov = iov;
   msg.msg_iovlen = 2;
 
-  sent = posix_sendmsg(sv[0], &msg, 0);
+  sent = posix_sendmsg(-1, &msg, 0);
 
   memset(recvbuf, 0, sizeof(recvbuf));
-  r = posix_recv(sv[1], recvbuf, sizeof(recvbuf) - 1, 0);
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
+  r = posix_recv(-1, recvbuf, sizeof(recvbuf) - 1, 0);
 
   PASS();
 }
 
 TEST test_sendmsg_null_arg(void) {
-  intptr_t sv[2];
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
-
+  (void)posix_sendmsg(-1, NULL, 0);
   PASS();
 }
 
 TEST test_sendmsg_native(void) {
-  intptr_t sv[2];
   struct iovec iov[1];
   struct msghdr msg;
   char buf[16];
@@ -99,15 +76,7 @@ TEST test_sendmsg_native(void) {
   msg.msg_iov = iov;
   msg.msg_iovlen = 1;
 
-  sent = win_compat_sendmsg((uintptr_t)sv[0], &msg, 0);
-
-#ifdef _WIN32
-  closesocket((SOCKET)sv[0]);
-  closesocket((SOCKET)sv[1]);
-#else
-  close((int)sv[0]);
-  close((int)sv[1]);
-#endif
+  sent = win_compat_sendmsg((uintptr_t)-1, &msg, 0);
 
   PASS();
 }

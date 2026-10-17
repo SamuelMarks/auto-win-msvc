@@ -14,11 +14,19 @@
 
 #if defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
+#define stat _crt_orig_stat
+#define fstat _crt_orig_fstat
 #include <../ucrt/sys/stat.h>
+#undef stat
+#undef fstat
 #include <../ucrt/sys/types.h>
 #include <../ucrt/io.h>
 #elif defined(_MSC_VER)
+#define stat _crt_orig_stat
+#define fstat _crt_orig_fstat
 #include <../include/sys/stat.h>
+#undef stat
+#undef fstat
 #include <../include/sys/types.h>
 #include <io.h>
 #elif defined(__GNUC__) || defined(__clang__)
@@ -291,14 +299,74 @@ typedef unsigned short mode_t;
 #endif
 
 #if defined(_WIN32)
-#ifndef stat
-/** @brief Shim for standard stat mapping to _stat64 on Windows. */
-#define stat _stat64
+#ifndef _BLKSIZE_T_DEFINED
+#define _BLKSIZE_T_DEFINED
+/** @brief Block size type. */
+typedef long blksize_t;
 #endif
-#ifndef fstat
-/** @brief Shim for standard fstat mapping to _fstat64 on Windows. */
-#define fstat _fstat64
+#ifndef _BLKCNT_T_DEFINED
+#define _BLKCNT_T_DEFINED
+/** @brief Block count type. */
+typedef long blkcnt_t;
 #endif
+
+/**
+ * @brief 64-bit file status structure compatible with struct _stat64 and
+ * POSIX.1-2008 struct stat.
+ */
+struct posix_stat {
+  _dev_t st_dev;           /**< ID of device containing file. */
+  _ino_t st_ino;           /**< Inode number. */
+  unsigned short st_mode;  /**< File type and mode. */
+  short st_nlink;          /**< Number of hard links. */
+  short st_uid;            /**< User ID of owner. */
+  short st_gid;            /**< Group ID of owner. */
+  _dev_t st_rdev;          /**< Device ID (if special file). */
+  __int64 st_size;         /**< Total size, in bytes. */
+  __time64_t st_atime;     /**< Time of last access (seconds). */
+  __time64_t st_mtime;     /**< Time of last modification (seconds). */
+  __time64_t st_ctime;     /**< Time of last status change (seconds). */
+  blksize_t st_blksize;    /**< Block size for filesystem I/O. */
+  blkcnt_t st_blocks;      /**< Number of 512B blocks allocated. */
+  struct timespec st_atim; /**< Time of last access (timespec). */
+  struct timespec st_mtim; /**< Time of last modification (timespec). */
+  struct timespec st_ctim; /**< Time of last status change (timespec). */
+};
+
+/**
+ * @brief Obtains file status, supporting virtual /proc paths and Windows drive
+ * paths.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_stat(const char *pathname, void *statbuf);
+
+/**
+ * @brief Obtains file status by file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_fstat(int fd, void *statbuf);
+
+/**
+ * @brief Obtains file status without following symbolic links.
+ * @param[in] pathname Path to file.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_lstat(const char *pathname, void *statbuf);
+
+#undef stat
+/** @brief Shim for standard stat mapping to posix_stat on Windows. */
+#define stat posix_stat
+#undef fstat
+/** @brief Shim for standard fstat mapping to posix_fstat on Windows. */
+#define fstat posix_fstat
+#undef lstat
+/** @brief Shim for standard lstat mapping to posix_lstat on Windows. */
+#define lstat posix_lstat
 #ifndef chmod
 /** @brief Shim for standard chmod mapping to _chmod on Windows. */
 #define chmod _chmod
@@ -376,8 +444,7 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
  * @param[in] flags Flags controlling behavior (e.g. AT_SYMLINK_NOFOLLOW).
  * @return 0 on success, -1 on failure with errno set.
  */
-int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
-            int flags);
+int fstatat(int dirfd, const char *pathname, void *statbuf, int flags);
 
 /**
  * @brief Sets file access and modification times by file descriptor.
@@ -386,14 +453,6 @@ int fstatat(int dirfd, const char *pathname, struct _stat64 *statbuf,
  * @return 0 on success, -1 on failure with errno set.
  */
 int futimens(int fd, const struct timespec times[2]);
-
-/**
- * @brief Obtains file status without following symbolic links.
- * @param[in] pathname Path to file.
- * @param[out] statbuf Structure receiving file status.
- * @return 0 on success, -1 on failure with errno set.
- */
-int lstat(const char *pathname, struct _stat64 *statbuf);
 
 /**
  * @brief Creates a filesystem node.
@@ -438,6 +497,42 @@ extern int mknod(const char *pathname, mode_t mode, dev_t dev);
 extern int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 extern int utimensat(int dirfd, const char *pathname,
                      const struct timespec times[2], int flags);
+#endif
+
+/**
+ * @brief Obtains file status, supporting virtual /proc paths on non-Linux
+ * POSIX systems.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_stat(const char *pathname, void *statbuf);
+
+/**
+ * @brief Obtains file status without following symbolic links, supporting
+ * virtual /proc paths on non-Linux POSIX systems.
+ * @param[in] pathname Path to file or directory.
+ * @param[out] statbuf Structure receiving file status.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int posix_lstat(const char *pathname, void *statbuf);
+
+#if (defined(__APPLE__) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&           \
+    !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
+#ifndef stat
+static __inline int auto_win_msvc_stat_wrap(const char *p, struct stat *b) {
+  return posix_stat(p, b);
+}
+#define stat(p, b) auto_win_msvc_stat_wrap((p), (b))
+#endif
+#ifndef lstat
+static __inline int auto_win_msvc_lstat_wrap(const char *p, struct stat *b) {
+  return posix_lstat(p, b);
+}
+#define lstat(p, b) auto_win_msvc_lstat_wrap((p), (b))
+#endif
+#endif
 #endif
 
 #endif /* _WIN32 */

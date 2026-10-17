@@ -60,7 +60,34 @@ TEST test_proc_pidpath(void) {
   PASS();
 }
 
+TEST test_posix_proc_enum(void) {
+  void *cursor;
+  struct posix_proc_entry entry;
+  int count = 0;
+
+  ASSERT_EQ(0, posix_proc_next(NULL, &entry));
+  posix_proc_close(NULL);
+
+  cursor = posix_proc_open();
+  ASSERT(cursor != NULL);
+  ASSERT_EQ(0, posix_proc_next(cursor, NULL));
+
+  while (posix_proc_next(cursor, &entry)) {
+    ASSERT(entry.pid > 0);
+    ASSERT(entry.comm[0] != '\0');
+    count++;
+    if (count > 5) {
+      break;
+    }
+  }
+  ASSERT(count > 0);
+  posix_proc_close(cursor);
+
+  PASS();
+}
+
 SUITE(suite_posix_libproc_core) {
   RUN_TEST(test_posix_libproc_get_info);
   RUN_TEST(test_proc_pidpath);
+  RUN_TEST(test_posix_proc_enum);
 }

@@ -25,19 +25,18 @@ extern "C" {
 #endif
 
 #if defined(_WIN32)
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+#define pollfd posix_pollfd
 /**
  * @brief Poll file descriptor structure for Windows.
  */
-struct pollfd {
+struct posix_pollfd {
   /** @brief File or socket descriptor. */
-  SOCKET fd;
+  int fd;
   /** @brief Requested event flags. */
   short events;
   /** @brief Returned event flags. */
   short revents;
 };
-#endif
 #endif
 
 #if defined(_WIN32)
@@ -50,6 +49,15 @@ typedef unsigned long nfds_t;
 #define _SIGSET_T_DEFINED
 typedef unsigned long sigset_t;
 #endif
+#endif
+
+#if defined(_WIN32)
+#undef POLLIN
+#undef POLLPRI
+#undef POLLOUT
+#undef POLLERR
+#undef POLLHUP
+#undef POLLNVAL
 #endif
 
 #ifndef POLLIN

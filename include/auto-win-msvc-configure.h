@@ -30,12 +30,69 @@
 #ifndef inline
 #define inline __inline
 #endif
-
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+#ifndef __restrict
+#define __restrict
+#endif
+#ifndef __restrict__
+#define __restrict__
+#endif
+#ifndef __extension__
+#define __extension__
+#endif
+#ifndef __builtin_unreachable
+#define __builtin_unreachable() __assume(0)
+#endif
+#if !defined(__clang__)
+#ifndef ALWAYS_INLINE
+#define ALWAYS_INLINE __forceinline
+#endif
+#ifndef NOINLINE
+#define NOINLINE __declspec(noinline)
+#endif
+#ifndef FAST_FUNC
+#define FAST_FUNC
+#endif
+#ifndef FIX_ALIASING
+#define FIX_ALIASING
+#endif
+#ifndef MAIN_EXTERNALLY_VISIBLE
+#define MAIN_EXTERNALLY_VISIBLE
+#endif
+#ifndef ALIGN1
+#define ALIGN1
+#endif
+#ifndef ALIGN2
+#define ALIGN2
+#endif
+#ifndef ALIGN4
+#define ALIGN4
+#endif
+#ifndef ALIGN_SUFFIX
+#define ALIGN_SUFFIX
+#endif
+#ifndef VISIBILITY_HIDDEN
+#define VISIBILITY_HIDDEN
+#endif
+#ifndef PUSH_AND_SET_FUNCTION_VISIBILITY_TO_HIDDEN
+#define PUSH_AND_SET_FUNCTION_VISIBILITY_TO_HIDDEN
+#endif
+#ifndef POP_SAVED_FUNCTION_VISIBILITY
+#define POP_SAVED_FUNCTION_VISIBILITY
+#endif
+void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+#ifndef barrier
+#define barrier() _ReadWriteBarrier()
+#endif
+#endif /* !__clang__ */
 #endif /* _MSC_VER */
 
 /* Architecture alignment and pointer guarantees */
 #ifndef SIZEOF_VOID_P
-#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__) || defined(__aarch64__)
+#if defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__ppc64__) || defined(__aarch64__)
 #define SIZEOF_VOID_P 8
 #else
 #define SIZEOF_VOID_P 4
@@ -122,20 +179,119 @@ typedef uint32_t uintptr_t;
 #define INT32_MIN (-0x7fffffffL - 1)
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32)
-#include <posix-types.h>
-#include <posix-signal.h>
-#include <posix-pthread.h>
-#include <posix-sys-uio.h>
-#include <posix-sockets.h>
+#if defined(__has_include)
+#if __has_include("autoconf.h")
+#include "autoconf.h"
+#ifndef AUTO_WIN_MSVC_HAS_AUTOCONF_H
+#define AUTO_WIN_MSVC_HAS_AUTOCONF_H 1
+#endif
+#endif
+#endif
+#if defined(AUTO_WIN_MSVC_INCLUDE_AUTOCONF_H) || defined(BB_VER)
+#ifndef AUTO_WIN_MSVC_HAS_AUTOCONF_H
+#include "autoconf.h"
+#define AUTO_WIN_MSVC_HAS_AUTOCONF_H 1
+#endif
+#endif
 
+#if defined(_MSC_VER) || defined(_WIN32)
+#ifndef HAVE_MEMRCHR
+#define HAVE_MEMRCHR 1
+#endif
+#ifndef HAVE_MEMPCPY
+#define HAVE_MEMPCPY 1
+#endif
+#ifndef HAVE_STPCPY
+#define HAVE_STPCPY 1
+#endif
+#ifndef HAVE_STPNCPY
+#define HAVE_STPNCPY 1
+#endif
+#ifndef HAVE_STRCHRNUL
+#define HAVE_STRCHRNUL 1
+#endif
+#ifndef HAVE_STRSEP
+#define HAVE_STRSEP 1
+#endif
+#ifndef HAVE_STRCASESTR
+#define HAVE_STRCASESTR 1
+#endif
+#ifndef HAVE_VASPRINTF
+#define HAVE_VASPRINTF 1
+#endif
+#ifndef HAVE_DPRINTF
+#define HAVE_DPRINTF 1
+#endif
+#ifndef HAVE_STRVERSCMP
+#define HAVE_STRVERSCMP 1
+#endif
+#ifndef HAVE_GETLINE
+#define HAVE_GETLINE 1
+#endif
+#ifndef HAVE_MNTENT_H
+#define HAVE_MNTENT_H 1
+#endif
+#ifndef HAVE_SYS_STATFS_H
+#define HAVE_SYS_STATFS_H 1
+#endif
+#endif /* _MSC_VER || _WIN32 */
+
+#if defined(_MSC_VER) || defined(__clang__)
+#ifndef BB_GLOBAL_CONST
+#define BB_GLOBAL_CONST
+#endif
+#endif
+
+#if defined(__APPLE__) && (defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H))
+#ifndef HAVE_MNTENT_H
+#define HAVE_MNTENT_H 1
+#endif
+#ifndef HAVE_SYS_STATFS_H
+#define HAVE_SYS_STATFS_H 1
+#endif
+#ifndef AUTO_WIN_MSVC_EMULATE_PROCFS
+#define AUTO_WIN_MSVC_EMULATE_PROCFS 1
+#endif
+#include <arpa/inet.h>
+#include <sys/sysinfo.h>
+#include <sys/statfs.h>
+#include <posix-core.h>
+#include <posix-stat.h>
+#include <posix-dirent.h>
+#include <posix-strings.h>
+struct mntent;
+extern struct mntent *find_mount_point(const char *name, int subdir_too);
+#endif
+
+#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER)
+#include <malloc.h>
+#ifndef alloca
+#define alloca _alloca
+#endif
+#endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <posix-types.h>
+#include <posix-signal.h>
+#include <posix-pthread.h>
+#include <posix-sys-uio.h>
+#include <posix-sockets.h>
 #include <io.h>
 #include <errno.h>
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H)
+#include <arpa/inet.h>
+#include <posix-core.h>
+#include <posix-strings.h>
+#include <bsd/string.h>
+#include <sys/sysinfo.h>
+#include <sys/statfs.h>
+#include <mntent.h>
+extern struct mntent *find_mount_point(const char *name, int subdir_too);
+#endif
 
 #if __has_include(<event2/util.h>)
 #include <event2/util.h>
@@ -154,7 +310,28 @@ typedef uint32_t uintptr_t;
 #define F_SETFL 4
 #endif
 #ifndef O_NONBLOCK
-#define O_NONBLOCK 0x0004
+#define O_NONBLOCK 0x4000
+#endif
+#ifndef O_NDELAY
+#define O_NDELAY O_NONBLOCK
+#endif
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef O_DIRECTORY
+#define O_DIRECTORY 0
+#endif
+#ifndef O_SYNC
+#define O_SYNC 0
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
 #endif
 
 #ifndef _SSIZE_T_DEFINED
@@ -253,8 +430,10 @@ static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
     return 0;
 #endif
 }
+#ifndef POSIX_CORE_H
 #undef pipe
 #define pipe auto_win_msvc_native_pipe
+#endif
 
 /**
  * @brief Emulates fcntl for non-blocking socket manipulation.
@@ -285,8 +464,10 @@ static __inline int auto_win_msvc_fcntl(intptr_t fd, int cmd, ...) {
     }
     return 0;
 }
+#ifndef POSIX_CORE_H
 #undef fcntl
 #define fcntl auto_win_msvc_fcntl
+#endif
 
 /**
  * @brief Closes either a socket or an OS file descriptor.
@@ -294,13 +475,12 @@ static __inline int auto_win_msvc_fcntl(intptr_t fd, int cmd, ...) {
  * @return 0 on success, -1 on error.
  */
 static __inline int auto_win_msvc_close(int fd) {
-    if (closesocket((SOCKET)fd) == 0) {
-        return 0;
-    }
-    return _close(fd);
+    return posix_close((intptr_t)fd);
 }
+#ifndef POSIX_CORE_H
 #undef close
 #define close auto_win_msvc_close
+#endif
 
 /**
  * @brief Reads data from either a socket or an OS file descriptor.
@@ -310,27 +490,12 @@ static __inline int auto_win_msvc_close(int fd) {
  * @return Number of bytes read, or -1 on error.
  */
 static __inline ssize_t auto_win_msvc_read(int fd, void *buf, size_t count) {
-    int r = recv((SOCKET)fd, (char *)buf, (int)count, 0);
-    if (r != SOCKET_ERROR) {
-        return (ssize_t)r;
-    }
-    {
-        int werr = WSAGetLastError();
-        if (werr == WSAENOTSOCK) {
-            return (ssize_t)_read(fd, buf, (unsigned int)count);
-        }
-        if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
-            errno = EAGAIN;
-        } else if (werr == WSAECONNRESET) {
-            errno = ECONNRESET;
-        } else {
-            errno = EIO;
-        }
-        return -1;
-    }
+    return (ssize_t)posix_read((intptr_t)fd, buf, (unsigned int)count);
 }
+#ifndef POSIX_CORE_H
 #undef read
 #define read auto_win_msvc_read
+#endif
 
 /**
  * @brief Writes data to either a socket or an OS file descriptor.
@@ -340,27 +505,12 @@ static __inline ssize_t auto_win_msvc_read(int fd, void *buf, size_t count) {
  * @return Number of bytes written, or -1 on error.
  */
 static __inline ssize_t auto_win_msvc_write(int fd, const void *buf, size_t count) {
-    int r = send((SOCKET)fd, (const char *)buf, (int)count, 0);
-    if (r != SOCKET_ERROR) {
-        return (ssize_t)r;
-    }
-    {
-        int werr = WSAGetLastError();
-        if (werr == WSAENOTSOCK) {
-            return (ssize_t)_write(fd, buf, (unsigned int)count);
-        }
-        if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
-            errno = EAGAIN;
-        } else if (werr == WSAECONNRESET) {
-            errno = ECONNRESET;
-        } else {
-            errno = EIO;
-        }
-        return -1;
-    }
+    return (ssize_t)posix_write((intptr_t)fd, buf, (unsigned int)count);
 }
+#ifndef POSIX_CORE_H
 #undef write
 #define write auto_win_msvc_write
+#endif
 
 /**
  * @brief Sends scatter/gather vector buffers using native WSASend.
@@ -370,26 +520,11 @@ static __inline ssize_t auto_win_msvc_write(int fd, const void *buf, size_t coun
  * @return Number of bytes sent, or -1 on error.
  */
 static __inline ssize_t auto_win_msvc_sendmsg(int fd, const struct msghdr *msg, int flags) {
-    WSABUF bufs[64];
-    DWORD sent = 0;
-    int i;
-    if (!msg || msg->msg_iovlen <= 0) return -1;
-    for (i = 0; i < (int)msg->msg_iovlen && i < 64; i++) {
-        bufs[i].buf = (char *)msg->msg_iov[i].iov_base;
-        bufs[i].len = (ULONG)msg->msg_iov[i].iov_len;
-    }
-    if (WSASend((SOCKET)fd, bufs, (DWORD)msg->msg_iovlen, &sent, (DWORD)flags, NULL, NULL) == SOCKET_ERROR) {
-        int werr = WSAGetLastError();
-        if (werr == WSAEWOULDBLOCK) errno = EAGAIN;
-        else errno = EIO;
-        return -1;
-    }
-    return (ssize_t)sent;
+    return (ssize_t)posix_sendmsg((intptr_t)fd, msg, flags);
 }
-#ifdef sendmsg
-#undef sendmsg
-#endif
+#ifndef sendmsg
 #define sendmsg auto_win_msvc_sendmsg
+#endif
 
 /**
  * @brief Emulates pthread_once using atomic compare-exchange.
@@ -425,8 +560,9 @@ static __inline int auto_win_msvc_dup2(int oldfd, int newfd) {
     }
     return -1;
 }
-#undef dup2
+#ifndef dup2
 #define dup2 auto_win_msvc_dup2
+#endif
 
 /**
  * @brief Emulates kill for terminating processes or handling SIGHUP.
@@ -583,6 +719,96 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
     (*lineptr)[pos] = '\0';
     return (ssize_t)pos;
+}
+
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+#ifndef NAME_MAX
+#define NAME_MAX 255
+#endif
+#ifndef SSIZE_MAX
+#define SSIZE_MAX INTPTR_MAX
+#endif
+
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H)
+#undef dup
+#define dup posix_dup
+#undef dup2
+#define dup2 posix_dup2
+#undef lseek
+#define lseek posix_lseek
+#undef access
+#define access(path, mode) _access((path), (mode) & 6)
+#endif
+
+#ifndef getc_unlocked
+#define getc_unlocked fgetc
+#endif
+#ifndef getchar_unlocked
+#define getchar_unlocked _getchar_nolock
+#endif
+#ifndef putc_unlocked
+#define putc_unlocked _putc_nolock
+#endif
+#ifndef putchar_unlocked
+#define putchar_unlocked _putchar_nolock
+#endif
+#ifndef fputs_unlocked
+#define fputs_unlocked fputs
+#endif
+#ifndef fgets_unlocked
+#define fgets_unlocked fgets
+#endif
+#ifndef ferror_unlocked
+#define ferror_unlocked ferror
+#endif
+#ifndef fileno_unlocked
+#define fileno_unlocked fileno
+#endif
+#ifndef fseeko
+#define fseeko _fseeki64
+#endif
+
+#include <malloc.h>
+#ifndef alloca
+#define alloca _alloca
+#endif
+
+#include <setjmp.h>
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))
+static __inline int auto_win_msvc_clear_jmp_frame(_JBTYPE *env, int rc) {
+    ((unsigned __int64 *)env)[0] = 0;
+    return rc;
+}
+#undef setjmp
+#define setjmp(env) auto_win_msvc_clear_jmp_frame((env), _setjmp(env))
+#endif
+#ifndef _SIGJMP_BUF_DEFINED
+#define _SIGJMP_BUF_DEFINED
+typedef jmp_buf sigjmp_buf;
+#endif
+#ifndef sigsetjmp
+#define sigsetjmp(env, savesigs) setjmp(env)
+#endif
+#ifndef siglongjmp
+#define siglongjmp(env, val) longjmp((env), (val))
+#endif
+
+/**
+ * @brief Locates the last path separator (forward slash or backslash) in str.
+ * @param[in] str Input null-terminated path string.
+ * @return Pointer to the last slash/backslash, or NULL if none exists.
+ */
+static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
+    const char *s1 = strrchr(str, '/');
+    const char *s2 = strrchr(str, '\\');
+    if (s1 && s2) return (char *)(s1 > s2 ? s1 : s2);
+    return (char *)(s1 ? s1 : s2);
 }
 
 #endif /* _MSC_VER || _WIN32 */

@@ -87,6 +87,16 @@ struct termios {
 #define OPOST 0000001  /**< Post-process output */
 #define ONLCR 0000002  /**< Map NL to CR-NL on output */
 #define OXTABS 0000004 /**< Expand tabs to spaces */
+#ifndef XTABS
+#define XTABS OXTABS /**< Expand tabs to spaces (BSD/Linux alias) */
+#endif
+#ifndef TABDLY
+#define TABDLY OXTABS /**< Tab delay mask */
+#endif
+#ifndef TAB0
+#define TAB0 0
+#define TAB3 OXTABS
+#endif
 #define ONOEOT 0000010 /**< Discard EOT (^D) on output */
 #define OCRNL 0000020  /**< Map CR to NL on output */
 #define ONOCR 0000040  /**< No CR output at column 0 */
@@ -255,6 +265,12 @@ int tcsendbreak(int fd, int duration);
  * @return 0 on success, -1 on failure.
  */
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
+
+/**
+ * @brief Set terminal attributes to raw mode.
+ * @param termios_p Pointer to termios structure.
+ */
+void cfmakeraw(struct termios *termios_p);
 
 #ifdef __cplusplus
 }

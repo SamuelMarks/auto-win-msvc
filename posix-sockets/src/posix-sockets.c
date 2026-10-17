@@ -21,6 +21,7 @@ typedef int error_type_t;
 #endif
 
 #include <stddef.h>
+#include <stdlib.h>
 #if defined(_WIN32)
 #include <fcntl.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -43,16 +44,64 @@ typedef int error_type_t;
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
 #if defined(_WIN32)
-#define safe_get_osfhandle(fd)                                                 \
-  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+static void sock_null_invalid_param_handler(const wchar_t *expression,
+                                            const wchar_t *function,
+                                            const wchar_t *file,
+                                            unsigned int line,
+                                            uintptr_t pReserved) {
+  if (expression || function || file || line || pReserved) {
+  }
+}
+#endif
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  int saved_err = errno;
+  if (fd < 0 || fd >= 2048) {
+    return -1;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(sock_null_invalid_param_handler);
+    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)_get_osfhandle((int)fd);
+#endif
+  errno = saved_err;
+  if (h == -2) {
+    return -1;
+  }
+  return h;
+}
 #else
 #define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
 #endif
 #endif
 
-#define GET_SOCKET(fd)                                                         \
-  ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd)                               \
-                                  : (SOCKET)safe_get_osfhandle(fd))
+#if defined(_WIN32)
+extern int is_socket(intptr_t fd);
+intptr_t posix_get_dup_socket(intptr_t fd);
+void posix_set_dup_socket(intptr_t fd, intptr_t s);
+intptr_t posix_lookup_crt_socket(intptr_t fd);
+void posix_register_crt_socket(intptr_t fd, intptr_t s);
+static SOCKET resolve_socket_or_fd_sock(intptr_t fd) {
+  intptr_t s = posix_get_dup_socket(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  s = posix_lookup_crt_socket(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  return (SOCKET)fd;
+}
+#define GET_SOCKET(fd) resolve_socket_or_fd_sock(fd)
+#else
+#define GET_SOCKET(fd) (fd)
+#endif
 
 #ifdef _WIN32
 
@@ -209,6 +258,30 @@ void copy_nonblock(SOCKET src, SOCKET dst) {
 }
 
 static unsigned char g_is_socket[8192] = {0};
+static intptr_t g_dup_sockets[64] = {0};
+static intptr_t g_crt_sockets[2048] = {0};
+intptr_t posix_get_dup_socket(intptr_t fd) {
+  if (fd >= 0 && fd < 64) {
+    return g_dup_sockets[fd];
+  }
+  return 0;
+}
+void posix_set_dup_socket(intptr_t fd, intptr_t s) {
+  if (fd >= 0 && fd < 64) {
+    g_dup_sockets[fd] = s;
+  }
+}
+intptr_t posix_lookup_crt_socket(intptr_t fd) {
+  if (fd >= 0 && fd < 2048) {
+    return g_crt_sockets[fd];
+  }
+  return 0;
+}
+void posix_register_crt_socket(intptr_t fd, intptr_t s) {
+  if (fd >= 0 && fd < 2048) {
+    g_crt_sockets[fd] = s;
+  }
+}
 error_type_t mark_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 8192)
     g_is_socket[fd] = 1;
@@ -255,10 +328,19 @@ void posix_endservent(void) {
 #endif
   return;
 }
+#define POSIX_AI_CUSTOM_MAGIC 0x41574D53
+
 void posix_freeaddrinfo(struct addrinfo *ai) {
   (void)ai;
 #ifdef _WIN32
 #undef freeaddrinfo
+  if (ai == NULL) {
+    return;
+  }
+  if (ai->ai_flags == POSIX_AI_CUSTOM_MAGIC) {
+    free(ai);
+    return;
+  }
   freeaddrinfo(ai);
 #endif
 }
@@ -285,9 +367,83 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res) {
 #ifdef _WIN32
 #undef getaddrinfo
-  int ret = getaddrinfo(nodename, servname, hints, res);
+  int ret;
+  if (nodename != NULL && nodename[0] >= '0' && nodename[0] <= '9') {
+    const char *p = nodename;
+    unsigned int parts[4] = {0, 0, 0, 0};
+    int part_idx = 0;
+    int has_digit = 0;
+    int valid_ipv4 = 1;
+    while (*p) {
+      if (*p >= '0' && *p <= '9') {
+        parts[part_idx] = parts[part_idx] * 10U + (unsigned int)(*p - '0');
+        if (parts[part_idx] > 255U) {
+          valid_ipv4 = 0;
+          break;
+        }
+        has_digit = 1;
+      } else if (*p == '.') {
+        if (!has_digit || part_idx >= 3) {
+          valid_ipv4 = 0;
+          break;
+        }
+        part_idx++;
+        has_digit = 0;
+      } else {
+        valid_ipv4 = 0;
+        break;
+      }
+      p++;
+    }
+    if (valid_ipv4 && has_digit && part_idx == 3) {
+      unsigned long ip_host =
+          (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+      unsigned long ip_be = htonl(ip_host);
+      struct addrinfo *ai = (struct addrinfo *)calloc(
+          1, sizeof(struct addrinfo) + sizeof(struct sockaddr_in));
+      if (ai != NULL && res != NULL) {
+        struct sockaddr_in *sin = (struct sockaddr_in *)(ai + 1);
+        sin->sin_family = AF_INET;
+        sin->sin_addr.s_addr = ip_be;
+        if (servname != NULL && servname[0] >= '0' && servname[0] <= '9') {
+          sin->sin_port = htons((unsigned short)atoi(servname));
+        }
+        ai->ai_flags = POSIX_AI_CUSTOM_MAGIC;
+        ai->ai_family = AF_INET;
+        ai->ai_socktype = (hints != NULL && hints->ai_socktype != 0)
+                              ? hints->ai_socktype
+                              : SOCK_STREAM;
+        ai->ai_protocol = (hints != NULL) ? hints->ai_protocol : 0;
+        ai->ai_addrlen = sizeof(struct sockaddr_in);
+        ai->ai_addr = (struct sockaddr *)sin;
+        ai->ai_canonname = NULL;
+        ai->ai_next = NULL;
+        *res = ai;
+        return 0;
+      }
+      if (ai != NULL) {
+        free(ai);
+      }
+    }
+  }
+  ret = getaddrinfo(nodename, servname, hints, res);
   if (ret != 0) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    if (ret == WSANOTINITIALISED || WSAGetLastError() == WSANOTINITIALISED) {
+      WSADATA wsaData;
+      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
+        ret = getaddrinfo(nodename, servname, hints, res);
+      }
+    }
+#ifdef AI_ADDRCONFIG
+    if (ret != 0 && hints != NULL && (hints->ai_flags & AI_ADDRCONFIG)) {
+      struct addrinfo fallback_hints = *hints;
+      fallback_hints.ai_flags &= ~AI_ADDRCONFIG;
+      ret = getaddrinfo(nodename, servname, &fallback_hints, res);
+    }
+#endif
+    if (ret != 0) {
+      errno = _wsaErrorToErrno(WSAGetLastError());
+    }
   }
   return ret;
 #else
@@ -409,25 +565,72 @@ struct protoent *posix_getprotoent(void) {
 }
 
 struct servent *posix_getservbyname(const char *name, const char *proto) {
+#ifdef _WIN32
+  static struct servent s_se;
+  static char *s_aliases[1] = {NULL};
+  if (name != NULL) {
+    unsigned short p = 0;
+    if (strcmp(name, "http") == 0) {
+      p = 80;
+    } else if (strcmp(name, "https") == 0) {
+      p = 443;
+    } else if (strcmp(name, "ftp") == 0) {
+      p = 21;
+    } else if (strcmp(name, "telnet") == 0) {
+      p = 23;
+    } else if (strcmp(name, "ssh") == 0) {
+      p = 22;
+    } else if (strcmp(name, "domain") == 0) {
+      p = 53;
+    } else if (strcmp(name, "tftp") == 0) {
+      p = 69;
+    } else if (strcmp(name, "ntp") == 0) {
+      p = 123;
+    }
+    if (p != 0) {
+      s_se.s_name = (char *)name;
+      s_se.s_aliases = s_aliases;
+      s_se.s_port = htons(p);
+      s_se.s_proto = (char *)(proto != NULL ? proto : "tcp");
+      return &s_se;
+    }
+  }
+#undef getservbyname
+  {
+    struct servent *se = getservbyname(name, proto);
+    if (se == NULL && WSAGetLastError() == WSANOTINITIALISED) {
+      WSADATA wsaData;
+      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
+        se = getservbyname(name, proto);
+      }
+    }
+    return se;
+  }
+#else
   (void)name;
   (void)proto;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
+#endif
 }
 
 struct servent *posix_getservbyport(int port, const char *proto) {
+#ifdef _WIN32
+#undef getservbyport
+  struct servent *se = getservbyport(port, proto);
+  if (se == NULL && WSAGetLastError() == WSANOTINITIALISED) {
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
+      se = getservbyport(port, proto);
+    }
+  }
+  return se;
+#else
   (void)port;
   (void)proto;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
+#endif
 }
 
 struct servent *posix_getservent(void) {
@@ -548,109 +751,121 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
 #endif
 
 extern int is_socket(intptr_t fd);
+#if defined(_WIN32)
+__declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
+__declspec(dllimport) int __stdcall PeekNamedPipe(
+    void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
+    unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
+    unsigned long *lpBytesLeftThisMessage);
+#endif
 
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {
 #if defined(_WIN32)
   fd_set ws_readfds = {0}, ws_writefds = {0}, ws_errorfds = {0};
+  fd_set ready_non_sock_r = {0}, ready_non_sock_w = {0};
   fd_set *p_ws_readfds = NULL, *p_ws_writefds = NULL, *p_ws_errorfds = NULL;
+  struct timeval zero_tv = {0, 0};
   unsigned int i;
-  int ret;
+  int num_sockets = 0;
+  int num_non_sock_ready = 0;
+  int ret = 0;
   (void)nfds;
 
+  FD_ZERO(&ready_non_sock_r);
+  FD_ZERO(&ready_non_sock_w);
+
   if (readfds) {
-#if defined(_MSC_VER)
-#endif
     FD_ZERO(&ws_readfds);
-#if defined(_MSC_VER)
-#endif
     for (i = 0; i < readfds->fd_count; i++) {
       intptr_t fd = (intptr_t)readfds->fd_array[i];
-      if (is_socket(fd)) {
-        intptr_t handle = safe_get_osfhandle(fd);
-        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET) {
-#if defined(_MSC_VER)
-#endif
-          FD_SET(s, &ws_readfds);
-#if defined(_MSC_VER)
-#endif
-        }
+      SOCKET s = GET_SOCKET(fd);
+      int optval = 0;
+      int optlen = sizeof(optval);
+      if (s != INVALID_SOCKET && s != 0 &&
+          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+        FD_SET(s, &ws_readfds);
+        num_sockets++;
       } else {
-#if defined(_MSC_VER)
-#endif
-        FD_SET((SOCKET)fd, &ws_readfds); /* Pass through */
-#if defined(_MSC_VER)
-#endif
+        ptrdiff_t h = (fd >= 0 && fd < 64) ? safe_get_osfhandle(fd) : -1;
+        if (h != -1) {
+          unsigned long ftype = GetFileType((void *)h);
+          if (ftype == 3 /* FILE_TYPE_PIPE */) {
+            unsigned long avail = 0;
+            if (!PeekNamedPipe((void *)h, NULL, 0, NULL, &avail, NULL) ||
+                avail > 0) {
+              FD_SET((SOCKET)fd, &ready_non_sock_r);
+              num_non_sock_ready++;
+            }
+          } else if (ftype == 1 /* FILE_TYPE_DISK */) {
+            FD_SET((SOCKET)fd, &ready_non_sock_r);
+            num_non_sock_ready++;
+          }
+        }
       }
     }
-    p_ws_readfds = &ws_readfds;
+    if (ws_readfds.fd_count > 0) {
+      p_ws_readfds = &ws_readfds;
+    }
   }
 
   if (writefds) {
-#if defined(_MSC_VER)
-#endif
     FD_ZERO(&ws_writefds);
-#if defined(_MSC_VER)
-#endif
     for (i = 0; i < writefds->fd_count; i++) {
       intptr_t fd = (intptr_t)writefds->fd_array[i];
-      if (is_socket(fd)) {
-        intptr_t handle = safe_get_osfhandle(fd);
-        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET) {
-#if defined(_MSC_VER)
-#endif
-          FD_SET(s, &ws_writefds);
-#if defined(_MSC_VER)
-#endif
-        }
+      SOCKET s = GET_SOCKET(fd);
+      int optval = 0;
+      int optlen = sizeof(optval);
+      if (s != INVALID_SOCKET && s != 0 &&
+          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+        FD_SET(s, &ws_writefds);
+        num_sockets++;
       } else {
-#if defined(_MSC_VER)
-#endif
-        FD_SET((SOCKET)fd, &ws_writefds);
-#if defined(_MSC_VER)
-#endif
+        ptrdiff_t h = (fd >= 0 && fd < 64) ? safe_get_osfhandle(fd) : -1;
+        if (h != -1) {
+          FD_SET((SOCKET)fd, &ready_non_sock_w);
+          num_non_sock_ready++;
+        }
       }
     }
-    p_ws_writefds = &ws_writefds;
+    if (ws_writefds.fd_count > 0) {
+      p_ws_writefds = &ws_writefds;
+    }
   }
 
   if (errorfds) {
-#if defined(_MSC_VER)
-#endif
     FD_ZERO(&ws_errorfds);
-#if defined(_MSC_VER)
-#endif
     for (i = 0; i < errorfds->fd_count; i++) {
       intptr_t fd = (intptr_t)errorfds->fd_array[i];
-      if (is_socket(fd)) {
-        intptr_t handle = safe_get_osfhandle(fd);
-        SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-        if (s != INVALID_SOCKET) {
-#if defined(_MSC_VER)
-#endif
-          FD_SET(s, &ws_errorfds);
-#if defined(_MSC_VER)
-#endif
-        }
-      } else {
-#if defined(_MSC_VER)
-#endif
-        FD_SET((SOCKET)fd, &ws_errorfds);
-#if defined(_MSC_VER)
-#endif
+      SOCKET s = GET_SOCKET(fd);
+      int optval = 0;
+      int optlen = sizeof(optval);
+      if (s != INVALID_SOCKET && s != 0 &&
+          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+        FD_SET(s, &ws_errorfds);
+        num_sockets++;
       }
     }
-    p_ws_errorfds = &ws_errorfds;
+    if (ws_errorfds.fd_count > 0) {
+      p_ws_errorfds = &ws_errorfds;
+    }
   }
 
+  if (num_sockets > 0) {
 #undef select
-  ret = select(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds, timeout);
+    ret = select(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds,
+                 num_non_sock_ready > 0 ? &zero_tv : timeout);
 #define select posix_select
-  if (ret == SOCKET_ERROR) {
-    errno = EBADF; /* Simplify */
-    return -1;
+    if (ret == SOCKET_ERROR) {
+      if (num_non_sock_ready > 0) {
+        ret = 0;
+      } else {
+        errno = EBADF;
+        return -1;
+      }
+    }
+  } else if (num_non_sock_ready == 0 && timeout != NULL) {
+    Sleep((DWORD)(timeout->tv_sec * 1000 + timeout->tv_usec / 1000));
   }
 
   if (readfds) {
@@ -658,9 +873,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     FD_ZERO(readfds);
     for (i = 0; i < orig.fd_count; i++) {
       intptr_t fd = (intptr_t)orig.fd_array[i];
-      intptr_t handle = safe_get_osfhandle(fd);
-      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-      if (FD_ISSET(s, &ws_readfds)) {
+      SOCKET s = GET_SOCKET(fd);
+      if ((p_ws_readfds && FD_ISSET(s, &ws_readfds)) ||
+          FD_ISSET((SOCKET)fd, &ready_non_sock_r)) {
         FD_SET((SOCKET)fd, readfds);
       }
     }
@@ -671,9 +886,9 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     FD_ZERO(writefds);
     for (i = 0; i < orig.fd_count; i++) {
       intptr_t fd = (intptr_t)orig.fd_array[i];
-      intptr_t handle = safe_get_osfhandle(fd);
-      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-      if (FD_ISSET(s, &ws_writefds)) {
+      SOCKET s = GET_SOCKET(fd);
+      if ((p_ws_writefds && FD_ISSET(s, &ws_writefds)) ||
+          FD_ISSET((SOCKET)fd, &ready_non_sock_w)) {
         FD_SET((SOCKET)fd, writefds);
       }
     }
@@ -684,15 +899,14 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     FD_ZERO(errorfds);
     for (i = 0; i < orig.fd_count; i++) {
       intptr_t fd = (intptr_t)orig.fd_array[i];
-      intptr_t handle = safe_get_osfhandle(fd);
-      SOCKET s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
-      if (FD_ISSET(s, &ws_errorfds)) {
+      SOCKET s = GET_SOCKET(fd);
+      if (p_ws_errorfds && FD_ISSET(s, &ws_errorfds)) {
         FD_SET((SOCKET)fd, errorfds);
       }
     }
   }
 
-  return ret;
+  return ret + num_non_sock_ready;
 #else
   (void)nfds;
   (void)readfds;
@@ -719,17 +933,10 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
   }
 
   copy_nonblock(GET_SOCKET(socket), ret);
-
-  {
-    intptr_t fd = _open_osfhandle((intptr_t)ret, _O_RDWR | _O_BINARY);
-    if (fd == -1) {
-      closesocket(ret);
-      return -1;
-    }
-    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */
-    }
-    return (int)fd;
+  posix_register_crt_socket((intptr_t)ret, (intptr_t)ret);
+  if (mark_as_socket((intptr_t)ret) != ERR_NONE) { /* Ignore */
   }
+  return (int)ret;
 #else
   (void)socket;
   (void)address;
@@ -778,14 +985,41 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
                   posix_socklen_t address_len) {
 #ifdef _WIN32
 #undef connect
+  SOCKET s;
   int ret;
   if (!address) {
     errno = EFAULT;
     return -1;
   }
-  ret = connect(GET_SOCKET(socket), address, address_len);
+  s = GET_SOCKET(socket);
+  ret = connect(s, address, address_len);
+  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAECONNREFUSED &&
+      address->sa_family == AF_INET && !get_nonblock(s)) {
+    const struct sockaddr_in *sin = (const struct sockaddr_in *)address;
+    if (sin->sin_addr.s_addr == htonl(0x7f000001UL) && sin->sin_port != 0) {
+      int attempt;
+      for (attempt = 0; attempt < 60; attempt++) {
+        SOCKET new_s;
+        Sleep(100);
+        new_s = WSASocketW(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
+        if (new_s == INVALID_SOCKET) {
+          break;
+        }
+        closesocket(s);
+        s = new_s;
+        posix_register_crt_socket(socket, (intptr_t)s);
+        ret = connect(s, address, address_len);
+        if (ret == 0 || WSAGetLastError() != WSAECONNREFUSED) {
+          break;
+        }
+      }
+    }
+  }
   if (ret == SOCKET_ERROR) {
     int err = WSAGetLastError();
+    if (err == WSAEISCONN) {
+      return 0;
+    }
     if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY)
       errno = EINPROGRESS;
     else
@@ -1351,29 +1585,15 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
 int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
                         posix_socklen_t address_len, int max_retries,
                         int delay_ms) {
-  int i;
-  int rc;
   if (max_retries <= 0) {
     max_retries = 10;
   }
   if (delay_ms <= 0) {
     delay_ms = 100;
   }
-  rc = -1;
-  for (i = 0; i < max_retries; ++i) {
-    rc = posix_connect(socket, address, address_len);
-    if (rc == 0) {
-      break;
-    }
-#if defined(_WIN32)
-    if (WSAGetLastError() == WSAECONNREFUSED || errno == 111) {
-      Sleep((DWORD)delay_ms);
-      continue;
-    }
-#endif
-    break;
-  }
-  return rc;
+  (void)max_retries;
+  (void)delay_ms;
+  return posix_connect(socket, address, address_len);
 }
 
 /** \brief posix_sendto function. */
@@ -1457,22 +1677,30 @@ int posix_socket(int domain, int type, int protocol) {
   SOCKET s;
   if (domain == AF_UNIX)
     domain = AF_INET;
-  s = WSASocketW(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  s = WSASocketW(domain, type, protocol, NULL, 0, 0);
   if (s == INVALID_SOCKET) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
-    return -1;
-  }
-
-  {
-    intptr_t fd = _open_osfhandle((intptr_t)s, _O_RDWR | _O_BINARY);
-    if (fd == -1) {
-      closesocket(s);
+    if (WSAGetLastError() == WSANOTINITIALISED) {
+      WSADATA wsaData;
+      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
+        s = WSASocketW(domain, type, protocol, NULL, 0, 0);
+      }
+    }
+    if (s == INVALID_SOCKET) {
+      int werr = WSAGetLastError();
+      if (type == SOCK_RAW &&
+          (werr == WSAEINVAL || werr == WSAEPROTONOSUPPORT ||
+           werr == WSAESOCKTNOSUPPORT || werr == WSAEACCES)) {
+        errno = EACCES;
+      } else {
+        errno = _wsaErrorToErrno(werr);
+      }
       return -1;
     }
-    if (mark_as_socket(fd) != ERR_NONE) { /* Ignore */
-    }
-    return (int)fd;
   }
+  posix_register_crt_socket((intptr_t)s, (intptr_t)s);
+  if (mark_as_socket((intptr_t)s) != ERR_NONE) { /* Ignore */
+  }
+  return (int)s;
 #else
   (void)domain;
   (void)type;
@@ -1495,13 +1723,12 @@ int posix_socketpair(int domain, int type, int protocol,
   if (domain != AF_INET && domain != AF_UNSPEC)
     return -1;
 
-  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
   if (listener == INVALID_SOCKET) {
     if (WSAGetLastError() == WSANOTINITIALISED) {
       WSADATA wsaData;
       WSAStartup(MAKEWORD(2, 2), &wsaData);
-      listener =
-          WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+      listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
     }
     if (listener == INVALID_SOCKET)
       return -1;
@@ -1519,7 +1746,7 @@ int posix_socketpair(int domain, int type, int protocol,
   if (listen(listener, 1) == SOCKET_ERROR)
     goto err;
 
-  client = WSASocketW(AF_INET, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+  client = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
   if (client == INVALID_SOCKET)
     goto err;
 
@@ -1552,6 +1779,8 @@ int posix_socketpair(int domain, int type, int protocol,
     }
     socket_vector[0] = (int)fd_server;
     socket_vector[1] = (int)fd_client;
+    posix_register_crt_socket(fd_server, (intptr_t)server);
+    posix_register_crt_socket(fd_client, (intptr_t)client);
     if (mark_as_socket(fd_server) != ERR_NONE) { /* Ignore */
     }
     if (mark_as_socket(fd_client) != ERR_NONE) { /* Ignore */

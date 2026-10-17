@@ -1,5 +1,5 @@
-#ifndef ARPA_INET_H
-#define ARPA_INET_H
+#ifndef AUTO_WIN_MSVC_ARPA_INET_H
+#define AUTO_WIN_MSVC_ARPA_INET_H
 
 /**
  * @file arpa/inet.h
@@ -26,7 +26,7 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* ARPA_INET_H */
+#endif /* AUTO_WIN_MSVC_ARPA_INET_H */
 
 /* API Contract symbols: inet_addr, inet_ntoa, inet_pton, __dependencies__,
  * __include_next__ */

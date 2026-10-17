@@ -32,6 +32,55 @@ auto_win_msvc_error_t posix_dirent_get_info(int *out_available);
 
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32)
 
+/**
+ * @brief Opens a directory stream, supporting virtual /proc iteration on
+ * non-Linux POSIX platforms.
+ * @param[in] name The name of the directory to open.
+ * @return A pointer to the directory stream, or NULL if an error occurred.
+ */
+DIR *posix_opendir(const char *name);
+
+/**
+ * @brief Reads a directory entry, supporting virtual /proc iteration on
+ * non-Linux POSIX platforms.
+ * @param[in,out] dirp The directory stream.
+ * @return A pointer to the next directory entry, or NULL at EOF or error.
+ */
+struct dirent *posix_readdir(DIR *dirp);
+
+/**
+ * @brief Closes a directory stream, supporting virtual /proc iteration on
+ * non-Linux POSIX platforms.
+ * @param[in,out] dirp The directory stream.
+ * @return 0 on success, or -1 on error.
+ */
+int posix_closedir(DIR *dirp);
+
+/**
+ * @brief Resets a directory stream position, supporting virtual /proc
+ * iteration on non-Linux POSIX platforms.
+ * @param[in,out] dirp The directory stream.
+ */
+void posix_rewinddir(DIR *dirp);
+
+#if (defined(__APPLE__) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&           \
+    !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
+#ifndef opendir
+#define opendir posix_opendir
+#endif
+#ifndef readdir
+#define readdir posix_readdir
+#endif
+#ifndef closedir
+#define closedir posix_closedir
+#endif
+#ifndef rewinddir
+#define rewinddir posix_rewinddir
+#endif
+#endif
+#endif
+
 #if defined(__linux__) && !defined(__USE_MISC) && !defined(__USE_XOPEN2K8)
 extern int scandir(const char *dir, struct dirent ***namelist,
                    int (*filter)(const struct dirent *),

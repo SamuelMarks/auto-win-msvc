@@ -23,20 +23,14 @@
 #else
 #include <sys/stat.h>
 #include <unistd.h>
+#if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+#include <sys/sysctl.h>
+#include <time.h>
+#endif
 #endif
 /* clang-format on */
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
-#define safe_get_osfhandle(fd)                                                 \
-  ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)_get_osfhandle((int)(fd)))
-#endif
-
-#define GET_SOCKET(fd)                                                         \
-  ((safe_get_osfhandle(fd) == -1) ? (SOCKET)(fd)                               \
-                                  : (SOCKET)safe_get_osfhandle(fd))
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 static void my_invalid_parameter_handler(const wchar_t *expression,
@@ -49,10 +43,468 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 }
 #endif
 
+#ifndef SAFE_GET_OSFHANDLE
+#define SAFE_GET_OSFHANDLE
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  int saved_err = errno;
+  if (fd < 0 || fd >= 2048) {
+    return -1;
+  }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(my_invalid_parameter_handler);
+    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)_get_osfhandle((int)fd);
+#endif
+  errno = saved_err;
+  if (h == -2) {
+    return -1;
+  }
+  return h;
+}
+#endif
+
+extern int is_socket(intptr_t);
+extern intptr_t posix_get_dup_socket(intptr_t fd);
+extern void posix_set_dup_socket(intptr_t fd, intptr_t s);
+extern intptr_t posix_lookup_crt_socket(intptr_t fd);
+extern void posix_register_crt_socket(intptr_t fd, intptr_t s);
+
+static SOCKET resolve_socket_or_fd(intptr_t fd) {
+  intptr_t s = posix_get_dup_socket(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  s = posix_lookup_crt_socket(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  return (SOCKET)fd;
+}
+
+#define GET_SOCKET(fd) resolve_socket_or_fd(fd)
+
 #undef _read
 #undef _write
 
 /* Removed g_cloned_cwd */
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
+#endif
+
+#if defined(_MSC_VER) && defined(_M_X64) &&                                    \
+    !defined(auto_win_msvc_export_lib_EXPORTS)
+#include <excpt.h>
+EXCEPTION_DISPOSITION __cdecl __C_specific_handler_noexcept(
+    struct _EXCEPTION_RECORD *ExceptionRecord, void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    struct _DISPATCHER_CONTEXT *DispatcherContext) {
+  return __C_specific_handler(ExceptionRecord, EstablisherFrame, ContextRecord,
+                              DispatcherContext);
+}
+void *__imp___C_specific_handler_noexcept =
+    (void *)(size_t)__C_specific_handler_noexcept;
+#pragma comment(linker, "/include:__C_specific_handler_noexcept")
+#pragma comment(linker, "/include:__imp___C_specific_handler_noexcept")
+
+DWORD __cdecl __vcrt_GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename,
+                                        DWORD nSize) {
+  return GetModuleFileNameW(hModule, lpFilename, nSize);
+}
+void *__imp___vcrt_GetModuleFileNameW =
+    (void *)(size_t)__vcrt_GetModuleFileNameW;
+#pragma comment(linker, "/include:__vcrt_GetModuleFileNameW")
+#pragma comment(linker, "/include:__imp___vcrt_GetModuleFileNameW")
+
+HMODULE __cdecl __vcrt_GetModuleHandleW(LPCWSTR lpModuleName) {
+  return GetModuleHandleW(lpModuleName);
+}
+void *__imp___vcrt_GetModuleHandleW = (void *)(size_t)__vcrt_GetModuleHandleW;
+#pragma comment(linker, "/include:__vcrt_GetModuleHandleW")
+#pragma comment(linker, "/include:__imp___vcrt_GetModuleHandleW")
+
+HMODULE __cdecl __vcrt_LoadLibraryExW(LPCWSTR lpLibFileName, HANDLE hFile,
+                                      DWORD dwFlags) {
+  return LoadLibraryExW(lpLibFileName, hFile, dwFlags);
+}
+void *__imp___vcrt_LoadLibraryExW = (void *)(size_t)__vcrt_LoadLibraryExW;
+#pragma comment(linker, "/include:__vcrt_LoadLibraryExW")
+#pragma comment(linker, "/include:__imp___vcrt_LoadLibraryExW")
+#endif
+
+#if defined(_MSC_VER) && defined(_M_X64)
+typedef int(__cdecl *rtc_error_fn_w)(int, const wchar_t *, int, const wchar_t *,
+                                     const wchar_t *, ...);
+rtc_error_fn_w __cdecl _RTC_SetErrorFuncW(rtc_error_fn_w);
+
+static int __cdecl auto_win_rtc_error_handler(int errType,
+                                              const wchar_t *filename, int line,
+                                              const wchar_t *moduleName,
+                                              const wchar_t *format, ...) {
+  (void)errType;
+  (void)filename;
+  (void)line;
+  (void)moduleName;
+  (void)format;
+  return 0;
+}
+#endif
+
+static int g_binary_stdio_init = 0;
+
+/**
+ * @brief Ensures standard streams and default CRT file mode use binary LF mode.
+ */
+static void __cdecl ensure_binary_stdio(void) {
+  if (!g_binary_stdio_init) {
+    int saved_err = errno;
+    WSADATA wsa_data;
+    (void)WSAStartup(MAKEWORD(2, 2), &wsa_data);
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    (void)_set_invalid_parameter_handler(my_invalid_parameter_handler);
+#if defined(_M_X64)
+    (void)_RTC_SetErrorFuncW(auto_win_rtc_error_handler);
+#endif
+#endif
+    g_binary_stdio_init = 1;
+#if defined(_MSC_VER)
+    _set_fmode(_O_BINARY);
+#else
+    _fmode = _O_BINARY;
+#endif
+    if (safe_get_osfhandle(0) != -1) {
+      _setmode(0, _O_BINARY);
+    }
+    if (safe_get_osfhandle(1) != -1) {
+      _setmode(1, _O_BINARY);
+    }
+    if (safe_get_osfhandle(2) != -1) {
+      _setmode(2, _O_BINARY);
+    }
+    errno = saved_err;
+  }
+}
+
+#if defined(_MSC_VER)
+#if defined(auto_win_msvc_export_lib_EXPORTS)
+int __stdcall DllMain(void *hinstDLL, unsigned long fdwReason,
+                      void *lpvReserved) {
+  (void)hinstDLL;
+  (void)lpvReserved;
+  if (fdwReason == 1 /* DLL_PROCESS_ATTACH */) {
+    ensure_binary_stdio();
+  }
+  return 1;
+}
+#else
+#pragma push_macro("read")
+#undef read
+#pragma section(".CRT$XCU", read)
+#pragma pop_macro("read")
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_binary_stdio_ptr)(void) =
+    ensure_binary_stdio;
+#if defined(_WIN64)
+#pragma comment(linker, "/include:__init_binary_stdio_ptr")
+#else
+#pragma comment(linker, "/include:___init_binary_stdio_ptr")
+#endif
+#endif
+#elif defined(__GNUC__) || defined(__clang__)
+__attribute__((constructor)) static void __init_binary_stdio_gcc(void) {
+  ensure_binary_stdio();
+}
+#endif
+
+__declspec(dllimport) unsigned long __stdcall GetTempPathA(
+    unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) unsigned int __stdcall GetTempFileNameA(
+    const char *lpPathName, const char *lpPrefixString, unsigned int uUnique,
+    char *lpTempFileName);
+
+/**
+ * @brief Safely opens a temporary FILE* in the user's temp directory with
+ * delete-on-close semantics.
+ * @return Temporary FILE* or NULL on error.
+ */
+static FILE *safe_tmpfile(void) {
+  char tmp_dir[MAX_PATH];
+  char tmp_file[MAX_PATH];
+  HANDLE h;
+  int fd;
+  FILE *f;
+  DWORD len = GetTempPathA(sizeof(tmp_dir), tmp_dir);
+  if (len == 0 || len >= sizeof(tmp_dir)) {
+#if defined(_MSC_VER)
+    strcpy_s(tmp_dir, sizeof(tmp_dir), ".");
+#else
+    strcpy(tmp_dir, ".");
+#endif
+  }
+  if (!GetTempFileNameA(tmp_dir, "awm", 0, tmp_file)) {
+    return NULL;
+  }
+  h = CreateFileA(tmp_file, GENERIC_READ | GENERIC_WRITE,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                  CREATE_ALWAYS,
+                  FILE_ATTRIBUTE_TEMPORARY |
+                      0x04000000 /* FILE_FLAG_DELETE_ON_CLOSE */,
+                  NULL);
+  if (h == INVALID_HANDLE_VALUE) {
+    return NULL;
+  }
+  fd = _open_osfhandle((intptr_t)h, _O_RDWR | _O_BINARY);
+  if (fd == -1) {
+    CloseHandle(h);
+    return NULL;
+  }
+  f = _fdopen(fd, "w+b");
+  if (!f) {
+    _close(fd);
+    return NULL;
+  }
+  return f;
+}
+
+/**
+ * @brief Generates a synthetic temporary FILE* if pathname matches a virtual
+ * /proc file.
+ * @param[in] pathname Path to check.
+ * @return Temporary FILE* positioned at offset 0, or NULL if not a virtual
+ * /proc file.
+ */
+static FILE *open_virtual_proc_stream(const char *pathname) {
+  const char *sub = pathname;
+  char buf[512];
+  FILE *tmp_f;
+
+  if (!pathname) {
+    return NULL;
+  }
+  if (strncmp(pathname, "/proc/", 6) == 0 ||
+      strncmp(pathname, "\\proc\\", 6) == 0) {
+    sub = pathname + 6;
+  }
+
+  if (strcmp(sub, "meminfo") == 0) {
+    typedef struct _WIN_MEMSTATEX {
+      DWORD dwLength;
+      DWORD dwMemoryLoad;
+      DWORDLONG ullTotalPhys;
+      DWORDLONG ullAvailPhys;
+      DWORDLONG ullTotalPageFile;
+      DWORDLONG ullAvailPageFile;
+      DWORDLONG ullTotalVirtual;
+      DWORDLONG ullAvailVirtual;
+      DWORDLONG ullAvailExtendedVirtual;
+    } WIN_MEMSTATEX;
+    typedef BOOL(WINAPI * PFN_GMS)(WIN_MEMSTATEX *);
+    HMODULE hK32 = GetModuleHandleA("kernel32.dll");
+    PFN_GMS pGMS =
+        hK32 ? (PFN_GMS)(size_t)GetProcAddress(hK32, "GlobalMemoryStatusEx")
+             : NULL;
+    WIN_MEMSTATEX mem;
+    DWORDLONG total_kb = (DWORDLONG)16777216U;
+    DWORDLONG avail_kb = (DWORDLONG)8388608U;
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    memset(&mem, 0, sizeof(mem));
+    mem.dwLength = sizeof(mem);
+    if (pGMS && pGMS(&mem)) {
+      total_kb = mem.ullTotalPhys / (DWORDLONG)1024U;
+      avail_kb = mem.ullAvailPhys / (DWORDLONG)1024U;
+    }
+#if defined(_MSC_VER)
+    sprintf_s(buf, sizeof(buf),
+              "MemTotal: %I64u kB\nMemFree: %I64u kB\nMemAvailable: %I64u "
+              "kB\nBuffers: 0 kB\nCached: 0 kB\nSwapCached: 0 kB\nSwapTotal: "
+              "0 kB\nSwapFree: 0 kB\nShmem: 0 kB\nSReclaimable: 0 kB\n",
+              total_kb, avail_kb, avail_kb);
+#else
+    sprintf(buf,
+            "MemTotal: %lu kB\nMemFree: %lu kB\nMemAvailable: %lu "
+            "kB\nBuffers: 0 kB\nCached: 0 kB\nSwapCached: 0 kB\nSwapTotal: 0 "
+            "kB\nSwapFree: 0 kB\nShmem: 0 kB\nSReclaimable: 0 kB\n",
+            (unsigned long)total_kb, (unsigned long)avail_kb,
+            (unsigned long)avail_kb);
+#endif
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "uptime") == 0) {
+    unsigned long ticks = GetTickCount();
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+#if defined(_MSC_VER)
+    sprintf_s(buf, sizeof(buf), "%lu.%02lu %lu.%02lu\n", ticks / 1000UL,
+              (ticks % 1000UL) / 10UL, ticks / 1000UL, (ticks % 1000UL) / 10UL);
+#else
+    sprintf(buf, "%lu.%02lu %lu.%02lu\n", ticks / 1000UL,
+            (ticks % 1000UL) / 10UL, ticks / 1000UL, (ticks % 1000UL) / 10UL);
+#endif
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "loadavg") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("0.10 0.10 0.10 1/64 1000\n", tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "version") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("Linux version 6.1.0-windows-msvc (msvc@windows) #1 SMP PREEMPT\n",
+          tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "stat") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("cpu  1000 0 500 8000 0 0 0 0 0 0\n"
+          "cpu0 1000 0 500 8000 0 0 0 0 0 0\n"
+          "intr 1000\n"
+          "ctxt 2000\n"
+          "btime 1700000000\n"
+          "processes 128\n"
+          "procs_running 1\n"
+          "procs_blocked 0\n",
+          tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "mounts") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("C:/ / ntfs rw,relatime 0 0\n", tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "filesystems") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("\tntfs\n\tvfat\nnodev\tproc\n", tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "swaps") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n", tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "cpuinfo") == 0) {
+    tmp_f = safe_tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("processor\t: 0\nvendor_id\t: GenuineIntel\nmodel name\t: x86_64 "
+          "CPU\n\n",
+          tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0) {
+    unsigned long pid = (strncmp(sub, "self", 4) == 0)
+                            ? (unsigned long)GetCurrentProcessId()
+                            : strtoul(sub, NULL, 10);
+    const char *slash = strchr(sub, '/');
+    if (!slash) {
+      slash = strchr(sub, '\\');
+    }
+    if (slash) {
+      const char *leaf = slash + 1;
+      if (strcmp(leaf, "stat") == 0) {
+        tmp_f = safe_tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+#if defined(_MSC_VER)
+        sprintf_s(buf, sizeof(buf),
+                  "%lu (busybox) R 1 %lu %lu 0 -1 4194304 100 0 0 0 10 5 0 0 "
+                  "20 0 1 0 100 4096000 1000 18446744073709551615 0 0 0 0 0 0 "
+                  "0 0 0 0 0 0 17 0 0 0 0 0 0\n",
+                  pid, pid, pid);
+#else
+        sprintf(buf,
+                "%lu (busybox) R 1 %lu %lu 0 -1 4194304 100 0 0 0 10 5 0 0 20 "
+                "0 1 0 100 4096000 1000 18446744073709551615 0 0 0 0 0 0 0 0 "
+                "0 0 0 0 17 0 0 0 0 0 0\n",
+                pid, pid, pid);
+#endif
+        fputs(buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+      if (strcmp(leaf, "cmdline") == 0 || strcmp(leaf, "comm") == 0) {
+        tmp_f = safe_tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+        fputs("busybox\n", tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+      if (strcmp(leaf, "status") == 0) {
+        tmp_f = safe_tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+#if defined(_MSC_VER)
+        sprintf_s(buf, sizeof(buf),
+                  "Name:\tbusybox\nState:\tR (running)\nPid:\t%lu\nPPid:\t1\n"
+                  "Uid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\n",
+                  pid);
+#else
+        sprintf(buf,
+                "Name:\tbusybox\nState:\tR (running)\nPid:\t%lu\nPPid:\t1\n"
+                "Uid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\n",
+                pid);
+#endif
+        fputs(buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+    }
+  }
+
+  return NULL;
+}
 
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
@@ -63,63 +515,30 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   intptr_t fd;
   FILE *f;
 
+  char clean_mode[8];
+  int mi = 0;
+  const char *mp;
+
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
   }
 
-  if (strcmp(pathname, "/proc/meminfo") == 0) {
-    char mem_buf[256];
-    FILE *tmp_f = tmpfile();
-    if (tmp_f) {
-      typedef struct _WIN_MEMSTATEX {
-        DWORD dwLength;
-        DWORD dwMemoryLoad;
-        DWORDLONG ullTotalPhys;
-        DWORDLONG ullAvailPhys;
-        DWORDLONG ullTotalPageFile;
-        DWORDLONG ullAvailPageFile;
-        DWORDLONG ullTotalVirtual;
-        DWORDLONG ullAvailVirtual;
-        DWORDLONG ullAvailExtendedVirtual;
-      } WIN_MEMSTATEX;
-      typedef BOOL(WINAPI * PFN_GMS)(WIN_MEMSTATEX *);
-      HMODULE hK32 = GetModuleHandleA("kernel32.dll");
-      PFN_GMS pGMS =
-          hK32 ? (PFN_GMS)(size_t)GetProcAddress(hK32, "GlobalMemoryStatusEx")
-               : NULL;
-      WIN_MEMSTATEX mem;
-      unsigned long long total_kb = 16777216;
-      unsigned long long avail_kb = 8388608;
-      memset(&mem, 0, sizeof(mem));
-      mem.dwLength = sizeof(mem);
-      if (pGMS && pGMS(&mem)) {
-        total_kb = mem.ullTotalPhys / 1024;
-        avail_kb = mem.ullAvailPhys / 1024;
-      }
-#if defined(_MSC_VER)
-#if defined(_MSC_VER)
-      sprintf_s(mem_buf, sizeof(mem_buf),
-#else
-      sprintf(mem_buf,
-#endif
-                "MemTotal: %I64u kB\nMemFree: %I64u kB\nMemAvailable: %I64u "
-                "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
-                total_kb, avail_kb, avail_kb);
-#else
-#if defined(_MSC_VER)
-      sprintf_s(mem_buf, sizeof(mem_buf),
-#else
-      sprintf(mem_buf,
-#endif
-                "MemTotal: %llu kB\nMemFree: %llu kB\nMemAvailable: %llu "
-                "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
-                total_kb, avail_kb, avail_kb);
-#endif
-      fputs(mem_buf, tmp_f);
-      rewind(tmp_f);
-      return tmp_f;
+  for (mp = mode; *mp && mi < 6; mp++) {
+    if (*mp == 'r' || *mp == 'w' || *mp == 'a' || *mp == '+') {
+      clean_mode[mi++] = *mp;
     }
+  }
+  if (mi == 0) {
+    clean_mode[mi++] = 'r';
+  }
+  clean_mode[mi++] = 'b';
+  clean_mode[mi] = '\0';
+  mode = clean_mode;
+
+  f = open_virtual_proc_stream(pathname);
+  if (f != NULL) {
+    return f;
   }
 
   if (strchr(mode, 'r')) {
@@ -208,12 +627,398 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   return f;
 }
 
-/** @brief Open file descriptor with POSIX semantics. */
-int posix_open(const char *pathname, int flags, ...) {
-  if (!pathname) {
+struct posix_socket_stream_entry {
+  FILE *stream;
+  SOCKET sock;
+  int eof_flag;
+  int err_flag;
+};
+
+static struct posix_socket_stream_entry g_socket_streams[64];
+
+static void register_socket_stream(FILE *stream, SOCKET sock) {
+  int i;
+  if (!stream || sock == (SOCKET)-1 || sock == 0) {
+    return;
+  }
+  for (i = 0; i < 64; i++) {
+    if (g_socket_streams[i].stream == stream ||
+        g_socket_streams[i].stream == NULL) {
+      g_socket_streams[i].stream = stream;
+      g_socket_streams[i].sock = sock;
+      g_socket_streams[i].eof_flag = 0;
+      g_socket_streams[i].err_flag = 0;
+      return;
+    }
+  }
+}
+
+static struct posix_socket_stream_entry *
+find_socket_stream_entry(FILE *stream) {
+  int i;
+  if (!stream) {
+    return NULL;
+  }
+  for (i = 0; i < 64; i++) {
+    if (g_socket_streams[i].stream == stream) {
+      return &g_socket_streams[i];
+    }
+  }
+  return NULL;
+}
+
+static void unregister_socket_stream(FILE *stream) {
+  int i;
+  if (!stream) {
+    return;
+  }
+  for (i = 0; i < 64; i++) {
+    if (g_socket_streams[i].stream == stream) {
+      g_socket_streams[i].stream = NULL;
+      g_socket_streams[i].sock = 0;
+      g_socket_streams[i].eof_flag = 0;
+      g_socket_streams[i].err_flag = 0;
+      return;
+    }
+  }
+}
+
+/** @brief Checks if a CRT file descriptor refers to a Winsock socket without
+ * altering errno. */
+static int is_crt_fd_socket(int fd, SOCKET *out_sock) {
+  int saved_err = errno;
+  SOCKET sock = GET_SOCKET(fd);
+  int optval = 0;
+  int optlen = sizeof(optval);
+  if (sock != (SOCKET)-1 && sock != 0 &&
+      getsockopt(sock, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+    errno = saved_err;
+    if (out_sock) {
+      *out_sock = sock;
+    }
+    return 1;
+  }
+  errno = saved_err;
+  return 0;
+}
+
+static int is_stream_socket(FILE *stream, SOCKET *out_sock) {
+  struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
+  int fd;
+  if (ent != NULL) {
+    if (out_sock) {
+      *out_sock = ent->sock;
+    }
+    return 1;
+  }
+  {
+    int saved_err = errno;
+    fd = _fileno(stream);
+    errno = saved_err;
+  }
+  if (fd >= 0 && is_crt_fd_socket(fd, out_sock)) {
+    return 1;
+  }
+  return 0;
+}
+
+#undef fdopen
+/** @brief Associate stream with file descriptor or socket. */
+FILE *posix_fdopen(intptr_t fd, const char *mode) {
+  char clean_mode[8];
+  int mi = 0;
+  const char *mp;
+  int crt_fd = (int)fd;
+  SOCKET sock = 0;
+  int is_sock = 0;
+  FILE *f;
+
+  if (fd < 0 || !mode) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  for (mp = mode; *mp && mi < 6; mp++) {
+    if (*mp == 'r' || *mp == 'w' || *mp == 'a' || *mp == '+') {
+      clean_mode[mi++] = *mp;
+    }
+  }
+  if (mi == 0) {
+    clean_mode[mi++] = 'r';
+  }
+  clean_mode[mi++] = 'b';
+  clean_mode[mi] = '\0';
+
+  if (is_crt_fd_socket((int)fd, &sock)) {
+    is_sock = 1;
+  }
+
+  if (is_sock) {
+    f = safe_tmpfile();
+    if (f != NULL) {
+      register_socket_stream(f, sock);
+      return f;
+    }
+    errno = EBADF;
+    return NULL;
+  }
+
+  if (safe_get_osfhandle(fd) == -1) {
+    int flags = _O_BINARY;
+    if (strchr(clean_mode, '+')) {
+      flags |= _O_RDWR;
+    } else if (strchr(clean_mode, 'w') || strchr(clean_mode, 'a')) {
+      flags |= _O_WRONLY;
+    } else {
+      flags |= _O_RDONLY;
+    }
+    crt_fd = _open_osfhandle(fd, flags);
+    if (crt_fd == -1) {
+      errno = EBADF;
+      return NULL;
+    }
+  }
+  return _fdopen(crt_fd, clean_mode);
+}
+
+#undef fgets
+/** @brief Read a line from stream or socket-backed stream. */
+char *posix_fgets(char *s, int size, FILE *stream) {
+  SOCKET sock;
+  if (!s || size <= 0 || !stream) {
+    return NULL;
+  }
+  if (is_stream_socket(stream, &sock)) {
+    struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
+    int pos = 0;
+    while (pos < size - 1) {
+      char ch;
+      int r = recv(sock, &ch, 1, 0);
+      if (r <= 0) {
+        if (r == 0 && ent != NULL) {
+          ent->eof_flag = 1;
+        } else if (r == SOCKET_ERROR) {
+          int werr = WSAGetLastError();
+          if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
+            errno = EAGAIN;
+          }
+          if (ent != NULL) {
+            ent->err_flag = 1;
+          }
+        }
+        if (pos == 0) {
+          return NULL;
+        }
+        break;
+      }
+      s[pos++] = ch;
+      if (ch == '\n') {
+        break;
+      }
+    }
+    s[pos] = '\0';
+    return s;
+  }
+  return fgets(s, size, stream);
+}
+
+#undef fprintf
+#undef fread
+#undef fwrite
+#undef fgetc
+#undef getc
+#undef fclose
+#undef feof
+#undef ferror
+#undef fileno
+
+/** @brief Test end-of-file indicator on stream or socket-backed stream. */
+int posix_feof(FILE *stream) {
+  struct posix_socket_stream_entry *ent;
+  if (!stream) {
+    return 0;
+  }
+  ent = find_socket_stream_entry(stream);
+  if (ent != NULL) {
+    return ent->eof_flag;
+  }
+  return feof(stream);
+}
+
+/** @brief Test error indicator on stream or socket-backed stream. */
+int posix_ferror(FILE *stream) {
+  struct posix_socket_stream_entry *ent;
+  if (!stream) {
+    return 0;
+  }
+  ent = find_socket_stream_entry(stream);
+  if (ent != NULL) {
+    return ent->err_flag;
+  }
+  return ferror(stream);
+}
+
+/** @brief Return integer file descriptor or socket for stream. */
+int posix_fileno(FILE *stream) {
+  struct posix_socket_stream_entry *ent;
+  if (!stream) {
     errno = EINVAL;
     return -1;
   }
+  ent = find_socket_stream_entry(stream);
+  if (ent != NULL) {
+    return (int)ent->sock;
+  }
+  return _fileno(stream);
+}
+
+/** @brief Close stream or socket-backed stream. */
+int posix_fclose(FILE *stream) {
+  struct posix_socket_stream_entry *ent;
+  if (!stream) {
+    errno = EINVAL;
+    return EOF;
+  }
+  ent = find_socket_stream_entry(stream);
+  if (ent != NULL) {
+    SOCKET s = ent->sock;
+    unregister_socket_stream(stream);
+    shutdown(s, SD_BOTH);
+    closesocket(s);
+  }
+  return fclose(stream);
+}
+
+/** @brief Read a character from stream or socket-backed stream. */
+int posix_fgetc(FILE *stream) {
+  SOCKET sock;
+  if (!stream) {
+    return EOF;
+  }
+  if (is_stream_socket(stream, &sock)) {
+    struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
+    unsigned char ch;
+    int r = recv(sock, (char *)&ch, 1, 0);
+    if (r <= 0) {
+      if (r == 0 && ent != NULL) {
+        ent->eof_flag = 1;
+      } else if (r == SOCKET_ERROR) {
+        int werr = WSAGetLastError();
+        if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
+          errno = EAGAIN;
+        }
+        if (ent != NULL) {
+          ent->err_flag = 1;
+        }
+      }
+      return EOF;
+    }
+    return (int)ch;
+  }
+  return fgetc(stream);
+}
+
+/** @brief Write formatted output to stream or socket-backed stream. */
+int posix_fprintf(FILE *stream, const char *format, ...) {
+  va_list ap;
+  SOCKET sock;
+  int ret;
+  if (!stream || !format) {
+    return -1;
+  }
+  if (is_stream_socket(stream, &sock)) {
+    char *buf = NULL;
+    int len;
+    va_start(ap, format);
+#if defined(_MSC_VER)
+    len = _vscprintf(format, ap);
+#else
+    len = vsnprintf(NULL, 0, format, ap);
+#endif
+    va_end(ap);
+    if (len < 0) {
+      return -1;
+    }
+    buf = (char *)malloc((size_t)len + 1);
+    if (!buf) {
+      return -1;
+    }
+    va_start(ap, format);
+#if defined(_MSC_VER)
+    ret = vsprintf_s(buf, (size_t)len + 1, format, ap);
+#else
+    ret = vsnprintf(buf, (size_t)len + 1, format, ap);
+#endif
+    va_end(ap);
+    if (ret > 0) {
+      ret = send(sock, buf, ret, 0);
+    }
+    free(buf);
+    return ret;
+  }
+  va_start(ap, format);
+  ret = vfprintf(stream, format, ap);
+  va_end(ap);
+  return ret;
+}
+
+/** @brief Read binary data from stream or socket-backed stream. */
+size_t posix_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  SOCKET sock;
+  if (!ptr || size == 0 || nmemb == 0 || !stream) {
+    return 0;
+  }
+  if (is_stream_socket(stream, &sock)) {
+    struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
+    size_t total = size * nmemb;
+    size_t got = 0;
+    while (got < total) {
+      int r = recv(sock, (char *)ptr + got, (int)(total - got), 0);
+      if (r <= 0) {
+        if (r == 0 && ent != NULL) {
+          ent->eof_flag = 1;
+        } else if (r == SOCKET_ERROR) {
+          int werr = WSAGetLastError();
+          if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS ||
+              werr == WSAETIMEDOUT) {
+            if (got == 0) {
+              errno = EAGAIN;
+            }
+          } else if (ent != NULL) {
+            ent->err_flag = 1;
+          }
+        }
+        break;
+      }
+      got += (size_t)r;
+      if (size == 1 && got > 0) {
+        break;
+      }
+    }
+    return got / size;
+  }
+  return fread(ptr, size, nmemb, stream);
+}
+
+/** @brief Write binary data to stream or socket-backed stream. */
+size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  SOCKET sock;
+  if (!ptr || size == 0 || nmemb == 0 || !stream) {
+    return 0;
+  }
+  if (is_stream_socket(stream, &sock)) {
+    size_t total = size * nmemb;
+    int r = send(sock, (const char *)ptr, (int)total, 0);
+    if (r <= 0) {
+      return 0;
+    }
+    return (size_t)r / size;
+  }
+  return fwrite(ptr, size, nmemb, stream);
+}
+
+/** @brief Open file descriptor with POSIX semantics. */
+int posix_open(const char *pathname, int flags, ...) {
   int mode = 0;
   DWORD dwDesiredAccess = 0;
   DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
@@ -222,6 +1027,19 @@ int posix_open(const char *pathname, int flags, ...) {
   HANDLE hFile;
   int fd_flags;
   intptr_t fd;
+  FILE *vproc;
+
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  vproc = open_virtual_proc_stream(pathname);
+  if (vproc != NULL) {
+    int vfd = _dup(_fileno(vproc));
+    fclose(vproc);
+    return vfd;
+  }
 
   if (flags & O_CREAT) {
     va_list ap;
@@ -251,14 +1069,21 @@ int posix_open(const char *pathname, int flags, ...) {
                       dwCreationDisposition, dwFlagsAndAttributes, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {
     DWORD err = GetLastError();
-    if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS)
+    if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS) {
       errno = EEXIST;
-    else if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
+    } else if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
-    else if (err == ERROR_ACCESS_DENIED)
-      errno = EACCES;
-    else
+    } else if (err == ERROR_ACCESS_DENIED) {
+      DWORD attr = GetFileAttributesA(pathname);
+      if (attr != INVALID_FILE_ATTRIBUTES &&
+          (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        errno = EISDIR;
+      } else {
+        errno = EACCES;
+      }
+    } else {
       errno = EINVAL;
+    }
     return -1;
   }
 
@@ -500,13 +1325,40 @@ int posix_close(intptr_t fd) {
   }
   SOCKET s;
   int ret;
-  if (fd >= 100 && fd < 1124) {
-    return posix_epoll_close((int)fd);
+  if (fd >= 100 && fd < 1024) {
+    if (posix_epoll_close((int)fd) == 0) {
+      return 0;
+    }
   }
   s = GET_SOCKET(fd);
   if (clear_nonblock(s) != ERR_NONE) { /* Ignore */
   }
   if (clear_as_socket(fd) != ERR_NONE) { /* Ignore */
+  }
+  if (fd >= 0 && fd < 2048 &&
+      (posix_get_dup_socket(fd) != 0 || posix_lookup_crt_socket(fd) != 0)) {
+    intptr_t sock_h = posix_get_dup_socket(fd);
+    int other_fd;
+    int shared = 0;
+    if (sock_h == 0) {
+      sock_h = posix_lookup_crt_socket(fd);
+    }
+    if (fd < 64) {
+      posix_set_dup_socket(fd, 0);
+    }
+    posix_register_crt_socket(fd, 0);
+    for (other_fd = 0; other_fd < 2048; other_fd++) {
+      if ((other_fd < 64 && posix_get_dup_socket(other_fd) == sock_h) ||
+          posix_lookup_crt_socket(other_fd) == sock_h) {
+        shared = 1;
+        break;
+      }
+    }
+    if (!shared) {
+      shutdown((SOCKET)sock_h, SD_BOTH);
+      closesocket((SOCKET)sock_h);
+    }
+    return 0;
   }
   ret = closesocket(s);
   if (ret == SOCKET_ERROR) {
@@ -538,12 +1390,78 @@ extern int is_socket(intptr_t);
 extern error_type_t mark_as_socket(intptr_t);
 extern error_type_t clear_as_socket(intptr_t);
 
+/** @brief Reposition read/write file offset with POSIX ESPIPE semantics. */
+#if defined(_MSC_VER)
+__int64 posix_lseek(int fd, __int64 offset, int whence) {
+  __int64 res;
+#else
+off_t posix_lseek(int fd, off_t offset, int whence) {
+  off_t res;
+#endif
+  ptrdiff_t h;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  h = safe_get_osfhandle(fd);
+  if (h != -1) {
+    DWORD ftype = GetFileType((HANDLE)h);
+    if (ftype == 3 /* FILE_TYPE_PIPE */ || ftype == 2 /* FILE_TYPE_CHAR */) {
+      errno = ESPIPE;
+      return -1;
+    }
+  }
+#if defined(_MSC_VER)
+  res = _lseeki64(fd, offset, whence);
+#else
+  res = (off_t)_lseek(fd, (long)offset, whence);
+#endif
+  if (res == -1 && errno == EINVAL &&
+      (whence == SEEK_SET || whence == SEEK_CUR || whence == SEEK_END)) {
+    if (h != -1 && GetFileType((HANDLE)h) != 1 /* FILE_TYPE_DISK */) {
+      errno = ESPIPE;
+    }
+  }
+  return res;
+}
+
+/** @brief Duplicate file descriptor with POSIX semantics. */
+int posix_dup(int oldfd) {
+  int ret;
+  if (oldfd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  ret = _dup(oldfd);
+  if (ret != -1 && is_socket(oldfd)) {
+    if (mark_as_socket(ret) != ERR_NONE) {
+    }
+  }
+  return ret;
+}
+
 /** @brief Duplicate file descriptor with POSIX semantics. */
 int posix_dup2(int oldfd, int newfd) {
   int ret;
+  SOCKET sock = 0;
   if (oldfd < 0 || newfd < 0) {
     errno = EBADF;
     return -1;
+  }
+  if (oldfd == newfd) {
+    return newfd;
+  }
+  if (newfd < 64 && (is_socket(oldfd) || is_crt_fd_socket(oldfd, &sock))) {
+    if (sock == 0) {
+      sock = GET_SOCKET(oldfd);
+    }
+    posix_set_dup_socket(newfd, (intptr_t)sock);
+    if (mark_as_socket(newfd) != ERR_NONE) { /* Ignore */
+    }
+    return newfd;
+  }
+  if (newfd < 64) {
+    posix_set_dup_socket(newfd, 0);
   }
   ret = _dup2(oldfd, newfd);
   if (ret != -1) {
@@ -561,8 +1479,9 @@ int posix_dup2(int oldfd, int newfd) {
 
 #else
 
-#if !defined(_WIN32)
 #undef fopen
+#undef open
+
 static int g_mock_fopen_count = 0;
 static FILE *mock_fopen(const char *pathname, const char *mode) {
   if (strcmp(pathname, "/proc/meminfo") == 0) {
@@ -574,10 +1493,173 @@ static FILE *mock_fopen(const char *pathname, const char *mode) {
   return fopen(pathname, mode);
 }
 #define fopen mock_fopen
+
+/**
+ * @brief Generates a synthetic temporary FILE* if pathname matches a virtual
+ * /proc file on non-Linux POSIX systems.
+ * @param[in] pathname Path to check.
+ * @return Temporary FILE* positioned at offset 0, or NULL if not a virtual
+ * /proc file.
+ */
+static FILE *open_virtual_proc_stream_posix(const char *pathname) {
+#if defined(__linux__)
+  (void)pathname;
+  return NULL;
+#else
+  const char *sub = pathname;
+  char buf[512];
+  FILE *tmp_f;
+
+  if (!pathname) {
+    return NULL;
+  }
+  if (strncmp(pathname, "/proc/", 6) == 0) {
+    sub = pathname + 6;
+  } else if (strcmp(pathname, "version") != 0 &&
+             strcmp(pathname, "uptime") != 0 &&
+             strcmp(pathname, "meminfo") != 0 &&
+             strcmp(pathname, "loadavg") != 0 &&
+             strcmp(pathname, "stat") != 0 && strcmp(pathname, "mounts") != 0 &&
+             strcmp(pathname, "filesystems") != 0 &&
+             strcmp(pathname, "swaps") != 0 &&
+             strcmp(pathname, "cpuinfo") != 0) {
+    return NULL;
+  }
+
+  if (strcmp(sub, "meminfo") == 0) {
+    unsigned long total_kb = 16777216UL;
+    unsigned long avail_kb = 8388608UL;
+#if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+    {
+      int mib[2];
+      unsigned long physmem = 0;
+      size_t len = sizeof(physmem);
+      mib[0] = 6;  /* CTL_HW */
+      mib[1] = 24; /* HW_MEMSIZE */
+      if (sysctl(mib, 2, &physmem, &len, NULL, 0) == 0 && physmem > 0) {
+        total_kb = physmem / 1024UL;
+        avail_kb = total_kb / 2UL;
+      }
+    }
 #endif
+    tmp_f = tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    sprintf(buf,
+            "MemTotal: %lu kB\nMemFree: %lu kB\nMemAvailable: %lu kB\n"
+            "Buffers: 0 kB\nCached: 0 kB\nSwapCached: 0 kB\nSwapTotal: 0 kB\n"
+            "SwapFree: 0 kB\nShmem: 0 kB\nSReclaimable: 0 kB\n",
+            total_kb, avail_kb, avail_kb);
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "uptime") == 0) {
+    unsigned long up = 1000UL;
+#if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+    {
+      struct timespec ts;
+      if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0 && ts.tv_sec > 0) {
+        up = (unsigned long)ts.tv_sec;
+      }
+    }
+#endif
+    tmp_f = tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    sprintf(buf, "%lu.00 %lu.00\n", up, up);
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "version") == 0) {
+    tmp_f = tmpfile();
+    if (!tmp_f) {
+      return NULL;
+    }
+    fputs("Linux version 6.1.0-posix-compat #1 SMP PREEMPT\n", tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0) {
+    unsigned long pid = (strncmp(sub, "self", 4) == 0) ? (unsigned long)getpid()
+                                                       : strtoul(sub, NULL, 10);
+    const char *slash = strchr(sub, '/');
+    if (slash) {
+      const char *leaf = slash + 1;
+      char comm[64];
+      unsigned long ppid = 1UL;
+      strcpy(comm, "busybox");
+#if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+      {
+        int mib[4];
+        struct kinfo_proc kp;
+        size_t len = sizeof(kp);
+        mib[0] = CTL_KERN;
+        mib[1] = KERN_PROC;
+        mib[2] = KERN_PROC_PID;
+        mib[3] = (int)pid;
+        if (sysctl(mib, 4, &kp, &len, NULL, 0) == 0 && len > 0 &&
+            kp.kp_proc.p_comm[0] != '\0') {
+          strncpy(comm, kp.kp_proc.p_comm, sizeof(comm) - 1);
+          comm[sizeof(comm) - 1] = '\0';
+          ppid = (unsigned long)kp.kp_eproc.e_ppid;
+        }
+      }
+#endif
+      if (strcmp(leaf, "stat") == 0) {
+        tmp_f = tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+        sprintf(buf,
+                "%lu (%s) R %lu %lu %lu 0 -1 4194304 100 0 0 0 10 5 0 0 "
+                "20 0 1 0 100 4096000 1000 18446744073709551615 0 0 0 0 0 0 "
+                "0 0 0 0 0 0 17 0 0 0 0 0 0\n",
+                pid, comm, ppid, pid, pid);
+        fputs(buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+      if (strcmp(leaf, "cmdline") == 0 || strcmp(leaf, "comm") == 0) {
+        tmp_f = tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+        sprintf(buf, "%s\n", comm);
+        fputs(buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+      if (strcmp(leaf, "status") == 0) {
+        unsigned int uid = (unsigned int)getuid();
+        unsigned int gid = (unsigned int)getgid();
+        tmp_f = tmpfile();
+        if (!tmp_f) {
+          return NULL;
+        }
+        sprintf(buf,
+                "Name:\t%s\nState:\tS (sleeping)\nPid:\t%lu\nPPid:\t%lu\n"
+                "Uid:\t%u\t%u\t%u\t%u\nGid:\t%u\t%u\t%u\t%u\n",
+                comm, pid, ppid, uid, uid, uid, uid, gid, gid, gid, gid);
+        fputs(buf, tmp_f);
+        rewind(tmp_f);
+        return tmp_f;
+      }
+    }
+  }
+  return NULL;
+#endif
+}
 
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
+  FILE *vproc;
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
@@ -587,26 +1669,118 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
     if (f_test) {
       return f_test;
     }
-    {
-      FILE *tmp_f = tmpfile();
-      fputs("MemTotal: 16777216 kB\nMemFree: 8388608 kB\nMemAvailable: 8388608 "
-            "kB\nCached: 0 kB\nSReclaimable: 0 kB\n",
-            tmp_f);
-      rewind(tmp_f);
-      return tmp_f;
-    }
+  }
+  vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    return vproc;
   }
   return fopen(pathname, mode);
+}
+
+/** @brief Associate stream with file descriptor or socket. */
+FILE *posix_fdopen(intptr_t fd, const char *mode) {
+  if (fd < 0 || !mode) {
+    errno = EINVAL;
+    return NULL;
+  }
+  return fdopen((int)fd, mode);
+}
+
+/** @brief Read a line from stream or socket-backed stream. */
+char *posix_fgets(char *s, int size, FILE *stream) {
+  if (!s || size <= 0 || !stream) {
+    return NULL;
+  }
+  return fgets(s, size, stream);
+}
+
+/** @brief Write formatted output to stream or socket-backed stream. */
+int posix_fprintf(FILE *stream, const char *format, ...) {
+  va_list ap;
+  int ret;
+  if (!stream || !format) {
+    return -1;
+  }
+  va_start(ap, format);
+  ret = vfprintf(stream, format, ap);
+  va_end(ap);
+  return ret;
+}
+
+/** @brief Read binary data from stream or socket-backed stream. */
+size_t posix_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  if (!ptr || size == 0 || nmemb == 0 || !stream) {
+    return 0;
+  }
+  return fread(ptr, size, nmemb, stream);
+}
+
+/** @brief Write binary data to stream or socket-backed stream. */
+size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  if (!ptr || size == 0 || nmemb == 0 || !stream) {
+    return 0;
+  }
+  return fwrite(ptr, size, nmemb, stream);
+}
+
+/** @brief Read a character from stream or socket-backed stream. */
+int posix_fgetc(FILE *stream) {
+  if (!stream) {
+    return EOF;
+  }
+  return fgetc(stream);
+}
+
+/** @brief Close stream or socket-backed stream. */
+int posix_fclose(FILE *stream) {
+  if (!stream) {
+    errno = EINVAL;
+    return EOF;
+  }
+  return fclose(stream);
+}
+
+/** @brief Test end-of-file indicator on stream or socket-backed stream. */
+int posix_feof(FILE *stream) {
+  if (!stream) {
+    return 0;
+  }
+  return feof(stream);
+}
+
+/** @brief Test error indicator on stream or socket-backed stream. */
+int posix_ferror(FILE *stream) {
+  if (!stream) {
+    return 0;
+  }
+  return ferror(stream);
+}
+
+/** @brief Return integer file descriptor or socket for stream. */
+int posix_fileno(FILE *stream) {
+  if (!stream) {
+    errno = EINVAL;
+    return -1;
+  }
+  return fileno(stream);
 }
 
 /** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...) {
   va_list ap;
   int mode = 0;
+  FILE *vproc;
 
   if (!pathname) {
     errno = EINVAL;
     return -1;
+  }
+
+  vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    int vfd = dup(fileno(vproc));
+    fclose(vproc);
+    return vfd;
   }
 
   if (flags & O_CREAT) {
@@ -650,6 +1824,24 @@ int posix_close(intptr_t fd) {
     return -1;
   }
   return close((int)fd);
+}
+
+/** @brief Reposition read/write file offset with POSIX ESPIPE semantics. */
+off_t posix_lseek(int fd, off_t offset, int whence) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return lseek(fd, offset, whence);
+}
+
+/** @brief Duplicate file descriptor with POSIX semantics. */
+int posix_dup(int oldfd) {
+  if (oldfd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return dup(oldfd);
 }
 
 /** @brief Duplicate file descriptor with POSIX semantics. */

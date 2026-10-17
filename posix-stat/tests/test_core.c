@@ -3,8 +3,10 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-stat.h"
+#include "sys/sysmacros.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -237,6 +239,9 @@ TEST test_stat_macros(void) {
   lval = (long)AT_SYMLINK_NOFOLLOW;
   ASSERT(lval != 0);
 
+  ASSERT_EQ(8u, (unsigned int)major(makedev(8, 3)));
+  ASSERT_EQ(3u, (unsigned int)minor(makedev(8, 3)));
+
   PASS();
 }
 
@@ -251,6 +256,79 @@ TEST test_stat_basic(void) {
 
   res = stat("nonexistent_stat_test_xyz_12345.tmp", &st);
   ASSERT_EQ(-1, res);
+
+#if defined(_WIN32)
+  res = stat(NULL, &st);
+  ASSERT_EQ(-1, res);
+  res = stat(".", NULL);
+  ASSERT_EQ(-1, res);
+
+  memset(&st, 0, sizeof(st));
+  res = stat("/proc", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+
+  memset(&st, 0, sizeof(st));
+  res = stat("/proc/1", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+
+  memset(&st, 0, sizeof(st));
+  res = stat("/proc/1/stat", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
+
+  memset(&st, 0, sizeof(st));
+  res = stat("version", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
+
+  memset(&st, 0, sizeof(st));
+  res = lstat("/proc", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+#else
+  res = posix_stat(NULL, &st);
+  ASSERT_EQ(-1, res);
+  res = posix_stat(".", NULL);
+  ASSERT_EQ(-1, res);
+  res = posix_stat(".", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+#if !defined(__linux__)
+  res = posix_stat("/proc", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/self", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/self/", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/1", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/1/stat", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
+#endif
+
+  res = posix_lstat(NULL, &st);
+  ASSERT_EQ(-1, res);
+  res = posix_lstat(".", NULL);
+  ASSERT_EQ(-1, res);
+  res = posix_lstat(".", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+#if !defined(__linux__)
+  res = posix_lstat("/proc", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
+#endif
+#endif
 
   PASS();
 }
@@ -334,6 +412,27 @@ TEST test_fstat_and_fchmod(void) {
   ASSERT_EQ(0, res);
   ASSERT(S_ISREG(st.st_mode));
   ASSERT(st.st_size > 0);
+#if defined(_WIN32)
+  {
+    struct posix_stat pst;
+    memset(&pst, 0, sizeof(pst));
+    res = posix_fstat(fd, &pst);
+    ASSERT_EQ(0, res);
+    ASSERT_EQ(4096, pst.st_blksize);
+    ASSERT(pst.st_blocks > 0);
+    ASSERT(pst.st_atim.tv_sec > 0);
+    ASSERT(pst.st_mtim.tv_sec > 0);
+    ASSERT(pst.st_ctim.tv_sec > 0);
+    memset(&pst, 0, sizeof(pst));
+    res = posix_stat("test_stat_file.txt", &pst);
+    ASSERT_EQ(0, res);
+    ASSERT_EQ(4096, pst.st_blksize);
+    ASSERT(pst.st_blocks > 0);
+    ASSERT(pst.st_atim.tv_sec > 0);
+    ASSERT(pst.st_mtim.tv_sec > 0);
+    ASSERT(pst.st_ctim.tv_sec > 0);
+  }
+#endif
 
   res = fchmod(fd, 0644);
   ASSERT_EQ(0, res);
@@ -660,7 +759,7 @@ TEST test_at_directory_fd(void) {
 }
 
 TEST test_at_absolute_paths(void) {
-  char fullpath[512];
+  char fullpath[4096];
   struct stat st;
   int res;
 

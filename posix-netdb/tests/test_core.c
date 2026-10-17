@@ -4,6 +4,7 @@
 #include "greatest.h"
 #include "netdb.h"
 #include "posix-netdb.h"
+#include "resolv.h"
 #include <stdio.h>
 /* clang-format on */
 
@@ -76,6 +77,23 @@ TEST test_posix_netdb_gai_strerror(void) {
 
   err = gai_strerror(EAI_SYSTEM);
   ASSERT_STR_EQ("System error", err);
+
+  ASSERT_STR_EQ("Resolver Error 0 (no error)", posix_hstrerror(0));
+  ASSERT_STR_EQ("Unknown host", posix_hstrerror(1));
+  ASSERT_STR_EQ("Host name lookup failure", posix_hstrerror(2));
+  ASSERT_STR_EQ("Unknown server error", posix_hstrerror(3));
+  ASSERT_STR_EQ("No address associated with name", posix_hstrerror(4));
+  ASSERT_STR_EQ("Unknown resolver error", posix_hstrerror(999));
+
+  posix_herror(NULL);
+  posix_herror("");
+  posix_herror("test_herror");
+
+#if defined(_WIN32)
+  ASSERT_EQ(0, res_init());
+  _res.options = 1UL;
+  ASSERT_EQ(1UL, _res.options);
+#endif
 
   PASS();
 }
