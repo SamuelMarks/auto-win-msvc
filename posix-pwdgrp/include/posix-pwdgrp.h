@@ -48,8 +48,11 @@ typedef unsigned int uid_t;
 typedef unsigned int gid_t;
 #endif
 
+#ifndef _POSIX_PWDGRP_PASSWD_DEFINED
+#define _POSIX_PWDGRP_PASSWD_DEFINED
 #ifndef _STRUCT_PASSWD_DEFINED
 #define _STRUCT_PASSWD_DEFINED
+#endif
 /**
  * @struct passwd
  * @brief Structure containing user account information.
@@ -66,8 +69,11 @@ struct passwd {
 };
 #endif
 
+#ifndef _POSIX_PWDGRP_GROUP_DEFINED
+#define _POSIX_PWDGRP_GROUP_DEFINED
 #ifndef _STRUCT_GROUP_DEFINED
 #define _STRUCT_GROUP_DEFINED
+#endif
 /**
  * @struct group
  * @brief Structure containing group account information.

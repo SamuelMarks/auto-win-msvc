@@ -68,6 +68,18 @@ int ffsll(posix_strings_llong i) {
   return 0;
 }
 
+#elif defined(_WIN32) && (defined(__GNUC__) || defined(__clang__))
+
+/** @brief Finds the first (least significant) bit set in an integer. */
+int ffs(int i) { return __builtin_ffs(i); }
+
+/** @brief Finds the first (least significant) bit set in a long integer. */
+int ffsl(long i) { return __builtin_ffsl(i); }
+
+/** @brief Finds the first (least significant) bit set in a long long integer.
+ */
+int ffsll(posix_strings_llong i) { return __builtin_ffsll(i); }
+
 #endif /* _MSC_VER */
 
 /**
@@ -216,6 +228,14 @@ char *stpncpy(char *dest, const char *src, size_t n) {
 
 #undef memrchr
 void *memrchr(const void *s, int c, size_t n) { return posix_memrchr(s, c, n); }
+
+#undef strsignal
+char *strsignal(int sig) { return posix_strsignal(sig); }
+
+#undef strtok_r
+char *strtok_r(char *str, const char *delim, char **saveptr) {
+  return strtok_s(str, delim, saveptr);
+}
 #endif
 
 typedef int make_iso_compilers_happy_tu_posix_strings;

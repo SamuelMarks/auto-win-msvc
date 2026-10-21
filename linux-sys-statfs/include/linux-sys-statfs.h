@@ -62,6 +62,17 @@ struct statfs {
   long f_spare[4];
 };
 
+#if defined(_MSC_VER)
+typedef unsigned __int64 linux_fsblkcnt_t;
+typedef unsigned __int64 linux_fsfilcnt_t;
+#elif defined(__GNUC__) || defined(__clang__)
+__extension__ typedef unsigned long long linux_fsblkcnt_t;
+__extension__ typedef unsigned long long linux_fsfilcnt_t;
+#else
+typedef unsigned long linux_fsblkcnt_t;
+typedef unsigned long linux_fsfilcnt_t;
+#endif
+
 /**
  * @brief Structure representing POSIX virtual file system statistics.
  */
@@ -71,17 +82,17 @@ struct statvfs {
   /** @brief Fundamental file system block size. */
   unsigned long f_frsize;
   /** @brief Total number of blocks on file system in units of f_frsize. */
-  unsigned long long f_blocks;
+  linux_fsblkcnt_t f_blocks;
   /** @brief Total number of free blocks. */
-  unsigned long long f_bfree;
+  linux_fsblkcnt_t f_bfree;
   /** @brief Number of free blocks available to unprivileged process. */
-  unsigned long long f_bavail;
+  linux_fsblkcnt_t f_bavail;
   /** @brief Total number of file serial numbers. */
-  unsigned long long f_files;
+  linux_fsfilcnt_t f_files;
   /** @brief Total number of free file serial numbers. */
-  unsigned long long f_ffree;
+  linux_fsfilcnt_t f_ffree;
   /** @brief Number of file serial numbers available to unprivileged process. */
-  unsigned long long f_favail;
+  linux_fsfilcnt_t f_favail;
   /** @brief File system ID. */
   unsigned long f_fsid;
   /** @brief Bit mask of f_flag values. */

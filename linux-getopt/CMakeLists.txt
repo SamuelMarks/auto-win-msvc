@@ -91,6 +91,9 @@ endif()
 
 
 add_library(linux-getopt src/linux-getopt.c)
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(linux-getopt PUBLIC LINUX_GETOPT_SHARED=1)
+endif()
 set_target_properties(linux-getopt PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
 target_include_directories(linux-getopt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 

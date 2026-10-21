@@ -89,8 +89,9 @@ struct timespec {
 typedef unsigned long sigset_t;
 #endif
 
-#ifndef _PID_T_DEFINED
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_)
 #define _PID_T_DEFINED
+#define _PID_T_
 typedef int pid_t;
 #endif
 

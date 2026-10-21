@@ -1047,6 +1047,7 @@ int posix_open(const char *pathname, int flags, ...) {
     mode = va_arg(ap, int);
     va_end(ap);
   }
+  (void)mode;
 
   if ((flags & 3) == O_RDONLY)
     dwDesiredAccess = GENERIC_READ;
@@ -1319,12 +1320,12 @@ extern error_type_t clear_nonblock(SOCKET s);
 extern error_type_t clear_as_socket(intptr_t fd);
 extern int posix_epoll_close(intptr_t);
 int posix_close(intptr_t fd) {
+  SOCKET s;
+  int ret;
   if (fd < 0) {
     errno = EBADF;
     return -1;
   }
-  SOCKET s;
-  int ret;
   if (fd >= 100 && fd < 1024) {
     if (posix_epoll_close((int)fd) == 0) {
       return 0;

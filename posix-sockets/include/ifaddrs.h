@@ -50,22 +50,12 @@ struct ifaddrs {
  * @param[out] ifap Pointer receiving the head of the interface list.
  * @return 0 on success, or -1 on error.
  */
-#if defined(POSIX_SOCKETS_EXPORTS)
-__declspec(dllexport)
-#else
-__declspec(dllimport)
-#endif
 int posix_getifaddrs(struct ifaddrs **ifap);
 
 /**
  * @brief Frees the memory allocated by getifaddrs().
  * @param[in] ifa Head of the interface list to free.
  */
-#if defined(POSIX_SOCKETS_EXPORTS)
-__declspec(dllexport)
-#else
-__declspec(dllimport)
-#endif
 void posix_freeifaddrs(struct ifaddrs *ifa);
 
 #ifdef __cplusplus

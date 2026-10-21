@@ -92,18 +92,30 @@ TEST test_posix_ioctl_operations(void) {
 }
 
 TEST test_posix_ioctl_constants(void) {
-  ASSERT_NEQ(0, TIOCGWINSZ);
-  ASSERT_NEQ(0, TIOCSWINSZ);
-  ASSERT_NEQ(0, TIOCNOTTY);
-  ASSERT_NEQ(0, FIONREAD);
-  ASSERT_NEQ(0, FIONBIO);
+  volatile unsigned long v;
+
+  v = (unsigned long)TIOCGWINSZ;
+  ASSERT_NEQ(0UL, v);
+  v = (unsigned long)TIOCSWINSZ;
+  ASSERT_NEQ(0UL, v);
+  v = (unsigned long)TIOCNOTTY;
+  ASSERT_NEQ(0UL, v);
+  v = (unsigned long)FIONREAD;
+  ASSERT_NEQ(0UL, v);
+  v = (unsigned long)FIONBIO;
+  ASSERT_NEQ(0UL, v);
 
 #if defined(_WIN32) || defined(_MSC_VER)
-  ASSERT_EQ(0x5413, TIOCGWINSZ);
-  ASSERT_EQ(0x5414, TIOCSWINSZ);
-  ASSERT_EQ(0x5422, TIOCNOTTY);
-  ASSERT_EQ(0x4004667fUL, FIONREAD);
-  ASSERT_EQ(0x8004667eUL, FIONBIO);
+  v = (unsigned long)TIOCGWINSZ;
+  ASSERT_EQ(0x5413UL, v);
+  v = (unsigned long)TIOCSWINSZ;
+  ASSERT_EQ(0x5414UL, v);
+  v = (unsigned long)TIOCNOTTY;
+  ASSERT_EQ(0x5422UL, v);
+  v = (unsigned long)FIONREAD;
+  ASSERT_EQ(0x4004667fUL, v);
+  v = (unsigned long)FIONBIO;
+  ASSERT_EQ(0x8004667eUL, v);
 #endif
 
   PASS();

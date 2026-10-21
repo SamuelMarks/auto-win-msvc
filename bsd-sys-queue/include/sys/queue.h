@@ -5,10 +5,10 @@
 #if defined(__GNUC__) || defined(__clang__)
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
 #pragma GCC system_header
 #include_next <sys/queue.h>
-#else
+#elif !defined(_WIN32)
 #include <sys/queue.h>
 #endif
 

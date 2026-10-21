@@ -198,10 +198,12 @@ def transform_source_content(content: str) -> str:
         + "#define get_unaligned_be32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_BE32(v); })",
         NL.join(
             [
-                "static ALWAYS_INLINE uint32_t bb_get_unaligned_le32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_LE32(v); }",
-                "static ALWAYS_INLINE uint32_t bb_get_unaligned_be32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_BE32(v); }",
-                "#define get_unaligned_le32(buf) bb_get_unaligned_le32(buf)",
-                "#define get_unaligned_be32(buf) bb_get_unaligned_be32(buf)",
+                "static ALWAYS_INLINE uint32_t awm_bb_get_unaligned_le32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_LE32(v); }",
+                "static ALWAYS_INLINE uint32_t awm_bb_get_unaligned_be32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_BE32(v); }",
+                "#undef get_unaligned_le32",
+                "#undef get_unaligned_be32",
+                "#define get_unaligned_le32(buf) awm_bb_get_unaligned_le32(buf)",
+                "#define get_unaligned_be32(buf) awm_bb_get_unaligned_be32(buf)",
             ]
         ),
     )
@@ -280,11 +282,52 @@ def transform_source_content(content: str) -> str:
         ),
         xvfork_repl,
     )
+    if "sigjmp_buf" in content and "typedef jmp_buf sigjmp_buf;" not in content:
+        content = (
+            NL.join(
+                [
+                    "#if defined(_WIN32)",
+                    "#include <setjmp.h>",
+                    "#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))",
+                    "static __inline int awm_clear_jmp_frame(_JBTYPE *env, int rc) { ((unsigned __int64 *)env)[0] = 0; return rc; }",
+                    "#undef setjmp",
+                    "#define setjmp(env) awm_clear_jmp_frame((env), _setjmp(env))",
+                    "#endif",
+                    "#ifndef _SIGJMP_BUF_DEFINED",
+                    "#define _SIGJMP_BUF_DEFINED",
+                    "typedef jmp_buf sigjmp_buf;",
+                    "#endif",
+                    "#ifndef sigsetjmp",
+                    "#define sigsetjmp(env, savesigs) setjmp(env)",
+                    "#endif",
+                    "#ifndef siglongjmp",
+                    "#define siglongjmp(env, val) longjmp((env), (val))",
+                    "#endif",
+                    "#endif",
+                    "",
+                ]
+            )
+            + content
+        )
     content = content.replace(
         "static __inline pid_t bb_libbb_xvfork(void) {",
         "void bb_simple_perror_msg_and_die(const char *s) NORETURN FAST_FUNC;"
         + NL
         + "static __inline pid_t bb_libbb_xvfork(void) {",
+    )
+    content = content.replace(
+        "#ifndef BB_GLOBAL_CONST" + NL + "# define BB_GLOBAL_CONST const" + NL + "#endif",
+        NL.join(
+            [
+                "#ifndef BB_GLOBAL_CONST",
+                "# if defined(_MSC_VER) || defined(_WIN32) || defined(__clang__)",
+                "#  define BB_GLOBAL_CONST",
+                "# else",
+                "#  define BB_GLOBAL_CONST const",
+                "# endif",
+                "#endif",
+            ]
+        ),
     )
     content = content.replace(
         '#define barrier() asm volatile ("":::"memory")',
@@ -317,7 +360,16 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "void xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen) FAST_FUNC;",
-        "void xconnect(int s, const struct sockaddr *sa_addr, socklen_t addrlen) FAST_FUNC;",
+        NL.join(
+            [
+                "void xconnect(int s, const struct sockaddr *sa_addr, socklen_t addrlen) FAST_FUNC;",
+                "#if defined(_WIN32)",
+                "#undef s_addr",
+                "#define s_addr S_un.S_addr",
+                "#endif",
+                '#include "auto-win-msvc-configure.h"',
+            ]
+        ),
     )
     content = content.replace(
         "void FAST_FUNC xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen)",
@@ -411,7 +463,13 @@ def transform_source_content(content: str) -> str:
         "#if defined(_WIN32) || defined(_MSC_VER)"
         + NL
         + TAB
-        + "const char *cp = auto_win_msvc_strrchr_slash(name);"
+        + "const char *cp_s1 = strrchr(name, '/');"
+        + NL
+        + TAB
+        + "const char *cp_s2 = strrchr(name, '\\\\');"
+        + NL
+        + TAB
+        + "const char *cp = (cp_s1 && cp_s2) ? (cp_s1 > cp_s2 ? cp_s1 : cp_s2) : (cp_s1 ? cp_s1 : cp_s2);"
         + NL
         + "#else"
         + NL
@@ -425,7 +483,13 @@ def transform_source_content(content: str) -> str:
         "#if defined(_WIN32) || defined(_MSC_VER)"
         + NL
         + TAB
-        + "const char *slash = auto_win_msvc_strrchr_slash(path);"
+        + "const char *sl_s1 = strrchr(path, '/');"
+        + NL
+        + TAB
+        + "const char *sl_s2 = strrchr(path, '\\\\');"
+        + NL
+        + TAB
+        + "const char *slash = (sl_s1 && sl_s2) ? (sl_s1 > sl_s2 ? sl_s1 : sl_s2) : (sl_s1 ? sl_s1 : sl_s2);"
         + NL
         + "#else"
         + NL
@@ -522,7 +586,7 @@ def transform_source_content(content: str) -> str:
         + "{",
         "#else"
         + NL
-        + "#if defined(_WIN32)"
+        + "#if defined(_WIN32) && SEAMLESS_COMPRESSION"
         + NL
         + "static transformer_state_t *setup_transformer_on_fd(int fd, int die_if_not_compressed);"
         + NL
@@ -546,7 +610,7 @@ def transform_source_content(content: str) -> str:
         + "int tmp_fd;"
         + NL
         + TAB
-        + "transformer_state_t *xs;"
+        + "transformer_state_t *xs = NULL;"
         + NL
         + TAB
         + "sprintf(tmp_name, \".bb_xfm_%u_%u.tmp\", (unsigned int)getpid(), ++s_seq);"
@@ -557,8 +621,12 @@ def transform_source_content(content: str) -> str:
         + TAB
         + "if (tmp_fd < 0) bb_simple_perror_msg_and_die(\"open tmp\");"
         + NL
+        + "#if SEAMLESS_COMPRESSION"
+        + NL
         + TAB
         + "xs = setup_transformer_on_fd(fd, 0);"
+        + NL
+        + "#endif"
         + NL
         + TAB
         + "if (xs && xs->xformer) {"

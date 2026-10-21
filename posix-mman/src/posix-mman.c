@@ -306,12 +306,13 @@ int mlock(const void *addr, size_t len) {
  * mlockall - lock all process address space
  */
 int mlockall(int flags) {
-  if (flags) {
-    /* parameters checked */
-  }
   WIN_SYSTEM_INFO si;
   WIN_LPVOID addr = 0;
   WIN_MEMORY_BASIC_INFORMATION mbi;
+
+  if (flags) {
+    /* parameters checked */
+  }
 
   if (flags & ~(1 | 2)) {
     errno = EINVAL;
@@ -394,8 +395,8 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
   }
 
   if (flags & MAP_ANONYMOUS) {
-    dwDesiredAccess |= WIN_FILE_MAP_EXECUTE;
     posix_mman_uint64_t len64 = (posix_mman_uint64_t)length;
+    dwDesiredAccess |= WIN_FILE_MAP_EXECUTE;
     dwMaximumSizeHigh = (WIN_DWORD)((len64 >> 32) & 0xFFFFFFFF);
     dwMaximumSizeLow = (WIN_DWORD)(len64 & 0xFFFFFFFF);
     hMap = CreateFileMappingA(WIN_INVALID_HANDLE_VALUE, NULL,
@@ -620,12 +621,13 @@ static error_type_t generate_shm_path(const char *name, char *file_path,
  * shm_open - open a shared memory object
  */
 int shm_open(const char *name, int oflag, mode_t mode) {
-  if (mode) {
-    /* parameters checked */
-  }
   char file_path[WIN_MAX_PATH];
   int fd;
   error_type_t rc;
+
+  if (mode) {
+    /* parameters checked */
+  }
 
   rc = generate_shm_path(name, file_path, WIN_MAX_PATH);
   if (rc != ERR_NONE) {
@@ -855,8 +857,7 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   sprintf_s(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
             (unsigned int)rand());
 #else
-  snprintf(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
-           (unsigned int)rand());
+  sprintf(temp_file, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)rand());
 #endif
   oflags = O_RDWR | O_CREAT | O_EXCL;
 #ifdef O_CLOEXEC

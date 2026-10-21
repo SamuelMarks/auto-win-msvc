@@ -53,19 +53,19 @@ auto_win_msvc_error_t posix_arpa_inet_parse_ipv4(const char *cp,
 /**
  * @brief Converts IPv4 numbers-and-dots notation into binary form in network
  * byte order.
- * @param addr_str The input IP address string.
+ * @param cp The input IP address string.
  * @param[out] inp Pointer to struct in_addr where the result is stored.
  * @return 1 if the address is valid, or 0 if invalid.
  */
-int posix_inet_aton(const char *addr_str, struct in_addr *inp);
+int posix_inet_aton(const char *cp, struct in_addr *inp);
 
 /**
  * @brief Converts IPv4 numbers-and-dots notation into binary data in network
  * byte order.
- * @param addr_str The input IP address string.
+ * @param cp The input IP address string.
  * @return The IP address in network byte order, or INADDR_NONE if invalid.
  */
-unsigned long posix_inet_addr(const char *addr_str);
+unsigned long posix_inet_addr(const char *cp);
 
 #if defined(_MSC_VER) || defined(_WIN32)
 #undef inet_aton

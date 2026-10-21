@@ -233,9 +233,10 @@ TEST test_clock_settime(void) {
   res = clock_settime(9999, &ts);
   ASSERT_EQ(-1, res);
 
-  /* Valid clock_id but unsupported (EPERM) */
+  /* Populate current time so privileged runners do not jump clock to 1970 */
+  clock_gettime(CLOCK_REALTIME, &ts);
   res = clock_settime(CLOCK_REALTIME, &ts);
-  ASSERT_EQ(-1, res);
+  ASSERT(res == -1 || res == 0);
 
   PASS();
 }

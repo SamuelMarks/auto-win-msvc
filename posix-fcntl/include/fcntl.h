@@ -12,6 +12,9 @@
 #else
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/fcntl.h>
+#elif defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#include_next <fcntl.h>
 #else
 /* Fallback, could cause include loop if -I is used instead of -isystem */
 #include <fcntl.h>

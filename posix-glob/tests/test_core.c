@@ -35,7 +35,7 @@ void *posix_glob_mock_realloc(void *ptr, size_t size) {
 }
 
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(POSIX_GLOB_SHARED)
 __declspec(dllimport) extern void *(*posix_glob_mock_malloc_ptr)(size_t);
 __declspec(dllimport) extern void *(*posix_glob_mock_realloc_ptr)(void *, size_t);
 #else

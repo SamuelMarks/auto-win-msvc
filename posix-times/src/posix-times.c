@@ -47,8 +47,8 @@ clock_t posix_times(struct tms *buf) {
       unsigned __int64 u = ((unsigned __int64)user_time.dwHighDateTime << 32) |
                            user_time.dwLowDateTime;
 
-      buf->tms_stime = (clock_t)(k / 10000ULL);
-      buf->tms_utime = (clock_t)(u / 10000ULL);
+      buf->tms_stime = (clock_t)(k / 10000UL);
+      buf->tms_utime = (clock_t)(u / 10000UL);
       buf->tms_cstime = 0;
       buf->tms_cutime = 0;
     } else {

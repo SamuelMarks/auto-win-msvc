@@ -83,6 +83,7 @@ TEST test_crypt(void) {
   char *c;
 
   c = crypt("key", "salt");
+  (void)c;
 
 #endif
   PASS();

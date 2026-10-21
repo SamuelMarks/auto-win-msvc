@@ -294,6 +294,9 @@ TEST test_posix_signal_sigaction(void) {
   struct sigaction oldsa;
   int res;
 
+  memset(&sa, 0, sizeof(sa));
+  memset(&oldsa, 0, sizeof(oldsa));
+
 #if defined(_WIN32) || defined(_MSC_VER)
   res = sigaction(0, &sa, NULL);
   ASSERT_EQ(-1, res);

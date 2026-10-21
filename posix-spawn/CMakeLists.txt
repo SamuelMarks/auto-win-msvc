@@ -82,6 +82,9 @@ add_library(posix-spawn src/posix-spawn.c)
 set_target_properties(posix-spawn PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(posix-spawn PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 target_compile_definitions(posix-spawn PUBLIC POSIX_SPAWN_MOCK_MALLOC=1)
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(posix-spawn PUBLIC POSIX_SPAWN_SHARED=1)
+endif()
 
 enable_testing()
 

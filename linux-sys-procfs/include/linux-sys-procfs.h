@@ -16,8 +16,9 @@ extern "C" {
 #endif
 
 #if !defined(__linux__)
-#ifndef _STRUCT_SYSINFO_DEFINED
+#if !defined(_STRUCT_SYSINFO_DEFINED) && !defined(_SYSINFO_DEFINED)
 #define _STRUCT_SYSINFO_DEFINED 1
+#define _SYSINFO_DEFINED 1
 
 /**
  * @brief Linux-compatible system statistics structure for non-Linux targets.

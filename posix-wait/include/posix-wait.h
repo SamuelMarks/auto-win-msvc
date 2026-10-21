@@ -44,8 +44,9 @@ auto_win_msvc_error_t posix_wait_get_info(int *out_available);
 /**
  * @brief PID type definition for Windows.
  */
-#ifndef _PID_T_DEFINED
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
 #define _PID_T_DEFINED
+#define _PID_T_
 typedef int pid_t;
 #endif
 
@@ -157,6 +158,23 @@ int posix_wait_kill(pid_t pid, int sig);
 #endif
 
 #else /* !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__) */
+
+#ifdef __CYGWIN__
+#ifndef _IDTYPE_T_DECLARED
+#define _IDTYPE_T_DECLARED
+typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
+#endif
+#ifndef WEXITED
+#define WEXITED 4
+#endif
+#ifndef WSTOPPED
+#define WSTOPPED 2
+#endif
+#ifndef WNOWAIT
+#define WNOWAIT 0x01000000
+#endif
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
+#endif
 
 /**
  * @brief Sends a signal to a process using native kill.

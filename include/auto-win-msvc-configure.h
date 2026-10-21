@@ -391,7 +391,7 @@ static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_addr.S_un.S_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port = 0;
 
     if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {

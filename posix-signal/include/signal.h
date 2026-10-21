@@ -23,6 +23,9 @@
 #else
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/signal.h>
+#elif defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#include_next <signal.h>
 #else
 #include <signal.h>
 #endif

@@ -25,6 +25,11 @@ TEST test_shm_comprehensive(void) {
 
   /* Create shared memory segment */
   shmid = shmget(IPC_PRIVATE, 4096, IPC_CREAT | 0666);
+#ifdef __CYGWIN__
+  if (shmid == -1) {
+    SKIP();
+  }
+#endif
   ASSERT_NEQ(-1, shmid);
 
   /* Attach */

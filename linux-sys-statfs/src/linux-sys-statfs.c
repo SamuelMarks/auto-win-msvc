@@ -154,9 +154,9 @@ int statvfs(const char *path, struct statvfs *buf) {
                           &totalNumberOfFreeBytes)) {
     buf->f_bsize = 4096;
     buf->f_frsize = 4096;
-    buf->f_blocks = (unsigned long long)(totalNumberOfBytes.QuadPart / 4096);
-    buf->f_bfree = (unsigned long long)(totalNumberOfFreeBytes.QuadPart / 4096);
-    buf->f_bavail = (unsigned long long)(freeBytesAvailable.QuadPart / 4096);
+    buf->f_blocks = (linux_fsblkcnt_t)(totalNumberOfBytes.QuadPart / 4096);
+    buf->f_bfree = (linux_fsblkcnt_t)(totalNumberOfFreeBytes.QuadPart / 4096);
+    buf->f_bavail = (linux_fsblkcnt_t)(freeBytesAvailable.QuadPart / 4096);
     buf->f_files = 0;
     buf->f_ffree = 0;
     buf->f_favail = 0;

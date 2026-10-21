@@ -460,19 +460,22 @@ void *_InterlockedCompareExchangePointer(void *volatile *, void *, void *);
 void *_InterlockedExchangePointer(void *volatile *, void *);
 #pragma intrinsic(_InterlockedCompareExchangePointer)
 #pragma intrinsic(_InterlockedExchangePointer)
-#define POSIX_CAS_PTR(dst, val, cmp) _InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) _InterlockedExchangePointer((void *volatile *)(dst), (val))
+#define POSIX_CAS_PTR(dst, val, cmp) _InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) _InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
 #else
 __declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
 __declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
-#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(dst), (val))
+#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
 #endif
+#elif defined(__GNUC__) || defined(__clang__)
+#define POSIX_CAS_PTR(dst, val, cmp) __sync_val_compare_and_swap((void *volatile *)(void *)(dst), (cmp), (val))
+#define POSIX_EXCHANGE_PTR(dst, val) (void)__sync_lock_test_and_set((void *volatile *)(void *)(dst), (val))
 #else
 __declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
 __declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
-#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(dst), (val))
+#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
 #endif
 
 typedef long(WINAPI *PFN_SetThreadDescription)(void *, const wchar_t *);
@@ -1257,11 +1260,11 @@ int pthread_cond_signal(pthread_cond_t *cond) {
 
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *abstime) {
+#if defined(_WIN32)
+  unsigned long timeout_ms;
   if (abstime) {
     /* parameters checked */
   }
-#if defined(_WIN32)
-  unsigned long timeout_ms;
   if (!cond || !mutex || !abstime)
     return 0;
   /* basic conversion, not exact abstime semantic */
@@ -2044,9 +2047,6 @@ int pthread_setschedprio(pthread_t thread, int prio) {
 
 /** \brief pthread_setname_np function. */
 int pthread_setname_np(pthread_t thread, const char *name) {
-  if (name) {
-    /* parameters checked */
-  }
 #if defined(_WIN32)
   wchar_t wname[256];
 #if defined(_MSC_VER)
@@ -2054,6 +2054,9 @@ int pthread_setname_np(pthread_t thread, const char *name) {
 #endif
   void *hThread;
   unsigned long threadId;
+  if (name) {
+    /* parameters checked */
+  }
   if (!thread || !name)
     return EINVAL;
 

@@ -568,6 +568,8 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
 #ifdef _WIN32
   static struct servent s_se;
   static char *s_aliases[1] = {NULL};
+  static char s_name_buf[64];
+  static char s_proto_buf[16];
   if (name != NULL) {
     unsigned short p = 0;
     if (strcmp(name, "http") == 0) {
@@ -588,10 +590,21 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
       p = 123;
     }
     if (p != 0) {
-      s_se.s_name = (char *)name;
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+      strncpy_s(s_name_buf, sizeof(s_name_buf), name, _TRUNCATE);
+      strncpy_s(s_proto_buf, sizeof(s_proto_buf), proto != NULL ? proto : "tcp",
+                _TRUNCATE);
+#else
+      strncpy(s_name_buf, name, sizeof(s_name_buf) - 1);
+      s_name_buf[sizeof(s_name_buf) - 1] = '\0';
+      strncpy(s_proto_buf, proto != NULL ? proto : "tcp",
+              sizeof(s_proto_buf) - 1);
+      s_proto_buf[sizeof(s_proto_buf) - 1] = '\0';
+#endif
+      s_se.s_name = s_name_buf;
       s_se.s_aliases = s_aliases;
       s_se.s_port = htons(p);
-      s_se.s_proto = (char *)(proto != NULL ? proto : "tcp");
+      s_se.s_proto = s_proto_buf;
       return &s_se;
     }
   }
@@ -1406,7 +1419,7 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
     errno = EINVAL;
     return -1;
   }
-  if (socket < 0) {
+  if (s == (uintptr_t)-1) {
     errno = EBADF;
     return -1;
   }
@@ -1495,7 +1508,7 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
     errno = EINVAL;
     return -1;
   }
-  if (socket < 0) {
+  if (s == (uintptr_t)-1) {
     errno = EBADF;
     return -1;
   }

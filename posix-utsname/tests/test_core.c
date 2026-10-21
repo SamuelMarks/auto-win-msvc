@@ -13,7 +13,7 @@ static int mock_uname(struct utsname *name) {
   if (uname_fail_mock) {
     return -1;
   }
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
   return uname(name);
 #else
   strcpy(name->sysname, "MockOS");
@@ -56,7 +56,7 @@ TEST test_uname(void) {
   int res;
   memset(&name, 0, sizeof(name));
   res = uname(&name);
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
   ASSERT_EQ(0, res);
   ASSERT(strlen(name.sysname) > 0);
   ASSERT(strlen(name.nodename) > 0);

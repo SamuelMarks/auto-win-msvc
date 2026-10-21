@@ -64,7 +64,8 @@ extern "C" {
 auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 
 #if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC) &&           \
-    !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC)
+    !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC) &&              \
+    !defined(_SYS__TIMESPEC_H_) && !defined(__CYGWIN__)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* VS2015+ provides struct timespec in time.h */
 #else
@@ -308,6 +309,13 @@ typedef long blksize_t;
 #define _BLKCNT_T_DEFINED
 /** @brief Block count type. */
 typedef long blkcnt_t;
+#endif
+
+#ifdef st_blocks
+#undef st_blocks
+#endif
+#ifdef st_blksize
+#undef st_blksize
 #endif
 
 /**

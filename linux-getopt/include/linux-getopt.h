@@ -83,7 +83,7 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
 #endif
 
 /** @brief Global optarg for linux_getopt. */
-#if defined(_WIN32) || defined(_MSC_VER)
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
 #if defined(LINUX_GETOPT_EXPORTS)
 __declspec(dllexport)
 #else
@@ -93,7 +93,7 @@ __declspec(dllimport)
 extern char *linux_optarg;
 
 /** @brief Global optind for linux_getopt. */
-#if defined(_WIN32) || defined(_MSC_VER)
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
 #if defined(LINUX_GETOPT_EXPORTS)
 __declspec(dllexport)
 #else
@@ -103,7 +103,7 @@ __declspec(dllimport)
 extern int linux_optind;
 
 /** @brief Global opterr for linux_getopt. */
-#if defined(_WIN32) || defined(_MSC_VER)
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
 #if defined(LINUX_GETOPT_EXPORTS)
 __declspec(dllexport)
 #else
@@ -113,7 +113,7 @@ __declspec(dllimport)
 extern int linux_opterr;
 
 /** @brief Global optopt for linux_getopt. */
-#if defined(_WIN32) || defined(_MSC_VER)
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
 #if defined(LINUX_GETOPT_EXPORTS)
 __declspec(dllexport)
 #else

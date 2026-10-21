@@ -821,7 +821,7 @@ int openat(int dirfd, const char *pathname, int flags, ...);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fadvise */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #else
 /* posix_fadvise */
@@ -830,7 +830,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fallocate */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #else
 /* posix_fallocate */
@@ -1028,7 +1028,11 @@ extern POSIX_CORE_DECL int optopt;
 /** @brief Parse command-line options. */
 POSIX_CORE_DECL int getopt(int argc, char *const argv[], const char *optstring);
 #elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(_MSC_VER)
-/* getopt provided by environment */
+extern char *optarg;
+extern int optind;
+extern int opterr;
+extern int optopt;
+int getopt(int argc, char *const argv[], const char *optstring);
 #else
 /* getopt */
 #endif

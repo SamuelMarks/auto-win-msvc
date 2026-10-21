@@ -15,8 +15,6 @@
 #include <time.h>
 
 #if defined(__MINGW32__)
-#include <winsock2.h>
-#include <ws2tcpip.h>
 /* MinGW natively provides these types, so we prevent redefining them. */
 #define _PID_T_DEFINED
 #define _SSIZE_T_DEFINED
@@ -26,7 +24,6 @@
 #define _USECONDS_T_DEFINED
 #define _DEV_T_DEFINED
 #define _INO_T_DEFINED
-#define _SOCKLEN_T_DEFINED
 #define _CLOCK_T_DEFINED
 #define _TIME_T_DEFINED
 #define _CLOCKID_T_DEFINED
@@ -40,8 +37,7 @@
 #endif
 
 #if defined(__MINGW32__)
-#include <winsock2.h>
-#include <ws2tcpip.h>
+/* MinGW types handled above */
 #elif !defined(__MSDOS__) && !defined(__WATCOMC__)
 #include <sys/socket.h>
 #endif
@@ -137,7 +133,7 @@ typedef unsigned char uchar;
  */
 #ifndef _OFF_T_DEFINED
 #define _OFF_T_DEFINED
-typedef long long off_t;
+POSIX_TYPES_EXTENSION typedef long long off_t;
 #endif
 
 /**
@@ -161,11 +157,11 @@ typedef __int64 quad_t;
  */
 typedef unsigned __int64 u_quad_t;
 #else
-typedef long long quad_t;
+POSIX_TYPES_EXTENSION typedef long long quad_t;
 /**
  * @brief 64-bit unsigned quad integer type.
  */
-typedef unsigned long long u_quad_t;
+POSIX_TYPES_EXTENSION typedef unsigned long long u_quad_t;
 #endif
 #endif
 
@@ -334,26 +330,29 @@ typedef long blkcnt_t;
 #else /* !_WIN32 */
 
 #if !defined(__useconds_t_defined) && !defined(_USECONDS_T_DEFINED) &&         \
-    !defined(_USECONDS_T)
+    !defined(_USECONDS_T) && !defined(_USECONDS_T_DECLARED) &&                 \
+    !defined(__CYGWIN__)
 #define _USECONDS_T_DEFINED
-#define _USECONDS_T 1
-#define __useconds_t_defined 1
+#define _USECONDS_T
+#define __useconds_t_defined
 typedef unsigned int useconds_t;
 #endif
 
 #if !defined(__suseconds_t_defined) && !defined(_SUSECONDS_T_DEFINED) &&       \
-    !defined(_SUSECONDS_T)
+    !defined(_SUSECONDS_T) && !defined(_SUSECONDS_T_DECLARED) &&               \
+    !defined(__CYGWIN__)
 #define _SUSECONDS_T_DEFINED
-#define _SUSECONDS_T 1
-#define __suseconds_t_defined 1
+#define _SUSECONDS_T
+#define __suseconds_t_defined
 typedef long suseconds_t;
 #endif
 
 #if !defined(__blksize_t_defined) && !defined(_BLKSIZE_T_DEFINED) &&           \
-    !defined(_BLKSIZE_T)
+    !defined(_BLKSIZE_T) && !defined(_BLKSIZE_T_DECLARED) &&                   \
+    !defined(__CYGWIN__)
 #define _BLKSIZE_T_DEFINED
-#define _BLKSIZE_T 1
-#define __blksize_t_defined 1
+#define _BLKSIZE_T
+#define __blksize_t_defined
 typedef long blksize_t;
 #endif
 

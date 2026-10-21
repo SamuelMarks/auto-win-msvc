@@ -7,14 +7,10 @@
 #include <stdio.h>
 /* clang-format on */
 
-#if defined(_MSC_VER) || 1
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(BSD_SYS_SYSCTL_SHARED)
 __declspec(dllimport)
 #endif
 extern int g_mock_sysconf_fail;
-#else
-extern int g_mock_sysconf_fail;
-#endif
 
 TEST test_bsd_sys_sysctl_init(void) {
   auto_win_msvc_error_t rc;

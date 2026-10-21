@@ -79,11 +79,8 @@ jobs:
 
       - name: Checkout busybox
         if: matrix.project == 'busybox'
-        uses: actions/checkout@master
-        with:
-          repository: mirror/busybox
-          ref: master
-          path: busybox-windows/busybox
+        run: |
+          git clone --depth 1 https://git.busybox.net/busybox busybox-windows/busybox || git clone --depth 1 https://github.com/mirror/busybox.git busybox-windows/busybox
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1

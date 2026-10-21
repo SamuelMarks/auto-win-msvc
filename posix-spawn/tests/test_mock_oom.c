@@ -4,7 +4,7 @@
 #include <stdlib.h>
 /* clang-format on */
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(POSIX_SPAWN_SHARED)
 __declspec(dllimport)
 #endif
 extern void *(*posix_spawn_mock_malloc_ptr)(size_t);

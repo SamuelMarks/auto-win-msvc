@@ -46,11 +46,7 @@ TEST test_posix_poll_args(void) {
   ASSERT_EQ(0, res);
 
   /* fds with invalid fd (-1) */
-#if defined(_WIN32) || defined(_MSC_VER)
-  pfd.fd = (SOCKET)INVALID_SOCKET;
-#else
   pfd.fd = -1;
-#endif
   pfd.events = POLLIN | POLLOUT | POLLPRI;
   pfd.revents = 0;
   res = posix_poll(&pfd, 1, 10);
@@ -91,6 +87,9 @@ TEST test_posix_ppoll(void) {
   int res;
   struct timespec ts;
   sigset_t sigmask;
+#if defined(_WIN32) || defined(_MSC_VER)
+  WSADATA wsa;
+#endif
 #if defined(_WIN32)
   sigmask = 0;
 #else
@@ -98,12 +97,9 @@ TEST test_posix_ppoll(void) {
 #endif
 
 #if defined(_WIN32) || defined(_MSC_VER)
-  WSADATA wsa;
   WSAStartup(MAKEWORD(2, 2), &wsa);
-  pfd.fd = (SOCKET)INVALID_SOCKET;
-#else
-  pfd.fd = -1;
 #endif
+  pfd.fd = -1;
 
   pfd.events = POLLIN;
   pfd.revents = 0;

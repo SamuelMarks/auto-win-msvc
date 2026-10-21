@@ -56,7 +56,7 @@ TEST test_posix_sendmsg(void) {
 }
 
 TEST test_posix_sendto(void) {
-  char buf[1];
+  char buf[1] = {0};
   struct sockaddr sa = {0};
   posix_ssize_t r = posix_sendto(-1, buf, 1, 1, &sa, 1);
   ASSERT_EQ(-1, r);

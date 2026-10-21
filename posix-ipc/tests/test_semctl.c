@@ -15,6 +15,11 @@ TEST test_sem_set(void) {
 
   /* Create semaphore set */
   semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0666);
+#ifdef __CYGWIN__
+  if (semid == -1) {
+    SKIP();
+  }
+#endif
   ASSERT_NEQ(-1, semid);
 
   /* Set value */

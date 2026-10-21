@@ -5,6 +5,14 @@
 #ifndef NAMESPACE_WIN_SHIM_H
 #define NAMESPACE_WIN_SHIM_H
 #endif
+#if !defined(_WIN32) && !defined(_MSC_VER)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <posix-poll.h>

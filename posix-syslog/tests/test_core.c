@@ -3,6 +3,7 @@
 /* clang-format off */
 #include "greatest.h"
 #include "posix-syslog.h"
+#include <stdarg.h>
 #include <stdio.h>
 /* clang-format on */
 
@@ -119,6 +120,10 @@ int ReportEventA(void *hEventLog, unsigned short wType,
   (void)lpRawData;
   return 1;
 }
+#if (defined(DEFINED_MSC_VER_FOR_TEST) || !defined(_MSC_VER)) &&               \
+    !defined(vsnprintf) && !defined(__APPLE__)
+extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+#endif
 #define _vsnprintf vsnprintf
 
 static void *mock_malloc(size_t size) {

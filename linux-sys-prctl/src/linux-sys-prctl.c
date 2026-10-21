@@ -49,12 +49,23 @@ typedef struct _PROCESS_BASIC_INFORMATION {
   ULONG_PTR InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION;
 
+#if defined(_MSC_VER)
+typedef __int64 prctl_i64;
+typedef unsigned __int64 prctl_u64;
+#elif defined(__GNUC__) || defined(__clang__)
+__extension__ typedef long long prctl_i64;
+__extension__ typedef unsigned long long prctl_u64;
+#else
+typedef long prctl_i64;
+typedef unsigned long prctl_u64;
+#endif
+
 typedef union _LARGE_INTEGER {
   struct {
     DWORD LowPart;
     long HighPart;
   } u;
-  long long QuadPart;
+  prctl_i64 QuadPart;
 } LARGE_INTEGER;
 
 typedef struct _JOBOBJECT_BASIC_LIMIT_INFORMATION {
@@ -70,12 +81,12 @@ typedef struct _JOBOBJECT_BASIC_LIMIT_INFORMATION {
 } JOBOBJECT_BASIC_LIMIT_INFORMATION;
 
 typedef struct _IO_COUNTERS {
-  unsigned long long ReadOperationCount;
-  unsigned long long WriteOperationCount;
-  unsigned long long OtherOperationCount;
-  unsigned long long ReadTransferCount;
-  unsigned long long WriteTransferCount;
-  unsigned long long OtherTransferCount;
+  prctl_u64 ReadOperationCount;
+  prctl_u64 WriteOperationCount;
+  prctl_u64 OtherOperationCount;
+  prctl_u64 ReadTransferCount;
+  prctl_u64 WriteTransferCount;
+  prctl_u64 OtherTransferCount;
 } IO_COUNTERS;
 
 typedef struct _JOBOBJECT_EXTENDED_LIMIT_INFORMATION {

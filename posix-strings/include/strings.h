@@ -18,6 +18,10 @@
 #include <strings.h>
 #endif
 #else
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#include_next <strings.h>
+#endif
 #include "posix-strings.h"
 #endif
 /* clang-format on */

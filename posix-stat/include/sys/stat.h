@@ -21,6 +21,7 @@
 #include "posix-stat.h"
 #endif
 #else
+#if !defined(POSIX_STAT_H)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #define stat _crt_orig_stat
 #define fstat _crt_orig_fstat
@@ -39,7 +40,22 @@
 #else
 #include <sys/stat.h>
 #endif
+#endif /* !POSIX_STAT_H */
+
 #include "posix-stat.h"
+
+#if (defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)) &&     \
+    !defined(AUTO_WIN_MSVC_NO_STAT_MACROS)
+#ifndef stat
+#define stat posix_stat
+#endif
+#ifndef fstat
+#define fstat posix_fstat
+#endif
+#ifndef lstat
+#define lstat posix_lstat
+#endif
+#endif
 #endif
 /* clang-format on */
 

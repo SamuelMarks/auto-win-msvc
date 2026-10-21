@@ -24,6 +24,11 @@ TEST test_msg_queue(void) {
 
   /* Create private queue */
   msqid = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
+#ifdef __CYGWIN__
+  if (msqid == -1) {
+    SKIP();
+  }
+#endif
   ASSERT_NEQ(-1, msqid);
 
   /* Status */

@@ -816,7 +816,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   }
   return 0;
 }
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 /** \brief posix_fadvise function. */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (fd < 0) {
@@ -880,7 +880,7 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
 
   return 0;
 }
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 /** \brief posix_fallocate function. */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   if (fd < 0) {
@@ -2912,6 +2912,7 @@ int setenv(const char *name, const char *value, int overwrite) {
     return _putenv_s(name, value != NULL ? value : "");
   }
 #else
+  (void)value;
   if (!overwrite && getenv(name) != NULL) {
     return 0;
   }
@@ -2934,7 +2935,9 @@ int unsetenv(const char *name) {
 
 /** \brief clearenv function. */
 int clearenv(void) {
+#if !defined(_WIN32) && !defined(environ)
   extern char **environ;
+#endif
   if (environ != NULL) {
     environ[0] = NULL;
   }

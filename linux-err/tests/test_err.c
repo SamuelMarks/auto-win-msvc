@@ -158,17 +158,15 @@ static void call_my_vwarnx(const char *fmt, ...) {
 }
 
 static void call_my_verr(int eval, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    my_verr(eval, fmt, ap);
-    va_end(ap);
+  va_list ap;
+  va_start(ap, fmt);
+  my_verr(eval, fmt, ap);
 }
 
 static void call_my_verrx(int eval, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    my_verrx(eval, fmt, ap);
-    va_end(ap);
+  va_list ap;
+  va_start(ap, fmt);
+  my_verrx(eval, fmt, ap);
 }
 
 TEST test_vwarn(void) {
