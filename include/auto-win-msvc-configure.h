@@ -46,12 +46,6 @@
 #define __builtin_unreachable() __assume(0)
 #endif
 #if !defined(__clang__)
-#ifndef ALWAYS_INLINE
-#define ALWAYS_INLINE __forceinline
-#endif
-#ifndef NOINLINE
-#define NOINLINE __declspec(noinline)
-#endif
 #ifndef FAST_FUNC
 #define FAST_FUNC
 #endif
@@ -60,18 +54,6 @@
 #endif
 #ifndef MAIN_EXTERNALLY_VISIBLE
 #define MAIN_EXTERNALLY_VISIBLE
-#endif
-#ifndef ALIGN1
-#define ALIGN1
-#endif
-#ifndef ALIGN2
-#define ALIGN2
-#endif
-#ifndef ALIGN4
-#define ALIGN4
-#endif
-#ifndef ALIGN_SUFFIX
-#define ALIGN_SUFFIX
 #endif
 #ifndef VISIBILITY_HIDDEN
 #define VISIBILITY_HIDDEN

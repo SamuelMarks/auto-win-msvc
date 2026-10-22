@@ -1385,7 +1385,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   free(buf);
   return -1;
 }
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 /** \brief fexecve function fallback. */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   if (fd < 0 || !argv || !envp) {

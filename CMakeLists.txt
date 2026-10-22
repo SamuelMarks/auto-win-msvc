@@ -44,6 +44,32 @@ if(MSVC)
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /MANIFEST:NO /INCREMENTAL:NO")
             string(REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
             string(REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
+            file(WRITE "${CMAKE_BINARY_DIR}/wine_retry.sh"
+"#!/bin/sh
+out=\"\"
+for arg in \"\$@\"; do
+  case \"\$arg\" in
+    [-/]Fo*) out=\"\${arg#???}\" ;;
+  esac
+done
+attempt=0
+while [ \$attempt -lt 5 ]; do
+  \"\$@\"
+  rc=\$?
+  if [ \$rc -eq 0 ]; then
+    if [ -z \"\$out\" ] || [ -f \"\$out\" ]; then
+      exit 0
+    fi
+    rc=1
+  fi
+  attempt=\$((attempt + 1))
+  sleep 1
+done
+exit \$rc
+")
+            file(CHMOD "${CMAKE_BINARY_DIR}/wine_retry.sh" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "/bin/sh \"${CMAKE_BINARY_DIR}/wine_retry.sh\"")
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "/bin/sh \"${CMAKE_BINARY_DIR}/wine_retry.sh\"")
         endif()
     else()
         add_compile_options(/W4 /WX /FS)
@@ -67,6 +93,9 @@ if(BUILD_SHARED_LIBS)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
+if(DEFINED CDD_CHARSET AND CDD_CHARSET STREQUAL "UNICODE")
+    set(AUTO_WIN_MSVC_UNICODE ON CACHE BOOL "Build with UNICODE and _UNICODE defined" FORCE)
+endif()
 option(AUTO_WIN_MSVC_UNICODE "Build with UNICODE and _UNICODE defined" OFF)
 if(AUTO_WIN_MSVC_UNICODE)
     add_compile_definitions(UNICODE _UNICODE)
@@ -121,6 +150,9 @@ if(MSVC)
     endif()
 endif()
 
+if(DEFINED CDD_MSVC_RTC AND NOT CDD_MSVC_RTC STREQUAL "OFF")
+    set(AUTO_WIN_MSVC_RTC "${CDD_MSVC_RTC}" CACHE STRING "Runtime Checks (Default, RTC1, RTCs, RTCu)" FORCE)
+endif()
 set(AUTO_WIN_MSVC_RTC "Default" CACHE STRING "Runtime Checks (Default, RTC1, RTCs, RTCu)")
 set_property(CACHE AUTO_WIN_MSVC_RTC PROPERTY STRINGS "Default" "RTC1" "RTCs" "RTCu")
 if(MSVC AND NOT AUTO_WIN_MSVC_RTC STREQUAL "Default")
@@ -136,6 +168,9 @@ if(MSVC AND NOT AUTO_WIN_MSVC_RTC STREQUAL "Default")
 endif()
 
 # Threading option
+if(DEFINED CDD_THREADING AND NOT CDD_THREADING)
+    set(AUTO_WIN_MSVC_SINGLE_THREADED ON CACHE BOOL "Build single-threaded (no thread safety/CRT threading)" FORCE)
+endif()
 option(AUTO_WIN_MSVC_SINGLE_THREADED "Build single-threaded (no thread safety/CRT threading)" OFF)
 if(MSVC AND AUTO_WIN_MSVC_SINGLE_THREADED)
     # Note: Modern MSVC no longer supports the /ML (single-threaded) CRT natively.

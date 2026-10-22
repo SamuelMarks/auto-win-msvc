@@ -828,6 +828,23 @@ int shm_unlink(const char *name) {
 
 #if defined(__CYGWIN__)
 
+/**
+ * \brief Lock all pages mapped into the address space of the calling process.
+ * \param flags Options for page locking.
+ * \return 0 on success, -1 on failure.
+ */
+int mlockall(int flags) {
+  if (flags == 0 || (flags & ~(MCL_CURRENT | MCL_FUTURE))) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/**
+ * \brief Unlock all pages mapped into the address space of the calling process.
+ * \return 0 on success, -1 on failure.
+ */
 int munlockall(void) { return 0; }
 
 #endif

@@ -479,6 +479,22 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
   return -1;
 }
 
+#elif defined(__CYGWIN__)
+#undef clock_settime
+/**
+ * @brief Sets the time of the specified clock with POSIX tv_nsec validation.
+ * @param clk_id The clock to set.
+ * @param tp A pointer to a timespec structure containing the new time.
+ * @return 0 on success, -1 on error.
+ */
+int posix_cygwin_clock_settime(clockid_t clk_id, const struct timespec *tp) {
+  if (tp == NULL || tp->tv_nsec < 0 || tp->tv_nsec >= 1000000000L) {
+    errno = EINVAL;
+    return -1;
+  }
+  return clock_settime(clk_id, tp);
+}
+
 #endif /* _WIN32 */
 
 /**

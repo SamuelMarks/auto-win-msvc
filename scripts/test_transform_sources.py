@@ -87,6 +87,7 @@ class TestTransformSources(unittest.TestCase):
                 "#define get_le32(u32p) ({ uint32_t v = *(bb__aliased_uint32_t*)(u32p); SWAP_LE32(v); })",
                 "#define isspace(a) ({ unsigned char bb__isspace = (a) - 9; bb__isspace == (' ' - 9) || bb__isspace <= (13 - 9); })",
                 '#define barrier() asm volatile ("":::"memory")',
+                "void bb_die(const char *s) NORETURN FAST_FUNC;",
                 tab + "TRUE, FALSE",
                 tab + "PIPE_BUF = 4096,",
                 "#if BUILD_AS_NOMMU",
@@ -99,6 +100,7 @@ class TestTransformSources(unittest.TestCase):
         self.assertIn("bb_get_le32", res)
         self.assertIn("bb_ascii_isspace", res)
         self.assertIn("_ReadWriteBarrier", res)
+        self.assertIn("NORETURN void bb_die(const char *s) FAST_FUNC;", res)
         self.assertIn("#undef TRUE", res)
         self.assertIn("#undef PIPE_BUF", res)
         self.assertIn("#if BUILD_AS_NOMMU || defined(_WIN32)", res)

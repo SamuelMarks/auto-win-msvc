@@ -535,7 +535,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + TAB
         + TAB
-        + "extern unsigned long __stdcall GetModuleFileNameA(void *, char *, unsigned long);"
+        + "/* GetModuleFileNameA declared via windows headers */"
         + NL
         + TAB
         + TAB
@@ -1062,10 +1062,6 @@ def transform_source_content(content: str) -> str:
         + "#endif",
     )
     content = content.replace(
-        "bb_perror_nomsg_and_die();" + NL + "}",
-        "bb_perror_nomsg_and_die();" + NL + TAB + "return 0;" + NL + "}",
-    )
-    content = content.replace(
         "#else" + NL + "void sed_free_and_close_stuff(void);" + NL + "#endif",
         "#else"
         + NL
@@ -1143,6 +1139,300 @@ def transform_source_content(content: str) -> str:
         "#if defined(__clang_major__) && __clang_major__ >= 9",
         "#if defined(__clang_major__) && __clang_major__ >= 9 && !defined(_MSC_VER)",
     )
+    content = content.replace(
+        "#define NORETURN __attribute__ ((__noreturn__))",
+        "#ifdef _MSC_VER"
+        + NL
+        + "# define NORETURN __declspec(noreturn)"
+        + NL
+        + "#else"
+        + NL
+        + "# define NORETURN __attribute__ ((__noreturn__))"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+        "NORETURN void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+    )
+    content = content.replace(
+        "void bb_perror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+        "NORETURN void bb_perror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+    )
+    content = content.replace(
+        "void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+        "NORETURN void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;",
+    )
+    content = content.replace(
+        "#define OC_B   OC_BUILTIN" + NL + "#define OC_F   OC_FBLTIN",
+        "#define OC_B   ((int)OC_BUILTIN)" + NL + "#define OC_F   ((int)OC_FBLTIN)",
+    )
+    content = content.replace(
+        "#define xstrtou(rest) xstrtoull##rest"
+        + NL
+        + "#define xstrto(rest) xstrtoll##rest"
+        + NL
+        + "#define xatou(rest) xatoull##rest"
+        + NL
+        + "#define xato(rest) xatoll##rest",
+        "#define xstrtou(rest) xstrtoull##rest"
+        + NL
+        + "#define xstrtou_plain xstrtoull"
+        + NL
+        + "#define xstrto(rest) xstrtoll##rest"
+        + NL
+        + "#define xstrto_plain xstrtoll"
+        + NL
+        + "#define xatou(rest) xatoull##rest"
+        + NL
+        + "#define xatou_plain xatoull"
+        + NL
+        + "#define xato(rest) xatoll##rest"
+        + NL
+        + "#define xato_plain xatoll",
+    )
+    content = content.replace(
+        "#define xstrtou(rest) xstrtoul##rest"
+        + NL
+        + "#define xstrto(rest) xstrtol##rest"
+        + NL
+        + "#define xatou(rest) xatoul##rest"
+        + NL
+        + "#define xato(rest) xatol##rest",
+        "#define xstrtou(rest) xstrtoul##rest"
+        + NL
+        + "#define xstrtou_plain xstrtoul"
+        + NL
+        + "#define xstrto(rest) xstrtol##rest"
+        + NL
+        + "#define xstrto_plain xstrtol"
+        + NL
+        + "#define xatou(rest) xatoul##rest"
+        + NL
+        + "#define xatou_plain xatoul"
+        + NL
+        + "#define xato(rest) xatol##rest"
+        + NL
+        + "#define xato_plain xatol",
+    )
+    content = content.replace(
+        "#define xstrtou(rest) xstrtou##rest"
+        + NL
+        + "#define xstrto(rest) xstrtoi##rest"
+        + NL
+        + "#define xatou(rest) xatou##rest"
+        + NL
+        + "#define xato(rest) xatoi##rest",
+        "#define xstrtou(rest) xstrtou##rest"
+        + NL
+        + "#define xstrtou_plain xstrtou"
+        + NL
+        + "#define xstrto(rest) xstrtoi##rest"
+        + NL
+        + "#define xstrto_plain xstrtoi"
+        + NL
+        + "#define xatou(rest) xatou##rest"
+        + NL
+        + "#define xatou_plain xatou"
+        + NL
+        + "#define xato(rest) xatoi##rest"
+        + NL
+        + "#define xato_plain xatoi",
+    )
+    content = content.replace(
+        "unsigned type FAST_FUNC xstrtou()(const char *numstr, int base)",
+        "unsigned type FAST_FUNC xstrtou_plain(const char *numstr, int base)",
+    )
+    content = content.replace(
+        "unsigned type FAST_FUNC xatou()(const char *numstr)",
+        "unsigned type FAST_FUNC xatou_plain(const char *numstr)",
+    )
+    content = content.replace(
+        "type FAST_FUNC xstrto()(const char *numstr, int base)",
+        "type FAST_FUNC xstrto_plain(const char *numstr, int base)",
+    )
+    content = content.replace(
+        "type FAST_FUNC xato()(const char *numstr)",
+        "type FAST_FUNC xato_plain(const char *numstr)",
+    )
+    content = content.replace(
+        "#undef xato" + NL,
+        "#undef xato"
+        + NL
+        + "#undef xstrtou_plain"
+        + NL
+        + "#undef xstrto_plain"
+        + NL
+        + "#undef xatou_plain"
+        + NL
+        + "#undef xato_plain"
+        + NL,
+    )
+    content = content.replace(
+        "static void abort_unzip(STATE_PARAM_ONLY) NORETURN;"
+        + NL
+        + "static void abort_unzip(STATE_PARAM_ONLY)",
+        "static NORETURN void abort_unzip(STATE_PARAM_ONLY)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "huft_free_all(PASS_STATE_ONLY);"
+        + NL
+        + TAB
+        + "longjmp(error_jmp, 1);"
+        + NL
+        + "}"
+        + NL
+        + "#if 0",
+    )
+    content = content.replace(
+        "#if 0"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "huft_free_all(PASS_STATE_ONLY);"
+        + NL
+        + TAB
+        + "longjmp(error_jmp, 1);"
+        + NL
+        + "}",
+        "",
+    )
+    content = re.sub(
+        r"(^[ \t]*)((?:(?:extern|static|inline|ALWAYS_INLINE|NOINLINE|FAST_FUNC)\s+)*(?:const\s+)?(?:struct\s+\w+\s*\*+\s*|void|int|char\s*\*+)\s*[a-zA-Z0-9_]+\s*\([^;{}]*\))\s*NORETURN(\s+FAST_FUNC)?\s*;",
+        lambda m: f"{m.group(1)}NORETURN {m.group(2)}{m.group(3) or ''};",
+        content,
+        flags=re.MULTILINE,
+    )
+    content = content.replace(
+        "#if ULONG_MAX > 0xffffffff"
+        + NL
+        + TAB
+        + "// 64-bit version (will not work correctly for 32-bit longs!)"
+        + NL
+        + TAB
+        + "return BC_PARSE_EXPRS_BITS & (1UL << i);",
+        "#if SIZE_MAX > 0xffffffff"
+        + NL
+        + TAB
+        + "return (BC_PARSE_EXPRS_BITS & (1ULL << i)) != 0;",
+    )
+    content = content.replace(
+        "unsigned long m = (uint32_t)BC_PARSE_EXPRS_BITS;"
+        + NL
+        + TAB
+        + "if (i >= 32) {"
+        + NL
+        + TAB
+        + TAB
+        + "m = (uint32_t)(BC_PARSE_EXPRS_BITS >> 32);",
+        "unsigned long m = (uint32_t)BC_PARSE_EXPRS_BITS;"
+        + NL
+        + TAB
+        + "if (i >= 32) {"
+        + NL
+        + TAB
+        + TAB
+        + "m = (uint32_t)((uint64_t)BC_PARSE_EXPRS_BITS >> 32);",
+    )
+    content = content.replace(
+        "unsigned long memleak_value;",
+        "uintptr_t memleak_value;",
+    )
+    content = content.replace(
+        "void *p;" + NL + TAB + "unsigned long l;",
+        "void *p;" + NL + TAB + "uintptr_t l;",
+    )
+    content = content.replace(
+        "l = (unsigned long)p;",
+        "l = (uintptr_t)p;",
+    )
+    content = content.replace(
+        "if (l < (unsigned long)p)",
+        "if (l < (uintptr_t)p)",
+    )
+    content = content.replace(
+        "if ((long)l < 0)",
+        "if ((intptr_t)l < 0)",
+    )
+    content = content.replace(
+        "len_and_sockaddr* FAST_FUNC get_sock_lsa(int fd)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "return get_lsa(fd, getsockname);"
+        + NL
+        + "}"
+        + NL
+        + NL
+        + "len_and_sockaddr* FAST_FUNC get_peer_lsa(int fd)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "return get_lsa(fd, getpeername);"
+        + NL
+        + "}",
+        "len_and_sockaddr* FAST_FUNC get_sock_lsa(int fd)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "return get_lsa(fd, (int (*)(int, struct sockaddr *, socklen_t *))getsockname);"
+        + NL
+        + "}"
+        + NL
+        + NL
+        + "len_and_sockaddr* FAST_FUNC get_peer_lsa(int fd)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "return get_lsa(fd, (int (*)(int, struct sockaddr *, socklen_t *))getpeername);"
+        + NL
+        + "}",
+    )
+    content = content.replace(
+        "typedef BC_STATUS (*BcNumBinaryOp)(BcNum *, BcNum *, BcNum *, size_t) FAST_FUNC;",
+        "typedef BC_STATUS (*BcNumBinaryOp)(BcNum *, BcNum *, BcNum *restrict, size_t) FAST_FUNC;",
+    )
+    content = re.sub(
+        r"(static FAST_FUNC BC_STATUS zbc_num_(?:add|sub|mul|div|mod|pow)\(BcNum \*a, BcNum \*b, BcNum \*)c(\s*, size_t scale\))",
+        r"\1restrict c\2",
+        content,
+    )
+    content = content.replace(
+        "#define ENABLE_HUSH_DOLLAR_OPS 1",
+        "#undef ENABLE_HUSH_DOLLAR_OPS" + NL + "#define ENABLE_HUSH_DOLLAR_OPS 1",
+    )
+    content = content.replace(
+        "# define IF_HAS_KEYWORDS(...) __VA_ARGS__",
+        "# undef IF_HAS_KEYWORDS" + NL + "# define IF_HAS_KEYWORDS(...) __VA_ARGS__",
+    )
+    content = content.replace(
+        "# define IF_HAS_KEYWORDS(...)",
+        "# undef IF_HAS_KEYWORDS" + NL + "# define IF_HAS_KEYWORDS(...)",
+    )
+    for bash_sym in (
+        "IF_BASH_FUNCTION",
+        "IF_BASH_REDIR_OUTPUT",
+        "IF_BASH_DOLLAR_SQUOTE",
+        "IF_BASH_PATTERN_SUBST",
+        "IF_BASH_SUBSTR",
+        "IF_BASH_READ_D",
+        "IF_BASH_PROCESS_SUBST",
+    ):
+        content = content.replace(
+            f"#define {bash_sym} ",
+            f"#undef {bash_sym}" + NL + f"#define {bash_sym} ",
+        )
+        content = content.replace(
+            f"# define {bash_sym}",
+            f"# undef {bash_sym}" + NL + f"# define {bash_sym}",
+        )
 
     return content
 

@@ -951,7 +951,7 @@ int fdatasync(intptr_t fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fexecve */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
 #else
 /* fexecve */

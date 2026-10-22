@@ -32,7 +32,7 @@ TEST test_fexecve(void) {
   argv[1] = NULL;
 
   /* Hit the error branch */
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   fexecve(-1, null_argv, null_envp);
   fexecve(0, null_argv, envp);
   fexecve(0, argv, null_envp);

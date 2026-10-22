@@ -23,6 +23,12 @@
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <winsock2.h>
 #endif
+#elif defined(__CYGWIN__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#include <sys/time.h>
+#include <time.h>
 #endif
 /* clang-format on */
 
@@ -267,6 +273,17 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
  */
 char *strptime(const char *buf, const char *fmt, struct tm *tm);
 
+#elif defined(__CYGWIN__)
+/**
+ * @brief Sets the time of the specified clock with POSIX tv_nsec validation.
+ * @param clk_id The clock to set.
+ * @param tp A pointer to a timespec structure containing the new time.
+ * @return 0 on success, -1 on error.
+ */
+int posix_cygwin_clock_settime(clockid_t clk_id, const struct timespec *tp);
+#undef clock_settime
+/** @brief Redefine clock_settime on Cygwin to enforce POSIX tv_nsec bounds. */
+#define clock_settime posix_cygwin_clock_settime
 #else /* _WIN32 */
 
 #endif /* _WIN32 */

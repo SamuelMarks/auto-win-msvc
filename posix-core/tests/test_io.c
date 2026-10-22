@@ -222,7 +222,7 @@ TEST test_posix_fopen(void) {
       fclose(f);
     }
   }
-#elif !defined(__linux__)
+#elif !defined(__linux__) && !defined(__CYGWIN__)
   {
     const char *vpaths[] = {"/proc/uptime",    "/proc/version",
                             "/proc/1/stat",    "/proc/1/cmdline",
@@ -260,7 +260,7 @@ TEST test_posix_open(void) {
   fd = open("version", O_RDONLY);
   ASSERT(fd >= 0);
   close(fd);
-#elif !defined(__linux__)
+#elif !defined(__linux__) && !defined(__CYGWIN__)
   fd = posix_open("/proc/uptime", O_RDONLY);
   ASSERT(fd >= 0);
   close(fd);
