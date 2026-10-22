@@ -3,7 +3,6 @@
 
 /* clang-format off */
 #include "posix-core.h"
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -13,6 +12,9 @@
 #include <string.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -22,7 +24,6 @@
 #include <sys/stat.h>
 #else
 #include <sys/stat.h>
-#include <unistd.h>
 #if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
 #include <sys/sysctl.h>
 #include <time.h>
@@ -55,6 +56,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -93,10 +99,6 @@ static SOCKET resolve_socket_or_fd(intptr_t fd) {
 #undef _write
 
 /* Removed g_cloned_cwd */
-
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#include <crtdbg.h>
-#endif
 
 #if defined(_MSC_VER) && defined(_M_X64) &&                                    \
     !defined(auto_win_msvc_export_lib_EXPORTS)
@@ -168,6 +170,14 @@ static void __cdecl ensure_binary_stdio(void) {
     (void)WSAStartup(MAKEWORD(2, 2), &wsa_data);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     (void)_set_invalid_parameter_handler(my_invalid_parameter_handler);
+#if defined(_DEBUG)
+    if (GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") ==
+        NULL) {
+      _CrtSetReportMode(_CRT_ASSERT, 0);
+      _CrtSetReportMode(_CRT_ERROR, 0);
+      _CrtSetReportMode(_CRT_WARN, 0);
+    }
+#endif
 #if defined(_M_X64)
     (void)_RTC_SetErrorFuncW(auto_win_rtc_error_handler);
 #endif
@@ -1326,7 +1336,8 @@ int posix_close(intptr_t fd) {
     errno = EBADF;
     return -1;
   }
-  if (fd >= 100 && fd < 1024) {
+  if (fd >= 100 && fd < 1024 && posix_get_dup_socket(fd) == 0 &&
+      posix_lookup_crt_socket(fd) == 0) {
     if (posix_epoll_close((int)fd) == 0) {
       return 0;
     }
@@ -1336,7 +1347,7 @@ int posix_close(intptr_t fd) {
   }
   if (clear_as_socket(fd) != ERR_NONE) { /* Ignore */
   }
-  if (fd >= 0 && fd < 2048 &&
+  if (fd >= 0 && fd < 65536 &&
       (posix_get_dup_socket(fd) != 0 || posix_lookup_crt_socket(fd) != 0)) {
     intptr_t sock_h = posix_get_dup_socket(fd);
     int other_fd;
@@ -1348,12 +1359,15 @@ int posix_close(intptr_t fd) {
       posix_set_dup_socket(fd, 0);
     }
     posix_register_crt_socket(fd, 0);
-    for (other_fd = 0; other_fd < 2048; other_fd++) {
-      if ((other_fd < 64 && posix_get_dup_socket(other_fd) == sock_h) ||
-          posix_lookup_crt_socket(other_fd) == sock_h) {
+    for (other_fd = 0; other_fd < 64; other_fd++) {
+      if (posix_get_dup_socket(other_fd) == sock_h) {
         shared = 1;
         break;
       }
+    }
+    if (!shared && sock_h >= 0 && sock_h < 65536 &&
+        posix_lookup_crt_socket(sock_h) == sock_h) {
+      shared = 1;
     }
     if (!shared) {
       shutdown((SOCKET)sock_h, SD_BOTH);

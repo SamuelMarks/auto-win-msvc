@@ -5,11 +5,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #ifndef _MSC_VER
 #include <unistd.h>
+#endif
+#if defined(__linux__)
+#include <sys/syscall.h>
 #endif
 #if defined(_WIN32) || defined(_WIN64)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -19,6 +23,9 @@
 #endif
 #if defined(_MSC_VER)
 #include <share.h>
+#if _MSC_VER >= 1400
+#include <crtdbg.h>
+#endif
 #endif
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 #include <sys/types.h>
@@ -50,6 +57,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(mman_null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -822,11 +834,6 @@ int munlockall(void) { return 0; }
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #if defined(__linux__)
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#include <sys/syscall.h>
-#include <unistd.h>
 int posix_memfd_create(const char *name, unsigned int flags) {
 #if defined(SYS_memfd_create)
   return (int)syscall(SYS_memfd_create, name, flags);
@@ -836,10 +843,6 @@ int posix_memfd_create(const char *name, unsigned int flags) {
 #endif
 }
 #else
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 int posix_memfd_create(const char *name, unsigned int flags) {
   char temp_file[256];
   int fd;

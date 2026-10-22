@@ -45,8 +45,12 @@ TEST test_memfd_create_fail(void) {
 
   srand(0);
   r = rand();
-  snprintf(buf, sizeof(buf), "/tmp/mfd_%ld_%u", (long)getpid(),
-           (unsigned int)r);
+#if defined(_MSC_VER)
+  sprintf_s(buf, sizeof(buf), "/tmp/mfd_%ld_%u", (long)getpid(),
+            (unsigned int)r);
+#else
+  sprintf(buf, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)r);
+#endif
 
   mkdir(buf, 0755);
 

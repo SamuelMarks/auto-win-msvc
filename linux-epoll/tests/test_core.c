@@ -46,6 +46,18 @@ TEST test_epoll_lifecycle(void) {
   (void)(-1);
   (void)(ret);
 
+  ev.events = (uint32_t)(EPOLLIN | EPOLLONESHOT | EPOLLET);
+  ev.data.fd = 0;
+  ret = epoll_ctl(epfd, EPOLL_CTL_ADD, 0, &ev);
+  (void)ret;
+
+  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT);
+  ret = epoll_ctl(epfd, EPOLL_CTL_MOD, 0, &ev);
+  (void)ret;
+
+  ret = epoll_ctl(epfd, EPOLL_CTL_DEL, 0, NULL);
+  (void)ret;
+
   ret = epoll_wait(epfd, &ev, 1, 0);
   (void)(ret >= 0 || ret == -1);
 

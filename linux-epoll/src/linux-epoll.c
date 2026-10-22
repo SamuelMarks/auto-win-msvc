@@ -14,6 +14,7 @@
 #include <io.h>
 #endif
 #if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
 static void epoll_null_invalid_param_handler(const wchar_t *expression,
                                              const wchar_t *function,
                                              const wchar_t *file,
@@ -33,6 +34,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(epoll_null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -40,6 +46,9 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   h = (ptrdiff_t)_get_osfhandle((int)fd);
 #endif
   errno = saved_err;
+  if (h == -2) {
+    return -1;
+  }
   return h;
 }
 #else
@@ -177,14 +186,38 @@ int posix_epoll_create1(int flags) {
 }
 
 int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
-  HANDLE hephnd = epoll_handles[epfd];
+  HANDLE hephnd;
   SOCKET s;
-  if (fd < 0) {
+  ptrdiff_t h;
+  int wop = op;
+  int res;
+  struct epoll_event local_ev;
+  struct epoll_event *ev_ptr = event;
+  if (epfd < 100 || epfd >= 1024 || epoll_handles[epfd] == NULL || fd < 0) {
     errno = 9;
     return -1;
   }
-  s = (SOCKET)safe_get_osfhandle(fd);
-  return epoll_ctl(hephnd, op, s, (void *)event);
+  hephnd = epoll_handles[epfd];
+  if (op == 2) {
+    wop = 3;
+  } else if (op == 3) {
+    wop = 2;
+  }
+  if (event != NULL) {
+    local_ev = *event;
+    local_ev.events &= ~(uint32_t)(1U << 31);
+    if (event->events & (1U << 30)) {
+      local_ev.events |= (1U << 31);
+    }
+    ev_ptr = &local_ev;
+  }
+  h = safe_get_osfhandle(fd);
+  s = (h != -1 && h != -2) ? (SOCKET)h : (SOCKET)(intptr_t)fd;
+  res = epoll_ctl(hephnd, wop, s, (void *)ev_ptr);
+  if (res == -1 && s != (SOCKET)(intptr_t)fd) {
+    res = epoll_ctl(hephnd, wop, (SOCKET)(intptr_t)fd, (void *)ev_ptr);
+  }
+  return res;
 }
 
 int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,

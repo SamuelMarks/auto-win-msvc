@@ -469,6 +469,10 @@ static __inline int auto_win_msvc_fcntl(intptr_t fd, int cmd, ...) {
 #define fcntl auto_win_msvc_fcntl
 #endif
 
+int posix_close(intptr_t fd);
+ssize_t posix_read(intptr_t fd, void *buf, size_t count);
+ssize_t posix_write(intptr_t fd, const void *buf, size_t count);
+
 /**
  * @brief Closes either a socket or an OS file descriptor.
  * @param[in] fd Descriptor to close.

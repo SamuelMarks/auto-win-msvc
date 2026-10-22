@@ -13,6 +13,18 @@ typedef int error_type_t;
 #define ERR_NONE 0
 #endif
 
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
+
 /* clang-format off */
 #include <stdarg.h>
 #include <stddef.h>
@@ -53,7 +65,13 @@ typedef int error_type_t;
 #include <sys/types.h>
 #include <sys/wait.h>
 #if !defined(_MSC_VER)
+#ifdef __CYGWIN__
+#define posix_close _cygwin_orig_posix_close
 #include <unistd.h>
+#undef posix_close
+#else
+#include <unistd.h>
+#endif
 #endif
 #endif
 #include "auto-win-msvc-error.h"
@@ -106,8 +124,9 @@ auto_win_msvc_error_t posix_core_init(int *out_status);
 #ifndef EALREADY
 #define EALREADY 103
 #endif
-#undef EWOULDBLOCK
-#define EWOULDBLOCK EAGAIN
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK 140
+#endif
 
 #ifndef ENOTSOCK
 #define ENOTSOCK 128
@@ -507,7 +526,7 @@ int posix_dup2(int oldfd, int newfd);
 #endif
 
 #ifndef fsync
-#define fsync _commit
+#define fsync fdatasync
 #endif
 #else
 /* fsync */
@@ -698,12 +717,22 @@ int fcntl(intptr_t fd, int cmd, ...);
 /** \brief Special value to indicate current working directory for at-functions.
  */
 #ifndef AT_FDCWD
+#if defined(__CYGWIN__) || defined(__APPLE__)
+#define AT_FDCWD -2
+#else
 #define AT_FDCWD -100
+#endif
 #endif
 
 /** \brief Flag to not follow symlinks for at-functions. */
 #ifndef AT_SYMLINK_NOFOLLOW
+#if defined(__CYGWIN__)
+#define AT_SYMLINK_NOFOLLOW 2
+#elif defined(__APPLE__)
+#define AT_SYMLINK_NOFOLLOW 0x0020
+#else
 #define AT_SYMLINK_NOFOLLOW 0x100
+#endif
 #endif
 
 /** \brief Flag to check effective user/group IDs for at-functions. */

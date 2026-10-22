@@ -7,6 +7,18 @@
  * @brief Strict C89 POSIX sys/stat.h header and polyfills for MSVC.
  */
 
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
+
 /* clang-format off */
 #include <errno.h>
 #include <stddef.h>
@@ -292,11 +304,21 @@ typedef unsigned short mode_t;
 
 #ifndef AT_FDCWD
 /** @brief Special value indicating current working directory. */
+#if defined(__CYGWIN__) || defined(__APPLE__)
+#define AT_FDCWD -2
+#else
 #define AT_FDCWD -100
+#endif
 #endif
 #ifndef AT_SYMLINK_NOFOLLOW
 /** @brief Do not follow symbolic links. */
+#if defined(__CYGWIN__)
+#define AT_SYMLINK_NOFOLLOW 2
+#elif defined(__APPLE__)
+#define AT_SYMLINK_NOFOLLOW 0x0020
+#else
 #define AT_SYMLINK_NOFOLLOW 0x100
+#endif
 #endif
 
 #if defined(_WIN32)

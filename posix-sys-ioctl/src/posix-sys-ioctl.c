@@ -19,6 +19,7 @@
 #include <io.h>
 #endif
 #if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
 static void ioctl_null_invalid_param_handler(const wchar_t *expression,
                                              const wchar_t *function,
                                              const wchar_t *file,
@@ -38,6 +39,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(ioctl_null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }

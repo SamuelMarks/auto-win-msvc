@@ -64,6 +64,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(sock_null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(_CRT_ASSERT, 0);
+    _CrtSetReportMode(_CRT_ERROR, 0);
+    _CrtSetReportMode(_CRT_WARN, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -257,9 +262,9 @@ void copy_nonblock(SOCKET src, SOCKET dst) {
     set_nonblock(dst, 1);
 }
 
-static unsigned char g_is_socket[8192] = {0};
+static unsigned char g_is_socket[65536] = {0};
 static intptr_t g_dup_sockets[64] = {0};
-static intptr_t g_crt_sockets[2048] = {0};
+static intptr_t g_crt_sockets[65536] = {0};
 intptr_t posix_get_dup_socket(intptr_t fd) {
   if (fd >= 0 && fd < 64) {
     return g_dup_sockets[fd];
@@ -272,28 +277,28 @@ void posix_set_dup_socket(intptr_t fd, intptr_t s) {
   }
 }
 intptr_t posix_lookup_crt_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 2048) {
+  if (fd >= 0 && fd < 65536) {
     return g_crt_sockets[fd];
   }
   return 0;
 }
 void posix_register_crt_socket(intptr_t fd, intptr_t s) {
-  if (fd >= 0 && fd < 2048) {
+  if (fd >= 0 && fd < 65536) {
     g_crt_sockets[fd] = s;
   }
 }
 error_type_t mark_as_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 8192)
+  if (fd >= 0 && fd < 65536)
     g_is_socket[fd] = 1;
   return ERR_NONE;
 }
 error_type_t clear_as_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 8192)
+  if (fd >= 0 && fd < 65536)
     g_is_socket[fd] = 0;
   return ERR_NONE;
 }
 int is_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 8192)
+  if (fd >= 0 && fd < 65536)
     return g_is_socket[fd];
   return 1; /* Assuming large FDs are sockets */
 }

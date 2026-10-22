@@ -2,7 +2,6 @@
 
 /* clang-format off */
 #include "posix-core.h"
-#include <unistd.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -21,12 +20,14 @@
 #else
 #include <io.h>
 #endif
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1600
 #include <stdint.h>
 #endif
 #else
 #include <fcntl.h>
-#include <unistd.h>
 #endif
 /* clang-format on */
 
@@ -55,6 +56,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -1328,7 +1334,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   GetFinalPathNameByHandleA_Func pGetFinalPathNameByHandleA;
   unsigned long res;
 
-  if (fd < 0 || !argv) {
+  if (fd < 0 || !argv || !envp) {
     errno = EINVAL;
     return -1;
   }
@@ -2445,6 +2451,11 @@ int posix_isatty(intptr_t fd) {
     int ret;
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     ret = _isatty((int)fd);
     _set_invalid_parameter_handler(old);
     return ret;

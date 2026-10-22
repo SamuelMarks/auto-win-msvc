@@ -21,6 +21,9 @@ static void *my_malloc(size_t size) { return posix_spawn_mock_malloc_ptr ? posix
 
 #if defined(_WIN32)
 #include <fcntl.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#include <crtdbg.h>
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
 #else
@@ -62,6 +65,11 @@ static ptrdiff_t safe_get_osfhandle(int fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(spawn_null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(2, 0);
+    _CrtSetReportMode(1, 0);
+    _CrtSetReportMode(0, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle(fd);
     _set_invalid_parameter_handler(old);
   }

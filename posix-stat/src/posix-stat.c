@@ -183,6 +183,11 @@ auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
+#if defined(_DEBUG) && !defined(_DLL)
+    _CrtSetReportMode(_CRT_ASSERT, 0);
+    _CrtSetReportMode(_CRT_ERROR, 0);
+    _CrtSetReportMode(_CRT_WARN, 0);
+#endif
     h = (ptrdiff_t)_get_osfhandle(fd);
     _set_invalid_parameter_handler(old);
   }
