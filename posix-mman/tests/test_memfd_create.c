@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #ifndef _MSC_VER
 #include <unistd.h>
 #include <sys/stat.h>
@@ -42,15 +43,40 @@ TEST test_memfd_create_fail(void) {
   int fd;
   char buf[256];
   int r;
+  unsigned long pid_val;
+  unsigned int rnd_val;
+  char num_buf[32];
+  size_t pos;
+  size_t i;
 
   srand(0);
   r = rand();
+  pid_val = (unsigned long)getpid();
+  rnd_val = (unsigned int)r;
 #if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "/tmp/mfd_%ld_%u", (long)getpid(),
-            (unsigned int)r);
+  strcpy_s(buf, sizeof(buf), "/tmp/mfd_");
 #else
-  sprintf(buf, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)r);
+  strcpy(buf, "/tmp/mfd_");
 #endif
+  pos = strlen(buf);
+  i = 0;
+  do {
+    num_buf[i++] = (char)('0' + (pid_val % 10UL));
+    pid_val /= 10UL;
+  } while (pid_val > 0UL && i < sizeof(num_buf));
+  while (i > 0) {
+    buf[pos++] = num_buf[--i];
+  }
+  buf[pos++] = '_';
+  i = 0;
+  do {
+    num_buf[i++] = (char)('0' + (rnd_val % 10U));
+    rnd_val /= 10U;
+  } while (rnd_val > 0U && i < sizeof(num_buf));
+  while (i > 0) {
+    buf[pos++] = num_buf[--i];
+  }
+  buf[pos] = '\0';
 
   mkdir(buf, 0755);
 

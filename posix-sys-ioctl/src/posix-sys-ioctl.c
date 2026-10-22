@@ -256,8 +256,9 @@ int posix_ioctl(intptr_t fd, unsigned long request, ...) {
     return -1;
   }
 
-#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) ||           \
-    defined(__CYGWIN__)
+#if defined(__CYGWIN__)
+  return ioctl((int)fd, (int)request, argp);
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
   return ioctl((int)fd, request, argp);
 #else
   if (request == 0 && argp == NULL) {

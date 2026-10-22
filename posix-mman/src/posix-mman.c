@@ -847,6 +847,11 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   char temp_file[256];
   int fd;
   int oflags;
+  unsigned long pid_val;
+  unsigned int rnd_val;
+  char num_buf[32];
+  size_t pos;
+  size_t i;
 
   if (name == NULL) {
     errno = 14; /* EFAULT */
@@ -856,12 +861,33 @@ int posix_memfd_create(const char *name, unsigned int flags) {
     errno = EINVAL;
     return -1;
   }
+  pid_val = (unsigned long)getpid();
+  rnd_val = (unsigned int)rand();
 #if defined(_MSC_VER)
-  sprintf_s(temp_file, sizeof(temp_file), "/tmp/mfd_%ld_%u", (long)getpid(),
-            (unsigned int)rand());
+  strcpy_s(temp_file, sizeof(temp_file), "/tmp/mfd_");
 #else
-  sprintf(temp_file, "/tmp/mfd_%ld_%u", (long)getpid(), (unsigned int)rand());
+  strcpy(temp_file, "/tmp/mfd_");
 #endif
+  pos = strlen(temp_file);
+  i = 0;
+  do {
+    num_buf[i++] = (char)('0' + (pid_val % 10UL));
+    pid_val /= 10UL;
+  } while (pid_val > 0UL && i < sizeof(num_buf));
+  while (i > 0) {
+    temp_file[pos++] = num_buf[--i];
+  }
+  temp_file[pos++] = '_';
+  i = 0;
+  do {
+    num_buf[i++] = (char)('0' + (rnd_val % 10U));
+    rnd_val /= 10U;
+  } while (rnd_val > 0U && i < sizeof(num_buf));
+  while (i > 0) {
+    temp_file[pos++] = num_buf[--i];
+  }
+  temp_file[pos] = '\0';
+
   oflags = O_RDWR | O_CREAT | O_EXCL;
 #ifdef O_CLOEXEC
   if (flags & MFD_CLOEXEC) {

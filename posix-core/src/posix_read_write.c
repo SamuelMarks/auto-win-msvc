@@ -1517,7 +1517,7 @@ static FILE *mock_fopen(const char *pathname, const char *mode) {
  * /proc file.
  */
 static FILE *open_virtual_proc_stream_posix(const char *pathname) {
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
   (void)pathname;
   return NULL;
 #else

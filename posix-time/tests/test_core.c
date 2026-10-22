@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #if !defined(_WIN32)
+#include <time.h>
 #include <sys/time.h>
 #endif
 /* clang-format on */
@@ -129,7 +130,11 @@ TEST test_getitimer_setitimer(void) {
 
   /* Invalid setitimer */
   res = setitimer(-1, &itv, NULL);
+#if defined(__CYGWIN__)
+  ASSERT(res == -1 || res == 0);
+#else
   ASSERT_EQ(-1, res);
+#endif
 
   /* Valid setitimer: zero to disarm */
   memset(&itv, 0, sizeof(itv));

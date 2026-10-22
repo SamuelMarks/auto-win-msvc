@@ -16,6 +16,7 @@
 #else
 #include <sys/ioctl.h>
 #endif
+#include "posix-sys-ioctl.h"
 #else
 #include "posix-sys-ioctl.h"
 #endif
