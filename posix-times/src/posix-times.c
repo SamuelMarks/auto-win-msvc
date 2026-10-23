@@ -16,11 +16,9 @@ extern "C" {
 
 /* Forward declare required Windows structures and functions */
 __declspec(dllimport) void *__stdcall GetCurrentProcess(void);
-__declspec(dllimport) int __stdcall GetProcessTimes(void *hProcess,
-                                                    void *lpCreationTime,
-                                                    void *lpExitTime,
-                                                    void *lpKernelTime,
-                                                    void *lpUserTime);
+__declspec(dllimport) int __stdcall
+GetProcessTimes(void *hProcess, void *lpCreationTime, void *lpExitTime,
+                void *lpKernelTime, void *lpUserTime);
 
 #ifdef __cplusplus
 }

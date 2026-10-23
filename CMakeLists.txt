@@ -1139,9 +1139,12 @@ list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/include"
 endif()
 set(COMBINED_POSIX_INCLUDES "${CMAKE_BINARY_DIR}/posix_includes")
 file(MAKE_DIRECTORY "${COMBINED_POSIX_INCLUDES}")
-foreach(D IN LISTS MEGA_INCLUDES)
-    file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
-endforeach()
+if(NOT EXISTS "${COMBINED_POSIX_INCLUDES}/.copied_stamp")
+    foreach(D IN LISTS MEGA_INCLUDES)
+        file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
+    endforeach()
+    file(WRITE "${COMBINED_POSIX_INCLUDES}/.copied_stamp" "1")
+endif()
 target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_POSIX_INCLUDES}>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
 

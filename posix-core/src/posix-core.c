@@ -82,24 +82,25 @@ __declspec(dllimport) int __stdcall ReadFile(void *hFile, void *lpBuffer,
                                              unsigned long nNumberOfBytesToRead,
                                              unsigned long *lpNumberOfBytesRead,
                                              void *lpOverlapped);
-__declspec(dllimport) int __stdcall WriteFile(
-    void *hFile, const void *lpBuffer, unsigned long nNumberOfBytesToWrite,
-    unsigned long *lpNumberOfBytesWritten, void *lpOverlapped);
+__declspec(dllimport) int __stdcall
+WriteFile(void *hFile, const void *lpBuffer,
+          unsigned long nNumberOfBytesToWrite,
+          unsigned long *lpNumberOfBytesWritten, void *lpOverlapped);
 __declspec(dllimport) int __stdcall GetFileSizeEx(void *hFile,
                                                   __int64 *lpFileSize);
-__declspec(dllimport) int __stdcall SetFilePointerEx(
-    void *hFile, __int64 liDistanceToMove, __int64 *lpNewFilePointer,
-    unsigned long dwMoveMethod);
+__declspec(dllimport) int __stdcall
+SetFilePointerEx(void *hFile, __int64 liDistanceToMove,
+                 __int64 *lpNewFilePointer, unsigned long dwMoveMethod);
 __declspec(dllimport) int __stdcall SetEndOfFile(void *hFile);
 __declspec(dllimport) unsigned long __stdcall GetLastError(void);
-__declspec(dllimport) int __stdcall LockFileEx(
-    void *hFile, unsigned long dwFlags, unsigned long dwReserved,
-    unsigned long nNumberOfBytesToLockLow,
-    unsigned long nNumberOfBytesToLockHigh, void *lpOverlapped);
-__declspec(dllimport) int __stdcall UnlockFileEx(
-    void *hFile, unsigned long dwReserved,
-    unsigned long nNumberOfBytesToUnlockLow,
-    unsigned long nNumberOfBytesToUnlockHigh, void *lpOverlapped);
+__declspec(dllimport) int __stdcall
+LockFileEx(void *hFile, unsigned long dwFlags, unsigned long dwReserved,
+           unsigned long nNumberOfBytesToLockLow,
+           unsigned long nNumberOfBytesToLockHigh, void *lpOverlapped);
+__declspec(dllimport) int __stdcall
+UnlockFileEx(void *hFile, unsigned long dwReserved,
+             unsigned long nNumberOfBytesToUnlockLow,
+             unsigned long nNumberOfBytesToUnlockHigh, void *lpOverlapped);
 __declspec(dllimport) int __stdcall ioctlsocket(uintptr_t s, long cmd,
                                                 unsigned long *argp);
 __declspec(dllimport) int __stdcall WSAGetLastError(void);
@@ -126,8 +127,8 @@ typedef struct _POSIX_SYSTEM_INFO {
   unsigned short wProcessorRevision;
 } POSIX_SYSTEM_INFO;
 
-__declspec(dllimport) void __stdcall GetSystemInfo(
-    POSIX_SYSTEM_INFO *lpSystemInfo);
+__declspec(dllimport) void __stdcall
+GetSystemInfo(POSIX_SYSTEM_INFO *lpSystemInfo);
 
 typedef struct _POSIX_MEMORYSTATUSEX {
   unsigned long dwLength;
@@ -141,59 +142,59 @@ typedef struct _POSIX_MEMORYSTATUSEX {
   unsigned __int64 ullAvailExtendedVirtual;
 } POSIX_MEMORYSTATUSEX;
 
-__declspec(dllimport) int __stdcall GlobalMemoryStatusEx(
-    POSIX_MEMORYSTATUSEX *lpBuffer);
+__declspec(dllimport) int __stdcall
+GlobalMemoryStatusEx(POSIX_MEMORYSTATUSEX *lpBuffer);
 __declspec(dllimport) int __stdcall GetComputerNameA(char *lpBuffer,
                                                      unsigned long *nSize);
 __declspec(dllimport) int __stdcall GetUserNameA(char *lpBuffer,
                                                  unsigned long *pcbBuffer);
-__declspec(dllimport) int __stdcall CreateHardLinkA(
-    const char *lpFileName, const char *lpExistingFileName,
-    void *lpSecurityAttributes);
+__declspec(dllimport) int __stdcall
+CreateHardLinkA(const char *lpFileName, const char *lpExistingFileName,
+                void *lpSecurityAttributes);
 #if defined(_MSC_VER)
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
-__declspec(dllimport) void *__stdcall GetModuleHandleA(
-    const char *lpModuleName);
+__declspec(dllimport) void *__stdcall
+GetModuleHandleA(const char *lpModuleName);
 __declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
                                                      const char *lpProcName);
-__declspec(dllimport) unsigned long __stdcall GetFileAttributesA(
-    const char *lpFileName);
+__declspec(dllimport) unsigned long __stdcall
+GetFileAttributesA(const char *lpFileName);
 
-__declspec(dllimport) unsigned long __stdcall GetCurrentDirectoryA(
-    unsigned long nBufferLength, char *lpBuffer);
-__declspec(dllimport) int __stdcall SetCurrentDirectoryA(
-    const char *lpPathName);
-__declspec(dllimport) int __stdcall CreateDirectoryA(
-    const char *lpPathName, void *lpSecurityAttributes);
+__declspec(dllimport) unsigned long __stdcall
+GetCurrentDirectoryA(unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) int __stdcall
+SetCurrentDirectoryA(const char *lpPathName);
+__declspec(dllimport) int __stdcall
+CreateDirectoryA(const char *lpPathName, void *lpSecurityAttributes);
 
-__declspec(dllimport) void *__stdcall CreateFileA(
-    const char *lpFileName, unsigned long dwDesiredAccess,
-    unsigned long dwShareMode, void *lpSecurityAttributes,
-    unsigned long dwCreationDisposition, unsigned long dwFlagsAndAttributes,
-    void *hTemplateFile);
+__declspec(dllimport) void *__stdcall
+CreateFileA(const char *lpFileName, unsigned long dwDesiredAccess,
+            unsigned long dwShareMode, void *lpSecurityAttributes,
+            unsigned long dwCreationDisposition,
+            unsigned long dwFlagsAndAttributes, void *hTemplateFile);
 __declspec(dllimport) int __stdcall CloseHandle(void *hObject);
 
-__declspec(dllimport) int __stdcall CreateTimerQueueTimer(
-    void **phNewTimer, void *TimerQueue,
-    void(__stdcall *Callback)(void *, unsigned char), void *Parameter,
-    unsigned long DueTime, unsigned long Period, unsigned long Flags);
-__declspec(dllimport) int __stdcall DeleteTimerQueueTimer(
-    void *TimerQueue, void *Timer, void *CompletionEvent);
+__declspec(dllimport) int __stdcall
+CreateTimerQueueTimer(void **phNewTimer, void *TimerQueue,
+                      void(__stdcall *Callback)(void *, unsigned char),
+                      void *Parameter, unsigned long DueTime,
+                      unsigned long Period, unsigned long Flags);
+__declspec(dllimport) int __stdcall
+DeleteTimerQueueTimer(void *TimerQueue, void *Timer, void *CompletionEvent);
 __declspec(dllimport) unsigned long __stdcall GetTickCount(void);
 
 typedef size_t WIN_HCRYPTPROV;
 typedef size_t WIN_HCRYPTHASH;
 typedef size_t WIN_HCRYPTKEY;
 
-__declspec(dllimport) int __stdcall CryptAcquireContextA(
-    WIN_HCRYPTPROV *phProv, const char *pszContainer, const char *pszProvider,
-    unsigned long dwProvType, unsigned long dwFlags);
-__declspec(dllimport) int __stdcall CryptCreateHash(WIN_HCRYPTPROV hProv,
-                                                    unsigned int Algid,
-                                                    WIN_HCRYPTKEY hKey,
-                                                    unsigned long dwFlags,
-                                                    WIN_HCRYPTHASH *phHash);
+__declspec(dllimport) int __stdcall
+CryptAcquireContextA(WIN_HCRYPTPROV *phProv, const char *pszContainer,
+                     const char *pszProvider, unsigned long dwProvType,
+                     unsigned long dwFlags);
+__declspec(dllimport) int __stdcall
+CryptCreateHash(WIN_HCRYPTPROV hProv, unsigned int Algid, WIN_HCRYPTKEY hKey,
+                unsigned long dwFlags, WIN_HCRYPTHASH *phHash);
 __declspec(dllimport) int __stdcall CryptHashData(WIN_HCRYPTHASH hHash,
                                                   const unsigned char *pbData,
                                                   unsigned long dwDataLen,
@@ -211,12 +212,14 @@ __declspec(dllimport) int __stdcall CryptDeriveKey(WIN_HCRYPTPROV hProv,
                                                    WIN_HCRYPTHASH hBaseData,
                                                    unsigned long dwFlags,
                                                    WIN_HCRYPTKEY *phKey);
-__declspec(dllimport) int __stdcall CryptEncrypt(
-    WIN_HCRYPTKEY hKey, WIN_HCRYPTHASH hHash, int Final, unsigned long dwFlags,
-    unsigned char *pbData, unsigned long *pdwDataLen, unsigned long dwBufLen);
-__declspec(dllimport) int __stdcall CryptDecrypt(
-    WIN_HCRYPTKEY hKey, WIN_HCRYPTHASH hHash, int Final, unsigned long dwFlags,
-    unsigned char *pbData, unsigned long *pdwDataLen);
+__declspec(dllimport) int __stdcall
+CryptEncrypt(WIN_HCRYPTKEY hKey, WIN_HCRYPTHASH hHash, int Final,
+             unsigned long dwFlags, unsigned char *pbData,
+             unsigned long *pdwDataLen, unsigned long dwBufLen);
+__declspec(dllimport) int __stdcall
+CryptDecrypt(WIN_HCRYPTKEY hKey, WIN_HCRYPTHASH hHash, int Final,
+             unsigned long dwFlags, unsigned char *pbData,
+             unsigned long *pdwDataLen);
 __declspec(dllimport) int __stdcall CryptDestroyKey(WIN_HCRYPTKEY hKey);
 
 #ifdef __cplusplus
@@ -224,15 +227,16 @@ __declspec(dllimport) int __stdcall CryptDestroyKey(WIN_HCRYPTKEY hKey);
 #endif
 
 __declspec(dllimport) void *__stdcall GetCurrentProcess(void);
-__declspec(dllimport) int __stdcall OpenProcessToken(
-    void *ProcessHandle, unsigned long DesiredAccess, void **TokenHandle);
+__declspec(dllimport) int __stdcall
+OpenProcessToken(void *ProcessHandle, unsigned long DesiredAccess,
+                 void **TokenHandle);
 __declspec(dllimport) int __stdcall GetTokenInformation(
     void *TokenHandle, int TokenInformationClass, void *TokenInformation,
     unsigned long TokenInformationLength, unsigned long *ReturnLength);
-__declspec(dllimport) void *__stdcall GetSidSubAuthority(
-    void *pSid, unsigned long nSubAuthority);
-__declspec(dllimport) unsigned char *__stdcall GetSidSubAuthorityCount(
-    void *pSid);
+__declspec(dllimport) void *__stdcall
+GetSidSubAuthority(void *pSid, unsigned long nSubAuthority);
+__declspec(dllimport) unsigned char *__stdcall
+GetSidSubAuthorityCount(void *pSid);
 
 typedef unsigned char BOOLEAN;
 typedef BOOLEAN(__stdcall *CreateSymbolicLinkA_Func)(
@@ -739,14 +743,14 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) void *__stdcall CreateFileMappingA(
-    void *hFile, void *lpFileMappingAttributes, unsigned long flProtect,
-    unsigned long dwMaximumSizeHigh, unsigned long dwMaximumSizeLow,
-    const char *lpName);
-__declspec(dllimport) void *__stdcall MapViewOfFile(
-    void *hFileMappingObject, unsigned long dwDesiredAccess,
-    unsigned long dwFileOffsetHigh, unsigned long dwFileOffsetLow,
-    size_t dwNumberOfBytesToMap);
+__declspec(dllimport) void *__stdcall
+CreateFileMappingA(void *hFile, void *lpFileMappingAttributes,
+                   unsigned long flProtect, unsigned long dwMaximumSizeHigh,
+                   unsigned long dwMaximumSizeLow, const char *lpName);
+__declspec(dllimport) void *__stdcall
+MapViewOfFile(void *hFileMappingObject, unsigned long dwDesiredAccess,
+              unsigned long dwFileOffsetHigh, unsigned long dwFileOffsetLow,
+              size_t dwNumberOfBytesToMap);
 __declspec(dllimport) int __stdcall UnmapViewOfFile(const void *lpBaseAddress);
 
 /** \brief posix_fadvise function. */
@@ -1948,8 +1952,8 @@ long pathconf(const char *pathname, int name) {
 }
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) unsigned long __stdcall SleepEx(
-    unsigned long dwMilliseconds, int bAlertable);
+__declspec(dllimport) unsigned long __stdcall
+SleepEx(unsigned long dwMilliseconds, int bAlertable);
 
 /** \brief pause function. */
 int pause(void) {
@@ -2078,16 +2082,17 @@ ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-__declspec(dllimport) int __stdcall DeviceIoControl(
-    void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
-    unsigned long nInBufferSize, void *lpOutBuffer,
-    unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
-    void *lpOverlapped);
+__declspec(dllimport) int __stdcall
+DeviceIoControl(void *hDevice, unsigned long dwIoControlCode, void *lpInBuffer,
+                unsigned long nInBufferSize, void *lpOutBuffer,
+                unsigned long nOutBufferSize, unsigned long *lpBytesReturned,
+                void *lpOverlapped);
 
-__declspec(dllimport) int __stdcall WideCharToMultiByte(
-    unsigned int CodePage, unsigned long dwFlags, const wchar_t *lpWideCharStr,
-    int cchWideChar, char *lpMultiByteStr, int cbMultiByte,
-    const char *lpDefaultChar, int *lpUsedDefaultChar);
+__declspec(dllimport) int __stdcall
+WideCharToMultiByte(unsigned int CodePage, unsigned long dwFlags,
+                    const wchar_t *lpWideCharStr, int cchWideChar,
+                    char *lpMultiByteStr, int cbMultiByte,
+                    const char *lpDefaultChar, int *lpUsedDefaultChar);
 #endif
 
 typedef struct _POSIX_REPARSE_DATA_BUFFER {
@@ -2360,8 +2365,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpath) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 __declspec(dllimport) unsigned long __stdcall GetLogicalDrives(void);
 __declspec(dllimport) int __stdcall FlushFileBuffers(void *hFile);
-__declspec(dllimport) unsigned int __stdcall GetDriveTypeA(
-    const char *lpRootPathName);
+__declspec(dllimport) unsigned int __stdcall
+GetDriveTypeA(const char *lpRootPathName);
 
 /** \brief sync function. */
 void sync(void) {
@@ -2588,8 +2593,8 @@ useconds_t ualarm(useconds_t value, useconds_t interval) {
 /** \brief vfork function. */
 pid_t vfork(void) { return fork(); }
 
-__declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(
-    void *hModule, char *lpFilename, unsigned long nSize);
+__declspec(dllimport) unsigned long __stdcall
+GetModuleFileNameA(void *hModule, char *lpFilename, unsigned long nSize);
 __declspec(dllimport) int __stdcall SetStdHandle(unsigned long nStdHandle,
                                                  void *hHandle);
 

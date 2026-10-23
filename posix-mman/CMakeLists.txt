@@ -78,7 +78,7 @@ if(MSVC)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
     # Enable ASan on Unix platforms as well for testing, skip for MinGW
-    if(NOT MINGW AND NOT CYGWIN)
+    if(NOT MINGW AND NOT CYGWIN AND HAS_ASAN)
         add_compile_options(-fsanitize=address)
         add_link_options(-fsanitize=address)
     endif()

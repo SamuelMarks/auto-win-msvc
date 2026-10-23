@@ -91,6 +91,7 @@ class TestTransformSources(unittest.TestCase):
                 tab + "TRUE, FALSE",
                 tab + "PIPE_BUF = 4096,",
                 "#if BUILD_AS_NOMMU",
+                "sigjmp_buf env;",
                 "",
             ]
         )

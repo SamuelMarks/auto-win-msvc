@@ -15,9 +15,8 @@ typedef unsigned long WIN_DWORD;
 #ifdef __cplusplus
 extern "C" {
 #endif
-__declspec(dllimport)
-WIN_DWORD __stdcall GetLogicalDriveStringsA(WIN_DWORD nBufferLength,
-                                            char *lpBuffer);
+__declspec(dllimport) WIN_DWORD __stdcall
+GetLogicalDriveStringsA(WIN_DWORD nBufferLength, char *lpBuffer);
 #ifdef __cplusplus
 }
 #endif

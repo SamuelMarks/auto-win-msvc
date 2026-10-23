@@ -77,17 +77,14 @@ typedef struct tagDIR_PROCESSENTRY32 {
 #ifdef __cplusplus
 extern "C" {
 #endif
-__declspec(dllimport)
-DIR_WIN_HANDLE __stdcall CreateToolhelp32Snapshot(DIR_WIN_DWORD dwFlags,
-                                                  DIR_WIN_DWORD th32ProcessID);
-__declspec(dllimport)
-DIR_WIN_BOOL __stdcall Process32First(DIR_WIN_HANDLE hSnapshot,
-                                      DIR_PROCESSENTRY32 *lppe);
-__declspec(dllimport)
-DIR_WIN_BOOL __stdcall Process32Next(DIR_WIN_HANDLE hSnapshot,
-                                     DIR_PROCESSENTRY32 *lppe);
-__declspec(dllimport)
-DIR_WIN_BOOL __stdcall CloseHandle(DIR_WIN_HANDLE hObject);
+__declspec(dllimport) DIR_WIN_HANDLE __stdcall
+CreateToolhelp32Snapshot(DIR_WIN_DWORD dwFlags, DIR_WIN_DWORD th32ProcessID);
+__declspec(dllimport) DIR_WIN_BOOL __stdcall
+Process32First(DIR_WIN_HANDLE hSnapshot, DIR_PROCESSENTRY32 *lppe);
+__declspec(dllimport) DIR_WIN_BOOL __stdcall
+Process32Next(DIR_WIN_HANDLE hSnapshot, DIR_PROCESSENTRY32 *lppe);
+__declspec(dllimport) DIR_WIN_BOOL __stdcall
+CloseHandle(DIR_WIN_HANDLE hObject);
 #ifdef __cplusplus
 }
 #endif

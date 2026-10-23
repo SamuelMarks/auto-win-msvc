@@ -144,8 +144,8 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-__declspec(dllimport) void WIN_STDCALL
-GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
+__declspec(dllimport) void
+    WIN_STDCALL GetSystemInfo(WIN_SYSTEM_INFO *lpSystemInfo);
 __declspec(dllimport) size_t WIN_STDCALL
 VirtualQuery(WIN_LPCVOID lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
              size_t dwLength);
@@ -827,6 +827,50 @@ int shm_unlink(const char *name) {
 #endif
 
 #if defined(__CYGWIN__)
+
+#undef madvise
+#undef mmap
+
+/**
+ * \brief Give advice about use of memory with POSIX NULL/MADV_FREE validation.
+ * \param addr Starting address.
+ * \param length Length of the memory region.
+ * \param advice Advice to give.
+ * \return 0 on success, -1 on failure.
+ */
+int posix_cygwin_madvise(void *addr, size_t length, int advice) {
+  if (addr == NULL || length == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (advice == MADV_FREE) {
+    return 0;
+  }
+  return madvise(addr, length, advice);
+}
+
+/**
+ * \brief Map files or devices into memory with POSIX fd/length validation.
+ * \param addr Starting address hint.
+ * \param length Length of the mapping.
+ * \param prot Memory protection flags.
+ * \param flags Mapping flags.
+ * \param fd File descriptor.
+ * \param offset Offset within the file.
+ * \return Mapped address on success, MAP_FAILED on failure.
+ */
+void *posix_cygwin_mmap(void *addr, size_t length, int prot, int flags, int fd,
+                        off_t offset) {
+  if (length == 0 || length > ((size_t)-1) - 65536U) {
+    errno = ENOMEM;
+    return MAP_FAILED;
+  }
+  if (!(flags & MAP_ANONYMOUS) && fd < 0) {
+    errno = EBADF;
+    return MAP_FAILED;
+  }
+  return mmap(addr, length, prot, flags, fd, offset);
+}
 
 /**
  * \brief Lock all pages mapped into the address space of the calling process.

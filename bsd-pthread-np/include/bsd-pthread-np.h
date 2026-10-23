@@ -26,7 +26,7 @@ auto_win_msvc_error_t bsd_pthread_np_init(int *out_status);
 
 #if (!defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) &&   \
      !defined(__OpenBSD__)) ||                                                 \
-    (defined(__linux__) && !defined(__USE_GNU))
+    (defined(__linux__) && !defined(__USE_GNU) && !defined(_GNU_SOURCE))
 /**
  * @brief Sets CPU affinity mask for a thread.
  * @param thread Thread identifier (or 0 for current thread).

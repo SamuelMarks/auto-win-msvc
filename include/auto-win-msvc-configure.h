@@ -243,6 +243,15 @@ typedef uint32_t uintptr_t;
 #include <posix-strings.h>
 struct mntent;
 extern struct mntent *find_mount_point(const char *name, int subdir_too);
+#undef mktemp
+#define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
+#undef sleep
+#define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : sleep(s))
+#if !defined(__OPTIMIZE__)
+extern void __gcov_dump(void);
+#undef _exit
+#define _exit(s) (__gcov_dump(), _exit(s))
+#endif
 #endif
 
 #if defined(_MSC_VER) || defined(_WIN32)

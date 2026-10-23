@@ -143,6 +143,8 @@
 #define posix_close _cygwin_orig_posix_close
 #include <unistd.h>
 #undef posix_close
+#else
+#include <unistd.h>
 #endif
 #endif
 
@@ -576,6 +578,10 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
  * @param fd File descriptor or socket handle.
  * @return 0 on success, or -1 on error.
  */
+#if !defined(_WIN32)
+#undef posix_close
+#define posix_close awm_posix_close
+#endif
 int posix_close(intptr_t fd);
 
 /**

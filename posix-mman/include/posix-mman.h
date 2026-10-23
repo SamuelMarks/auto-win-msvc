@@ -104,6 +104,35 @@ int mlockall(int flags);
  * \return 0 on success, -1 on failure.
  */
 int munlockall(void);
+
+/**
+ * \brief Give advice about use of memory with POSIX NULL/MADV_FREE validation.
+ * \param addr Starting address.
+ * \param length Length of the memory region.
+ * \param advice Advice to give.
+ * \return 0 on success, -1 on failure.
+ */
+int posix_cygwin_madvise(void *addr, size_t length, int advice);
+#undef madvise
+/** \brief Redefine madvise on Cygwin to enforce NULL validation and MADV_FREE.
+ */
+#define madvise posix_cygwin_madvise
+
+/**
+ * \brief Map files or devices into memory with POSIX fd/length validation.
+ * \param addr Starting address hint.
+ * \param length Length of the mapping.
+ * \param prot Memory protection flags.
+ * \param flags Mapping flags.
+ * \param fd File descriptor.
+ * \param offset Offset within the file.
+ * \return Mapped address on success, MAP_FAILED on failure.
+ */
+void *posix_cygwin_mmap(void *addr, size_t length, int prot, int flags, int fd,
+                        off_t offset);
+#undef mmap
+/** \brief Redefine mmap on Cygwin to enforce POSIX fd and length bounds. */
+#define mmap posix_cygwin_mmap
 #endif /* defined(__CYGWIN__) */
 
 #else

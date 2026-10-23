@@ -771,10 +771,10 @@ static void posix_fd_clr(SOCKET fd, fd_set *set) {
 extern int is_socket(intptr_t fd);
 #if defined(_WIN32)
 __declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
-__declspec(dllimport) int __stdcall PeekNamedPipe(
-    void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
-    unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
-    unsigned long *lpBytesLeftThisMessage);
+__declspec(dllimport) int __stdcall
+PeekNamedPipe(void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
+              unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
+              unsigned long *lpBytesLeftThisMessage);
 #endif
 
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,

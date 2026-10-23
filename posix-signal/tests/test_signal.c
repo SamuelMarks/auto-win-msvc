@@ -55,12 +55,13 @@ typedef struct _PROCESS_INFORMATION {
   unsigned long dwThreadId;
 } PROCESS_INFORMATION;
 
-__declspec(dllimport) int __stdcall CreateProcessA(
-    const char *lpApplicationName, char *lpCommandLine,
-    void *lpProcessAttributes, void *lpThreadAttributes, int bInheritHandles,
-    unsigned long dwCreationFlags, void *lpEnvironment,
-    const char *lpCurrentDirectory, STARTUPINFOA *lpStartupInfo,
-    PROCESS_INFORMATION *lpProcessInformation);
+__declspec(dllimport) int __stdcall
+CreateProcessA(const char *lpApplicationName, char *lpCommandLine,
+               void *lpProcessAttributes, void *lpThreadAttributes,
+               int bInheritHandles, unsigned long dwCreationFlags,
+               void *lpEnvironment, const char *lpCurrentDirectory,
+               STARTUPINFOA *lpStartupInfo,
+               PROCESS_INFORMATION *lpProcessInformation);
 __declspec(dllimport) int __stdcall CloseHandle(void *hObject);
 #endif
 

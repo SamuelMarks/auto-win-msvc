@@ -77,7 +77,8 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 
 #if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC) &&           \
     !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC) &&              \
-    !defined(_SYS__TIMESPEC_H_) && !defined(__CYGWIN__)
+    !defined(_SYS__TIMESPEC_H_) && !defined(_DEFINED_struct_timespec) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* VS2015+ provides struct timespec in time.h */
 #else
@@ -85,6 +86,7 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 #define HAVE_STRUCT_TIMESPEC 1
 #define __timespec_defined 1
 #define _STRUCT_TIMESPEC 1
+#define _DEFINED_struct_timespec
 /**
  * @brief Structure for representing time with nanosecond precision.
  */
@@ -516,7 +518,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 
 #else /* !_WIN32 */
 
-#if !defined(__USE_XOPEN2K8)
+#if !defined(__USE_XOPEN2K8) &&                                                \
+    (!defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L)
 extern int fchmod(int fd, mode_t mode);
 extern int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
 extern int fstatat(int dirfd, const char *pathname, struct stat *statbuf,

@@ -247,6 +247,9 @@ typedef uint64_t uintmax_t;
 #if defined(_MSC_VER)
 /** @brief Minimum value of signed 64-bit integer. */
 #define INT64_MIN (-9223372036854775807i64 - 1)
+#elif defined(__LP64__)
+/** @brief Minimum value of signed 64-bit integer. */
+#define INT64_MIN (-9223372036854775807L - 1L)
 #else
 /** @brief Minimum value of signed 64-bit integer. */
 #define INT64_MIN (__extension__(-9223372036854775807LL - 1))
@@ -257,6 +260,9 @@ typedef uint64_t uintmax_t;
 #if defined(_MSC_VER)
 /** @brief Maximum value of signed 64-bit integer. */
 #define INT64_MAX 9223372036854775807i64
+#elif defined(__LP64__)
+/** @brief Maximum value of signed 64-bit integer. */
+#define INT64_MAX 9223372036854775807L
 #else
 /** @brief Maximum value of signed 64-bit integer. */
 #define INT64_MAX (__extension__ 9223372036854775807LL)
@@ -267,6 +273,9 @@ typedef uint64_t uintmax_t;
 #if defined(_MSC_VER)
 /** @brief Maximum value of unsigned 64-bit integer. */
 #define UINT64_MAX 0xffffffffffffffffui64
+#elif defined(__LP64__)
+/** @brief Maximum value of unsigned 64-bit integer. */
+#define UINT64_MAX 0xffffffffffffffffUL
 #else
 /** @brief Maximum value of unsigned 64-bit integer. */
 #define UINT64_MAX (__extension__ 0xffffffffffffffffULL)

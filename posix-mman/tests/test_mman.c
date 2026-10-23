@@ -23,6 +23,23 @@ TEST test_mman(void) {
   PASS();
 }
 
+TEST test_posix_cygwin_mmap(void) {
+  void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  ASSERT_NEQ(MAP_FAILED, ptr);
+  munmap(ptr, 4096);
+  PASS();
+}
+
+TEST test_posix_cygwin_madvise(void) {
+  void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  ASSERT_NEQ(MAP_FAILED, ptr);
+  ASSERT_EQ(0, madvise(ptr, 4096, MADV_NORMAL));
+  munmap(ptr, 4096);
+  PASS();
+}
+
 TEST test_memfd_create(void) {
   int fd;
   int invalid_fd;
@@ -45,5 +62,7 @@ TEST test_memfd_create(void) {
 
 SUITE(suite_posix_mman_mman) {
   RUN_TEST(test_mman);
+  RUN_TEST(test_posix_cygwin_mmap);
+  RUN_TEST(test_posix_cygwin_madvise);
   RUN_TEST(test_memfd_create);
 }

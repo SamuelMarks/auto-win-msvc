@@ -103,10 +103,11 @@ static SOCKET resolve_socket_or_fd(intptr_t fd) {
 #if defined(_MSC_VER) && defined(_M_X64) &&                                    \
     !defined(auto_win_msvc_export_lib_EXPORTS)
 #include <excpt.h>
-EXCEPTION_DISPOSITION __cdecl __C_specific_handler_noexcept(
-    struct _EXCEPTION_RECORD *ExceptionRecord, void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    struct _DISPATCHER_CONTEXT *DispatcherContext) {
+EXCEPTION_DISPOSITION __cdecl
+__C_specific_handler_noexcept(struct _EXCEPTION_RECORD *ExceptionRecord,
+                              void *EstablisherFrame,
+                              struct _CONTEXT *ContextRecord,
+                              struct _DISPATCHER_CONTEXT *DispatcherContext) {
   return __C_specific_handler(ExceptionRecord, EstablisherFrame, ContextRecord,
                               DispatcherContext);
 }
@@ -231,11 +232,11 @@ __attribute__((constructor)) static void __init_binary_stdio_gcc(void) {
 }
 #endif
 
-__declspec(dllimport) unsigned long __stdcall GetTempPathA(
-    unsigned long nBufferLength, char *lpBuffer);
-__declspec(dllimport) unsigned int __stdcall GetTempFileNameA(
-    const char *lpPathName, const char *lpPrefixString, unsigned int uUnique,
-    char *lpTempFileName);
+__declspec(dllimport) unsigned long __stdcall
+GetTempPathA(unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) unsigned int __stdcall
+GetTempFileNameA(const char *lpPathName, const char *lpPrefixString,
+                 unsigned int uUnique, char *lpTempFileName);
 
 /**
  * @brief Safely opens a temporary FILE* in the user's temp directory with

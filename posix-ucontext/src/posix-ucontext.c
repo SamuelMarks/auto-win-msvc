@@ -57,9 +57,9 @@ typedef void(__stdcall *WIN_PFIBER_START_ROUTINE)(WIN_LPVOID lpFiberParameter);
 __declspec(dllimport) void *__stdcall ConvertThreadToFiber(void *lpParameter);
 __declspec(dllimport) void __stdcall SwitchToFiber(void *lpFiber);
 __declspec(dllimport) void __stdcall DeleteFiber(void *lpFiber);
-__declspec(dllimport) void *__stdcall CreateFiber(
-    size_t dwStackSize, WIN_PFIBER_START_ROUTINE lpStartAddress,
-    void *lpParameter);
+__declspec(dllimport) void *__stdcall
+CreateFiber(size_t dwStackSize, WIN_PFIBER_START_ROUTINE lpStartAddress,
+            void *lpParameter);
 __declspec(dllimport) void __stdcall ExitThread(unsigned long dwExitCode);
 
 #ifdef __cplusplus

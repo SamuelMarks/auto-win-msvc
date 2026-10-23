@@ -441,6 +441,10 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
 /* open */
 #endif
 /** @brief close */
+#if !defined(_WIN32)
+#undef posix_close
+#define posix_close awm_posix_close
+#endif
 int posix_close(intptr_t fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS

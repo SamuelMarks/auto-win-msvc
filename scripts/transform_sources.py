@@ -1462,8 +1462,13 @@ def transform_file(input_path: str, output_path: str) -> None:
                 out_dir_abs = os.path.dirname(os.path.abspath(output_path))
                 gen_inc = os.path.join(out_dir_abs, inc_rel)
                 os.makedirs(os.path.dirname(gen_inc), exist_ok=True)
-                with open(gen_inc, "w", encoding="utf-8") as gf:
-                    gf.write(c_trans)
+                existing_inc = None
+                if os.path.isfile(gen_inc):
+                    with open(gen_inc, "r", encoding="utf-8", errors="ignore") as ef:
+                        existing_inc = ef.read()
+                if existing_inc != c_trans:
+                    with open(gen_inc, "w", encoding="utf-8") as gf:
+                        gf.write(c_trans)
                 return f'#include "{gen_inc.replace(BS, "/")}"'
             return f'#include "{candidate.replace(BS, "/")}"'
         return match.group(0)
@@ -1478,8 +1483,13 @@ def transform_file(input_path: str, output_path: str) -> None:
     out_dir = os.path.dirname(os.path.abspath(output_path))
     os.makedirs(out_dir, exist_ok=True)
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(transformed)
+    existing_out = None
+    if os.path.isfile(output_path):
+        with open(output_path, "r", encoding="utf-8", errors="ignore") as ef:
+            existing_out = ef.read()
+    if existing_out != transformed:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(transformed)
 
 
 def main() -> None:

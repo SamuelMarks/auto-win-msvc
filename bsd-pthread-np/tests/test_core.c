@@ -1,10 +1,14 @@
 #ifdef _MSC_VER
 #endif /* _MSC_VER */
 /* clang-format off */
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE 1
+#endif
 #include "greatest.h"
 #include "bsd-pthread-np.h"
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #if defined(__linux__)
 #include <sched.h>
 #endif
@@ -31,8 +35,12 @@ TEST test_pthread_setaffinity_np(void) {
 #if defined(__linux__)
   {
     cpu_set_t cpuset;
+#if defined(__GLIBC__)
     __CPU_ZERO_S(sizeof(cpuset), &cpuset);
     __CPU_SET_S(0, sizeof(cpuset), &cpuset);
+#else
+    memset(&cpuset, 0, sizeof(cpuset));
+#endif
     ret = pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
     (void)ret;
   }

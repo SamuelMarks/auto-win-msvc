@@ -8,6 +8,14 @@
  */
 
 /* clang-format off */
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
 
@@ -82,10 +90,12 @@ struct sched_param {
 #include <sys/types.h>
 
 #if !defined(__sigset_t_defined) && !defined(_SIGSET_T_DEFINED) &&             \
-    !defined(_SIGSET_T)
+    !defined(_SIGSET_T) && !defined(_DEFINED_sigset_t) &&                      \
+    !defined(__linux__) && !defined(__CYGWIN__)
 #define _SIGSET_T_DEFINED
 #define _SIGSET_T 1
 #define __sigset_t_defined 1
+#define _DEFINED_sigset_t
 typedef unsigned long sigset_t;
 #endif
 

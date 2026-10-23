@@ -107,10 +107,10 @@ auto_win_msvc_error_t posix_poll_get_info(int *out_available) {
 #if defined(_WIN32)
 
 __declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
-__declspec(dllimport) int __stdcall PeekNamedPipe(
-    void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
-    unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
-    unsigned long *lpBytesLeftThisMessage);
+__declspec(dllimport) int __stdcall
+PeekNamedPipe(void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
+              unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
+              unsigned long *lpBytesLeftThisMessage);
 
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
 #undef FD_ZERO

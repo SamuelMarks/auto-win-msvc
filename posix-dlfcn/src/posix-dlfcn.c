@@ -68,27 +68,23 @@ typedef struct _WIN_MEMORY_BASIC_INFORMATION {
 extern "C" {
 #endif
 
-__declspec(dllimport)
-WIN_HMODULE __stdcall LoadLibraryA(WIN_LPCSTR lpLibFileName);
-__declspec(dllimport)
-WIN_HMODULE __stdcall GetModuleHandleA(WIN_LPCSTR lpModuleName);
+__declspec(dllimport) WIN_HMODULE __stdcall
+LoadLibraryA(WIN_LPCSTR lpLibFileName);
+__declspec(dllimport) WIN_HMODULE __stdcall
+GetModuleHandleA(WIN_LPCSTR lpModuleName);
 __declspec(dllimport) int __stdcall FreeLibrary(WIN_HMODULE hLibModule);
-__declspec(dllimport)
-WIN_FARPROC __stdcall GetProcAddress(WIN_HMODULE hModule,
-                                     WIN_LPCSTR lpProcName);
+__declspec(dllimport) WIN_FARPROC __stdcall
+GetProcAddress(WIN_HMODULE hModule, WIN_LPCSTR lpProcName);
 __declspec(dllimport) WIN_DWORD __stdcall GetLastError(void);
-__declspec(dllimport)
-WIN_DWORD __stdcall GetModuleFileNameA(WIN_HMODULE hModule,
-                                       WIN_LPSTR lpFilename, WIN_DWORD nSize);
-__declspec(dllimport)
-WIN_DWORD __stdcall FormatMessageA(WIN_DWORD dwFlags, const void *lpSource,
-                                   WIN_DWORD dwMessageId,
-                                   WIN_DWORD dwLanguageId, WIN_LPSTR lpBuffer,
-                                   WIN_DWORD nSize, void *Arguments);
-__declspec(dllimport)
-size_t __stdcall VirtualQuery(const void *lpAddress,
-                              WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
-                              size_t dwLength);
+__declspec(dllimport) WIN_DWORD __stdcall
+GetModuleFileNameA(WIN_HMODULE hModule, WIN_LPSTR lpFilename, WIN_DWORD nSize);
+__declspec(dllimport) WIN_DWORD __stdcall
+FormatMessageA(WIN_DWORD dwFlags, const void *lpSource, WIN_DWORD dwMessageId,
+               WIN_DWORD dwLanguageId, WIN_LPSTR lpBuffer, WIN_DWORD nSize,
+               void *Arguments);
+__declspec(dllimport) size_t __stdcall
+VirtualQuery(const void *lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
+             size_t dwLength);
 
 #ifdef __cplusplus
 }

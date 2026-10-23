@@ -8,6 +8,14 @@
  */
 
 /* clang-format off */
+#if defined(__linux__)
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
 #include "auto-win-msvc-error.h"
 #if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun) || defined(__QNX__)
 #include <dlfcn.h>
@@ -135,7 +143,7 @@ int dladdr(const void *addr, Dl_info *info);
 
 #endif
 
-#if defined(__linux__) && !defined(__USE_GNU)
+#if defined(__linux__) && defined(__GLIBC__) && !defined(__USE_GNU)
 #ifndef _DL_INFO_DEFINED
 #define _DL_INFO_DEFINED
 /**

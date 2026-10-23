@@ -73,64 +73,42 @@ def main():
         "https://github.com/mirror/busybox.git",
         branch="master",
     )
-    bb_build_dir = os.path.join(busybox_win_path, "build_downstream")
-    if os.path.exists(bb_build_dir):
-        shutil.rmtree(bb_build_dir, ignore_errors=True)
-    bb_cmake_cmd = [
-        "cmake",
-        "-B",
-        bb_build_dir,
-        "-S",
-        busybox_win_path,
-        "-DCMAKE_BUILD_TYPE=Release",
-        f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={current_awm_dir}",
-        f"-DBUSYBOX_SOURCE_DIR={busybox_src_path}",
-    ]
-    run_cmd(bb_cmake_cmd, cwd=busybox_win_path)
-    run_cmd(
-        ["cmake", "--build", bb_build_dir, "--config", "Release", "-j"],
-        cwd=busybox_win_path,
-    )
-    run_cmd(
-        [
-            "ctest",
-            "--test-dir",
+    bb_legacy_build_dir = os.path.join(busybox_win_path, "build_downstream")
+    if os.path.exists(bb_legacy_build_dir):
+        shutil.rmtree(bb_legacy_build_dir, ignore_errors=True)
+    bb_build_dir = tempfile.mkdtemp(prefix="busybox-downstream-")
+    try:
+        bb_cmake_cmd = [
+            "cmake",
+            "-B",
             bb_build_dir,
-            "-C",
-            "Release",
-            "--output-on-failure",
-            "-j",
-        ],
-        cwd=busybox_win_path,
-    )
-    shutil.rmtree(bb_build_dir, ignore_errors=True)
+            "-S",
+            busybox_win_path,
+            "-DCMAKE_BUILD_TYPE=Release",
+            f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={current_awm_dir}",
+            f"-DBUSYBOX_SOURCE_DIR={busybox_src_path}",
+        ]
+        run_cmd(bb_cmake_cmd, cwd=busybox_win_path)
+        run_cmd(
+            ["cmake", "--build", bb_build_dir, "--config", "Release", "-j"],
+            cwd=busybox_win_path,
+        )
+        run_cmd(
+            [
+                "ctest",
+                "--test-dir",
+                bb_build_dir,
+                "-C",
+                "Release",
+                "--output-on-failure",
+                "-j",
+            ],
+            cwd=busybox_win_path,
+        )
+    finally:
+        shutil.rmtree(bb_build_dir, ignore_errors=True)
 
     # 3. Rsync
-    rsync_path, rsync_is_tmp = setup_repo(
-        "rsync", "https://github.com/SamuelMarks/rsync.git", branch="windows"
-    )
-    # Rsync CMakeLists.txt looks for ../auto-win-msvc
-    rsync_parent = os.path.dirname(rsync_path)
-    rsync_awm = os.path.join(rsync_parent, "auto-win-msvc")
-    if os.path.abspath(rsync_awm) != os.path.abspath(current_awm_dir):
-        if os.path.exists(rsync_awm):
-            shutil.rmtree(rsync_awm, ignore_errors=True)
-        shutil.copytree(
-            current_awm_dir, rsync_awm, ignore=ignore_pats, dirs_exist_ok=True
-        )
-
-    # Configure and build rsync
-    with open(os.path.join(rsync_path, "CMakeLists.txt"), "a") as f:
-        f.write(
-            "\nif(TARGET popt)\n  target_compile_definitions(popt PRIVATE HAVE_CONFIG_H=1)\nendif()\n"
-        )
-        f.write(
-            'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rounding.h "#define EXTRA_ROUNDING 0\\n")\n'
-        )
-        f.write(
-            'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git-version.h "#define RSYNC_GITOBJ \\"\\"\\n")\n'
-        )
-
     vcpkg_path = (
         os.environ.get("VCPKG_INSTALLATION_ROOT")
         or os.environ.get("VCPKG_ROOT")
@@ -141,6 +119,31 @@ def main():
             "Skipping rsync downstream test because VCPKG is not set in the environment."
         )
     else:
+        rsync_path, rsync_is_tmp = setup_repo(
+            "rsync", "https://github.com/SamuelMarks/rsync.git", branch="windows"
+        )
+        # Rsync CMakeLists.txt looks for ../auto-win-msvc
+        rsync_parent = os.path.dirname(rsync_path)
+        rsync_awm = os.path.join(rsync_parent, "auto-win-msvc")
+        if os.path.abspath(rsync_awm) != os.path.abspath(current_awm_dir):
+            if os.path.exists(rsync_awm):
+                shutil.rmtree(rsync_awm, ignore_errors=True)
+            shutil.copytree(
+                current_awm_dir, rsync_awm, ignore=ignore_pats, dirs_exist_ok=True
+            )
+
+        # Configure and build rsync
+        with open(os.path.join(rsync_path, "CMakeLists.txt"), "a") as f:
+            f.write(
+                "\nif(TARGET popt)\n  target_compile_definitions(popt PRIVATE HAVE_CONFIG_H=1)\nendif()\n"
+            )
+            f.write(
+                'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rounding.h "#define EXTRA_ROUNDING 0\\n")\n'
+            )
+            f.write(
+                'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git-version.h "#define RSYNC_GITOBJ \\"\\"\\n")\n'
+            )
+
         cmake_cmd = [
             "cmake",
             "-G",

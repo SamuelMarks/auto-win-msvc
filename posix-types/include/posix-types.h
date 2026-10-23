@@ -331,28 +331,34 @@ typedef long blkcnt_t;
 
 #if !defined(__useconds_t_defined) && !defined(_USECONDS_T_DEFINED) &&         \
     !defined(_USECONDS_T) && !defined(_USECONDS_T_DECLARED) &&                 \
+    !defined(_DEFINED_useconds_t) && !defined(__linux__) &&                    \
     !defined(__CYGWIN__)
 #define _USECONDS_T_DEFINED
 #define _USECONDS_T
 #define __useconds_t_defined
+#define _DEFINED_useconds_t
 typedef unsigned int useconds_t;
 #endif
 
 #if !defined(__suseconds_t_defined) && !defined(_SUSECONDS_T_DEFINED) &&       \
     !defined(_SUSECONDS_T) && !defined(_SUSECONDS_T_DECLARED) &&               \
+    !defined(_DEFINED_suseconds_t) && !defined(__linux__) &&                   \
     !defined(__CYGWIN__)
 #define _SUSECONDS_T_DEFINED
 #define _SUSECONDS_T
 #define __suseconds_t_defined
+#define _DEFINED_suseconds_t
 typedef long suseconds_t;
 #endif
 
 #if !defined(__blksize_t_defined) && !defined(_BLKSIZE_T_DEFINED) &&           \
     !defined(_BLKSIZE_T) && !defined(_BLKSIZE_T_DECLARED) &&                   \
+    !defined(_DEFINED_blksize_t) && !defined(__linux__) &&                     \
     !defined(__CYGWIN__)
 #define _BLKSIZE_T_DEFINED
 #define _BLKSIZE_T
 #define __blksize_t_defined
+#define _DEFINED_blksize_t
 typedef long blksize_t;
 #endif
 

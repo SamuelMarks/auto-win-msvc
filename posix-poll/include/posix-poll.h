@@ -26,8 +26,8 @@
 #endif
 #include <winsock2.h>
 #else
-#include <sys/poll.h>
-#include <sys/signal.h>
+#include <poll.h>
+#include <signal.h>
 #endif
 #include <stddef.h>
 /* clang-format on */

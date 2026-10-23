@@ -45,20 +45,18 @@ typedef struct tagLIBPROC_PROCESSENTRY32 {
 #ifdef __cplusplus
 extern "C" {
 #endif
-__declspec(dllimport) LIBPROC_WIN_HANDLE __stdcall CreateToolhelp32Snapshot(
-    LIBPROC_WIN_DWORD dwFlags, LIBPROC_WIN_DWORD th32ProcessID);
-__declspec(dllimport)
-LIBPROC_WIN_BOOL __stdcall Process32First(LIBPROC_WIN_HANDLE hSnapshot,
-                                          LIBPROC_PROCESSENTRY32 *lppe);
-__declspec(dllimport)
-LIBPROC_WIN_BOOL __stdcall Process32Next(LIBPROC_WIN_HANDLE hSnapshot,
-                                         LIBPROC_PROCESSENTRY32 *lppe);
-__declspec(dllimport)
-LIBPROC_WIN_BOOL __stdcall CloseHandle(LIBPROC_WIN_HANDLE hObject);
+__declspec(dllimport) LIBPROC_WIN_HANDLE __stdcall
+CreateToolhelp32Snapshot(LIBPROC_WIN_DWORD dwFlags,
+                         LIBPROC_WIN_DWORD th32ProcessID);
+__declspec(dllimport) LIBPROC_WIN_BOOL __stdcall
+Process32First(LIBPROC_WIN_HANDLE hSnapshot, LIBPROC_PROCESSENTRY32 *lppe);
+__declspec(dllimport) LIBPROC_WIN_BOOL __stdcall
+Process32Next(LIBPROC_WIN_HANDLE hSnapshot, LIBPROC_PROCESSENTRY32 *lppe);
+__declspec(dllimport) LIBPROC_WIN_BOOL __stdcall
+CloseHandle(LIBPROC_WIN_HANDLE hObject);
 __declspec(dllimport) LIBPROC_WIN_DWORD __stdcall GetCurrentProcessId(void);
-__declspec(dllimport)
-LIBPROC_WIN_DWORD __stdcall GetModuleFileNameA(void *hModule, char *lpFilename,
-                                               LIBPROC_WIN_DWORD nSize);
+__declspec(dllimport) LIBPROC_WIN_DWORD __stdcall
+GetModuleFileNameA(void *hModule, char *lpFilename, LIBPROC_WIN_DWORD nSize);
 #ifdef __cplusplus
 }
 #endif

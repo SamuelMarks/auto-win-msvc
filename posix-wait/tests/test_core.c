@@ -50,9 +50,10 @@ TEST test_wait_macros(void) {
   ASSERT(WIFSIGNALED(status));
   ASSERT_EQ(9, WTERMSIG(status));
 
-  /* Stopped by signal 19 (0x7F) */
-  status = 0x7F;
+  /* Stopped by signal 17 (0x7F) */
+  status = (17 << 8) | 0x7F;
   ASSERT(WIFSTOPPED(status));
+  ASSERT_EQ(17, WSTOPSIG(status));
 
   /* Core dumped */
   status = 9 | 0x80;
