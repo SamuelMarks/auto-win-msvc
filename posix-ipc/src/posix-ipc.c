@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "posix-ipc.h"
 #include <stddef.h>
@@ -779,3 +780,6 @@ typedef int dummy_translation_unit;
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_ipc;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_4;

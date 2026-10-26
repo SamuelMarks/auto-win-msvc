@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "sys/epoll.h"
 #include <errno.h>
@@ -49,3 +50,6 @@ int sys_epoll_dummy_for_coverage(void) { return 0; }
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_sys_epoll_c;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_16;

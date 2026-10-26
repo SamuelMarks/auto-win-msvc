@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "bsd-sys-param.h"
 #include <stddef.h>
@@ -15,3 +16,6 @@ auto_win_msvc_error_t bsd_sys_param_get_maxpathlen(size_t *out_maxlen) {
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_param;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_9;

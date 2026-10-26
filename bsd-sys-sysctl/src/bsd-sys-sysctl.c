@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* bsd-sys-sysctl.c - Strict C89 Implementation */
 /* clang-format off */
 #define BSD_SYS_SYSCTL_EXPORTS
@@ -105,3 +106,6 @@ auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_sys_sysctl;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_12;

@@ -77,7 +77,11 @@ def main():
     if os.path.exists(bb_legacy_build_dir):
         shutil.rmtree(bb_legacy_build_dir, ignore_errors=True)
     bb_build_dir = tempfile.mkdtemp(prefix="busybox-downstream-")
+    bb_awm_dir = tempfile.mkdtemp(prefix="busybox-awm-")
     try:
+        shutil.copytree(
+            current_awm_dir, bb_awm_dir, ignore=ignore_pats, dirs_exist_ok=True
+        )
         bb_cmake_cmd = [
             "cmake",
             "-B",
@@ -85,7 +89,7 @@ def main():
             "-S",
             busybox_win_path,
             "-DCMAKE_BUILD_TYPE=Release",
-            f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={current_awm_dir}",
+            f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={bb_awm_dir}",
             f"-DBUSYBOX_SOURCE_DIR={busybox_src_path}",
         ]
         run_cmd(bb_cmake_cmd, cwd=busybox_win_path)
@@ -107,6 +111,7 @@ def main():
         )
     finally:
         shutil.rmtree(bb_build_dir, ignore_errors=True)
+        shutil.rmtree(bb_awm_dir, ignore_errors=True)
 
     # 3. Rsync
     vcpkg_path = (

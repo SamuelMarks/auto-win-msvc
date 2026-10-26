@@ -476,6 +476,9 @@ struct posix_proc_dir {
 static struct posix_proc_dir *g_active_proc_dirs[16] = {NULL};
 
 static int is_proc_dir_handle(DIR *dirp) {
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+  return ((DIR *)g_active_proc_dirs[0] == dirp);
+#else
   int i;
   if (!dirp) {
     return 0;
@@ -486,6 +489,7 @@ static int is_proc_dir_handle(DIR *dirp) {
     }
   }
   return 0;
+#endif
 }
 
 /**
@@ -495,11 +499,26 @@ static int is_proc_dir_handle(DIR *dirp) {
  * @return A pointer to the directory stream, or NULL if an error occurred.
  */
 DIR *posix_opendir(const char *name) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (!name) {
     errno = EINVAL;
     return NULL;
   }
+#endif
 #if !defined(__linux__)
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+  if (strcmp(name, "/proc") == 0) {
+    struct posix_proc_dir *pd =
+        (struct posix_proc_dir *)calloc(1, sizeof(struct posix_proc_dir));
+    pd->magic = POSIX_PROC_MAGIC;
+    pd->index = 0;
+    pd->pids = (int *)malloc(sizeof(int));
+    pd->pids[0] = 1;
+    pd->count = 1;
+    g_active_proc_dirs[0] = pd;
+    return (DIR *)pd;
+  }
+#else
   if (strcmp(name, "/proc") == 0 || strcmp(name, "/proc/") == 0) {
     struct posix_proc_dir *pd;
     int slot = -1;
@@ -558,6 +577,7 @@ DIR *posix_opendir(const char *name) {
     }
   }
 #endif
+#endif
   return opendir(name);
 }
 
@@ -568,10 +588,12 @@ DIR *posix_opendir(const char *name) {
  * @return A pointer to the next directory entry, or NULL at EOF or error.
  */
 struct dirent *posix_readdir(DIR *dirp) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (!dirp) {
     errno = EBADF;
     return NULL;
   }
+#endif
   if (is_proc_dir_handle(dirp)) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)dirp;
     if (pd->index == 0) {
@@ -605,12 +627,18 @@ struct dirent *posix_readdir(DIR *dirp) {
  * @return 0 on success, or -1 on error.
  */
 int posix_closedir(DIR *dirp) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (!dirp) {
     errno = EBADF;
     return -1;
   }
+#endif
   if (is_proc_dir_handle(dirp)) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)dirp;
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+    g_active_proc_dirs[0] = NULL;
+    free(pd->pids);
+#else
     int i;
     for (i = 0; i < 16; i++) {
       if (g_active_proc_dirs[i] == pd) {
@@ -621,12 +649,14 @@ int posix_closedir(DIR *dirp) {
     if (pd->pids != NULL) {
       free(pd->pids);
     }
+#endif
     free(pd);
     return 0;
   }
   return closedir(dirp);
 }
 
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 /**
  * @brief Resets a directory stream position, supporting virtual /proc
  * iteration on non-Linux POSIX platforms.
@@ -643,8 +673,10 @@ void posix_rewinddir(DIR *dirp) {
   }
   rewinddir(dirp);
 }
+#endif
 #endif /* _WIN32 */
 
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 /**
  * @brief Retrieves information on posix-dirent module availability.
  */
@@ -655,6 +687,7 @@ auto_win_msvc_error_t posix_dirent_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
+#endif
 
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;

@@ -826,7 +826,8 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   }
   return 0;
 }
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief posix_fadvise function. */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (fd < 0) {
@@ -890,7 +891,8 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
 
   return 0;
 }
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief posix_fallocate function. */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   if (fd < 0) {
@@ -924,7 +926,8 @@ int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
   }
   return -1;
 }
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif defined(__APPLE__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) ||            \
+    !defined(__linux__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief sync_file_range function fallback. */
 int sync_file_range(intptr_t fd, off_t offset, off_t nbytes,
                     unsigned int flags) {
@@ -1319,7 +1322,7 @@ int fdatasync(intptr_t fd) {
   }
   return 0;
 }
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief fdatasync function. */
 int fdatasync(intptr_t fd) {
   if (fd < 0) {
@@ -1389,7 +1392,8 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   free(buf);
   return -1;
 }
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief fexecve function fallback. */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   if (fd < 0 || !argv || !envp) {
@@ -1997,7 +2001,8 @@ int pipe2(int pipefd[2], int flags) {
   pipefd[1] = (int)sv[1];
   return 0;
 }
-#elif defined(__APPLE__) || !defined(__linux__)
+#elif defined(__APPLE__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) ||            \
+    !defined(__linux__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief pipe2 function. */
 int pipe2(int pipefd[2], int flags) {
   if (!pipefd || flags < 0) {
@@ -2445,6 +2450,7 @@ long sysconf(int name) {
   }
 }
 #endif
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /** @brief Check if file descriptor refers to a terminal. */
 int posix_isatty(intptr_t fd) {
   if (fd < 0 || fd >= 2048) {
@@ -2471,6 +2477,7 @@ int posix_isatty(intptr_t fd) {
   return isatty((int)fd);
 #endif
 }
+#endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** \brief tcgetpgrp function. */
@@ -2757,7 +2764,7 @@ char *posix_mkdtemp(char *tmpl) {
   }
   return tmpl;
 }
-#else
+#elif !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** \brief rename function (POSIX semantics). */
 int posix_rename(const char *oldpath, const char *newpath) {
   return rename(oldpath, newpath);
@@ -3030,6 +3037,7 @@ int settimeofday(const void *tv, const void *tz) {
 
 #endif
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 void ASSIGN_CONST_PTR(const void *pptr, void *v) {
   union {
     const void *cp;
@@ -3058,3 +3066,4 @@ auto_win_msvc_error_t posix_core_init(int *out_status) {
   *out_status = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
+#endif

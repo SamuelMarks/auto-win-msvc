@@ -111,17 +111,29 @@ static char s_apple_type[] = "apfs";
 static char s_apple_opts[] = "rw";
 
 FILE *setmntent(const char *filename, const char *type) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (filename == NULL || type == NULL) {
     return NULL;
   }
+#else
+  (void)filename;
+  (void)type;
+#endif
   s_apple_mnt_idx = 0;
   return (FILE *)&s_apple_mnt_idx;
 }
 
 struct mntent *getmntent(FILE *stream) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (stream == NULL || s_apple_mnt_idx > 0) {
     return NULL;
   }
+#else
+  (void)stream;
+  if (s_apple_mnt_idx > 0) {
+    return NULL;
+  }
+#endif
   s_apple_mnt_idx++;
   s_apple_mnt.mnt_fsname = s_apple_fsname;
   s_apple_mnt.mnt_dir = s_apple_dir;
@@ -138,11 +150,13 @@ int endmntent(FILE *stream) {
   return 1;
 }
 
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 char *hasmntopt(const struct mntent *mnt, const char *opt) {
   if (mnt == NULL || opt == NULL || mnt->mnt_opts == NULL) {
     return NULL;
   }
   return strstr(mnt->mnt_opts, opt);
 }
+#endif
 
 #endif

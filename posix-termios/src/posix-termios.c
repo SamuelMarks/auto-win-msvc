@@ -227,6 +227,7 @@ static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
 #endif
 
 /** \brief cfgetispeed function. */
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 speed_t cfgetispeed(const struct termios *termios_p) {
   if (!termios_p)
     return 0;
@@ -337,6 +338,7 @@ int tcflush(int fd, int queue_selector) {
 }
 
 /** \brief tcgetattr function. */
+#endif
 int tcgetattr(int fd, struct termios *termios_p) {
 #ifdef _WIN32
   HANDLE h;
@@ -373,18 +375,23 @@ int tcgetattr(int fd, struct termios *termios_p) {
   return -1;
 #else
   (void)fd;
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (termios_p) {
+#endif
     termios_p->c_iflag = 0;
     termios_p->c_oflag = 0;
     termios_p->c_cflag = 0;
     termios_p->c_lflag = 0;
     termios_p->c_ispeed = B0;
     termios_p->c_ospeed = B0;
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   }
+#endif
   return -1;
 #endif
 }
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /** \brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
   (void)fd;
@@ -421,6 +428,7 @@ int tcsendbreak(int fd, int duration) {
 
 /** rief tcsetattr function. */
 
+#endif
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 #ifdef _WIN32
   HANDLE h;
@@ -474,6 +482,7 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
  * @brief Set terminal attributes to raw mode.
  * @param termios_p Pointer to termios structure.
  */
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 void cfmakeraw(struct termios *termios_p) {
   if (!termios_p) {
     return;
@@ -505,4 +514,5 @@ typedef int make_iso_compilers_happy_tu;
 /* Dummy function to prevent empty translation unit */
 int dummy_posix_termios(void) { return 0; }
 
+#endif
 typedef int make_iso_compilers_happy_tu_posix_termios;

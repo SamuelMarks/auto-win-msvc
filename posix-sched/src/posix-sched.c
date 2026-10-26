@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-sched.c
  * @brief Implementation of posix-sched polyfills.
@@ -146,3 +147,6 @@ int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
 #endif
 
 typedef int make_iso_compilers_happy_tu_posix_sched;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_13;

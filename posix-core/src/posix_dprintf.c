@@ -13,6 +13,7 @@
 #endif
 /* clang-format on */
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /** \brief dprintf function. */
 int dprintf(int fd, const char *fmt, ...) {
   char *buf = NULL;
@@ -32,3 +33,6 @@ int dprintf(int fd, const char *fmt, ...) {
   free(buf);
   return written;
 }
+
+#endif
+typedef int make_iso_compilers_happy_posix_dprintf;

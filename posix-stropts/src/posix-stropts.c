@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-stropts.c
  * @brief Implementation of POSIX STREAMS interface stubs.
@@ -18,3 +19,6 @@ int posix_isastream(int fildes) {
 }
 
 int dummy_posix_stropts(void) { return 0; }
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_19;

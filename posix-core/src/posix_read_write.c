@@ -1498,6 +1498,93 @@ int posix_dup2(int oldfd, int newfd) {
 #undef fopen
 #undef open
 
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+static FILE *open_virtual_proc_stream_posix(const char *pathname) {
+  const char *sub;
+  char buf[512];
+  FILE *tmp_f;
+
+  if (pathname == NULL || strncmp(pathname, "/proc/", 6) != 0) {
+    return NULL;
+  }
+  sub = pathname + 6;
+
+  if (strcmp(sub, "meminfo") == 0) {
+    unsigned long total_kb = 16777216UL;
+    unsigned long avail_kb = 8388608UL;
+    tmp_f = tmpfile();
+    sprintf(buf,
+            "MemTotal: %lu kB\nMemFree: %lu kB\nMemAvailable: %lu kB\n"
+            "Buffers: 0 kB\nCached: 0 kB\nSwapCached: 0 kB\nSwapTotal: 0 kB\n"
+            "SwapFree: 0 kB\nShmem: 0 kB\nSReclaimable: 0 kB\n",
+            total_kb, avail_kb, avail_kb);
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  if (strcmp(sub, "uptime") == 0) {
+    unsigned long up = 1000UL;
+    tmp_f = tmpfile();
+    sprintf(buf, "%lu.00 %lu.00\n", up, up);
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+
+  {
+    unsigned long pid = strtoul(sub, NULL, 10);
+    const char *slash = strchr(sub, '/');
+    const char *leaf = slash + 1;
+    char comm[64];
+    unsigned long ppid = 1UL;
+    strcpy(comm, "busybox");
+    if (strcmp(leaf, "stat") == 0) {
+      tmp_f = tmpfile();
+      sprintf(buf,
+              "%lu (%s) R %lu %lu %lu 0 -1 4194304 100 0 0 0 10 5 0 0 "
+              "20 0 1 0 100 4096000 1000 18446744073709551615 0 0 0 0 0 0 "
+              "0 0 0 0 0 0 17 0 0 0 0 0 0\n",
+              pid, comm, ppid, pid, pid);
+      fputs(buf, tmp_f);
+      rewind(tmp_f);
+      return tmp_f;
+    }
+    tmp_f = tmpfile();
+    sprintf(buf, "%s\n", comm);
+    fputs(buf, tmp_f);
+    rewind(tmp_f);
+    return tmp_f;
+  }
+}
+
+FILE *posix_fopen(const char *pathname, const char *mode) {
+  FILE *vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    return vproc;
+  }
+  return fopen(pathname, mode);
+}
+
+int posix_open(const char *pathname, int flags, ...) {
+  va_list ap;
+  int mode = 0;
+  FILE *vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    int vfd = dup(fileno(vproc));
+    fclose(vproc);
+    return vfd;
+  }
+  if (flags & O_CREAT) {
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+    return open(pathname, flags, mode);
+  }
+  return open(pathname, flags);
+}
+#else
+
 static int g_mock_fopen_count = 0;
 static FILE *mock_fopen(const char *pathname, const char *mode) {
   if (strcmp(pathname, "/proc/meminfo") == 0) {
@@ -1869,6 +1956,7 @@ int posix_dup2(int oldfd, int newfd) {
   return dup2(oldfd, newfd);
 }
 
+#endif
 #endif
 
 typedef int make_iso_compilers_happy_posix_read_write;

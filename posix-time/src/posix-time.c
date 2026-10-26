@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-time.c - Strict C89 Implementation */
 /* clang-format off */
 #include <errno.h>
@@ -515,3 +516,6 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_time(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_time;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_22;

@@ -9,7 +9,16 @@
  */
 
 /* clang-format off */
+#if !defined(_WIN32)
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#include_next <glob.h>
+#else
+#include <glob.h>
+#endif
+#else
 #include "posix-glob.h"
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus

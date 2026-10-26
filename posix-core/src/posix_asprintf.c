@@ -14,6 +14,7 @@
 #endif
 
 /** \brief vasprintf function. */
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 int vasprintf(char **strp, const char *fmt, va_list ap) {
   int len;
   char *buf;
@@ -56,3 +57,6 @@ int asprintf(char **strp, const char *fmt, ...) {
   va_end(ap);
   return ret;
 }
+
+#endif
+typedef int make_iso_compilers_happy_posix_asprintf;

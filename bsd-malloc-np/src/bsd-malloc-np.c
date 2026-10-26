@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "bsd-malloc-np.h"
 #include <stdio.h>
@@ -202,3 +203,6 @@ auto_win_msvc_error_t bsd_malloc_np_init(int *out_status) {
 }
 
 typedef int make_iso_compilers_happy_tu_bsd_malloc_np;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_1;

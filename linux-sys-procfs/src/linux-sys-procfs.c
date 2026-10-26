@@ -36,10 +36,12 @@ extern int sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
  * @return 0 on success, or -1 on failure with errno set.
  */
 int sysinfo(struct sysinfo *info) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (info == NULL) {
     errno = EFAULT;
     return -1;
   }
+#endif
   memset(info, 0, sizeof(*info));
 #if defined(_WIN32)
   {
@@ -78,19 +80,16 @@ int sysinfo(struct sysinfo *info) {
     int mib[2];
     unsigned long physmem = 0;
     size_t len = sizeof(physmem);
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-      info->uptime = (long)ts.tv_sec;
-    }
+    (void)clock_gettime(CLOCK_MONOTONIC, &ts);
+    info->uptime = (long)ts.tv_sec;
     info->mem_unit = 4096U;
     mib[0] = 6;  /* CTL_HW */
     mib[1] = 24; /* HW_MEMSIZE */
-    if (sysctl(mib, 2, &physmem, &len, NULL, 0) == 0 && physmem > 0) {
+    (void)sysctl(mib, 2, &physmem, &len, NULL, 0);
+    {
       unsigned long pages = physmem / 4096UL;
       info->totalram = pages;
       info->freeram = pages / 2UL;
-    } else {
-      info->totalram = 262144UL;
-      info->freeram = 131072UL;
     }
   }
 #else
@@ -109,6 +108,7 @@ int sysinfo(struct sysinfo *info) {
  * status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t linux_sys_procfs_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -117,4 +117,5 @@ auto_win_msvc_error_t linux_sys_procfs_init(int *out_status) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_linux_sys_procfs;

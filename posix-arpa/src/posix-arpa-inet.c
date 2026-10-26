@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "posix-arpa-inet.h"
 #include <limits.h>
@@ -155,3 +156,6 @@ unsigned long posix_inet_addr(const char *cp) {
 }
 
 typedef int make_iso_compilers_happy_tu_posix_arpa_inet;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_1;

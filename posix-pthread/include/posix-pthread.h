@@ -100,9 +100,12 @@ typedef int pid_t;
 typedef int clockid_t;
 #endif
 
+#ifndef _SCHED_PARAM_DEFINED
+#define _SCHED_PARAM_DEFINED
 struct sched_param {
   int sched_priority;
 };
+#endif
 
 #define PTHREAD_MUTEX_INITIALIZER {0}
 #define PTHREAD_COND_INITIALIZER {0}

@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file bsd_string.c
  * @brief Implementation of BSD string functions.
@@ -116,3 +117,6 @@ char *strcasestr(const char *haystack, const char *needle) {
 int bsd_string_dummy_for_coverage(void) { return 0; }
 
 typedef int make_iso_compilers_happy_bsd_string_c;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_4;

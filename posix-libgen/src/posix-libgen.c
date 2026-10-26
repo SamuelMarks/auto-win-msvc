@@ -25,6 +25,7 @@
 #define _MAX_PATH 260
 #endif
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* Helper function returning void */
 static void get_path_len(const char *path, size_t *out_len) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -205,4 +206,5 @@ auto_win_msvc_error_t posix_libgen_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_posix_libgen;

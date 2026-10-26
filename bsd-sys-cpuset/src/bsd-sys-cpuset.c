@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* bsd-sys-cpuset implementation */
 /* clang-format off */
 #include "bsd-sys-cpuset.h"
@@ -324,3 +325,6 @@ auto_win_msvc_error_t bsd_sys_cpuset_init(int *out_status) {
 }
 
 typedef error_type_t make_iso_compilers_happy_tu_bsd_sys_cpuset;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_5;

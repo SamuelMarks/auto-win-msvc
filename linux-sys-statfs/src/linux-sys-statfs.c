@@ -232,6 +232,7 @@ int fstatvfs(int fd, struct statvfs *buf) {
  * status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t linux_sys_statfs_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -240,4 +241,5 @@ auto_win_msvc_error_t linux_sys_statfs_init(int *out_status) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_linux_sys_statfs;

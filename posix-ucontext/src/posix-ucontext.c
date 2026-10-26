@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-ucontext.c
  * @brief Implementation of posix-ucontext polyfills.
@@ -291,3 +292,6 @@ auto_win_msvc_error_t posix_ucontext_get_info(int *out_available) {
 }
 
 typedef int make_iso_compilers_happy_tu_posix_ucontext;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_25;

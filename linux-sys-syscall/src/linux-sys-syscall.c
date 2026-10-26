@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "linux-sys-syscall.h"
 #include <errno.h>
@@ -39,3 +40,6 @@ auto_win_msvc_error_t linux_sys_syscall_init(int *out_status) {
 }
 
 typedef int make_iso_compilers_happy_tu_linux_sys_syscall;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_22;

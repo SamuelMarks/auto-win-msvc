@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-spawn.c - Strict C89 Implementation */
 
 /* clang-format off */
@@ -831,3 +832,6 @@ int posix_spawnp(pid_t *pid, const char *file,
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_spawn;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_16;

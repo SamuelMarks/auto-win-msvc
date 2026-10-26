@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "posix-sys-uio.h"
 
@@ -434,3 +435,6 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_sys_uio(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sys_uio;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_21;

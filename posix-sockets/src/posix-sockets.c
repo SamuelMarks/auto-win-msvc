@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-sockets.c - Strict C89 Implementation */
 #define POSIX_SOCKETS_EXPORTS
 #if defined(_MSC_VER)
@@ -1865,3 +1866,6 @@ void posix_freeifaddrs(struct ifaddrs *ifa) {
 int dummy_posix_sockets(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sockets;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_15;

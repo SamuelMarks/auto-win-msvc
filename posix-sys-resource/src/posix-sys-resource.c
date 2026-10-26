@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-sys-resource.c
  * @brief Implementation of posix-sys-resource polyfills.
@@ -174,3 +175,6 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
 #endif
 
 typedef int make_iso_compilers_happy_tu_posix_sys_resource;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_20;

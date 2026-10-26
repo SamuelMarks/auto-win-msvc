@@ -151,6 +151,7 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_stat_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -158,6 +159,7 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
+#endif
 
 #ifdef _WIN32
 
@@ -870,6 +872,23 @@ static int is_virtual_proc_stat_posix(const char *pathname,
   (void)pathname;
   (void)statbuf;
   return 0;
+#elif defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+  if (strncmp(pathname, "/proc/", 6) == 0) {
+    const char *sub = pathname + 6;
+    const char *slash = strchr(sub, '/');
+    int is_dir = (slash == NULL);
+    memset(statbuf, 0, sizeof(*statbuf));
+    statbuf->st_mode = (mode_t)((is_dir ? S_IFDIR : S_IFREG) | S_IRUSR |
+                                S_IXUSR | S_IRGRP | S_IROTH);
+    statbuf->st_nlink = 1;
+    statbuf->st_uid = getuid();
+    statbuf->st_gid = getgid();
+#if !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
+    statbuf->st_blksize = 4096;
+#endif
+    return 1;
+  }
+  return 0;
 #else
   if (!pathname || !statbuf) {
     return 0;
@@ -917,10 +936,12 @@ static int is_virtual_proc_stat_posix(const char *pathname,
  */
 int posix_stat(const char *pathname, void *statbuf) {
   struct stat *st = (struct stat *)statbuf;
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (pathname == NULL || st == NULL) {
     errno = EINVAL;
     return -1;
   }
+#endif
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;
   }
@@ -936,6 +957,7 @@ int posix_stat(const char *pathname, void *statbuf) {
  */
 int posix_lstat(const char *pathname, void *statbuf) {
   struct stat *st = (struct stat *)statbuf;
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (pathname == NULL || st == NULL) {
     errno = EINVAL;
     return -1;
@@ -943,6 +965,7 @@ int posix_lstat(const char *pathname, void *statbuf) {
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;
   }
+#endif
   return lstat(pathname, st);
 }
 

@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-pwdgrp.c - Strict C89 Implementation */
 
 /* Provide C89 compliant CRT secure overload definitions */
@@ -638,3 +639,6 @@ typedef int dummy_posix_pwdgrp_c_typedef;
 /* Prevent empty translation unit */
 int dummy_posix_pwdgrp(void) { return 0; }
 typedef int make_iso_compilers_happy_tu_posix_pwdgrp;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_11;

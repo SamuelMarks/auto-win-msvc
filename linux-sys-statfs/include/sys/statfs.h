@@ -26,10 +26,9 @@ struct statfs {
 };
 static __inline int statfs(const char *path, struct statfs *buf) {
   struct statvfs vfs;
-  if (!path || !buf) return -1;
   if (statvfs(path, &vfs) != 0) return -1;
   buf->f_type = 0;
-  buf->f_bsize = vfs.f_frsize ? vfs.f_frsize : vfs.f_bsize;
+  buf->f_bsize = vfs.f_frsize;
   buf->f_blocks = vfs.f_blocks;
   buf->f_bfree = vfs.f_bfree;
   buf->f_bavail = vfs.f_bavail;

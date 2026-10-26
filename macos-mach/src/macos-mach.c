@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "mach/mach.h"
 #include <errno.h>
@@ -177,3 +178,6 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
 }
 
 typedef int make_iso_compilers_happy_tu_macos_mach;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_24;

@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file solaris-port.c
  * @brief Implementation of Solaris event ports stub for MSVC.
@@ -65,3 +66,6 @@ auto_win_msvc_error_t solaris_port_get_info(int *out_available) {
 }
 
 typedef int make_iso_compilers_happy_tu_solaris_port;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_25;

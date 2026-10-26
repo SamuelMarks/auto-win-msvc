@@ -37,6 +37,7 @@ ReportEventA(WIN_HANDLE hEventLog, WIN_WORD wType, WIN_WORD wCategory,
 #endif
 /* clang-format on */
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 #if defined(_WIN32)
 static WIN_HANDLE g_EventSource = NULL;
 #endif
@@ -168,4 +169,5 @@ void syslog(int priority, const char *format, ...) {
 #endif
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_posix_syslog;

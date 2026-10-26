@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "posix-inttypes.h"
 #include <stddef.h>
@@ -15,3 +16,6 @@ auto_win_msvc_error_t posix_inttypes_get_info(int *out_available) {
 }
 
 typedef int make_iso_compilers_happy_tu_posix_inttypes;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_3;

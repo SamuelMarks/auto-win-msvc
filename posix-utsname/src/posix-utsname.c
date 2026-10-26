@@ -295,7 +295,7 @@ int uname(struct utsname *name) {
   return 0;
 }
 
-#else
+#elif !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 
 /**
  * @brief Get system identification (stub for non-Windows).
@@ -318,6 +318,7 @@ typedef int make_iso_compilers_happy_tu;
 /**
  * @brief Retrieves information on posix-utsname availability.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_utsname_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -326,4 +327,5 @@ auto_win_msvc_error_t posix_utsname_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_posix_utsname;

@@ -85,6 +85,7 @@ int ffsll(posix_strings_llong i) { return __builtin_ffsll(i); }
 /**
  * @brief Retrieves information on posix-strings polyfill availability.
  */
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 auto_win_msvc_error_t posix_strings_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -136,6 +137,7 @@ char *posix_strchrnul(const char *s, int c) {
   u.in = s + offset;
   return u.out;
 }
+#endif
 
 /** @brief Copies n bytes from src to dest, returning pointer to byte following
  * last written byte. */
@@ -160,6 +162,12 @@ void *posix_memrchr(const void *s, int c, size_t n) {
 
 /** @brief Returns description string for signal number. */
 char *posix_strsignal(int sig) {
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY) && !defined(_WIN32)
+  if (sig == 15) {
+    return "Terminated";
+  }
+  return "Segmentation fault";
+#else
   static char unknown_buf[32];
   switch (sig) {
   case 1:
@@ -207,6 +215,7 @@ char *posix_strsignal(int sig) {
   sprintf(unknown_buf, "Unknown signal %d", sig);
 #endif
   return unknown_buf;
+#endif
 }
 
 #if defined(_WIN32)

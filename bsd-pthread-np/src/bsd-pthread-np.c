@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "bsd-pthread-np.h"
 #include <errno.h>
@@ -97,3 +98,6 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
 #endif
 
 typedef int make_iso_compilers_happy_tu_bsd_pthread_np;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_2;

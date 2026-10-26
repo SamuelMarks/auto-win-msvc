@@ -1,3 +1,4 @@
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 /**
  * @file uname_main.c
  * @brief Command-line utility emulating uname.
@@ -26,3 +27,6 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
+
+#endif
+typedef int make_iso_compilers_happy_uname_main;

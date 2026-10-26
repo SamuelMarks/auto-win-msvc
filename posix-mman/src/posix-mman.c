@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-mman.c - Strict C89 Implementation */
 
 /* clang-format off */
@@ -967,3 +968,6 @@ int posix_memfd_create(const char *name, unsigned int flags) {
 /* Ensure strict C compliance requires at least one declaration in translation
  * unit */
 typedef int make_iso_compilers_happy_tu_posix_mman;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_7;

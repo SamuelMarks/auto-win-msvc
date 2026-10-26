@@ -1168,6 +1168,150 @@ def transform_source_content(content: str) -> str:
         "#define OC_B   ((int)OC_BUILTIN)" + NL + "#define OC_F   ((int)OC_FBLTIN)",
     )
     content = content.replace(
+        "char *printed = xzalloc(linelen + 2) + 1;",
+        "char *printed = (char *)xzalloc(linelen + 2) + 1;",
+    )
+    content = content.replace(
+        "#if ENABLE_FEATURE_SH_STANDALONE && BB_MMU"
+        + NL
+        + "static void close_all_HFILE_list(void)",
+        "#if ENABLE_FEATURE_SH_STANDALONE"
+        + NL
+        + "static void close_all_HFILE_list(void)",
+    )
+    content = content.replace(
+        "#if ENABLE_FEATURE_SH_STANDALONE && BB_MMU"
+        + NL
+        + "static void close_saved_fds_and_FILE_fds(void)",
+        "#if ENABLE_FEATURE_SH_STANDALONE"
+        + NL
+        + "static void close_saved_fds_and_FILE_fds(void)",
+    )
+    content = content.replace(
+        TAB + "fflush_all();" + NL + TAB + "pid = xfork();",
+        TAB + "fflush_all();" + NL + TAB + "pid = BB_MMU ? xfork() : xvfork();",
+    )
+    content = content.replace(
+        "__builtin_bswap16(",
+        "bswap_16(",
+    )
+    content = content.replace(
+        "__builtin_bswap32(",
+        "bswap_32(",
+    )
+    content = content.replace(
+        "# define bswap_16(x) bswap_16(x)"
+        + NL
+        + "# define bswap_32(x) bswap_32(x)",
+        "# define bswap_16(x) __builtin_bswap16(x)"
+        + NL
+        + "# define bswap_32(x) __builtin_bswap32(x)",
+    )
+    content = content.replace(
+        "#   define ntohs(x) bswap_16(x)"
+        + NL
+        + "#   define htons(x) bswap_16(x)"
+        + NL
+        + "#   define ntohl(x) bswap_32(x)"
+        + NL
+        + "#   define htonl(x) bswap_32(x)",
+        "#   define ntohs(x) __builtin_bswap16(x)"
+        + NL
+        + "#   define htons(x) __builtin_bswap16(x)"
+        + NL
+        + "#   define ntohl(x) __builtin_bswap32(x)"
+        + NL
+        + "#   define htonl(x) __builtin_bswap32(x)",
+    )
+    content = content.replace(
+        "#if ULONG_MAX == ULLONG_MAX"
+        + NL
+        + "#define xstrtoul_range_sfx(str, l, u, sfx) ((unsigned long)xstrtoull_range_sfx((str), (l), (u), (sfx)))",
+        "#if 1"
+        + NL
+        + "#define xstrtoul_range_sfx(str, l, u, sfx) ((unsigned long)xstrtoull_range_sfx((str), (l), (u), (sfx)))",
+    )
+    if "#define xstrtoul_range_sfx(str, l, u, sfx)" in content:
+        content = content.replace(
+            "#elif UINT_MAX == ULONG_MAX"
+            + NL
+            + "DEFINE_EQUIV_STR_CONV(int, i, l, u, ul)",
+            "#elif 0" + NL + "DEFINE_EQUIV_STR_CONV(int, i, l, u, ul)",
+        )
+    content = content.replace(
+        "return transformer_write(xstate, buf, bufsize);"
+        + NL
+        + "}"
+        + NL
+        + NL
+        + "void FAST_FUNC fork_transformer(int fd,",
+        "return transformer_write(xstate, buf, bufsize);"
+        + NL
+        + "}"
+        + NL
+        + NL
+        + "#if !BB_MMU"
+        + NL
+        + "#define fork_transformer fork_transformer_mmu"
+        + NL
+        + "#undef fork_transformer_with_no_sig"
+        + NL
+        + "#define fork_transformer_with_no_sig(fd, transformer) fork_transformer_mmu((fd), 1, (transformer))"
+        + NL
+        + "#endif"
+        + NL
+        + "void FAST_FUNC fork_transformer(int fd,",
+    )
+    if "#define fork_transformer fork_transformer_mmu" in content:
+        content = content.replace(
+            "int FAST_FUNC setup_unzip_on_fd(int fd, int die_if_not_compressed)"
+            + NL
+            + "{"
+            + NL
+            + TAB
+            + "transformer_state_t *xstate = setup_transformer_on_fd(fd, die_if_not_compressed);"
+            + NL
+            + TAB
+            + "fork_transformer_and_free(xstate);"
+            + NL
+            + TAB
+            + "return 0;"
+            + NL
+            + "}",
+            "int FAST_FUNC setup_unzip_on_fd(int fd, int die_if_not_compressed)"
+            + NL
+            + "{"
+            + NL
+            + TAB
+            + "transformer_state_t *xstate = setup_transformer_on_fd(fd, die_if_not_compressed);"
+            + NL
+            + TAB
+            + "fork_transformer_and_free(xstate);"
+            + NL
+            + TAB
+            + "return 0;"
+            + NL
+            + "}"
+            + NL
+            + "#if !BB_MMU"
+            + NL
+            + "#undef fork_transformer"
+            + NL
+            + "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)"
+            + NL
+            + "{"
+            + NL
+            + TAB
+            + "(void)transform_prog;"
+            + NL
+            + TAB
+            + "setup_unzip_on_fd(fd, 0);"
+            + NL
+            + "}"
+            + NL
+            + "#endif",
+        )
+    content = content.replace(
         "#define xstrtou(rest) xstrtoull##rest"
         + NL
         + "#define xstrto(rest) xstrtoll##rest"

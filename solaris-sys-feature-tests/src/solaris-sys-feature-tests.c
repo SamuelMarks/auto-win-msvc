@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "solaris-sys-feature-tests.h"
 #include <stddef.h>
@@ -15,3 +16,6 @@ auto_win_msvc_error_t solaris_sys_feature_tests_init(int *out_status) {
 }
 
 typedef int make_iso_compilers_happy_tu_solaris_sys_feature_tests;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_27;

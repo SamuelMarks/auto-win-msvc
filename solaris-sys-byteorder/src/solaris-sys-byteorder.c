@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "solaris-sys-byteorder.h"
 #include <stddef.h>
@@ -24,3 +25,6 @@ solaris_sys_byteorder_get_byte_order(int *out_byte_order) {
 }
 
 typedef int make_iso_compilers_happy_tu_solaris_sys_byteorder;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch2_26;

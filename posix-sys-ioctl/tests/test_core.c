@@ -78,6 +78,10 @@ TEST test_posix_ioctl_operations(void) {
   /* Valid pointer on stdin for FIONBIO */
   res = posix_ioctl((intptr_t)0, FIONBIO, &non_blocking);
   ASSERT(res == 0 || res == -1);
+  if (res == 0) {
+    non_blocking = 0;
+    (void)posix_ioctl((intptr_t)0, FIONBIO, &non_blocking);
+  }
 
   /* Invalid request */
   res = posix_ioctl((intptr_t)0, 0x12345678, NULL);

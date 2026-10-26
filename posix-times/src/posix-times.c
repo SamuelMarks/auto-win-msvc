@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-times.c
  * @brief Implementation of posix-times polyfills.
@@ -73,3 +74,6 @@ auto_win_msvc_error_t posix_times_get_info(int *out_available) {
 }
 
 typedef int make_iso_compilers_happy_tu_posix_times;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_23;

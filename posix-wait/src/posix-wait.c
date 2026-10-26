@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-wait.c - Strict C89 Implementation */
 #if !defined(_XOPEN_SOURCE)
 #define _XOPEN_SOURCE 700
@@ -383,3 +384,6 @@ auto_win_msvc_error_t posix_wait_get_info(int *out_available) {
 typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_wait;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_26;

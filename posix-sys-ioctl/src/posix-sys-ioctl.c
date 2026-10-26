@@ -71,6 +71,7 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
 /**
  * @brief Retrieves information on posix-sys-ioctl availability.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_sys_ioctl_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -78,6 +79,7 @@ auto_win_msvc_error_t posix_sys_ioctl_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
+#endif
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
@@ -251,10 +253,20 @@ int posix_ioctl(intptr_t fd, unsigned long request, ...) {
   argp = va_arg(args, void *);
   va_end(args);
 
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (fd < 0) {
     errno = EBADF;
     return -1;
   }
+
+  if (argp == NULL && (request == (unsigned long)TIOCGWINSZ ||
+                       request == (unsigned long)TIOCSWINSZ ||
+                       request == (unsigned long)FIONREAD ||
+                       request == (unsigned long)FIONBIO)) {
+    errno = EFAULT;
+    return -1;
+  }
+#endif
 
 #if defined(__CYGWIN__)
   return ioctl((int)fd, (int)request, argp);

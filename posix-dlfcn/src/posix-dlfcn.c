@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-dlfcn.c - Strict C89 Implementation */
 /* clang-format off */
 #include "posix-dlfcn.h"
@@ -403,3 +404,6 @@ auto_win_msvc_error_t posix_dlfcn_get_info(int *out_available) {
 }
 
 typedef int make_iso_compilers_happy_tu_posix_dlfcn;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_2;

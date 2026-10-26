@@ -96,6 +96,7 @@ static SOCKET resolve_socket_or_fd_poll(intptr_t fd) {
 /**
  * @brief Retrieves information on posix-poll availability.
  */
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_poll_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -103,6 +104,7 @@ auto_win_msvc_error_t posix_poll_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
+#endif
 
 #if defined(_WIN32)
 
@@ -265,9 +267,11 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
 #else
 
 int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (fds == NULL && nfds > 0) {
     return -1;
   }
+#endif
 #if defined(__APPLE__) || defined(__linux__) || defined(__unix__) ||           \
     defined(__CYGWIN__)
   return poll((struct pollfd *)fds, (nfds_t)nfds, timeout);
@@ -289,9 +293,13 @@ int posix_ppoll(struct pollfd *fds, unsigned long nfds,
     timeout_ms = (int)(tmo_p->tv_sec * 1000 + tmo_p->tv_nsec / 1000000);
   }
   res = posix_poll(fds, nfds, timeout_ms);
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (sigmask != NULL) {
     return res;
   }
+#else
+  (void)sigmask;
+#endif
   return res;
 }
 

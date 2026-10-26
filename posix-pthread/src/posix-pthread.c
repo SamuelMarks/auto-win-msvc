@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-pthread.c - Strict C89 Implementation */
 /* clang-format off */
 #include "posix-pthread.h"
@@ -2648,3 +2649,6 @@ typedef int make_iso_compilers_happy_tu;
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_10;

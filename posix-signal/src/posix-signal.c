@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-signal.c - Strict C89 Implementation */
 
 /* clang-format off */
@@ -799,3 +800,6 @@ int posix_signal_killpg(pid_t pgrp, int sig) {
 typedef int make_iso_compilers_happy_tu_posix_signal;
 
 #endif
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_14;

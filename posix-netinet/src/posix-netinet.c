@@ -1,3 +1,4 @@
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @file posix-netinet.c
  * @brief Implementation of posix-netinet compatibility helpers.
@@ -37,3 +38,6 @@ auto_win_msvc_error_t posix_netinet_is_ipv4_loopback(unsigned long addr,
 }
 
 typedef int make_iso_compilers_happy_tu_posix_netinet;
+
+#endif
+typedef int make_iso_compilers_happy_mega_batch3_9;

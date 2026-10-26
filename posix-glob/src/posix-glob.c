@@ -46,6 +46,7 @@ static void *my_realloc(void *ptr, size_t size) { return posix_glob_mock_realloc
 /* clang-format on */
 #endif
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* helper to append to glob_t */
 static int glob_append(glob_t *pglob, const char *path) {
   size_t new_count = pglob->gl_pathc + 1;
@@ -541,4 +542,5 @@ int posix_glob_compare_test_internal(const void *a, const void *b) {
   return glob_compare(a, b);
 }
 
+#endif
 typedef int make_iso_compilers_happy_tu_posix_glob;
