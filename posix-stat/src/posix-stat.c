@@ -440,6 +440,9 @@ static void populate_posix_stat_extras(struct posix_stat *st, HANDLE hFile) {
   if (hFile != INVALID_HANDLE_VALUE &&
       GetFileInformationByHandle(hFile, &bhfi)) {
     unsigned int idx = (unsigned int)(bhfi.nFileIndexLow ^ bhfi.nFileIndexHigh);
+    if (bhfi.dwVolumeSerialNumber != 0) {
+      st->st_dev = (_dev_t)(bhfi.dwVolumeSerialNumber & 0x7FFFU);
+    }
     if (idx != 0) {
       st->st_ino = (_ino_t)(idx & 0xFFFFU);
       if (st->st_ino == 0) {
@@ -463,6 +466,16 @@ static int is_virtual_proc_stat(const char *pathname,
                                 struct posix_stat *statbuf) {
   if (!pathname || !statbuf) {
     return 0;
+  }
+  if (strcmp(pathname, "/dev/null") == 0 ||
+      strcmp(pathname, "\\dev\\null") == 0) {
+    memset(statbuf, 0, sizeof(*statbuf));
+    statbuf->st_mode = S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+                       S_IROTH | S_IWOTH;
+    statbuf->st_nlink = 1;
+    statbuf->st_ino = (_ino_t)0xFFFE;
+    statbuf->st_blksize = 4096;
+    return 1;
   }
   if (strcmp(pathname, "/proc") == 0 || strcmp(pathname, "/proc/") == 0 ||
       strcmp(pathname, "\\proc") == 0 || strcmp(pathname, "\\proc\\") == 0 ||
@@ -520,6 +533,9 @@ int posix_stat(const char *pathname, void *statbuf) {
   if (pathname == NULL || st == NULL) {
     errno = EINVAL;
     return -1;
+  }
+  while (pathname[0] == '/' && pathname[1] == '/') {
+    pathname++;
   }
   if (is_virtual_proc_stat(pathname, st)) {
     return 0;
@@ -670,6 +686,9 @@ int posix_lstat(const char *pathname, void *statbuf_ptr) {
   if (pathname == NULL || statbuf == NULL) {
     errno = EINVAL;
     return -1;
+  }
+  while (pathname[0] == '/' && pathname[1] == '/') {
+    pathname++;
   }
 
   if (is_virtual_proc_stat(pathname, statbuf)) {
@@ -941,6 +960,9 @@ int posix_stat(const char *pathname, void *statbuf) {
     errno = EINVAL;
     return -1;
   }
+  while (pathname[0] == '/' && pathname[1] == '/') {
+    pathname++;
+  }
 #endif
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;
@@ -961,6 +983,9 @@ int posix_lstat(const char *pathname, void *statbuf) {
   if (pathname == NULL || st == NULL) {
     errno = EINVAL;
     return -1;
+  }
+  while (pathname[0] == '/' && pathname[1] == '/') {
+    pathname++;
   }
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;

@@ -1694,8 +1694,13 @@ int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
 #undef socket
   SOCKET s;
+  int is_icmp_dgram = 0;
   if (domain == AF_UNIX)
     domain = AF_INET;
+  if (type == SOCK_DGRAM && (protocol == 1 || protocol == 58)) {
+    is_icmp_dgram = 1;
+    protocol = 0;
+  }
   s = WSASocketW(domain, type, protocol, NULL, 0, 0);
   if (s == INVALID_SOCKET) {
     if (WSAGetLastError() == WSANOTINITIALISED) {
@@ -1715,6 +1720,11 @@ int posix_socket(int domain, int type, int protocol) {
       }
       return -1;
     }
+  }
+  if (is_icmp_dgram) {
+    unsigned long nb = 1;
+    ioctlsocket(s, FIONBIO, &nb);
+    set_nonblock(s, 1);
   }
   posix_register_crt_socket((intptr_t)s, (intptr_t)s);
   if (mark_as_socket((intptr_t)s) != ERR_NONE) { /* Ignore */
@@ -1739,7 +1749,7 @@ int posix_socketpair(int domain, int type, int protocol,
   struct sockaddr_in addr;
   int addrlen = sizeof(addr);
 
-  if (domain != AF_INET && domain != AF_UNSPEC)
+  if (domain != AF_INET && domain != AF_UNSPEC && domain != AF_UNIX)
     return -1;
 
   listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);

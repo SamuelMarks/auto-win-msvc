@@ -297,6 +297,10 @@ static FILE *open_virtual_proc_stream(const char *pathname) {
   if (!pathname) {
     return NULL;
   }
+  if (strcmp(pathname, "/dev/null") == 0 ||
+      strcmp(pathname, "\\dev\\null") == 0) {
+    return safe_tmpfile();
+  }
   if (strncmp(pathname, "/proc/", 6) == 0 ||
       strncmp(pathname, "\\proc\\", 6) == 0) {
     sub = pathname + 6;
@@ -1031,6 +1035,11 @@ size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
 /** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...) {
   int mode = 0;
+  if (pathname) {
+    while (pathname[0] == '/' && pathname[1] == '/') {
+      pathname++;
+    }
+  }
   DWORD dwDesiredAccess = 0;
   DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
   DWORD dwCreationDisposition = OPEN_EXISTING;
@@ -1486,6 +1495,13 @@ int posix_dup2(int oldfd, int newfd) {
       }
     } else {
       if (clear_as_socket(newfd) != ERR_NONE) { /* Ignore */
+      }
+      if (newfd >= 0 && newfd <= 2) {
+        ptrdiff_t h = safe_get_osfhandle(newfd);
+        if (h != -1 && h != -2) {
+          DWORD std_id = (newfd == 0) ? (DWORD)-10 : ((newfd == 1) ? (DWORD)-11 : (DWORD)-12);
+          SetStdHandle(std_id, (HANDLE)h);
+        }
       }
     }
     return newfd;

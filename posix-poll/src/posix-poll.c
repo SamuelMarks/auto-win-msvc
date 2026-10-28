@@ -174,15 +174,22 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
         SOCKET_ERROR) {
       /* Non-socket handle (pipe/file/console) */
-      unsigned long ftype = GetFileType((void *)s);
+      void *h = ((intptr_t)fds[i].fd >= 0 && (intptr_t)fds[i].fd < 2048)
+                    ? (void *)_get_osfhandle((int)fds[i].fd)
+                    : (void *)s;
+      unsigned long ftype;
       short rev = 0;
+      if (h == (void *)(intptr_t)-1 || h == (void *)(intptr_t)-2) {
+        h = (void *)s;
+      }
+      ftype = GetFileType(h);
       if (fds[i].events & POLLOUT) {
         rev |= POLLOUT;
       }
       if (fds[i].events & POLLIN) {
         if (ftype == 3 /* FILE_TYPE_PIPE */) {
           unsigned long avail = 0;
-          if (!PeekNamedPipe((void *)s, NULL, 0, NULL, &avail, NULL)) {
+          if (!PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL)) {
             /* Pipe broken / EOF -> readable for EOF or HUP */
             rev |= POLLIN;
           } else if (avail > 0) {

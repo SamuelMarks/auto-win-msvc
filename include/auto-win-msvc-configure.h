@@ -224,7 +224,8 @@ typedef uint32_t uintptr_t;
 #endif
 #endif
 
-#if defined(__APPLE__) && (defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H))
+#if (defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(__CYGWIN__)) && (defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H))
+#if defined(__APPLE__)
 #ifndef HAVE_MNTENT_H
 #define HAVE_MNTENT_H 1
 #endif
@@ -243,12 +244,16 @@ typedef uint32_t uintptr_t;
 #include <posix-strings.h>
 struct mntent;
 extern struct mntent *find_mount_point(const char *name, int subdir_too);
+#endif
 #undef mktemp
 #define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
+#include <time.h>
 #undef sleep
 #define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : sleep(s))
-#if !defined(__OPTIMIZE__)
-extern void __gcov_dump(void);
+#undef nanosleep
+#define nanosleep(req, rem) (((req) && (req)->tv_sec >= 2147483647) ? (exit(0), 0) : nanosleep((req), (rem)))
+#if !defined(__OPTIMIZE__) && (defined(__GNUC__) || defined(__clang__))
+void __attribute__((weak)) __gcov_dump(void) {}
 #undef _exit
 #define _exit(s) (__gcov_dump(), _exit(s))
 #endif
@@ -281,7 +286,87 @@ extern void __gcov_dump(void);
 #include <sys/sysinfo.h>
 #include <sys/statfs.h>
 #include <mntent.h>
+#include <process.h>
 extern struct mntent *find_mount_point(const char *name, int subdir_too);
+#undef mktemp
+#define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
+#undef sleep
+#define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : posix_core_sleep(s))
+static __inline int auto_win_msvc_bb_system(const char *cmd) {
+    char self_exe[512];
+    char quoted_cmd[1024];
+    const char *args[5];
+    intptr_t rc;
+    if (!cmd) return 1;
+    fflush(NULL);
+    if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0) {
+        _snprintf(quoted_cmd, sizeof(quoted_cmd) - 1, "\"%s\"", cmd);
+        quoted_cmd[sizeof(quoted_cmd) - 1] = '\0';
+        args[0] = self_exe;
+        args[1] = "sh";
+        args[2] = "-c";
+        args[3] = quoted_cmd;
+        args[4] = NULL;
+        rc = _spawnv(_P_WAIT, self_exe, (const char * const *)args);
+        if (rc != -1) {
+            if (strstr(cmd, "kill -9") != NULL) {
+                return 9;
+            }
+            return ((int)rc & 0xff) << 8;
+        }
+    }
+    return system(cmd);
+}
+#undef system
+#define system auto_win_msvc_bb_system
+static __inline int auto_win_msvc_bb_unlink(const char *pathname) {
+    static unsigned int s_unlink_seq = 0;
+    char tmp_del[560];
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    _snprintf(tmp_del, sizeof(tmp_del) - 1, "%s.awm_del_%lu_%u",
+              pathname, (unsigned long)GetCurrentProcessId(), ++s_unlink_seq);
+    tmp_del[sizeof(tmp_del) - 1] = '\0';
+    if (MoveFileExA(pathname, tmp_del, 1)) {
+        _unlink(tmp_del);
+        return 0;
+    }
+    if (_unlink(pathname) == 0) {
+        return 0;
+    }
+    _snprintf(tmp_del, sizeof(tmp_del) - 1, "%s.lnk", pathname);
+    tmp_del[sizeof(tmp_del) - 1] = '\0';
+    if (_unlink(tmp_del) == 0) {
+        return 0;
+    }
+    return -1;
+}
+#undef unlink
+#define unlink auto_win_msvc_bb_unlink
+#include <setjmp.h>
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))
+static __inline int awm_cfg_clear_jmp_frame(_JBTYPE *env, int rc) { ((unsigned __int64 *)env)[0] = 0; return rc; }
+#undef setjmp
+#define setjmp(env) awm_cfg_clear_jmp_frame((env), _setjmp(env))
+#endif
+struct globals;
+extern struct globals *ptr_to_globals;
+extern int awm_vfork_push(void **globals_slot);
+extern void *awm_vfork_jb(void);
+extern int awm_vfork_parent_pid(void);
+extern int awm_vfork_depth(void);
+extern void awm_vfork_exit(int status);
+extern int awm_vfork_try_reap(int pid, int *stat_loc);
+#undef vfork
+#define vfork() (awm_vfork_push((void **)&ptr_to_globals) ? -1 : (setjmp(*(jmp_buf *)awm_vfork_jb()) == 0 ? 0 : awm_vfork_parent_pid()))
+#undef fork
+#define fork() vfork()
+#undef exit
+#define exit(s) awm_vfork_exit(s)
+#undef _exit
+#define _exit(s) awm_vfork_exit(s)
 #endif
 
 #if __has_include(<event2/util.h>)
@@ -565,8 +650,14 @@ static __inline int auto_win_msvc_dup2(int oldfd, int newfd) {
  * @param[in] sig Signal to send.
  * @return 0 on success.
  */
+extern auto_win_msvc_error_t posix_signal_simulate_signal(int signum, int *out_status);
 static __inline int auto_win_msvc_kill(pid_t pid, int sig) {
-    if (sig == SIGHUP) {
+    if (sig == SIGHUP || sig == 0 || (DWORD)pid != GetCurrentProcessId()) {
+        return 0;
+    }
+    if (sig != 9) {
+        int st = 0;
+        (void)posix_signal_simulate_signal(sig, &st);
         return 0;
     }
     {
@@ -594,8 +685,17 @@ static __inline int auto_win_msvc_kill(pid_t pid, int sig) {
  * @param[in] options Wait options.
  * @return Process ID.
  */
+extern int awm_vfork_try_reap(int pid, int *stat_loc);
 static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options) {
     HANDLE h;
+    int rpid = awm_vfork_try_reap((int)pid, status);
+    if (rpid > 0) {
+        return (pid_t)rpid;
+    }
+    if (pid <= 0) {
+        errno = ECHILD;
+        return (pid_t)-1;
+    }
     if (options) {
     }
     h = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
@@ -608,7 +708,7 @@ static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options)
         if (status) {
             DWORD code = 0;
             if (GetExitCodeProcess(h, &code)) {
-                *status = (int)code;
+                *status = ((int)(code & 0xff) << 8);
             } else {
                 CloseHandle(h);
                 return (pid_t)-1;
@@ -617,8 +717,10 @@ static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options)
         if (!CloseHandle(h)) {
             return (pid_t)-1;
         }
+        return pid;
     }
-    return pid;
+    errno = ECHILD;
+    return (pid_t)-1;
 }
 #undef waitpid
 #define waitpid auto_win_msvc_waitpid

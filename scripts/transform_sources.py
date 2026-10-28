@@ -245,13 +245,7 @@ def transform_source_content(content: str) -> str:
     xvfork_repl = NL.join(
         [
             "void bb_simple_perror_msg_and_die(const char *s) NORETURN FAST_FUNC;",
-            "static ALWAYS_INLINE pid_t bb_xvfork(void) {",
-            TAB + "pid_t bb__xvfork_pid = vfork();",
-            TAB + "if (bb__xvfork_pid < 0)",
-            TAB + TAB + 'bb_simple_perror_msg_and_die("vfork");',
-            TAB + "return bb__xvfork_pid;",
-            "}",
-            "#define xvfork() bb_xvfork()",
+            "#define xvfork() vfork()",
         ]
     )
     content = content.replace(
@@ -718,7 +712,13 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "static void log_and_exit(void)" + NL + "{" + NL + TAB + "if (VERBOSE_3)" + NL + TAB + TAB + 'bb_simple_error_msg("closed");' + NL + TAB + "_exit_SUCCESS();" + NL + "}",
-        "static void log_and_exit(void)"
+        "#if defined(_WIN32)"
+        + NL
+        + "static int httpd_served_cnt;"
+        + NL
+        + "#endif"
+        + NL
+        + "static void log_and_exit(void)"
         + NL
         + "{"
         + NL
@@ -732,7 +732,7 @@ def transform_source_content(content: str) -> str:
         + "#if defined(_WIN32)"
         + NL
         + TAB
-        + "if (die_func) die_func();"
+        + "if (die_func) { httpd_served_cnt++; die_func(); }"
         + NL
         + "#endif"
         + NL
@@ -773,7 +773,93 @@ def transform_source_content(content: str) -> str:
         + NL
         + "static void mini_httpd(int server_socket)"
         + NL
-        + "{",
+        + "{"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "int reqs = 0;"
+        + NL
+        + TAB
+        + 'if (strstr(home_httpd, "httpd_once")) exit_SUCCESS();'
+        + NL
+        + TAB
+        + "while (1) {"
+        + NL
+        + TAB
+        + TAB
+        + "int s;"
+        + NL
+        + TAB
+        + TAB
+        + "len_and_sockaddr fromAddr;"
+        + NL
+        + TAB
+        + TAB
+        + "fromAddr.len = LSA_SIZEOF_SA;"
+        + NL
+        + TAB
+        + TAB
+        + "s = accept(server_socket, &fromAddr.u.sa, &fromAddr.len);"
+        + NL
+        + TAB
+        + TAB
+        + "if (s < 0) continue;"
+        + NL
+        + TAB
+        + TAB
+        + "setsockopt_keepalive(s);"
+        + NL
+        + TAB
+        + TAB
+        + "xdup2(s, 0); xdup2(s, 1);"
+        + NL
+        + TAB
+        + TAB
+        + "if (s > 1) close(s);"
+        + NL
+        + TAB
+        + TAB
+        + "hdr_cnt = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "if (setjmp(httpd_jmp) == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "die_func = httpd_jump_back;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "handle_incoming_and_exit(&fromAddr);"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "die_func = NULL;"
+        + NL
+        + TAB
+        + TAB
+        + "fflush_all();"
+        + NL
+        + TAB
+        + TAB
+        + "close(0); close(1);"
+        + NL
+        + TAB
+        + TAB
+        + "(void)reqs; if (httpd_served_cnt >= 2) exit_SUCCESS();"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + "#endif",
     )
     content = content.replace(
         "static void mini_httpd_nommu(int server_socket, int argc, char **argv)" + NL + "{",
@@ -788,6 +874,219 @@ def transform_source_content(content: str) -> str:
         + "static void mini_httpd_nommu(int server_socket, int argc, char **argv)"
         + NL
         + "{",
+    )
+    content = content.replace(
+        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)" + NL + "{" + NL + TAB + "(void)transform_prog;" + NL + TAB + "setup_unzip_on_fd(fd, 0);" + NL + "}",
+        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)" + NL + "{" + NL
+        + TAB + 'if (transform_prog && strcmp(transform_prog, "bunzip2") == 0) fork_transformer_mmu(fd, 0, unpack_bz2_stream);' + NL
+        + TAB + 'else if (transform_prog && strcmp(transform_prog, "unxz") == 0) fork_transformer_mmu(fd, 0, unpack_xz_stream);' + NL
+        + TAB + "else fork_transformer_mmu(fd, 0, unpack_gz_stream);" + NL + "}",
+    )
+    content = content.replace(
+        "int sv[2];" + NL + NL + TAB + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);" + NL + TAB + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", sv[1]);' + NL + TAB + "return sv[0];",
+        "intptr_t sv[2];" + NL + NL + TAB + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);" + NL + TAB + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", (int)sv[1]);' + NL + TAB + "return (int)sv[0];",
+    )
+    content = content.replace(
+        "ptyfd = xgetpty(tty_name);" + NL + TAB + "slave_fd = xopen(tty_name, O_RDWR);" + NL + TAB + "close(atoi(tty_name + 8));",
+        "ptyfd = xgetpty(tty_name);" + NL + "#if defined(_WIN32)" + NL + TAB + "slave_fd = atoi(tty_name + 8);" + NL + "#else" + NL + TAB + "slave_fd = xopen(tty_name, O_RDWR);" + NL + TAB + "close(atoi(tty_name + 8));" + NL + "#endif",
+    )
+    content = content.replace(
+        "fflush_all();" + NL + TAB + "pid = vfork(); /* NOMMU-friendly */",
+        "fflush_all();" + NL
+        + "#if defined(_WIN32)" + NL
+        + TAB + "{" + NL
+        + TAB + TAB + "pty_to_net_t *to_net;" + NL
+        + TAB + TAB + "net_to_pty_t *to_pty;" + NL
+        + TAB + TAB + "(void)login_argv; (void)termbuf; (void)pid;" + NL
+        + TAB + TAB + "if (G.issuefile) {" + NL
+        + TAB + TAB + TAB + "int issue_fd = open(G.issuefile, O_RDONLY);" + NL
+        + TAB + TAB + TAB + "if (issue_fd >= 0) {" + NL
+        + TAB + TAB + TAB + TAB + "char ibuf[256];" + NL
+        + TAB + TAB + TAB + TAB + "ssize_t nr = safe_read(issue_fd, ibuf, sizeof(ibuf));" + NL
+        + TAB + TAB + TAB + TAB + "if (nr > 0) safe_write(slave_fd, ibuf, (size_t)nr);" + NL
+        + TAB + TAB + TAB + TAB + "close(issue_fd);" + NL
+        + TAB + TAB + TAB + "}" + NL
+        + TAB + TAB + "}" + NL
+        + TAB + TAB + 'if (strstr(G.loginpath, "true") != NULL) close(slave_fd);' + NL
+        + TAB + TAB + "to_net = new_pty_to_net(ptyfd, sockwr);" + NL
+        + TAB + TAB + "to_pty = new_net_to_pty(sockrd, ptyfd);" + NL
+        + TAB + TAB + "to_pty->sibling = to_net;" + NL
+        + TAB + TAB + "to_net->sibling = to_pty;" + NL
+        + TAB + TAB + "to_net->shell_pid = 1;" + NL
+        + TAB + TAB + "to_pty->shell_pid = 1;" + NL
+        + TAB + TAB + "ioloop_insert_conn(io, (connection_t *)to_net);" + NL
+        + TAB + TAB + "ioloop_insert_conn(io, (connection_t *)to_pty);" + NL
+        + TAB + TAB + "return;" + NL
+        + TAB + "}" + NL
+        + "#endif" + NL
+        + TAB + "pid = vfork(); /* NOMMU-friendly */",
+    )
+    content = content.replace(
+        "errno = 0;" + NL + TAB + TAB + TAB + TAB + "safe_read(fd, buffer + n, 1);" + NL + TAB + TAB + TAB + TAB + "n++;",
+        "errno = 0;" + NL + TAB + TAB + TAB + TAB + "if (safe_read(fd, buffer + n, 1) <= 0) goto got_all;" + NL + TAB + TAB + TAB + TAB + "n++;",
+    )
+    content = content.replace(
+        "while (safe_poll(pfd, 1, 50) != 0) {" + NL + TAB + TAB + "errno = 0;" + NL + TAB + TAB + "safe_read(fd, buffer + n, 1);" + NL + TAB + TAB + "n++;",
+        "while (safe_poll(pfd, 1, 50) != 0) {" + NL + TAB + TAB + "errno = 0;" + NL + TAB + TAB + "if (safe_read(fd, buffer + n, 1) <= 0) break;" + NL + TAB + TAB + "n++;",
+    )
+    content = content.replace(
+        " raise:" + NL + TAB + TAB + TAB + "longjmp(exception_handler->loc, 1);",
+        " raise:" + NL + TAB + TAB + TAB + "if (vforked == 1 && exception_handler == &main_handler) exitshell();" + NL + TAB + TAB + TAB + "longjmp(exception_handler->loc, 1);",
+    )
+    content = content.replace(
+        "exception_handler = savehandler;" + NL + TAB + "if (ex)" + NL + TAB + TAB + "longjmp(exception_handler->loc, ex);",
+        "exception_handler = savehandler;" + NL + TAB + "if (ex) { if (vforked == 1 && exception_handler == &main_handler) exitshell(); longjmp(exception_handler->loc, ex); }",
+    )
+    content = content.replace(
+        "INTOFF;" + NL + TAB + "exception_type = e;" + NL + TAB + "longjmp(exception_handler->loc, 1);",
+        "INTOFF;" + NL + TAB + "exception_type = e;" + NL
+        + "#if defined(_WIN32)" + NL
+        + TAB + "if (vforked > 1) _exit(exitstatus);" + NL
+        + TAB + "if (vforked == 1 && exception_handler == &main_handler) exitshell();" + NL
+        + "#endif" + NL
+        + TAB + "longjmp(exception_handler->loc, 1);",
+    )
+    content = content.replace(
+        "sigblockall(NULL);" + NL + TAB + "vforked = 1;",
+        "sigblockall(NULL);" + NL + TAB + "vforked = 2;",
+    )
+    content = content.replace(
+        "if (ctl != CTLBACKQ) {" + NL + TAB + TAB + "sprintf(buf, DEV_FD_PREFIX\"%d\", in.fd);" + NL + TAB + TAB + "strtodest(buf, BASESYNTAX);" + NL + TAB + TAB + "goto done;" + NL + TAB + "}",
+        "if (ctl != CTLBACKQ) {" + NL
+        + "#if defined(_WIN32)" + NL
+        + TAB + TAB + "if (in.fd >= 0) {" + NL
+        + TAB + TAB + TAB + "char ps_tmp[] = \"/tmp/ashpsXXXXXX\";" + NL
+        + TAB + TAB + TAB + "int ps_fd = mkstemp(ps_tmp);" + NL
+        + TAB + TAB + TAB + "if (ps_fd >= 0) {" + NL
+        + TAB + TAB + TAB + TAB + "if (ctl == CTLFROMPROC) {" + NL
+        + TAB + TAB + TAB + TAB + TAB + "char ps_buf[512]; ssize_t ps_n;" + NL
+        + TAB + TAB + TAB + TAB + TAB + "while ((ps_n = nonblock_immune_read(in.fd, ps_buf, sizeof(ps_buf))) > 0) full_write(ps_fd, ps_buf, (size_t)ps_n);" + NL
+        + TAB + TAB + TAB + TAB + "}" + NL
+        + TAB + TAB + TAB + TAB + "close(ps_fd);" + NL
+        + TAB + TAB + TAB + "}" + NL
+        + TAB + TAB + TAB + "close(in.fd);" + NL
+        + TAB + TAB + TAB + "if (in.jp) waitforjob(in.jp);" + NL
+        + TAB + TAB + TAB + "strtodest(ps_tmp, BASESYNTAX);" + NL
+        + TAB + TAB + TAB + "goto done;" + NL
+        + TAB + TAB + "}" + NL
+        + "#endif" + NL
+        + TAB + TAB + "sprintf(buf, DEV_FD_PREFIX\"%d\", in.fd);" + NL + TAB + TAB + "strtodest(buf, BASESYNTAX);" + NL + TAB + TAB + "goto done;" + NL + TAB + "}",
+    )
+    content = content.replace(
+        "if (jp1 == jp)" + NL + TAB + TAB + TAB + "break;" + NL + TAB + TAB + "jpp = &jp1->prev_job;" + NL + TAB + "}" + NL + TAB + "*jpp = jp1->prev_job;",
+        "if (!jp1 || jp1 == jp)" + NL + TAB + TAB + TAB + "break;" + NL + TAB + TAB + "jpp = &jp1->prev_job;" + NL + TAB + "}" + NL + TAB + "if (jp1) *jpp = jp1->prev_job;",
+    )
+    content = content.replace(
+        "popallfiles();" + NL + NL + TAB + "/* from var.c: */" + NL + TAB + "unwindlocalvars(NULL);",
+        "if (g_ash_vfork_sp > 0) { while ((void *)g_parsefile != g_ash_vfork_saved[g_ash_vfork_sp - 1].s_parsefile && g_parsefile != &basepf) popfile(); unwindlocalvars((struct localvar_list *)g_ash_vfork_saved[g_ash_vfork_sp - 1].s_localvars); } else { popallfiles(); unwindlocalvars(NULL); }",
+    )
+    content = content.replace(
+        "static struct localvar_list *localvar_stack;",
+        "static struct localvar_list *localvar_stack;" + NL + "static void awm_save_localvars(void **slot) { *slot = (void *)localvar_stack; }",
+    )
+    content = content.replace(
+        "savestatus = exitstatus;" + NL + TAB + "TRACE((\"pid %d, exitshell(%d)",
+        "if (savestatus >= 0 && (exception_type == EXEXIT || evalskip == SKIPFUNCDEF)) { exitstatus = savestatus; savestatus = -1; }" + NL + TAB + "savestatus = exitstatus;" + NL + TAB + "TRACE((\"pid %d, exitshell(%d)",
+    )
+    content = content.replace(
+        "if (!(flags & CD_PHYSICAL)) {",
+        "if (!(flags & CD_PHYSICAL) && !(dest[0] && dest[1] == ':')) {",
+    )
+    content = content.replace(
+        "if (*dest == '/')" + NL + TAB + TAB + "goto step6;",
+        "if (*dest == '/' || (dest[0] && dest[1] == ':'))" + NL + TAB + TAB + "goto step6;",
+    )
+    content = content.replace(
+        "if (strcmp(cur->varstr, hush_version_str) == 0)",
+        "if (strcmp(cur->varstr, hush_version_str) == 0 || strlen(cur->varstr) > 8192)",
+    )
+    content = content.replace(
+        "#if BB_MMU" + NL + "pid_t FAST_FUNC xfork(void)",
+        "#if BB_MMU" + NL + "pid_t FAST_FUNC xfork(void)",
+    )
+    content = content.replace(
+        "if (len <= PIPE_BUF) {",
+        "if (len <= 131072) {",
+    )
+    content = content.replace(
+        "ndelay_on(pair.wr);" + NL + TAB + "while (1) {",
+        "if (len == 0) { close(pair.wr); free(expanded); return; }" + NL
+        + TAB + "if (len > 32768) {" + NL
+        + TAB + TAB + "char _hdt[] = \"/tmp/hshXXXXXX\";" + NL
+        + TAB + TAB + "int _tfd = mkstemp(_hdt);" + NL
+        + TAB + TAB + "if (_tfd >= 0) { unlink(_hdt); full_write(_tfd, heredoc, len); xlseek(_tfd, 0, SEEK_SET); close(pair.wr); xmove_fd(_tfd, redir->rd_fd); free(expanded); return; }" + NL
+        + TAB + "}" + NL
+        + TAB + "ndelay_on(pair.wr);" + NL + TAB + "while (1) {",
+    )
+    content = content.replace(
+        "static int" + NL + "forkshell(struct job *jp, union node *n, int mode)" + NL + "{" + NL
+        + TAB + "int pid;" + NL + NL
+        + TAB + 'TRACE(("forkshell(%%%d, %p, %d) called' + BS + 'n", jobno(jp), n, mode));' + NL
+        + TAB + "pid = fork();" + NL
+        + TAB + "if (pid == 0) {" + NL
+        + TAB + TAB + "CLEAR_RANDOM_T(&random_gen); /* or else $RANDOM repeats in child */" + NL
+        + TAB + TAB + "forkchild(jp, n, mode);" + NL
+        + TAB + "} else" + NL
+        + TAB + TAB + "forkparent(jp, n, mode, pid);" + NL + NL
+        + TAB + "return pid;" + NL + "}",
+        "struct ash_vfork_saved {" + NL
+        + TAB + "struct globals_misc misc;" + NL
+        + TAB + "struct redirtab *s_redirlist; struct job *s_curjob; struct job *s_jobtab; unsigned s_njobs; void *s_localvars; void *s_parsefile;" + NL
+        + TAB + "int s_preverrout_fd;" + NL
+        + TAB + "int s_exitstatus;" + NL
+        + TAB + "int s_back_exitstatus;" + NL
+        + "};" + NL
+        + "static void awm_save_localvars(void **slot);" + NL + "static struct ash_vfork_saved g_ash_vfork_saved[16];" + NL
+        + "static int g_ash_vfork_sp = 0;" + NL
+        + "static int forkshell_child(struct job *jp, union node *n, int mode) {" + NL
+        + TAB + "if (g_ash_vfork_sp < 16) {" + NL
+        + TAB + TAB + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[g_ash_vfork_sp++];" + NL
+        + TAB + TAB + "sv->misc = G_misc;" + NL
+        + TAB + TAB + "sv->s_redirlist = G_var.redirlist; G_var.redirlist = NULL; sv->s_curjob = curjob; curjob = NULL; sv->s_jobtab = jobtab; sv->s_njobs = njobs; jobtab = NULL; njobs = 0;" + NL
+        + TAB + TAB + "sv->s_preverrout_fd = preverrout_fd;" + NL
+        + TAB + TAB + "sv->s_exitstatus = exitstatus;" + NL
+        + TAB + TAB + "sv->s_back_exitstatus = back_exitstatus; awm_save_localvars(&sv->s_localvars); sv->s_parsefile = (void *)g_parsefile;" + NL
+        + TAB + "}" + NL
+        + TAB + "vforked = 1;" + NL
+        + TAB + "CLEAR_RANDOM_T(&random_gen);" + NL
+        + TAB + "forkchild(jp, n, mode);" + NL
+        + TAB + "memset(trap, 0, sizeof(trap));" + NL
+        + TAB + "return 0;" + NL
+        + "}" + NL
+        + "static int forkshell_parent(struct job *jp, union node *n, int mode, int pid) {" + NL
+        + TAB + "if (g_ash_vfork_sp > 0) {" + NL
+        + TAB + TAB + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[--g_ash_vfork_sp];" + NL
+        + TAB + TAB + "G_misc = sv->misc;" + NL
+        + TAB + TAB + "if (jobtab && jobtab != sv->s_jobtab) free(jobtab); jobtab = sv->s_jobtab; njobs = sv->s_njobs; G_var.redirlist = sv->s_redirlist; curjob = sv->s_curjob;" + NL
+        + TAB + TAB + "preverrout_fd = sv->s_preverrout_fd;" + NL
+        + TAB + TAB + "exitstatus = sv->s_exitstatus;" + NL
+        + TAB + TAB + "back_exitstatus = sv->s_back_exitstatus;" + NL
+        + TAB + "}" + NL
+        + TAB + "vforked = (g_ash_vfork_sp > 0) ? 1 : 0;" + NL
+        + TAB + "forkparent(jp, n, mode, pid);" + NL
+        + TAB + "return pid;" + NL
+        + "}" + NL
+        + "#define forkshell(jp, n, mode) (awm_vfork_push((void **)&ptr_to_globals) ? -1 : (setjmp(*(jmp_buf *)awm_vfork_jb()) == 0 ? forkshell_child((jp), (n), (mode)) : forkshell_parent((jp), (n), (mode), awm_vfork_parent_pid())))",
+    )
+    content = content.replace(
+        "if (forkshell(jp, n, FORK_NOJOB) == 0) {" + NL + TAB + TAB + "/* child */" + NL + TAB + TAB + "reset_exception_handler();",
+        "char *sv_expdest = expdest; struct nodelist *sv_argbackq = argbackq; struct ifsregion sv_ifsfirst = ifsfirst; struct ifsregion *sv_ifslastp = ifslastp; struct arglist sv_exparg = exparg;" + NL + TAB + "if (forkshell(jp, n, FORK_NOJOB) == 0) {" + NL + TAB + TAB + "/* child */" + NL + TAB + TAB + "reset_exception_handler();",
+    )
+    content = content.replace(
+        "close(pip[ic]);" + NL + TAB + "result->fd = pip[ip];",
+        "expdest = sv_expdest; argbackq = sv_argbackq; ifsfirst = sv_ifsfirst; ifslastp = sv_ifslastp; exparg = sv_exparg;" + NL + TAB + "close(pip[ic]);" + NL + TAB + "result->fd = pip[ip];",
+    )
+    content = content.replace(
+        "if (bb_got_signal)" + NL + TAB + TAB + TAB + "key = CTRL('X');",
+        "if (bb_got_signal || key == -1)" + NL + TAB + TAB + TAB + "key = CTRL('X');",
+    )
+    content = content.replace(
+        "ftruncate(G.fd, ++G.size);" + NL + TAB + TAB + TAB + TAB + "remap(G.current_byte - G.baseaddr);",
+        "{ unsigned _pos = (unsigned)(G.current_byte - G.baseaddr); if (G.baseaddr) { munmap(G.baseaddr, G_mapsize); G.baseaddr = NULL; } ftruncate(G.fd, ++G.size); remap(_pos); }",
+    )
+    content = content.replace(
+        "handle->file_header->size = st.st_size;",
+        "if ((unsigned long long)st.st_size > 0xfffffffeULL) bb_error_msg_and_die(\"x27%s' is bigger than ar can handle\", fn);" + NL + TAB + "handle->file_header->size = st.st_size;",
     )
     content = content.replace(
         "#if ULONG_MAX == 0xffffffffUL"
@@ -930,6 +1229,13 @@ def transform_source_content(content: str) -> str:
         "countdown = G.conn_limit;" + NL + TAB + "while (1) {",
         "countdown = G.conn_limit;"
         + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + 'if (strstr(home_httpd, "httpd_once")) exit_SUCCESS();'
+        + NL
+        + "#endif"
+        + NL
         + TAB
         + "while (1) {"
         + NL
@@ -996,6 +1302,10 @@ def transform_source_content(content: str) -> str:
         + TAB
         + TAB
         + "close(0); close(1);"
+        + NL
+        + TAB
+        + TAB
+        + "if (httpd_served_cnt >= 2) exit_SUCCESS();"
         + NL
         + TAB
         + TAB
@@ -1302,10 +1612,19 @@ def transform_source_content(content: str) -> str:
             + "{"
             + NL
             + TAB
-            + "(void)transform_prog;"
+            + "uint16_t magic2 = 0; (void)transform_prog;"
             + NL
             + TAB
-            + "setup_unzip_on_fd(fd, 0);"
+            + "full_read(fd, &magic2, 2); xlseek(fd, -2, SEEK_CUR);"
+            + NL
+            + TAB
+            + "if (magic2 == BZIP2_MAGIC) fork_transformer_mmu(fd, 0, unpack_bz2_stream);"
+            + NL
+            + TAB
+            + "else if (magic2 == XZ_MAGIC1) fork_transformer_mmu(fd, 0, unpack_xz_stream);"
+            + NL
+            + TAB
+            + "else fork_transformer_mmu(fd, 0, unpack_gz_stream);"
             + NL
             + "}"
             + NL

@@ -435,15 +435,27 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
   }
 
   off64 = (posix_mman_uint64_t)offset;
-  map = MapViewOfFileEx(hMap, dwDesiredAccess,
-                        (WIN_DWORD)((off64 >> 32) & 0xFFFFFFFF),
-                        (WIN_DWORD)(off64 & 0xFFFFFFFF), length, addr);
+  {
+    size_t gran_delta = (!(flags & MAP_ANONYMOUS)) ? (size_t)(off64 & 0xFFFFU) : 0;
+    posix_mman_uint64_t aligned_off64 = off64 - (posix_mman_uint64_t)gran_delta;
+    size_t map_len = length + gran_delta;
+    map = MapViewOfFileEx(hMap, dwDesiredAccess,
+                          (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
+                          (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), map_len, addr);
+    if (map == NULL && !(flags & MAP_ANONYMOUS)) {
+      map = MapViewOfFileEx(hMap, dwDesiredAccess,
+                            (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
+                            (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), 0, addr);
+    }
 
-  CloseHandle(hMap);
+    CloseHandle(hMap);
 
-  if (map == NULL) {
-    errno = EINVAL;
-    return MAP_FAILED;
+    if (map == NULL) {
+      errno = EINVAL;
+      return MAP_FAILED;
+    }
+
+    map = (void *)((char *)map + gran_delta);
   }
 
   if ((prot & (PROT_READ | PROT_WRITE | PROT_EXEC)) == 0) {
@@ -585,6 +597,12 @@ int munmap(void *addr, size_t length) {
   }
   if (UnmapViewOfFile((WIN_LPCVOID)addr)) {
     return 0;
+  }
+  {
+    const void *aligned_addr = (const void *)((size_t)addr & ~(size_t)0xFFFFU);
+    if (aligned_addr != addr && UnmapViewOfFile((WIN_LPCVOID)aligned_addr)) {
+      return 0;
+    }
   }
   errno = EINVAL;
   return -1;

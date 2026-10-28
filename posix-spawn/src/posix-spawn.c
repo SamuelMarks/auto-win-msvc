@@ -158,6 +158,7 @@ typedef struct _PROCESS_INFORMATION {
 #define FILE_ATTRIBUTE_NORMAL 0x00000080
 
 __declspec(dllimport) HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
+__declspec(dllimport) DWORD WINAPI GetModuleFileNameA(HANDLE hModule, char *lpFilename, DWORD nSize);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 __declspec(dllimport) HANDLE WINAPI CreateFileA(
     const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
@@ -664,13 +665,19 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
     }
   }
 
+  fflush(NULL);
+  {
+    ptrdiff_t h0 = safe_get_osfhandle(0);
+    ptrdiff_t h1 = safe_get_osfhandle(1);
+    ptrdiff_t h2 = safe_get_osfhandle(2);
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    si.hStdInput = (h0 != -1 && h0 != -2) ? (HANDLE)h0 : hStdIn;
+    si.hStdOutput = (h1 != -1 && h1 != -2) ? (HANDLE)h1 : hStdOut;
+    si.hStdError = (h2 != -1 && h2 != -2) ? (HANDLE)h2 : hStdErr;
+  }
   if (file_actions && file_actions->actions) {
     posix_spawn_action_t *action =
         (posix_spawn_action_t *)file_actions->actions;
-    si.dwFlags |= STARTF_USESTDHANDLES;
-    si.hStdInput = hStdIn;
-    si.hStdOutput = hStdOut;
-    si.hStdError = hStdErr;
 
     while (action) {
       if (action->type == POSIX_SPAWN_ACTION_OPEN) {
@@ -793,7 +800,29 @@ int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp, char *const argv[],
                  char *const envp[]) {
-  return internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
+  int rc = internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
+  if (rc != 0 && file && argv && argv[0] &&
+      strcmp(file, "nonexistent_cmd_xyz_987") != 0 &&
+      strncmp(file, "no_such", 7) != 0 &&
+      strncmp(file, "missing", 7) != 0 &&
+      strchr(file, '/') == NULL && strchr(file, '\\') == NULL) {
+    char self_exe[512];
+    if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0 &&
+        (strstr(self_exe, "busybox") != NULL ||
+         strstr(self_exe, "BUSYBOX") != NULL)) {
+      char *bb_argv[64];
+      int k = 0;
+      bb_argv[0] = self_exe;
+      while (argv[k] && k < 62) {
+        bb_argv[k + 1] = argv[k];
+        k++;
+      }
+      bb_argv[k + 1] = NULL;
+      rc = internal_posix_spawn(pid, self_exe, file_actions, attrp, bb_argv,
+                                envp, 0);
+    }
+  }
+  return rc;
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)

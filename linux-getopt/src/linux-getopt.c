@@ -59,6 +59,9 @@ int linux_getopt(int argc, char *const argv[], const char *optstring) {
     if (*nextchar != '\0') {
       linux_optarg = nextchar;
       linux_optind++;
+    } else if (cp[2] == ':') {
+      linux_optarg = NULL;
+      linux_optind++;
     } else {
       if (linux_optind + 1 >= argc) {
         if (linux_opterr && *optstring != ':') {
@@ -85,6 +88,13 @@ int linux_getopt(int argc, char *const argv[], const char *optstring) {
 /** @brief Portable implementation of getopt_long. */
 int linux_getopt_long(int argc, char *const argv[], const char *optstring,
                       const struct option *longopts, int *longindex) {
+  if (linux_optind == 0) {
+    linux_optind = 1;
+    nextchar = NULL;
+  }
+  if (nextchar != NULL && *nextchar != '\0') {
+    return linux_getopt(argc, argv, optstring);
+  }
   if (linux_optind >= argc || argv[linux_optind] == NULL ||
       argv[linux_optind][0] != '-') {
     return -1;
@@ -152,6 +162,10 @@ int linux_getopt_long(int argc, char *const argv[], const char *optstring,
 #if defined(_WIN32) || defined(_MSC_VER)
 int getopt(int argc, char *const argv[], const char *optstring) {
   int res;
+  if (optind != linux_optind) {
+    linux_optind = optind;
+    nextchar = NULL;
+  }
   res = linux_getopt(argc, argv, optstring);
   optarg = linux_optarg;
   optind = linux_optind;
@@ -163,6 +177,10 @@ int getopt(int argc, char *const argv[], const char *optstring) {
 int getopt_long(int argc, char *const argv[], const char *optstring,
                 const struct option *longopts, int *longindex) {
   int res;
+  if (optind != linux_optind) {
+    linux_optind = optind;
+    nextchar = NULL;
+  }
   res = linux_getopt_long(argc, argv, optstring, longopts, longindex);
   optarg = linux_optarg;
   optind = linux_optind;

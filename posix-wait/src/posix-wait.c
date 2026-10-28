@@ -112,10 +112,17 @@ __declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
 __declspec(selectany) int g_posix_child_count = 0;
 
 /** rief waitpid function. */
+extern int awm_vfork_try_reap(int pid, int *stat_loc);
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
   DWORD wait_res;
   DWORD exit_code;
   int i;
+  {
+    int rpid = awm_vfork_try_reap((int)pid, stat_loc);
+    if (rpid > 0) {
+      return (pid_t)rpid;
+    }
+  }
 
   if (pid <= 0) {
     if (pid != -1) {

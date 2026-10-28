@@ -271,8 +271,33 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer,
   *result = NULL;
 
   rc = get_sid_from_name(name, &peUse, &sid);
-  if (rc != ERR_NONE)
+  if (rc != ERR_NONE) {
+    if (strcmp(name, "root") == 0 || strcmp(name, "wheel") == 0 ||
+        strcmp(name, "users") == 0) {
+      grp->gr_gid = (strcmp(name, "users") == 0) ? (gid_t)513 : (gid_t)0;
+      rc = copy_string(&buffer, &bufsize, name, &grp->gr_name);
+      if (rc != ERR_NONE)
+        return rc;
+      rc = copy_string(&buffer, &bufsize, "*", &grp->gr_passwd);
+      if (rc != ERR_NONE)
+        return rc;
+      align_offset = ((size_t)buffer) % sizeof(char *);
+      if (align_offset != 0) {
+        align_offset = sizeof(char *) - align_offset;
+        if (bufsize < align_offset)
+          return ERANGE;
+        buffer += align_offset;
+        bufsize -= align_offset;
+      }
+      if (bufsize < sizeof(char *))
+        return ERANGE;
+      grp->gr_mem = (char **)buffer;
+      grp->gr_mem[0] = NULL;
+      *result = grp;
+      return 0;
+    }
     return ENOENT;
+  }
 
   if (peUse != SidTypeAlias && peUse != SidTypeGroup &&
       peUse != SidTypeWellKnownGroup) {
@@ -380,6 +405,14 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
     return r;
   }
 
+  if (gid < (gid_t)65536) {
+    int r = getgrnam_r(gid == 0 ? "root" : "users", grp, buffer, bufsize, result);
+    if (r == 0 && *result) {
+      grp->gr_gid = gid;
+    }
+    return r;
+  }
+
   return ENOENT;
 }
 
@@ -455,8 +488,26 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
   *result = NULL;
 
   rc = get_sid_from_name(name, &peUse, &sid);
-  if (rc != ERR_NONE || !sid)
+  if (rc != ERR_NONE || !sid) {
+    if (strcmp(name, "root") == 0) {
+      pwd->pw_uid = 0;
+      pwd->pw_gid = 0;
+      rc = copy_string(&buffer, &bufsize, name, &pwd->pw_name);
+      if (rc == ERR_NONE)
+        rc = copy_string(&buffer, &bufsize, "*", &pwd->pw_passwd);
+      if (rc == ERR_NONE)
+        rc = copy_string(&buffer, &bufsize, "C:", &pwd->pw_dir);
+      if (rc == ERR_NONE)
+        rc = copy_string(&buffer, &bufsize, "root", &pwd->pw_gecos);
+      if (rc == ERR_NONE)
+        rc = copy_string(&buffer, &bufsize, "cmd.exe", &pwd->pw_shell);
+      if (rc != ERR_NONE)
+        return rc;
+      *result = pwd;
+      return 0;
+    }
     return ENOENT;
+  }
 
   if (peUse != SidTypeUser) {
     free(sid);
@@ -598,6 +649,14 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
   if (found && found_name) {
     int r = getpwnam_r(found_name, pwd, buffer, bufsize, result);
     free(found_name);
+    return r;
+  }
+
+  if (uid < (uid_t)65536) {
+    int r = getpwnam_r("root", pwd, buffer, bufsize, result);
+    if (r == 0 && *result) {
+      pwd->pw_uid = uid;
+    }
     return r;
   }
 

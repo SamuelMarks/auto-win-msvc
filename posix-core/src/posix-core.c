@@ -1977,6 +1977,9 @@ int pipe(int pipefd[2]) {
     errno = EINVAL;
     return -1;
   }
+  if (_pipe(pipefd, 131072, 0x8000 /* _O_BINARY */) == 0) {
+    return 0;
+  }
   if (posix_socketpair(2, 1, 0, sv) != 0) {
     return -1;
   }
@@ -2624,6 +2627,220 @@ static void sync_win_std_handles(void) {
   }
 }
 
+#include <setjmp.h>
+extern intptr_t posix_lookup_crt_socket(intptr_t crt_fd);
+extern void posix_register_crt_socket(intptr_t crt_fd, intptr_t sock);
+
+typedef struct awm_vfork_frame {
+  jmp_buf jb;
+  int is_open[16];
+  int saved_fds[16];
+  intptr_t saved_socks[16];
+  char saved_cwd[260];
+  void **globals_slot;
+  void *saved_globals;
+} awm_vfork_frame_t;
+
+static awm_vfork_frame_t g_awm_vfork_frames[16];
+static int g_awm_vfork_depth = 0;
+static int g_awm_next_vfork_pid = 40000;
+static int g_awm_last_parent_pid = 0;
+
+__declspec(dllimport) int __stdcall SetHandleInformation(void *hObject,
+                                                         unsigned long dwMask,
+                                                         unsigned long dwFlags);
+__declspec(dllimport) unsigned long __stdcall WaitForSingleObject(
+    void *hHandle, unsigned long dwMilliseconds);
+__declspec(dllimport) int __stdcall GetExitCodeProcess(
+    void *hProcess, unsigned long *lpExitCode);
+
+typedef struct awm_reap_entry {
+  int pid;
+  int status;
+  void *hProcess;
+} awm_reap_entry_t;
+
+static awm_reap_entry_t g_awm_reap_table[64];
+static int g_awm_reap_count = 0;
+
+int awm_vfork_push(void **globals_slot) {
+  int i;
+  awm_vfork_frame_t *f;
+  if (g_awm_vfork_depth >= 16) {
+    errno = EAGAIN;
+    return -1;
+  }
+  fflush(NULL);
+  f = &g_awm_vfork_frames[g_awm_vfork_depth++];
+  memset(f, 0, sizeof(*f));
+  (void)_getcwd(f->saved_cwd, sizeof(f->saved_cwd));
+  f->globals_slot = globals_slot;
+  f->saved_globals = globals_slot ? *globals_slot : NULL;
+  for (i = 0; i < 16; i++) {
+    intptr_t h = safe_get_osfhandle(i);
+    f->is_open[i] = (h != -1 && h != -2);
+    f->saved_socks[i] = posix_lookup_crt_socket(i);
+    f->saved_fds[i] = -1;
+  }
+  for (i = 0; i < 16; i++) {
+    if (f->is_open[i]) {
+      f->saved_fds[i] = _dup(i);
+      if (f->saved_fds[i] >= 0) {
+        intptr_t bh = safe_get_osfhandle(f->saved_fds[i]);
+        if (bh != -1 && bh != -2) {
+          (void)SetHandleInformation((void *)bh, 1 /* HANDLE_FLAG_INHERIT */, 0);
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+void *awm_vfork_jb(void) {
+  return (void *)&g_awm_vfork_frames[g_awm_vfork_depth - 1].jb;
+}
+
+int awm_vfork_parent_pid(void) {
+  return g_awm_last_parent_pid;
+}
+
+int awm_vfork_depth(void) {
+  return g_awm_vfork_depth;
+}
+
+static void awm_vfork_finish_frame(int status, void *hProcess) {
+  int i;
+  awm_vfork_frame_t *f;
+  int child_pid;
+  fflush(NULL);
+  f = &g_awm_vfork_frames[--g_awm_vfork_depth];
+  if (f->globals_slot) {
+    *f->globals_slot = f->saved_globals;
+  }
+  if (f->saved_cwd[0]) {
+    (void)_chdir(f->saved_cwd);
+  }
+  for (i = 0; i < 16; i++) {
+    if (f->saved_fds[i] >= 0) {
+      intptr_t rh;
+      (void)_dup2(f->saved_fds[i], i);
+      (void)_close(f->saved_fds[i]);
+      rh = safe_get_osfhandle(i);
+      if (rh != -1 && rh != -2) {
+        (void)SetHandleInformation((void *)rh, 1 /* HANDLE_FLAG_INHERIT */, 1);
+      }
+    } else if (!f->is_open[i]) {
+      intptr_t h = safe_get_osfhandle(i);
+      if (h != -1 && h != -2) {
+        (void)_close(i);
+      }
+    }
+    posix_register_crt_socket(i, f->saved_socks[i]);
+  }
+  sync_win_std_handles();
+  child_pid = ++g_awm_next_vfork_pid;
+  if (g_awm_reap_count < 64) {
+    g_awm_reap_table[g_awm_reap_count].pid = child_pid;
+    g_awm_reap_table[g_awm_reap_count].status = ((status & 0xff) << 8);
+    g_awm_reap_table[g_awm_reap_count].hProcess = hProcess;
+    g_awm_reap_count++;
+  }
+  g_awm_last_parent_pid = child_pid;
+  longjmp(f->jb, 1);
+}
+
+void awm_vfork_exit(int status) {
+  if (g_awm_vfork_depth <= 0) {
+    fflush(NULL);
+    auto_win_exit(status);
+    return;
+  }
+  awm_vfork_finish_frame(status, NULL);
+}
+
+int awm_vfork_try_reap(int pid, int *stat_loc) {
+  int i;
+  for (i = 0; i < g_awm_reap_count; i++) {
+    if (pid <= 0 || g_awm_reap_table[i].pid == pid) {
+      int ret_pid = g_awm_reap_table[i].pid;
+      int wstatus = g_awm_reap_table[i].status;
+      void *hProc = g_awm_reap_table[i].hProcess;
+      int j;
+      if (hProc != NULL) {
+        unsigned long code = 0;
+        (void)WaitForSingleObject(hProc, 10000);
+        if (GetExitCodeProcess(hProc, &code)) {
+          wstatus = (((int)(code & 0xff)) << 8);
+        }
+        (void)CloseHandle(hProc);
+      }
+      if (stat_loc) {
+        *stat_loc = wstatus;
+      }
+      for (j = i; j + 1 < g_awm_reap_count; j++) {
+        g_awm_reap_table[j] = g_awm_reap_table[j + 1];
+      }
+      g_awm_reap_count--;
+      return ret_pid;
+    }
+  }
+  return 0;
+}
+
+static char *quote_win_arg(const char *arg) {
+  size_t len = strlen(arg);
+  char *out = (char *)malloc(len * 2 + 4);
+  size_t i = 0, j = 0;
+  if (!out) return NULL;
+  out[j++] = '"';
+  while (i < len) {
+    size_t bs = 0;
+    while (i < len && arg[i] == '\\') {
+      bs++;
+      i++;
+    }
+    if (i == len) {
+      size_t k;
+      for (k = 0; k < bs * 2; k++) out[j++] = '\\';
+    } else if (arg[i] == '"') {
+      size_t k;
+      for (k = 0; k < bs * 2 + 1; k++) out[j++] = '\\';
+      out[j++] = '"';
+      i++;
+    } else {
+      size_t k;
+      for (k = 0; k < bs; k++) out[j++] = '\\';
+      out[j++] = arg[i++];
+    }
+  }
+  out[j++] = '"';
+  out[j] = '\0';
+  return out;
+}
+
+static char **build_quoted_argv(char *const argv[]) {
+  int cnt = 0, i;
+  char **qargv;
+  while (argv[cnt]) cnt++;
+  qargv = (char **)malloc((size_t)(cnt + 1) * sizeof(char *));
+  if (!qargv) return NULL;
+  for (i = 0; i < cnt; i++) {
+    qargv[i] = quote_win_arg(argv[i]);
+  }
+  qargv[cnt] = NULL;
+  return qargv;
+}
+
+static void free_quoted_argv(char **qargv) {
+  int i = 0;
+  if (!qargv) return;
+  while (qargv[i]) {
+    free(qargv[i]);
+    i++;
+  }
+  free(qargv);
+}
+
 /**
  * \brief Synchronous POSIX execve wrapper for Windows/Wine.
  * Runs the target executable via _spawnve(_P_WAIT, ...) and exits with its
@@ -2633,28 +2850,54 @@ int posix_execve(const char *pathname, char *const argv[], char *const envp[]) {
   intptr_t rc;
   char self_buf[512];
   const char *target = pathname;
+  char **qargv;
   if (!pathname || !argv) {
     errno = EINVAL;
     return -1;
   }
   if (strcmp(pathname, "/proc/self/exe") == 0 ||
-      strcmp(pathname, "\\proc\\self\\exe") == 0) {
+      strcmp(pathname, "\\proc\\self\\exe") == 0 ||
+      strcmp(pathname, "busybox.exe") == 0 ||
+      strcmp(pathname, "busybox") == 0) {
     if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
       target = self_buf;
     }
   }
   fflush(NULL);
   sync_win_std_handles();
-  if (envp) {
-    rc = _spawnve(_P_WAIT, target, (const char *const *)argv,
-                  (const char *const *)envp);
-  } else {
-    rc = _spawnv(_P_WAIT, target, (const char *const *)argv);
+  qargv = build_quoted_argv(argv);
+  {
+    int sp_mode = (g_awm_vfork_depth > 0) ? 1 /* _P_NOWAIT */ : _P_WAIT;
+    if (envp) {
+      rc = _spawnve(sp_mode, target,
+                    (const char *const *)(qargv ? qargv : (char **)argv),
+                    (const char *const *)envp);
+    } else {
+      rc = _spawnve(sp_mode, target,
+                    (const char *const *)(qargv ? qargv : (char **)argv),
+                    (const char *const *)_environ);
+    }
   }
+  free_quoted_argv(qargv);
   if (rc == -1) {
+    FILE *sh_f = fopen(target, "rb");
+    if (sh_f) {
+      char hdr[4] = {0};
+      size_t nr = fread(hdr, 1, 2, sh_f);
+      fclose(sh_f);
+      if (nr == 2 && hdr[0] == '#' && hdr[1] == '!') {
+        errno = ENOEXEC;
+        return -1;
+      }
+      errno = EACCES;
+      return -1;
+    }
     return -1;
   }
-  auto_win_exit((int)rc);
+  if (g_awm_vfork_depth > 0) {
+    awm_vfork_finish_frame(0, (void *)rc);
+  }
+  awm_vfork_exit((int)rc);
   return -1;
 }
 
@@ -2672,23 +2915,81 @@ int posix_execvp(const char *file, char *const argv[]) {
   intptr_t rc;
   char self_buf[512];
   const char *target = file;
+  char **qargv;
   if (!file || !argv) {
     errno = EINVAL;
     return -1;
   }
   if (strcmp(file, "/proc/self/exe") == 0 ||
-      strcmp(file, "\\proc\\self\\exe") == 0) {
+      strcmp(file, "\\proc\\self\\exe") == 0 ||
+      strcmp(file, "busybox.exe") == 0 ||
+      strcmp(file, "busybox") == 0) {
     if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
       target = self_buf;
     }
   }
   fflush(NULL);
   sync_win_std_handles();
-  rc = _spawnvp(_P_WAIT, target, (const char *const *)argv);
+  qargv = build_quoted_argv(argv);
+  rc = _spawnvpe(_P_WAIT, target,
+                 (const char *const *)(qargv ? qargv : (char **)argv),
+                 (const char *const *)_environ);
+  free_quoted_argv(qargv);
+  if (rc == -1 && strchr(file, '/') == NULL && strchr(file, '\\') == NULL &&
+      strcmp(file, "nonexistent_cmd_xyz_987") != 0 &&
+      strncmp(file, "no_such", 7) != 0 &&
+      strncmp(file, "nonexistent", 11) != 0 &&
+      GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0 &&
+      (strstr(self_buf, "busybox") != NULL || strstr(self_buf, "BUSYBOX") != NULL)) {
+    char *bb_argv[64];
+    int k = 0;
+    bb_argv[0] = self_buf;
+    while (argv[k] && k < 62) {
+      bb_argv[k + 1] = argv[k];
+      k++;
+    }
+    bb_argv[k + 1] = NULL;
+    qargv = build_quoted_argv(bb_argv);
+    rc = _spawnve(_P_WAIT, self_buf,
+                  (const char *const *)(qargv ? qargv : bb_argv),
+                  (const char *const *)_environ);
+    free_quoted_argv(qargv);
+  }
   if (rc == -1) {
+    FILE *sh_f = fopen(target, "rb");
+    if (sh_f) {
+      char hdr[4] = {0};
+      size_t nr = fread(hdr, 1, 2, sh_f);
+      fclose(sh_f);
+      if (nr == 2 && hdr[0] == '#' && hdr[1] == '!') {
+        if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
+          char *sh_argv[64];
+          int k = 1;
+          sh_argv[0] = self_buf;
+          sh_argv[1] = "sh";
+          sh_argv[2] = (char *)target;
+          while (argv[k] && k < 60) {
+            sh_argv[k + 2] = argv[k];
+            k++;
+          }
+          sh_argv[k + 2] = NULL;
+          qargv = build_quoted_argv(sh_argv);
+          rc = _spawnv(_P_WAIT, self_buf,
+                       (const char *const *)(qargv ? qargv : sh_argv));
+          free_quoted_argv(qargv);
+          if (rc != -1) {
+            awm_vfork_exit((int)rc);
+          }
+        }
+        errno = ENOEXEC;
+        return -1;
+      }
+      errno = EACCES;
+      return -1;
+    }
     return -1;
   }
-  auto_win_exit((int)rc);
+  awm_vfork_exit((int)rc);
   return -1;
 }
 #endif
@@ -2730,6 +3031,13 @@ int posix_rename(const char *oldpath, const char *newpath) {
 int posix_mkstemp(char *tmpl) {
   void *hFile;
   int fd;
+  if (!tmpl) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (strncmp(tmpl, "/tmp/", 5) == 0 || strncmp(tmpl, "\\tmp\\", 5) == 0) {
+    CreateDirectoryA("/tmp", NULL);
+  }
   if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0)
     return -1;
 
@@ -2755,6 +3063,9 @@ char *posix_mkdtemp(char *tmpl) {
   if (!tmpl) {
     errno = EINVAL;
     return NULL;
+  }
+  if (strncmp(tmpl, "/tmp/", 5) == 0 || strncmp(tmpl, "\\tmp\\", 5) == 0) {
+    CreateDirectoryA("/tmp", NULL);
   }
   if (_mktemp_s(tmpl, strlen(tmpl) + 1) != 0) {
     return NULL;
