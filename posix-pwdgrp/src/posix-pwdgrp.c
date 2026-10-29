@@ -406,7 +406,8 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
   }
 
   if (gid < (gid_t)65536) {
-    int r = getgrnam_r(gid == 0 ? "root" : "users", grp, buffer, bufsize, result);
+    int r =
+        getgrnam_r(gid == 0 ? "root" : "users", grp, buffer, bufsize, result);
     if (r == 0 && *result) {
       grp->gr_gid = gid;
     }

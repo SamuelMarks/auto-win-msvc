@@ -245,6 +245,7 @@ typedef uint32_t uintptr_t;
 struct mntent;
 extern struct mntent *find_mount_point(const char *name, int subdir_too);
 #endif
+#include <unistd.h>
 #undef mktemp
 #define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
 #include <time.h>

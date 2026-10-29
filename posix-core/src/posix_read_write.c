@@ -1499,7 +1499,9 @@ int posix_dup2(int oldfd, int newfd) {
       if (newfd >= 0 && newfd <= 2) {
         ptrdiff_t h = safe_get_osfhandle(newfd);
         if (h != -1 && h != -2) {
-          DWORD std_id = (newfd == 0) ? (DWORD)-10 : ((newfd == 1) ? (DWORD)-11 : (DWORD)-12);
+          DWORD std_id = (newfd == 0)
+                             ? (DWORD)-10
+                             : ((newfd == 1) ? (DWORD)-11 : (DWORD)-12);
           SetStdHandle(std_id, (HANDLE)h);
         }
       }

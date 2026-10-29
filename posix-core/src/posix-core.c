@@ -2649,10 +2649,10 @@ static int g_awm_last_parent_pid = 0;
 __declspec(dllimport) int __stdcall SetHandleInformation(void *hObject,
                                                          unsigned long dwMask,
                                                          unsigned long dwFlags);
-__declspec(dllimport) unsigned long __stdcall WaitForSingleObject(
-    void *hHandle, unsigned long dwMilliseconds);
-__declspec(dllimport) int __stdcall GetExitCodeProcess(
-    void *hProcess, unsigned long *lpExitCode);
+__declspec(dllimport) unsigned long __stdcall
+WaitForSingleObject(void *hHandle, unsigned long dwMilliseconds);
+__declspec(dllimport) int __stdcall
+GetExitCodeProcess(void *hProcess, unsigned long *lpExitCode);
 
 typedef struct awm_reap_entry {
   int pid;
@@ -2688,7 +2688,8 @@ int awm_vfork_push(void **globals_slot) {
       if (f->saved_fds[i] >= 0) {
         intptr_t bh = safe_get_osfhandle(f->saved_fds[i]);
         if (bh != -1 && bh != -2) {
-          (void)SetHandleInformation((void *)bh, 1 /* HANDLE_FLAG_INHERIT */, 0);
+          (void)SetHandleInformation((void *)bh, 1 /* HANDLE_FLAG_INHERIT */,
+                                     0);
         }
       }
     }
@@ -2700,13 +2701,9 @@ void *awm_vfork_jb(void) {
   return (void *)&g_awm_vfork_frames[g_awm_vfork_depth - 1].jb;
 }
 
-int awm_vfork_parent_pid(void) {
-  return g_awm_last_parent_pid;
-}
+int awm_vfork_parent_pid(void) { return g_awm_last_parent_pid; }
 
-int awm_vfork_depth(void) {
-  return g_awm_vfork_depth;
-}
+int awm_vfork_depth(void) { return g_awm_vfork_depth; }
 
 static void awm_vfork_finish_frame(int status, void *hProcess) {
   int i;
@@ -2791,7 +2788,8 @@ static char *quote_win_arg(const char *arg) {
   size_t len = strlen(arg);
   char *out = (char *)malloc(len * 2 + 4);
   size_t i = 0, j = 0;
-  if (!out) return NULL;
+  if (!out)
+    return NULL;
   out[j++] = '"';
   while (i < len) {
     size_t bs = 0;
@@ -2801,15 +2799,18 @@ static char *quote_win_arg(const char *arg) {
     }
     if (i == len) {
       size_t k;
-      for (k = 0; k < bs * 2; k++) out[j++] = '\\';
+      for (k = 0; k < bs * 2; k++)
+        out[j++] = '\\';
     } else if (arg[i] == '"') {
       size_t k;
-      for (k = 0; k < bs * 2 + 1; k++) out[j++] = '\\';
+      for (k = 0; k < bs * 2 + 1; k++)
+        out[j++] = '\\';
       out[j++] = '"';
       i++;
     } else {
       size_t k;
-      for (k = 0; k < bs; k++) out[j++] = '\\';
+      for (k = 0; k < bs; k++)
+        out[j++] = '\\';
       out[j++] = arg[i++];
     }
   }
@@ -2821,9 +2822,11 @@ static char *quote_win_arg(const char *arg) {
 static char **build_quoted_argv(char *const argv[]) {
   int cnt = 0, i;
   char **qargv;
-  while (argv[cnt]) cnt++;
+  while (argv[cnt])
+    cnt++;
   qargv = (char **)malloc((size_t)(cnt + 1) * sizeof(char *));
-  if (!qargv) return NULL;
+  if (!qargv)
+    return NULL;
   for (i = 0; i < cnt; i++) {
     qargv[i] = quote_win_arg(argv[i]);
   }
@@ -2833,7 +2836,8 @@ static char **build_quoted_argv(char *const argv[]) {
 
 static void free_quoted_argv(char **qargv) {
   int i = 0;
-  if (!qargv) return;
+  if (!qargv)
+    return;
   while (qargv[i]) {
     free(qargv[i]);
     i++;
@@ -2922,8 +2926,7 @@ int posix_execvp(const char *file, char *const argv[]) {
   }
   if (strcmp(file, "/proc/self/exe") == 0 ||
       strcmp(file, "\\proc\\self\\exe") == 0 ||
-      strcmp(file, "busybox.exe") == 0 ||
-      strcmp(file, "busybox") == 0) {
+      strcmp(file, "busybox.exe") == 0 || strcmp(file, "busybox") == 0) {
     if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
       target = self_buf;
     }
@@ -2940,7 +2943,8 @@ int posix_execvp(const char *file, char *const argv[]) {
       strncmp(file, "no_such", 7) != 0 &&
       strncmp(file, "nonexistent", 11) != 0 &&
       GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0 &&
-      (strstr(self_buf, "busybox") != NULL || strstr(self_buf, "BUSYBOX") != NULL)) {
+      (strstr(self_buf, "busybox") != NULL ||
+       strstr(self_buf, "BUSYBOX") != NULL)) {
     char *bb_argv[64];
     int k = 0;
     bb_argv[0] = self_buf;

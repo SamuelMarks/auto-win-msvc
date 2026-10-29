@@ -111,7 +111,30 @@ __declspec(selectany) void *g_posix_child_handles[1024] = {0};
 __declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
 __declspec(selectany) int g_posix_child_count = 0;
 
-/** rief waitpid function. */
+#if defined(_MSC_VER)
+#if defined(_M_IX86)
+#pragma comment(linker,                                                        \
+                "/alternatename:_awm_vfork_try_reap=_awm_vfork_try_reap_stub")
+#else
+#pragma comment(linker,                                                        \
+                "/alternatename:awm_vfork_try_reap=awm_vfork_try_reap_stub")
+#endif
+/** \brief Fallback stub when posix-core is not linked. */
+int awm_vfork_try_reap_stub(int pid, int *stat_loc) {
+  (void)pid;
+  (void)stat_loc;
+  return 0;
+}
+#elif defined(__GNUC__) || defined(__clang__)
+/** \brief Weak fallback stub when posix-core is not linked. */
+int __attribute__((weak)) awm_vfork_try_reap(int pid, int *stat_loc) {
+  (void)pid;
+  (void)stat_loc;
+  return 0;
+}
+#endif
+
+/** \brief waitpid function. */
 extern int awm_vfork_try_reap(int pid, int *stat_loc);
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
   DWORD wait_res;

@@ -94,7 +94,7 @@ def main():
         ]
         run_cmd(bb_cmake_cmd, cwd=busybox_win_path)
         run_cmd(
-            ["cmake", "--build", bb_build_dir, "--config", "Release", "-j"],
+            ["cmake", "--build", bb_build_dir, "--config", "Release", "-j", "4"],
             cwd=busybox_win_path,
         )
         run_cmd(
@@ -106,6 +106,7 @@ def main():
                 "Release",
                 "--output-on-failure",
                 "-j",
+                "4",
             ],
             cwd=busybox_win_path,
         )

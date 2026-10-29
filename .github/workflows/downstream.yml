@@ -79,8 +79,11 @@ jobs:
 
       - name: Checkout busybox
         if: matrix.project == 'busybox'
+        shell: pwsh
         run: |
-          git clone --depth 1 https://git.busybox.net/busybox busybox-windows/busybox || git clone --depth 1 https://github.com/mirror/busybox.git busybox-windows/busybox
+          $ref = "e6302b2711d851bfb17eaf9316514c9d0a806cc7"
+          git clone --depth 200 https://git.busybox.net/busybox busybox-windows/busybox
+          git -C busybox-windows/busybox checkout -B master $ref
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1

@@ -470,8 +470,8 @@ static int is_virtual_proc_stat(const char *pathname,
   if (strcmp(pathname, "/dev/null") == 0 ||
       strcmp(pathname, "\\dev\\null") == 0) {
     memset(statbuf, 0, sizeof(*statbuf));
-    statbuf->st_mode = S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                       S_IROTH | S_IWOTH;
+    statbuf->st_mode =
+        S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
     statbuf->st_nlink = 1;
     statbuf->st_ino = (_ino_t)0xFFFE;
     statbuf->st_blksize = 4096;

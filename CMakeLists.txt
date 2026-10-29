@@ -57,9 +57,10 @@ while [ \$attempt -lt 5 ]; do
   \"\$@\"
   rc=\$?
   if [ \$rc -eq 0 ]; then
-    if [ -z \"\$out\" ] || [ -f \"\$out\" ]; then
+    if [ -z \"\$out\" ] || [ -s \"\$out\" ]; then
       exit 0
     fi
+    rm -f \"\$out\"
     rc=1
   fi
   attempt=\$((attempt + 1))

@@ -436,12 +436,13 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
 
   off64 = (posix_mman_uint64_t)offset;
   {
-    size_t gran_delta = (!(flags & MAP_ANONYMOUS)) ? (size_t)(off64 & 0xFFFFU) : 0;
+    size_t gran_delta =
+        (!(flags & MAP_ANONYMOUS)) ? (size_t)(off64 & 0xFFFFU) : 0;
     posix_mman_uint64_t aligned_off64 = off64 - (posix_mman_uint64_t)gran_delta;
     size_t map_len = length + gran_delta;
-    map = MapViewOfFileEx(hMap, dwDesiredAccess,
-                          (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
-                          (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), map_len, addr);
+    map = MapViewOfFileEx(
+        hMap, dwDesiredAccess, (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
+        (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), map_len, addr);
     if (map == NULL && !(flags & MAP_ANONYMOUS)) {
       map = MapViewOfFileEx(hMap, dwDesiredAccess,
                             (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),

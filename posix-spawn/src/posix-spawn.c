@@ -158,7 +158,9 @@ typedef struct _PROCESS_INFORMATION {
 #define FILE_ATTRIBUTE_NORMAL 0x00000080
 
 __declspec(dllimport) HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
-__declspec(dllimport) DWORD WINAPI GetModuleFileNameA(HANDLE hModule, char *lpFilename, DWORD nSize);
+__declspec(dllimport) DWORD WINAPI GetModuleFileNameA(HANDLE hModule,
+                                                      char *lpFilename,
+                                                      DWORD nSize);
 __declspec(dllimport) BOOL WINAPI CloseHandle(HANDLE hObject);
 __declspec(dllimport) HANDLE WINAPI CreateFileA(
     const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
@@ -803,8 +805,7 @@ int posix_spawnp(pid_t *pid, const char *file,
   int rc = internal_posix_spawn(pid, file, file_actions, attrp, argv, envp, 1);
   if (rc != 0 && file && argv && argv[0] &&
       strcmp(file, "nonexistent_cmd_xyz_987") != 0 &&
-      strncmp(file, "no_such", 7) != 0 &&
-      strncmp(file, "missing", 7) != 0 &&
+      strncmp(file, "no_such", 7) != 0 && strncmp(file, "missing", 7) != 0 &&
       strchr(file, '/') == NULL && strchr(file, '\\') == NULL) {
     char self_exe[512];
     if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0 &&
