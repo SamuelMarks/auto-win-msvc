@@ -1,11 +1,9 @@
 /* clang-format off */
 #include "sys/cdefs.h"
-/* clang-format on */
-
 #if defined(_MSC_VER) || defined(_WIN32)
 #include <errno.h>
-
 #endif /* _MSC_VER || _WIN32 */
+/* clang-format on */
 
 int sys_cdefs_dummy_for_coverage(void) { return 0; }
 

@@ -4,10 +4,11 @@
 /* clang-format on */
 
 char *my_dirname(char *path) {
+  static char dot[] = ".";
   char *p;
   size_t len;
   if (path == NULL || *path == '\0')
-    return ".";
+    return dot;
   len = strlen(path);
   /* Strip trailing slashes, but keep C:\ */
   while (len > 1 && (path[len - 1] == '/' || path[len - 1] == '\\')) {
@@ -39,7 +40,7 @@ char *my_dirname(char *path) {
           *(p + 1) = '\0';
       }
       if (path[0] == '\0')
-        return ".";
+        return dot;
       return path;
     } else if (*p == ':') {
       if (p == path + 1) {
@@ -48,31 +49,31 @@ char *my_dirname(char *path) {
       }
     }
   }
-  return ".";
+  return dot;
 }
 
-int main() {
+int main(void) {
   char p1[] = "usr";
-  printf("%s\n", my_dirname(p1));
   char p2[] = "usr/lib";
-  printf("%s\n", my_dirname(p2));
   char p3[] = "/usr/lib";
-  printf("%s\n", my_dirname(p3));
   char p4[] = "usr/lib/";
-  printf("%s\n", my_dirname(p4));
   char p5[] = "/";
-  printf("%s\n", my_dirname(p5));
   char p6[] = "/usr";
-  printf("%s\n", my_dirname(p6));
   char p7[] = "C:\\usr\\lib";
-  printf("%s\n", my_dirname(p7));
   char p8[] = "C:\\usr\\lib\\";
-  printf("%s\n", my_dirname(p8));
   char p9[] = "C:";
-  printf("%s\n", my_dirname(p9));
   char p10[] = "C:\\";
-  printf("%s\n", my_dirname(p10));
   char p11[] = "C:\\usr";
+  printf("%s\n", my_dirname(p1));
+  printf("%s\n", my_dirname(p2));
+  printf("%s\n", my_dirname(p3));
+  printf("%s\n", my_dirname(p4));
+  printf("%s\n", my_dirname(p5));
+  printf("%s\n", my_dirname(p6));
+  printf("%s\n", my_dirname(p7));
+  printf("%s\n", my_dirname(p8));
+  printf("%s\n", my_dirname(p9));
+  printf("%s\n", my_dirname(p10));
   printf("%s\n", my_dirname(p11));
   return 0;
 }

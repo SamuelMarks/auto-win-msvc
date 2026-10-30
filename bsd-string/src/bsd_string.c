@@ -95,16 +95,16 @@ char *strcasestr(const char *haystack, const char *needle) {
   }
   nlen = strlen(needle);
   if (nlen == 0) {
-    return (char *)haystack;
+    return strchr(haystack, *haystack);
   }
   while (*haystack != '\0') {
 #if defined(_MSC_VER)
     if (_strnicmp(haystack, needle, nlen) == 0) {
-      return (char *)haystack;
+      return strchr(haystack, *haystack);
     }
 #else
     if (strncasecmp(haystack, needle, nlen) == 0) {
-      return (char *)haystack;
+      return strchr(haystack, *haystack);
     }
 #endif
     haystack++;

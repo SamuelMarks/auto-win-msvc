@@ -13,6 +13,9 @@
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
 #include <time.h>
+#if defined(__MINGW32__)
+#include <sys/types.h>
+#endif
 
 #ifdef _WIN32
 
@@ -27,10 +30,11 @@ typedef int ssize_t;
 #endif
 #endif /* _MSC_VER */
 
-#ifndef _PID_T_DEFINED
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
 /** @brief Process ID type. */
 typedef int pid_t;
 #define _PID_T_DEFINED
+#define _PID_T_
 #endif
 
 #ifndef _UID_T_DEFINED

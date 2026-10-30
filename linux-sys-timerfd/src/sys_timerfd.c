@@ -1,9 +1,11 @@
 /* clang-format off */
 #include "sys/timerfd.h"
+#if defined(_MSC_VER) || defined(_WIN32)
+#include <errno.h>
+#endif
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
-#include <errno.h>
 
 int timerfd_create(int clockid, int flags) {
   if (clockid < 0 || flags < 0) {

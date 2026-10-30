@@ -22,6 +22,9 @@
 #endif
 #include <winsock2.h>
 #include <sys/stat.h>
+#if defined(_MSC_VER) && defined(_M_X64) && !defined(auto_win_msvc_export_lib_EXPORTS)
+#include <excpt.h>
+#endif
 #else
 #include <sys/stat.h>
 #if defined(__APPLE__) && !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
@@ -102,7 +105,6 @@ static SOCKET resolve_socket_or_fd(intptr_t fd) {
 
 #if defined(_MSC_VER) && defined(_M_X64) &&                                    \
     !defined(auto_win_msvc_export_lib_EXPORTS)
-#include <excpt.h>
 EXCEPTION_DISPOSITION __cdecl
 __C_specific_handler_noexcept(struct _EXCEPTION_RECORD *ExceptionRecord,
                               void *EstablisherFrame,
@@ -1035,11 +1037,6 @@ size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
 /** @brief Open file descriptor with POSIX semantics. */
 int posix_open(const char *pathname, int flags, ...) {
   int mode = 0;
-  if (pathname) {
-    while (pathname[0] == '/' && pathname[1] == '/') {
-      pathname++;
-    }
-  }
   DWORD dwDesiredAccess = 0;
   DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
   DWORD dwCreationDisposition = OPEN_EXISTING;
@@ -1052,6 +1049,9 @@ int posix_open(const char *pathname, int flags, ...) {
   if (!pathname) {
     errno = EINVAL;
     return -1;
+  }
+  while (pathname[0] == '/' && pathname[1] == '/') {
+    pathname++;
   }
 
   vproc = open_virtual_proc_stream(pathname);

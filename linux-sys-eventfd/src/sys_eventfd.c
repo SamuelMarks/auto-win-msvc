@@ -1,9 +1,11 @@
 /* clang-format off */
 #include "sys/eventfd.h"
+#if defined(_MSC_VER) || defined(_WIN32)
+#include <errno.h>
+#endif
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
-#include <errno.h>
 
 int eventfd(unsigned int initval, int flags) {
   if (flags < 0) {

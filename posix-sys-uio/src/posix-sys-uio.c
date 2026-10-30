@@ -1,13 +1,13 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* clang-format off */
 #include "posix-sys-uio.h"
+#include <errno.h>
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <errno.h>
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK 140
 #endif
@@ -313,7 +313,6 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
-#include <errno.h>
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK 140
 #endif

@@ -3,6 +3,7 @@
 /* clang-format off */
 #include "posix-core.h"
 #include <errno.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -2627,7 +2628,6 @@ static void sync_win_std_handles(void) {
   }
 }
 
-#include <setjmp.h>
 extern intptr_t posix_lookup_crt_socket(intptr_t crt_fd);
 extern void posix_register_crt_socket(intptr_t crt_fd, intptr_t sock);
 
@@ -2819,7 +2819,7 @@ static char *quote_win_arg(const char *arg) {
   return out;
 }
 
-static char **build_quoted_argv(char *const argv[]) {
+static char **build_quoted_argv(const char *const argv[]) {
   int cnt = 0, i;
   char **qargv;
   while (argv[cnt])
@@ -2869,17 +2869,15 @@ int posix_execve(const char *pathname, char *const argv[], char *const envp[]) {
   }
   fflush(NULL);
   sync_win_std_handles();
-  qargv = build_quoted_argv(argv);
+  qargv = build_quoted_argv((const char *const *)argv);
   {
     int sp_mode = (g_awm_vfork_depth > 0) ? 1 /* _P_NOWAIT */ : _P_WAIT;
+    const char *const *spawn_argv =
+        qargv ? (const char *const *)qargv : (const char *const *)argv;
     if (envp) {
-      rc = _spawnve(sp_mode, target,
-                    (const char *const *)(qargv ? qargv : (char **)argv),
-                    (const char *const *)envp);
+      rc = _spawnve(sp_mode, target, spawn_argv, (const char *const *)envp);
     } else {
-      rc = _spawnve(sp_mode, target,
-                    (const char *const *)(qargv ? qargv : (char **)argv),
-                    (const char *const *)_environ);
+      rc = _spawnve(sp_mode, target, spawn_argv, (const char *const *)_environ);
     }
   }
   free_quoted_argv(qargv);
@@ -2933,9 +2931,9 @@ int posix_execvp(const char *file, char *const argv[]) {
   }
   fflush(NULL);
   sync_win_std_handles();
-  qargv = build_quoted_argv(argv);
+  qargv = build_quoted_argv((const char *const *)argv);
   rc = _spawnvpe(_P_WAIT, target,
-                 (const char *const *)(qargv ? qargv : (char **)argv),
+                 qargv ? (const char *const *)qargv : (const char *const *)argv,
                  (const char *const *)_environ);
   free_quoted_argv(qargv);
   if (rc == -1 && strchr(file, '/') == NULL && strchr(file, '\\') == NULL &&
@@ -2945,7 +2943,7 @@ int posix_execvp(const char *file, char *const argv[]) {
       GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0 &&
       (strstr(self_buf, "busybox") != NULL ||
        strstr(self_buf, "BUSYBOX") != NULL)) {
-    char *bb_argv[64];
+    const char *bb_argv[64];
     int k = 0;
     bb_argv[0] = self_buf;
     while (argv[k] && k < 62) {
@@ -2955,7 +2953,7 @@ int posix_execvp(const char *file, char *const argv[]) {
     bb_argv[k + 1] = NULL;
     qargv = build_quoted_argv(bb_argv);
     rc = _spawnve(_P_WAIT, self_buf,
-                  (const char *const *)(qargv ? qargv : bb_argv),
+                  qargv ? (const char *const *)qargv : bb_argv,
                   (const char *const *)_environ);
     free_quoted_argv(qargv);
   }
@@ -2967,11 +2965,11 @@ int posix_execvp(const char *file, char *const argv[]) {
       fclose(sh_f);
       if (nr == 2 && hdr[0] == '#' && hdr[1] == '!') {
         if (GetModuleFileNameA(NULL, self_buf, sizeof(self_buf)) > 0) {
-          char *sh_argv[64];
+          const char *sh_argv[64];
           int k = 1;
           sh_argv[0] = self_buf;
           sh_argv[1] = "sh";
-          sh_argv[2] = (char *)target;
+          sh_argv[2] = target;
           while (argv[k] && k < 60) {
             sh_argv[k + 2] = argv[k];
             k++;
@@ -2979,7 +2977,7 @@ int posix_execvp(const char *file, char *const argv[]) {
           sh_argv[k + 2] = NULL;
           qargv = build_quoted_argv(sh_argv);
           rc = _spawnv(_P_WAIT, self_buf,
-                       (const char *const *)(qargv ? qargv : sh_argv));
+                       qargv ? (const char *const *)qargv : sh_argv);
           free_quoted_argv(qargv);
           if (rc != -1) {
             awm_vfork_exit((int)rc);

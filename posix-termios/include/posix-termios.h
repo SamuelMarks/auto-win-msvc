@@ -15,6 +15,9 @@ extern "C" {
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
+#if defined(__MINGW32__)
+#include <sys/types.h>
+#endif
 /* clang-format on */
 
 /**
@@ -41,8 +44,9 @@ typedef unsigned char cc_t;
  */
 typedef unsigned int speed_t;
 
-#ifndef _PID_T_DEFINED
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
 #define _PID_T_DEFINED
+#define _PID_T_
 /**
  * @brief Process ID type.
  */

@@ -22,7 +22,9 @@ typedef int error_type_t;
 #endif
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include "ifaddrs.h"
 #if defined(_WIN32)
 #include <fcntl.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -173,8 +175,6 @@ static int _wsaErrorToErrno(int err) {
 }
 
 #endif
-#include <stdio.h>
-#include <stdlib.h>
 #ifdef _WIN32
 static void __cdecl null_invalid_parameter_handler_auto(const wchar_t *a,
                                                         const wchar_t *b,
@@ -714,22 +714,8 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 }
 
 /** \brief posix_select function. */
-#include <errno.h>
-#if defined(_MSC_VER)
-#include <crtdbg.h>
-#endif
 #if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <winsock2.h>
 #if defined(_MSC_VER)
-
-#ifndef _WINSOCK2API_
-#include <winsock2.h>
-#endif
 #undef FD_ZERO
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
 #define FD_ZERO(set) posix_fd_zero((fd_set *)set)
@@ -1854,8 +1840,6 @@ auto_win_msvc_error_t posix_sockets_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
-
-#include "ifaddrs.h"
 
 int posix_getifaddrs(struct ifaddrs **ifap) {
   if (ifap == NULL) {

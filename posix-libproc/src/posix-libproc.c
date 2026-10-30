@@ -13,6 +13,9 @@
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
+#if defined(__APPLE__) && defined(_DARWIN_C_SOURCE)
+#include <sys/sysctl.h>
+#endif
 #endif
 /* clang-format on */
 
@@ -151,8 +154,14 @@ int posix_proc_next(void *cursor, struct posix_proc_entry *out_entry) {
 #if defined(_MSC_VER)
   strncpy_s(out_entry->comm, sizeof(out_entry->comm), base, _TRUNCATE);
 #else
-  strncpy(out_entry->comm, base, sizeof(out_entry->comm) - 1);
-  out_entry->comm[sizeof(out_entry->comm) - 1] = '\0';
+  {
+    size_t blen = strlen(base);
+    if (blen >= sizeof(out_entry->comm)) {
+      blen = sizeof(out_entry->comm) - 1;
+    }
+    memcpy(out_entry->comm, base, blen);
+    out_entry->comm[blen] = '\0';
+  }
 #endif
   strip_exe_suffix(out_entry->comm);
 
@@ -160,8 +169,14 @@ int posix_proc_next(void *cursor, struct posix_proc_entry *out_entry) {
   strncpy_s(out_entry->cmdline, sizeof(out_entry->cmdline), out_entry->comm,
             _TRUNCATE);
 #else
-  strncpy(out_entry->cmdline, out_entry->comm, sizeof(out_entry->cmdline) - 1);
-  out_entry->cmdline[sizeof(out_entry->cmdline) - 1] = '\0';
+  {
+    size_t clen = strlen(out_entry->comm);
+    if (clen >= sizeof(out_entry->cmdline)) {
+      clen = sizeof(out_entry->cmdline) - 1;
+    }
+    memcpy(out_entry->cmdline, out_entry->comm, clen);
+    out_entry->cmdline[clen] = '\0';
+  }
 #endif
   return 1;
 }
@@ -199,10 +214,6 @@ int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
 }
 
 #else
-
-#if defined(__APPLE__) && defined(_DARWIN_C_SOURCE)
-#include <sys/sysctl.h>
-#endif
 
 struct generic_proc_cursor {
   struct posix_proc_entry *entries;

@@ -1,8 +1,8 @@
 /* clang-format off */
 #include <stdio.h>
 /* clang-format on */
-int main() {
-#if _MSC_VER >= 1900
+int main(void) {
+#if defined(_MSC_VER) && _MSC_VER >= 1900
   printf(">=1900\n");
 #else
   printf("<1900\n");
