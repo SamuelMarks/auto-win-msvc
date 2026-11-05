@@ -50,7 +50,8 @@ struct option {
   int val;
 };
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 /** @brief Current option argument pointer. */
 extern char *optarg;
 /** @brief Current argv index. */

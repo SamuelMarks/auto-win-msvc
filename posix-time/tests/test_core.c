@@ -253,7 +253,30 @@ TEST test_clock_settime(void) {
   PASS();
 }
 
-TEST test_strptime(void) { PASS(); }
+TEST test_strptime(void) {
+  struct tm tm_val;
+  char *rest;
+  time_t now;
+  struct tm gm_res;
+
+  memset(&tm_val, 0, sizeof(tm_val));
+  rest = strptime("2026-11-05T14:30:45Z", "%Y-%m-%dT%H:%M:%SZ", &tm_val);
+  ASSERT(rest != NULL);
+  ASSERT_EQ('\0', *rest);
+  ASSERT_EQ(2026 - 1900, tm_val.tm_year);
+  ASSERT_EQ(10, tm_val.tm_mon);
+  ASSERT_EQ(5, tm_val.tm_mday);
+  ASSERT_EQ(14, tm_val.tm_hour);
+  ASSERT_EQ(30, tm_val.tm_min);
+  ASSERT_EQ(45, tm_val.tm_sec);
+
+  now = time(NULL);
+  memset(&gm_res, 0, sizeof(gm_res));
+  ASSERT_EQ(&gm_res, gmtime_r(&now, &gm_res));
+  ASSERT(gm_res.tm_year > 100);
+
+  PASS();
+}
 
 SUITE(suite_posix_time_core) {
   RUN_TEST(test_posix_time_get_info);

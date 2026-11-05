@@ -215,7 +215,11 @@ static __inline int posix_builtin_ctzll(unsigned __int64 val) {
 #define __typeof typeof
 #endif
 #ifndef __thread
+#if defined(_MSC_VER)
 #define __thread __declspec(thread)
+#else
+#define __thread
+#endif
 #endif
 #define AUTO_WIN_MSVC_SKIP_IOVEC 1
 #include "linux-getopt.h"
@@ -252,10 +256,14 @@ extern "C" {
 #endif
 
 #ifndef setenv
+#if defined(_MSC_VER)
 #define setenv(k, v, o) _putenv_s(k, v)
 #endif
+#endif
 #ifndef unsetenv
+#if defined(_MSC_VER)
 #define unsetenv(k) _putenv_s(k, "")
+#endif
 #endif
 
 #ifndef sysconf

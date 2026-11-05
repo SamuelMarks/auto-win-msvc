@@ -14,7 +14,7 @@
  */
 
 /* clang-format off */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 
 /* Strip unsupported GCC/Clang attributes */
 #ifndef __attribute__
@@ -23,7 +23,11 @@
 
 /* Thread-local storage specifier */
 #ifndef __thread
+#if defined(_MSC_VER)
 #define __thread __declspec(thread)
+#else
+#define __thread
+#endif
 #endif
 
 /* C89 inline polyfill */
@@ -43,7 +47,11 @@
 #define __extension__
 #endif
 #ifndef __builtin_unreachable
+#if defined(_MSC_VER)
 #define __builtin_unreachable() __assume(0)
+#else
+#define __builtin_unreachable()
+#endif
 #endif
 #if !defined(__clang__)
 #ifndef FAST_FUNC
@@ -64,13 +72,19 @@
 #ifndef POP_SAVED_FUNCTION_VISIBILITY
 #define POP_SAVED_FUNCTION_VISIBILITY
 #endif
+#if defined(_MSC_VER)
 void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
 #ifndef barrier
 #define barrier() _ReadWriteBarrier()
 #endif
+#else
+#ifndef barrier
+#define barrier()
+#endif
+#endif
 #endif /* !__clang__ */
-#endif /* _MSC_VER */
+#endif /* _MSC_VER || __WATCOMC__ */
 
 /* Architecture alignment and pointer guarantees */
 #ifndef SIZEOF_VOID_P
@@ -896,6 +910,142 @@ typedef jmp_buf sigjmp_buf;
 #ifndef siglongjmp
 #define siglongjmp(env, val) longjmp((env), (val))
 #endif
+
+/**
+ * @brief Locates the last path separator (forward slash or backslash) in str.
+ * @param[in] str Input null-terminated path string.
+ * @return Pointer to the last slash/backslash, or NULL if none exists.
+ */
+static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
+    const char *s1 = strrchr(str, '/');
+    const char *s2 = strrchr(str, '\\');
+    if (s1 && s2) return (char *)(s1 > s2 ? s1 : s2);
+    return (char *)(s1 ? s1 : s2);
+}
+
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <errno.h>
+#include <malloc.h>
+#include <setjmp.h>
+
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+typedef intptr_t ssize_t;
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 260
+#endif
+#ifndef NAME_MAX
+#define NAME_MAX 255
+#endif
+#ifndef SSIZE_MAX
+#define SSIZE_MAX INTPTR_MAX
+#endif
+
+#ifndef _SIGJMP_BUF_DEFINED
+#define _SIGJMP_BUF_DEFINED
+typedef jmp_buf sigjmp_buf;
+#endif
+#ifndef sigsetjmp
+#define sigsetjmp(env, savesigs) setjmp(env)
+#endif
+#ifndef siglongjmp
+#define siglongjmp(env, val) longjmp((env), (val))
+#endif
+
+/**
+ * @brief Parses suboptions from a string on DOS/OpenWatcom.
+ * @param[in,out] optionp Option string pointer.
+ * @param[in] tokens Array of recognized tokens.
+ * @param[out] valuep Pointer to value string.
+ * @return Index of matching token, or -1.
+ */
+static __inline int getsubopt(char **optionp, char * const *tokens, char **valuep) {
+    char *subopt;
+    int i;
+
+    *valuep = NULL;
+    if (optionp == NULL || *optionp == NULL)
+        return -1;
+
+    subopt = *optionp;
+    while (**optionp != '\0' && **optionp != ',' && **optionp != '=')
+        (*optionp)++;
+
+    if (**optionp == '=') {
+        **optionp = '\0';
+        (*optionp)++;
+        *valuep = *optionp;
+        while (**optionp != '\0' && **optionp != ',')
+            (*optionp)++;
+        if (**optionp == ',') {
+            **optionp = '\0';
+            (*optionp)++;
+        }
+    } else if (**optionp == ',') {
+        **optionp = '\0';
+        (*optionp)++;
+    }
+
+    for (i = 0; tokens[i] != NULL; i++) {
+        if (strcmp(subopt, tokens[i]) == 0)
+            return i;
+    }
+
+    if (*valuep == NULL)
+        *valuep = subopt;
+
+    return -1;
+}
+
+/**
+ * @brief Reads an entire line from stream into a dynamically allocated buffer on DOS/OpenWatcom.
+ * @param[in,out] lineptr Pointer to buffer receiving line.
+ * @param[in,out] n Pointer to buffer size.
+ * @param[in] stream Input stream.
+ * @return Number of characters read, or -1 on error/EOF.
+ */
+static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    size_t pos = 0;
+    int c;
+
+    if (lineptr == NULL || n == NULL || stream == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (*lineptr == NULL || *n == 0) {
+        *n = 128;
+        *lineptr = (char *)malloc(*n);
+        if (*lineptr == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+    }
+
+    while ((c = fgetc(stream)) != EOF) {
+        if (pos + 2 >= *n) {
+            size_t new_size = *n * 2;
+            char *new_ptr = (char *)realloc(*lineptr, new_size);
+            if (new_ptr == NULL) {
+                errno = ENOMEM;
+                return -1;
+            }
+            *lineptr = new_ptr;
+            *n = new_size;
+        }
+        (*lineptr)[pos++] = (char)c;
+        if (c == 10)
+            break;
+    }
+
+    if (pos == 0 && c == EOF)
+        return -1;
+
+    (*lineptr)[pos] = '\0';
+    return (ssize_t)pos;
+}
 
 /**
  * @brief Locates the last path separator (forward slash or backslash) in str.

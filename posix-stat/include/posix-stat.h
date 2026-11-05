@@ -55,7 +55,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#if !defined(_MSC_VER) && !defined(_WIN32)
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <direct.h>
+#include <io.h>
+#elif !defined(_MSC_VER) && !defined(_WIN32)
 #include <unistd.h>
 #endif
 #endif
@@ -517,6 +520,17 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
               int flags);
 
 #else /* !_WIN32 */
+
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#ifndef mkdir
+/** @brief Shim for standard mkdir mapping to _mkdir on DOS/OpenWatcom. */
+#define mkdir(path, mode) _mkdir(path)
+#endif
+#ifndef lstat
+/** @brief Shim for lstat mapping to posix_lstat on DOS/OpenWatcom. */
+#define lstat posix_lstat
+#endif
+#endif
 
 #if !defined(__USE_XOPEN2K8) &&                                                \
     (!defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L)

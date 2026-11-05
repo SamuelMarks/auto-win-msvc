@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 /**
  * @file bsd_string.c
  * @brief Implementation of BSD string functions.
@@ -11,7 +12,8 @@
 #include <errno.h>
 /* clang-format on */
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 
 size_t strlcpy(char *dst, const char *src, size_t size) {
   size_t srclen;
@@ -65,7 +67,7 @@ char *strsep(char **stringp, const char *delim) {
   return begin;
 }
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 int strcasecmp(const char *s1, const char *s2) {
   if (s1 == NULL || s2 == NULL) {
     return (s1 == s2) ? 0 : (s1 ? 1 : -1);
@@ -98,7 +100,7 @@ char *strcasestr(const char *haystack, const char *needle) {
     return strchr(haystack, *haystack);
   }
   while (*haystack != '\0') {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
     if (_strnicmp(haystack, needle, nlen) == 0) {
       return strchr(haystack, *haystack);
     }
@@ -112,7 +114,7 @@ char *strcasestr(const char *haystack, const char *needle) {
   return NULL;
 }
 
-#endif /* _MSC_VER || _WIN32 */
+#endif /* _MSC_VER || _WIN32 || __DOS__ || __MSDOS__ || __WATCOMC__ */
 
 int bsd_string_dummy_for_coverage(void) { return 0; }
 

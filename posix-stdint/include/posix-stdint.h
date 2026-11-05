@@ -71,7 +71,7 @@ typedef unsigned int uint32_t;
 #define _INT64_T_DEFINED
 #define _INT64_T
 #define __int64_t_defined
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Signed 64-bit integer type. */
 typedef __int64 int64_t;
 #elif defined(__APPLE__)
@@ -91,7 +91,7 @@ __extension__ typedef long long int64_t;
 #define _UINT64_T_DEFINED
 #define _UINT64_T
 #define __uint64_t_defined
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Unsigned 64-bit integer type. */
 typedef unsigned __int64 uint64_t;
 #elif defined(__APPLE__)
@@ -244,7 +244,7 @@ typedef uint64_t uintmax_t;
 #endif
 
 #ifndef INT64_MIN
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Minimum value of signed 64-bit integer. */
 #define INT64_MIN (-9223372036854775807i64 - 1)
 #elif defined(__LP64__)
@@ -257,7 +257,7 @@ typedef uint64_t uintmax_t;
 #endif
 
 #ifndef INT64_MAX
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Maximum value of signed 64-bit integer. */
 #define INT64_MAX 9223372036854775807i64
 #elif defined(__LP64__)
@@ -270,7 +270,7 @@ typedef uint64_t uintmax_t;
 #endif
 
 #ifndef UINT64_MAX
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Maximum value of unsigned 64-bit integer. */
 #define UINT64_MAX 0xffffffffffffffffui64
 #elif defined(__LP64__)
@@ -451,7 +451,7 @@ typedef uint64_t uintmax_t;
 #define INT32_C(val) val
 /** @brief Macro to expand unsigned 32-bit integer constant. */
 #define UINT32_C(val) val##U
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 /** @brief Macro to expand signed 64-bit integer constant. */
 #define INT64_C(val) val##i64
 /** @brief Macro to expand unsigned 64-bit integer constant. */

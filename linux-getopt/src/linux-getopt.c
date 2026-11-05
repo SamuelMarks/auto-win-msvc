@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 /* clang-format off */
 #define LINUX_GETOPT_EXPORTS
 #include "linux-getopt.h"
@@ -13,7 +14,8 @@ int linux_optopt = 0;
 
 static char *nextchar = NULL;
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 char *optarg = NULL;
 int optind = 1;
 int opterr = 1;
@@ -159,7 +161,8 @@ int linux_getopt_long(int argc, char *const argv[], const char *optstring,
   return linux_getopt(argc, argv, optstring);
 }
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 int getopt(int argc, char *const argv[], const char *optstring) {
   int res;
   if (optind != linux_optind) {
@@ -205,7 +208,8 @@ auto_win_msvc_error_t linux_getopt_init(int *out_status) {
   linux_opterr = 0;
   linux_optopt = 0;
   nextchar = NULL;
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
   optarg = NULL;
   optind = 1;
   opterr = 0;

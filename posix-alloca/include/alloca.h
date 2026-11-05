@@ -8,7 +8,7 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
-#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) || defined(__MINGW32__)
 #include <malloc.h>
 #else
 #include <stdlib.h>

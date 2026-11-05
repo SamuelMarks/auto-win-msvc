@@ -106,6 +106,7 @@ def transform_source_content(content: str) -> str:
             )
             or "sizeof" in expr_no_comments
             or "ARRAY_SIZE" in expr_no_comments
+            or "Kmax" in expr_no_comments
         ):
             return match.group(0)
         has_alloca = True
@@ -125,7 +126,7 @@ def transform_source_content(content: str) -> str:
             NL.join(
                 [
                     "/* clang-format off */",
-                    "#if defined(_MSC_VER) || defined(_WIN32)",
+                    "#if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)",
                     "#include <malloc.h>",
                     "#else",
                     "#include <alloca.h>",
@@ -1897,6 +1898,152 @@ def transform_source_content(content: str) -> str:
             f"# undef {bash_sym}" + NL + f"# define {bash_sym}",
         )
 
+    # Transform C99 jv compound literals in jq into C89 helper calls
+    if "__attribute__" in content and "#ifndef __attribute__" not in content:
+        content = (
+            NL.join(
+                [
+                    "/* clang-format off */",
+                    "#if defined(_MSC_VER) || defined(__WATCOMC__)",
+                    "#ifndef __attribute__",
+                    "#define __attribute__(x)",
+                    "#endif",
+                    "#endif",
+                    "/* clang-format on */",
+                    "",
+                ]
+            )
+            + content
+        )
+
+    if "typedef struct {" in content and "} jv;" in content:
+        content = content.replace(
+            "} jv;",
+            "} jv;"
+            + NL
+            + "static __inline jv awm_jv_make_ptr(unsigned char kf, unsigned char p, unsigned short o, int sz, struct jv_refcnt *ptr) {"
+            + NL
+            + "  jv r; r.kind_flags = kf; r.pad_ = p; r.offset = o; r.size = sz; r.u.ptr = ptr; return r;"
+            + NL
+            + "}"
+            + NL
+            + "static __inline jv awm_jv_make_num(unsigned char kf, unsigned char p, unsigned short o, int sz, double num) {"
+            + NL
+            + "  jv r; r.kind_flags = kf; r.pad_ = p; r.offset = o; r.size = sz; r.u.number = num; return r;"
+            + NL
+            + "}",
+        )
+
+    content = re.sub(
+        r"\(jv\)\s*\{\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*\{\s*(?:\.ptr\s*=\s*)?0\s*\}\s*\}",
+        r"awm_jv_make_ptr(\1, \2, \3, \4, 0)",
+        content,
+    )
+    content = re.sub(
+        r"\(jv\)\s*\{\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*\{\s*\.ptr\s*=\s*([^}]+?)\s*\}\s*\}",
+        r"awm_jv_make_ptr(\1, \2, \3, \4, \5)",
+        content,
+    )
+    content = re.sub(
+        r"\(jv\)\s*\{\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*([^,{}]+),\s*\{\s*\.number\s*=\s*([^}]+?)\s*\}\s*\}",
+        r"awm_jv_make_num(\1, \2, \3, \4, \5)",
+        content,
+    )
+    content = re.sub(
+        r"(\s*)\[\s*JV_KIND_[A-Z0-9_]+\s*\]\s*=\s*",
+        r"\1",
+        content,
+    )
+    content = re.sub(
+        r"#define\s+MIN\(a,\s*b\)\s*\\\s*\n\s*\(\{\s*__typeof__\s*\(a\)\s*_a\s*=\s*\(a\);\s*\\\s*\n\s*__typeof__\s*\(b\)\s*_b\s*=\s*\(b\);\s*\\\s*\n\s*_a\s*<\s*_b\s*\?\s*_a\s*:\s*_b;\s*\}\)",
+        "#define MIN(a,b) ((a) < (b) ? (a) : (b))",
+        content,
+    )
+    content = re.sub(
+        r"#define\s+MAX\(a,\s*b\)\s*\\\s*\n\s*\(\{\s*__typeof__\s*\(a\)\s*_a\s*=\s*\(a\);\s*\\\s*\n\s*__typeof__\s*\(b\)\s*_b\s*=\s*\(b\);\s*\\\s*\n\s*_a\s*>\s*_b\s*\?\s*_a\s*:\s*_b;\s*\}\)",
+        "#define MAX(a,b) ((a) > (b) ? (a) : (b))",
+        content,
+    )
+    content = content.replace(
+        "#define JV_ARRAY_IDX(_1,_2,_3,_4,_5,_6,_7,_8,_9,NAME,...) NAME"
+        + NL
+        + "#define JV_ARRAY(...) \\"
+        + NL
+        + "  JV_ARRAY_IDX(__VA_ARGS__, JV_ARRAY_9, JV_ARRAY_8, JV_ARRAY_7, JV_ARRAY_6, JV_ARRAY_5, JV_ARRAY_4, JV_ARRAY_3, JV_ARRAY_2, JV_ARRAY_1, dummy)(__VA_ARGS__)",
+        "#ifndef AWM_VA_APPLY"
+        + NL
+        + "#define AWM_VA_APPLY(m, a) m a"
+        + NL
+        + "#endif"
+        + NL
+        + "#define JV_ARRAY_IDX(_1,_2,_3,_4,_5,_6,_7,_8,_9,NAME,...) NAME"
+        + NL
+        + "#define JV_ARRAY(...) \\"
+        + NL
+        + "  AWM_VA_APPLY(JV_ARRAY_IDX, (__VA_ARGS__, JV_ARRAY_9, JV_ARRAY_8, JV_ARRAY_7, JV_ARRAY_6, JV_ARRAY_5, JV_ARRAY_4, JV_ARRAY_3, JV_ARRAY_2, JV_ARRAY_1, dummy))(__VA_ARGS__)",
+    )
+    content = content.replace(
+        "#define JV_OBJECT_IDX(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,NAME,...) NAME"
+        + NL
+        + "#define JV_OBJECT(...) \\"
+        + NL
+        + "  JV_OBJECT_IDX(__VA_ARGS__, \\"
+        + NL
+        + "                JV_OBJECT_18, JV_OBJECT_17, JV_OBJECT_16, JV_OBJECT_15, \\"
+        + NL
+        + "                JV_OBJECT_14, JV_OBJECT_13, JV_OBJECT_12, JV_OBJECT_11, \\"
+        + NL
+        + "                JV_OBJECT_10, JV_OBJECT_9, JV_OBJECT_8, JV_OBJECT_7,    \\"
+        + NL
+        + "                JV_OBJECT_6, JV_OBJECT_5, JV_OBJECT_4, JV_OBJECT_3,     \\"
+        + NL
+        + "                JV_OBJECT_2, JV_OBJECT_1)(__VA_ARGS__)",
+        "#define JV_OBJECT_IDX(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,NAME,...) NAME"
+        + NL
+        + "#define JV_OBJECT(...) \\"
+        + NL
+        + "  AWM_VA_APPLY(JV_OBJECT_IDX, (__VA_ARGS__, \\"
+        + NL
+        + "                JV_OBJECT_18, JV_OBJECT_17, JV_OBJECT_16, JV_OBJECT_15, \\"
+        + NL
+        + "                JV_OBJECT_14, JV_OBJECT_13, JV_OBJECT_12, JV_OBJECT_11, \\"
+        + NL
+        + "                JV_OBJECT_10, JV_OBJECT_9, JV_OBJECT_8, JV_OBJECT_7,    \\"
+        + NL
+        + "                JV_OBJECT_6, JV_OBJECT_5, JV_OBJECT_4, JV_OBJECT_3,     \\"
+        + NL
+        + "                JV_OBJECT_2, JV_OBJECT_1))(__VA_ARGS__)",
+    )
+    content = content.replace(
+        "#define BLOCK_IDX(_1,_2,_3,_4,_5,_6,_7,_8,NAME,...) NAME"
+        + NL
+        + "#define BLOCK(...) \\"
+        + NL
+        + "  BLOCK_IDX(__VA_ARGS__, BLOCK_8, BLOCK_7, BLOCK_6, BLOCK_5, BLOCK_4, BLOCK_3, BLOCK_2, BLOCK_1)(__VA_ARGS__)",
+        "#ifndef AWM_VA_APPLY"
+        + NL
+        + "#define AWM_VA_APPLY(m, a) m a"
+        + NL
+        + "#endif"
+        + NL
+        + "#define BLOCK_IDX(_1,_2,_3,_4,_5,_6,_7,_8,NAME,...) NAME"
+        + NL
+        + "#define BLOCK(...) \\"
+        + NL
+        + "  AWM_VA_APPLY(BLOCK_IDX, (__VA_ARGS__, BLOCK_8, BLOCK_7, BLOCK_6, BLOCK_5, BLOCK_4, BLOCK_3, BLOCK_2, BLOCK_1))(__VA_ARGS__)",
+    )
+    content = content.replace(
+        "#ifdef WIN32" + NL + "#ifndef __MINGW32__",
+        "#if 0" + NL + "#ifndef __MINGW32__",
+    )
+    content = content.replace(
+        "inline struct dtoa_context *tsd_dtoa_context_get(void)",
+        "struct dtoa_context *tsd_dtoa_context_get(void)",
+    )
+    content = content.replace(
+        "((void *)tm + offsets[i])", "((char *)tm + offsets[i])"
+    )
+
     return content
 
 
@@ -1920,7 +2067,10 @@ def transform_file(input_path: str, output_path: str) -> None:
         if os.path.isfile(candidate):
             with open(candidate, "r", encoding="utf-8", errors="ignore") as cf:
                 c_text = cf.read()
-            c_trans = transform_source_content(c_text)
+            c_sub = re.sub(
+                r'#\s*include\s+"([^"]+)"', resolve_local_include, c_text
+            )
+            c_trans = transform_source_content(c_sub)
             if c_trans != c_text:
                 out_dir_abs = os.path.dirname(os.path.abspath(output_path))
                 gen_inc = os.path.join(out_dir_abs, inc_rel)

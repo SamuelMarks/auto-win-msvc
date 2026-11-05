@@ -169,6 +169,24 @@ def main():
         run_cmd(cmake_cmd, cwd=rsync_path)
         run_cmd(["cmake", "--build", "build", "--config", "Release"], cwd=rsync_path)
 
+        # 4. Test jq (Native MSVC / OpenWatcom DOS port via cmake/jq-port)
+        jq_port_dir = os.path.join(repo_root, "cmake", "jq-port")
+        if os.path.exists(jq_port_dir):
+            print("=== Testing jq (cmake/jq-port) ===")
+            jq_build_dir = os.path.join(temp_dir, "jq_build")
+            cmake_cmd = [
+                "cmake",
+                "-B",
+                jq_build_dir,
+                "-S",
+                jq_port_dir,
+                "-DCMAKE_BUILD_TYPE=Release",
+                f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={repo_root}",
+            ]
+            run_cmd(cmake_cmd)
+            run_cmd(["cmake", "--build", jq_build_dir, "--config", "Release"])
+            run_cmd(["ctest", "--test-dir", jq_build_dir, "-C", "Release", "--output-on-failure"])
+
     print("All downstream tests passed!")
 
 

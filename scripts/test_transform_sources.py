@@ -51,6 +51,55 @@ class TestTransformSources(unittest.TestCase):
         self.assertIn("char *p = 0;", res)
         self.assertIn('(a ? a : "default")', res)
 
+    def test_jq_c89_transforms(self) -> None:
+        """Verify jq C99 jv compound literals and designated array initializers are rewritten to C89."""
+        nl = chr(10)
+        src = nl.join(
+            [
+                "__attribute__((warn_unused_result)) void* jv_mem_realloc(void*, size_t);",
+                "typedef struct {",
+                "  unsigned char kind_flags;",
+                "} jv;",
+                "jv make_null(void) {",
+                "  return (jv){JVP_FLAGS_NULL, 0, 0, 0, {0}};",
+                "}",
+                "jv make_ptr(struct jv_refcnt *p) {",
+                "  return (jv){JVP_FLAGS_ARRAY, 0, 0, 1, {.ptr = p}};",
+                "}",
+                "jv make_num(double d) {",
+                "  return (jv){JVP_FLAGS_NUMBER, 0, 0, 0, {.number = d}};",
+                "}",
+                "static const char *const names[] = {",
+                '  [JV_KIND_INVALID] = "<invalid>",',
+                '  [JV_KIND_NULL] = "null",',
+                "};",
+                "#define MIN(a,b) \\",
+                "  ({ __typeof__ (a) _a = (a); \\",
+                "   __typeof__ (b) _b = (b); \\",
+                "   _a < _b ? _a : _b; })",
+                "#define MAX(a,b) \\",
+                "  ({ __typeof__ (a) _a = (a); \\",
+                "   __typeof__ (b) _b = (b); \\",
+                "   _a > _b ? _a : _b; })",
+                "#define BLOCK_IDX(_1,_2,_3,_4,_5,_6,_7,_8,NAME,...) NAME",
+                "#define BLOCK(...) \\",
+                "  BLOCK_IDX(__VA_ARGS__, BLOCK_8, BLOCK_7, BLOCK_6, BLOCK_5, BLOCK_4, BLOCK_3, BLOCK_2, BLOCK_1)(__VA_ARGS__)",
+                "void ptr_arith(void *tm, int *offsets, int i) {",
+                "  *(int *)((void *)tm + offsets[i]) = 0;",
+                "}",
+            ]
+        )
+        res = transform_sources.transform_source_content(src)
+        self.assertIn("#define __attribute__(x)", res)
+        self.assertIn("awm_jv_make_ptr(JVP_FLAGS_NULL, 0, 0, 0, 0)", res)
+        self.assertIn("awm_jv_make_ptr(JVP_FLAGS_ARRAY, 0, 0, 1, p)", res)
+        self.assertIn("awm_jv_make_num(JVP_FLAGS_NUMBER, 0, 0, 0, d)", res)
+        self.assertNotIn("[JV_KIND_NULL]", res)
+        self.assertIn("#define MIN(a,b) ((a) < (b) ? (a) : (b))", res)
+        self.assertIn("#define MAX(a,b) ((a) > (b) ? (a) : (b))", res)
+        self.assertIn("AWM_VA_APPLY(BLOCK_IDX,", res)
+        self.assertIn("((char *)tm + offsets[i])", res)
+
     def test_packed_structs(self) -> None:
         """Verify PACKED structs are wrapped in MSVC pragma pack."""
         nl = chr(10)

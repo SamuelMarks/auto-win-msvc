@@ -44,7 +44,8 @@ typedef int error_type_t;
 #include <process.h>
 #include <share.h>
 #include <sys/stat.h>
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <direct.h>
 #include <fcntl.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -55,7 +56,7 @@ typedef int error_type_t;
 #include <share.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#if !defined(_MSC_VER)
+#if !defined(_MSC_VER) && !defined(__WATCOMC__)
 #include <unistd.h>
 #endif
 #else
@@ -1512,6 +1513,59 @@ int posix_fileno(FILE *stream);
 #define fileno posix_fileno
 #define fileno_unlocked posix_fileno
 #endif
+#endif
+
+#if (defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)) &&        \
+    !defined(_WIN32)
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifndef W_OK
+#define W_OK 2
+#endif
+#ifndef R_OK
+#define R_OK 4
+#endif
+#ifndef X_OK
+#define X_OK 1
+#endif
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
+#ifndef ftruncate
+#define ftruncate(fd, len) chsize((int)(fd), (long)(len))
+#endif
+/** @brief Synchronizes file state on DOS/OpenWatcom. */
+int fsync(int fd);
+/** @brief Sets an environment variable on DOS/OpenWatcom. */
+int setenv(const char *name, const char *value, int overwrite);
+/** @brief Unsets an environment variable on DOS/OpenWatcom. */
+int unsetenv(const char *name);
+/** @brief Duplicates at most n bytes of string s on DOS/OpenWatcom. */
+char *strndup(const char *s, size_t n);
+/** @brief Formats a string into a newly allocated buffer (va_list) on
+ * DOS/OpenWatcom. */
+int vasprintf(char **strp, const char *fmt, va_list ap);
+/** @brief Formats a string into a newly allocated buffer on DOS/OpenWatcom. */
+int asprintf(char **strp, const char *fmt, ...);
+/** @brief Reads a delimited record from stream on DOS/OpenWatcom. */
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
+/** @brief Creates and opens a unique temporary file on DOS/OpenWatcom. */
+int mkstemp(char *tmpl);
+/** @brief Stubs fork on single-tasking DOS. */
+int fork(void);
+/** @brief Stubs vfork on single-tasking DOS. */
+int vfork(void);
+/** @brief Stubs pipe on single-tasking DOS. */
+int pipe(int pipefd[2]);
+/** @brief Stubs waitpid on single-tasking DOS. */
+int waitpid(int pid, int *status, int options);
 #endif
 
 #ifdef __cplusplus

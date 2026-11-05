@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) ||                \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 /**
  * @brief Copy strings safely.
  */
@@ -36,7 +37,7 @@ char *strcasestr(const char *haystack, const char *needle);
  */
 char *strsep(char **stringp, const char *delim);
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 #ifndef strcasecmp
 /**
  * @brief Compare strings ignoring case.
@@ -50,14 +51,14 @@ int strcasecmp(const char *s1, const char *s2);
  */
 int strncasecmp(const char *s1, const char *s2, size_t n);
 #endif
-#endif /* _MSC_VER */
+#endif /* _MSC_VER || __WATCOMC__ */
 
 /**
  * @brief Compare version strings.
  */
 int strverscmp(const char *s1, const char *s2);
 
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
+#endif /* defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__) */
 
 #ifdef __cplusplus
 }

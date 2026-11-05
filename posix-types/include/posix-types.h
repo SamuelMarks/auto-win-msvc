@@ -32,13 +32,13 @@
 #else
 #include <sys/types.h>
 #include <time.h>
-#if !defined(_MSC_VER) && !defined(_WIN32)
+#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(__MSDOS__) && !defined(__DOS__) && !defined(__WATCOMC__)
 #include <unistd.h>
 #endif
 
 #if defined(__MINGW32__)
 /* MinGW types handled above */
-#elif !defined(__MSDOS__) && !defined(__WATCOMC__)
+#elif !defined(__MSDOS__) && !defined(__DOS__) && !defined(__WATCOMC__)
 #include <sys/socket.h>
 #endif
 
@@ -50,7 +50,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__MSDOS__) ||         \
+    defined(__DOS__) || defined(__WATCOMC__)
 
 #if defined(__GNUC__)
 #define POSIX_TYPES_EXTENSION __extension__
@@ -62,8 +63,9 @@ extern "C" {
  * @brief Process ID type.
  * MSVC defines this as int.
  */
-#ifndef _PID_T_DEFINED
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__WATCOMC__)
 #define _PID_T_DEFINED
+#define _PID_T_
 typedef int pid_t;
 #endif
 
@@ -76,9 +78,14 @@ typedef int pid_t;
 typedef int mqd_t;
 #endif
 
-#ifndef _SSIZE_T_DEFINED
+#if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_) && !defined(__WATCOMC__)
 #define _SSIZE_T_DEFINED
+#define _SSIZE_T_
+#if defined(_WIN32)
 typedef SSIZE_T ssize_t;
+#else
+typedef long ssize_t;
+#endif
 #endif
 
 /**
@@ -86,7 +93,7 @@ typedef SSIZE_T ssize_t;
  * MSVC defines this as unsigned short.
  */
 #if !defined(_MODE_T_DEFINED) && !defined(_MODE_T_DEFINED_) &&                 \
-    !defined(_MODE_T_)
+    !defined(_MODE_T_) && !defined(__WATCOMC__)
 #define _MODE_T_DEFINED
 #define _MODE_T_DEFINED_
 #define _MODE_T_
@@ -106,7 +113,7 @@ typedef unsigned short mode_t;
 #define HAVE_OFF_T 1
 #endif
 
-#ifndef _UID_T_DEFINED
+#if !defined(_UID_T_DEFINED) && !defined(__WATCOMC__)
 #define _UID_T_DEFINED
 typedef int uid_t;
 #endif
@@ -114,7 +121,7 @@ typedef int uid_t;
 #define HAVE_UID_T 1
 #endif
 
-#ifndef _GID_T_DEFINED
+#if !defined(_GID_T_DEFINED) && !defined(__WATCOMC__)
 #define _GID_T_DEFINED
 typedef int gid_t;
 #endif
@@ -131,9 +138,13 @@ typedef unsigned char uchar;
  * @brief File offset type.
  * MSVC defines this as long in sys/types.h under certain conditions.
  */
-#ifndef _OFF_T_DEFINED
+#if !defined(_OFF_T_DEFINED) && !defined(__WATCOMC__)
 #define _OFF_T_DEFINED
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+typedef __int64 off_t;
+#else
 POSIX_TYPES_EXTENSION typedef long long off_t;
+#endif
 #endif
 
 /**
@@ -142,7 +153,11 @@ POSIX_TYPES_EXTENSION typedef long long off_t;
  */
 #ifndef _OFF64_T_DEFINED
 #define _OFF64_T_DEFINED
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef __int64 off64_t;
+#else
+POSIX_TYPES_EXTENSION typedef long long off64_t;
+#endif
 #endif
 
 /**
@@ -150,7 +165,7 @@ typedef __int64 off64_t;
  */
 #ifndef _QUAD_T_DEFINED
 #define _QUAD_T_DEFINED
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef __int64 quad_t;
 /**
  * @brief 64-bit unsigned quad integer type.
@@ -187,7 +202,7 @@ typedef long suseconds_t;
  * @brief Device ID type.
  * MSVC defines this as unsigned int in sys/types.h.
  */
-#ifndef _DEV_T_DEFINED
+#if !defined(_DEV_T_DEFINED) && !defined(__WATCOMC__)
 #define _DEV_T_DEFINED
 typedef unsigned int dev_t;
 #endif
@@ -196,7 +211,7 @@ typedef unsigned int dev_t;
  * @brief Inode number type.
  * MSVC defines this as unsigned short in sys/types.h.
  */
-#ifndef _INO_T_DEFINED
+#if !defined(_INO_T_DEFINED) && !defined(__WATCOMC__)
 #define _INO_T_DEFINED
 typedef unsigned short ino_t;
 #endif
@@ -205,7 +220,7 @@ typedef unsigned short ino_t;
  * @brief Number of hard links type.
  * MSVC defines this as short.
  */
-#ifndef _NLINK_T_DEFINED
+#if !defined(_NLINK_T_DEFINED) && !defined(__WATCOMC__)
 #define _NLINK_T_DEFINED
 typedef short nlink_t;
 #endif
@@ -241,7 +256,7 @@ typedef unsigned long sigset_t;
  * @brief Identifier type.
  * MSVC defines this as int.
  */
-#ifndef _ID_T_DEFINED
+#if !defined(_ID_T_DEFINED) && !defined(__WATCOMC__)
 #define _ID_T_DEFINED
 typedef int id_t;
 #endif
@@ -250,7 +265,7 @@ typedef int id_t;
  * @brief Inter-process communication key type.
  * MSVC defines this as int.
  */
-#ifndef _KEY_T_DEFINED
+#if !defined(_KEY_T_DEFINED) && !defined(__WATCOMC__)
 #define _KEY_T_DEFINED
 typedef int key_t;
 #endif
@@ -259,7 +274,7 @@ typedef int key_t;
  * @brief Clock ticks type.
  * MSVC defines this as long.
  */
-#ifndef _CLOCK_T_DEFINED
+#if !defined(_CLOCK_T_DEFINED) && !defined(__WATCOMC__)
 #define _CLOCK_T_DEFINED
 typedef long clock_t;
 #endif
@@ -268,16 +283,20 @@ typedef long clock_t;
  * @brief Time in seconds type.
  * MSVC defines this as __time64_t.
  */
-#ifndef _TIME_T_DEFINED
+#if !defined(_TIME_T_DEFINED) && !defined(__WATCOMC__)
 #define _TIME_T_DEFINED
+#if defined(_MSC_VER)
 typedef __time64_t time_t;
+#else
+typedef long time_t;
+#endif
 #endif
 
 /**
  * @brief Timer type.
  * MSVC defines this as void*.
  */
-#ifndef _TIMER_T_DEFINED
+#if !defined(_TIMER_T_DEFINED) && !defined(__WATCOMC__)
 #define _TIMER_T_DEFINED
 typedef void *timer_t;
 #endif
@@ -286,7 +305,7 @@ typedef void *timer_t;
  * @brief Clock ID type.
  * MSVC defines this as int.
  */
-#ifndef _CLOCKID_T_DEFINED
+#if !defined(_CLOCKID_T_DEFINED) && !defined(__WATCOMC__)
 #define _CLOCKID_T_DEFINED
 typedef int clockid_t;
 #endif
@@ -297,7 +316,11 @@ typedef int clockid_t;
  */
 #ifndef _FSBLKCNT_T_DEFINED
 #define _FSBLKCNT_T_DEFINED
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+typedef unsigned __int64 fsblkcnt_t;
+#else
 POSIX_TYPES_EXTENSION typedef unsigned long long fsblkcnt_t;
+#endif
 #endif
 
 /**
@@ -306,7 +329,11 @@ POSIX_TYPES_EXTENSION typedef unsigned long long fsblkcnt_t;
  */
 #ifndef _FSFILCNT_T_DEFINED
 #define _FSFILCNT_T_DEFINED
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+typedef unsigned __int64 fsfilcnt_t;
+#else
 POSIX_TYPES_EXTENSION typedef unsigned long long fsfilcnt_t;
+#endif
 #endif
 
 /**

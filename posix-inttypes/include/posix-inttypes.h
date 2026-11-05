@@ -9,7 +9,7 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
 #include <posix-stdint.h>
 #include <stdlib.h>
 #else
@@ -21,7 +21,8 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||           \
+    defined(__MSDOS__)
 
 #ifndef PRId8
 /** @brief Format specifier for signed 8-bit integer decimal output. */
@@ -160,15 +161,29 @@ extern "C" {
 #endif
 
 #ifndef imaxabs
+#if defined(_MSC_VER)
 #define imaxabs _abs64
+#else
+static __inline intmax_t imaxabs(intmax_t j) { return j < 0 ? -j : j; }
+#endif
 #endif
 
+#ifndef _IMAXDIV_T_DEFINED
+#define _IMAXDIV_T_DEFINED
+/** @brief Structure returned by imaxdiv(). */
 typedef struct {
-  intmax_t quot;
-  intmax_t rem;
+  intmax_t quot; /**< Quotient. */
+  intmax_t rem;  /**< Remainder. */
 } imaxdiv_t;
+#endif
 
 #ifndef imaxdiv
+/**
+ * @brief Computes quotient and remainder of two intmax_t values.
+ * @param numer Numerator.
+ * @param denom Denominator.
+ * @return imaxdiv_t structure with quot and rem.
+ */
 static __inline imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) {
   imaxdiv_t result;
   result.quot = numer / denom;
@@ -181,7 +196,8 @@ static __inline imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) {
 }
 #endif
 
-#endif /* defined(_MSC_VER) */
+#endif /* defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||     \
+          defined(__MSDOS__) */
 
 /**
  * @brief Retrieves information on inttypes polyfill availability.

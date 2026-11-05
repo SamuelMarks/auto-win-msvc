@@ -8,15 +8,12 @@
 
 /* Carefully guard every header that is not available on MSVC throughout the
  * codebase; to prevent errors. */
-#if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MSDOS__)
+#if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&      \
+    !defined(__DOS__)
 #include <sys/param.h>
-#if !defined(_MSC_VER)
-#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 /* clang-format on */
-#endif
-#endif
-#endif
 
 /* For printf formatting things you can  * later guarded for msvc and c89 etc.
  */
@@ -25,7 +22,8 @@
 #define _MAX_PATH 260
 #endif
 
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 /* Helper function returning void */
 static void get_path_len(const char *path, size_t *out_len) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400

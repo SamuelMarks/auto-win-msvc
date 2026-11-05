@@ -9,126 +9,140 @@ auto-win-msvc
 
 **A Massive, Modular POSIX Compatibility Layer for MSVC, MinGW, and Cygwin**
 
-`auto-win-msvc` is a comprehensive suite of C89-compliant libraries designed to provide POSIX, Linux, BSD, macOS, Solaris, and Haiku user-space APIs natively on Windows. Validated against Microsoft Visual C++ (MSVC 2005, 2022, 2026), MinGW-w64, Cygwin, GCC, and Clang, this monorepo expands across **78 distinct modules** to cover nearly 100% of standard user-space APIs.
+`auto-win-msvc` is a comprehensive suite of C89-compliant libraries designed to provide POSIX, Linux, BSD, macOS, and Solaris user-space APIs natively on Windows. Validated against Microsoft Visual C++ (MSVC 2005, 2022, 2026), MinGW-w64, Cygwin, GCC, and Clang, this monorepo expands across **77 distinct modules** to cover nearly 100% of standard user-space APIs.
+
+## 🏭 Real-World Downstream Integration
+
+`auto-win-msvc` is continuously tested and verified in downstream CI builds of major open-source projects ported to native Windows:
+
+| Project | Upstream / Port | Build System | Highlights |
+|---|---|---|---|
+| **Valkey** | [`SamuelMarks/valkey-windows`](https://github.com/SamuelMarks/valkey-windows) | MSVC / NMake / Release scripts | High-performance distributed key-value store, NSIS packaging |
+| **Redis** | [`SamuelMarks/redis-windows`](https://github.com/SamuelMarks/redis-windows) | MSVC / CTest | Validated against Redis 8+ test suites and NSIS packaging |
+| **Rsync** | [`SamuelMarks/rsync`](https://github.com/SamuelMarks/rsync) | CMake + FetchContent | Native POSIX file synchronizer built on Windows with vcpkg |
+| **Memcached** | [`SamuelMarks/memcached`](https://github.com/SamuelMarks/memcached) | CMake + FetchContent | Automated C99 VLA AST transformation, executes `memcached.exe -h` and `sizes.exe` |
+| **DASH** | [`SamuelMarks/dash-windows`](https://github.com/SamuelMarks/dash-windows) | CMake + FetchContent + CTest | Debian Almquist Shell running natively on Windows with `vfork`/`setjmp` emulation |
+| **BusyBox** | [`SamuelMarks/busybox-windows`](https://github.com/SamuelMarks/busybox-windows) | CMake + FetchContent + CTest | Multi-call POSIX swiss-army knife compiled natively with MSVC |
+| **s2n-tls** | [`SamuelMarks/s2n-tls`](https://github.com/SamuelMarks/s2n-tls) | CMake + FetchContent + CTest | AWS C99 TLS/SSL protocol implementation transformed and compiled under MSVC |
+| **jq** | [`SamuelMarks/jq-windows`](https://github.com/SamuelMarks/jq-windows) | CMake + FetchContent + CTest | Command-line JSON processor transformed to strict C89 for native MSVC and OpenWatcom 32-bit DOS (`JQ.EXE`) |
+
+---
 
 ## 🏆 Current Feature Set & Implementation Details
 
-- **Massive Scope (78 Modules):** Modular polyfills spanning POSIX.1-2008, Linux, BSD (FreeBSD/NetBSD/OpenBSD), macOS (Mach / CoreFoundation), Solaris, and Haiku OS headers.
+- **Massive Scope (77 Modules):** Modular polyfills spanning POSIX.1-2008, Linux, BSD (FreeBSD/NetBSD/OpenBSD), macOS (Mach), and Solaris headers.
 - **Strict ISO C90 (C89) Compliance:** Every module compiles under `-std=c90` / `/Za` / strict MSVC C89 for legacy and enterprise integration.
 - **Automated C99-to-C89 Source Transformation Engine:** Includes `AutoWinMsvcTransform.cmake` and `scripts/transform_sources.py` to rewrite unsupported C99 idioms (such as Variable Length Arrays) at configure time for seamless downstream compilation under MSVC.
+- **Universal Preprocessor & Error Shims:** Includes root-level headers (`<auto-win-msvc.h>`, `<auto-win-msvc-configure.h>`, `<auto-win-msvc-error.h>`, and `namespace_win_shim.h`) providing drop-in compiler attribute shims, central `auto_win_msvc_error_t` error handling, and `vfork`/`setjmp` emulation.
 - **Mega Library & Modular Architecture:** Consume the entire suite as a single `auto-win-msvc` mega-library (shared `.dll` or static `.lib`), OR fetch individual modules piece-by-piece to minimize binary footprint.
 - **Implementation Caveats & Safety:**
   - **Zero `<windows.h>` Namespace Pollution:** Public headers avoid pulling in the Windows API namespace unless explicitly required.
   - **Safe CRT Utilization:** Employs MSVC safe CRT extensions (`sprintf_s`, `_TRUNCATE`, etc.) with proper `#if defined` fallbacks to ensure buffer safety without breaking non-MSVC toolchains.
-  - **Customizable Compilation Matrix:** Build configurations support `UNICODE` vs `ANSI`, Multi-threaded vs Single-threaded (`/MT` vs `/MTd`, `/MD` vs `/MDd`), Link-Time Optimization (LTO/IPO), and granular MSVC Runtime Checks (`/RTC1`, `/RTCs`, `/RTCu`).
-  - **Strict Helper Exit Codes:** All internal non-void, non-math helper functions return strict `int` exit codes for reliable execution auditing.
-  - **Winsock Responsibility:** For `posix-sockets` and network-related modules, consumers remain responsible for calling `WSAStartup()` and `WSACleanup()`.
+  - **Customizable Compilation Matrix:** Build configurations support `UNICODE` vs `ANSI`, Multi-threaded vs Single-threaded (`/MT` vs `/MTd`, `/MD` vs `/MDd`), Link-Time Optimization (LTO/IPO), AddressSanitizer (ASAN), Code Coverage, and granular MSVC Runtime Checks (`/RTC1`, `/RTCs`, `/RTCu`).
+  - **Strict Helper Exit Codes:** All internal non-void, non-math helper functions return strict `int` or `auto_win_msvc_error_t` exit codes for reliable execution auditing.
+  - **Winsock Responsibility:** For `posix-sockets` and network-related modules, consumers remain responsible for calling `WSAStartup()` and `WSACleanup()` (or calling `auto_win_msvc_ensure_wsastartup()`).
 
-## 📦 Module Catalog (78 Modules)
+## 📦 Module Catalog (77 Modules)
 
-The monorepo is organized into 6 platform and standard categories:
+The monorepo is organized into 5 platform and standard categories:
 
-### POSIX (43 Modules)
+### POSIX (44 Modules)
 | Module | Primary Headers Provided | Description |
 |---|---|---|
 | `posix-alloca` | `<alloca.h>` | Stack memory allocation wrapper |
-| `posix-arpa` | `<arpa/inet.h>` | Internet operations and byte-order conversions |
-| `posix-core` | `<unistd.h>`, `<fcntl.h>`, `<sys/stat.h>`, `<sys/types.h>` | Core POSIX file I/O, process APIs, and system constants |
-| `posix-dirent` | `<dirent.h>` | Directory stream traversal (`opendir`, `readdir`, `closedir`) |
-| `posix-dlfcn` | `<dlfcn.h>` | Dynamic library loading (`dlopen`, `dlsym`, `dlclose`, `dlerror`) |
-| `posix-glob` | `<glob.h>` | Pathname pattern matching |
-| `posix-inttypes` | `<inttypes.h>` | Exact-width integer formatting and conversions |
-| `posix-ipc` | `<sys/ipc.h>`, `<sys/shm.h>`, `<sys/msg.h>`, `<sys/sem.h>` | System V IPC primitives |
-| `posix-langinfo` | `<langinfo.h>`, `<nl_types.h>` | Locale and language information constants |
-| `posix-libgen` | `<libgen.h>` | Path parsing utilities (`basename`, `dirname`) |
-| `posix-libproc` | `<libproc.h>` | Process status and path inspection |
-| `posix-libunwind` | `<libunwind.h>` | Call-stack unwinding interface |
-| `posix-mman` | `<sys/mman.h>` | Memory management (`mmap`, `munmap`, `mprotect`, `msync`, `madvise`) |
-| `posix-netdb` | `<netdb.h>` | Network database operations (`getaddrinfo`, `gethostbyname`) |
-| `posix-netinet` | `<netinet/in.h>`, `<netinet/tcp.h>`, `<netinet/ip.h>` | Internet protocol family and socket options |
-| `posix-poll` | `<poll.h>`, `<sys/poll.h>` | Polling file descriptor multiplexing |
-| `posix-pthread` | `<pthread.h>`, `<sched.h>` | POSIX threads, mutexes, condition variables, rwlocks, and TLS |
-| `posix-pwdgrp` | `<pwd.h>`, `<grp.h>` | User and group database access |
-| `posix-regex` | `<regex.h>` | POSIX regular expressions (backed by PCRE2) |
-| `posix-sched` | `<sched.h>` | Thread and process scheduling and CPU affinity |
-| `posix-signal` | `<signal.h>`, `<sys/signal.h>` | POSIX signal emulation (`sigaction`, `kill`, `raise`) |
-| `posix-sockets` | `<sys/socket.h>`, `<sys/un.h>` | BSD socket layer with transparent CRT fd translation |
-| `posix-spawn` | `<spawn.h>` | Process spawning (`posix_spawn`, `posix_spawnp`) |
-| `posix-stat` | `<sys/stat.h>` | File attributes and permission modes |
-| `posix-stdatomic` | `<stdatomic.h>` | C11 atomic types and operations polyfill |
-| `posix-stdbool` | `<stdbool.h>` | Boolean type and constants |
-| `posix-stdint` | `<stdint.h>` | Standard integer types and limits for C89 |
-| `posix-strings` | `<strings.h>` | Case-insensitive comparisons and legacy memory ops (`bzero`, `bcopy`) |
+| `posix-arpa` | `<arpa/inet.h>`, `<arpa/telnet.h>`, `<posix-arpa-inet.h>` | Internet operations, telnet constants, and byte-order conversions |
+| `posix-core` | `<unistd.h>`, `<paths.h>`, `<sysexits.h>`, `<posix-core.h>` | Core POSIX file I/O, process APIs, and system constants |
+| `posix-dirent` | `<dirent.h>`, `<posix-dirent.h>` | Directory stream traversal (`opendir`, `readdir`, `closedir`) |
+| `posix-dlfcn` | `<dlfcn.h>`, `<posix-dlfcn.h>` | Dynamic library loading (`dlopen`, `dlsym`, `dlclose`, `dlerror`) |
+| `posix-fcntl` | `<fcntl.h>` | File control options and descriptor manipulation (`fcntl`, `open`, `openat`) |
+| `posix-glob` | `<glob.h>`, `<fnmatch.h>`, `<posix-glob.h>` | Pathname pattern and filename matching |
+| `posix-inttypes` | `<inttypes.h>`, `<posix-inttypes.h>` | Exact-width integer formatting and conversions |
+| `posix-ipc` | `<posix-ipc.h>` (`<sys/ipc.h>`, `<sys/shm.h>`, `<sys/msg.h>`, `<sys/sem.h>`) | System V IPC primitives |
+| `posix-langinfo` | `<langinfo.h>`, `<posix-langinfo.h>` | Locale and language information constants (`nl_langinfo`) |
+| `posix-libgen` | `<libgen.h>`, `<posix-libgen.h>` | Path parsing utilities (`basename`, `dirname`) |
+| `posix-libproc` | `<posix-libproc.h>` | Process status and path inspection |
+| `posix-mman` | `<posix-mman.h>` (`<sys/mman.h>`) | Memory management (`mmap`, `munmap`, `mprotect`, `msync`, `madvise`) |
+| `posix-mqueue` | `<mqueue.h>` | POSIX message queues (`mq_open`, `mq_send`, `mq_receive`, `mq_unlink`) |
+| `posix-netdb` | `<netdb.h>`, `<resolv.h>`, `<posix-netdb.h>` | Network database and DNS resolver operations (`getaddrinfo`, `gethostbyname`) |
+| `posix-netinet` | `<netinet/in.h>`, `<netinet/tcp.h>`, `<netinet/ip.h>`, `<netinet/ip_icmp.h>`, `<netinet/icmp6.h>` | Internet protocol family, ICMP, and TCP socket options |
+| `posix-poll` | `<poll.h>`, `<posix-poll.h>` | Polling file descriptor multiplexing (`poll`, `ppoll`) |
+| `posix-pthread` | `<pthread.h>`, `<posix-pthread.h>` | POSIX threads, mutexes, condition variables, rwlocks, barriers, and TLS |
+| `posix-pwdgrp` | `<pwd.h>`, `<grp.h>`, `<posix-pwdgrp.h>` | User and group database access (`getpwnam`, `getgrgid`) |
+| `posix-regex` | `<regex.h>`, `<posix-regex.h>` | POSIX regular expressions (backed by PCRE2) |
+| `posix-sched` | `<posix-sched.h>` (`<sched.h>`) | Thread and process scheduling and CPU affinity |
+| `posix-semaphore` | `<semaphore.h>` | POSIX named and unnamed semaphores (`sem_init`, `sem_wait`, `sem_post`) |
+| `posix-signal` | `<signal.h>`, `<posix-signal.h>`, `<posix-signal-ext.h>` | POSIX signal emulation (`sigaction`, `kill`, `sigprocmask`, `sigsuspend`) |
+| `posix-sockets` | `<sys/socket.h>`, `<sys/un.h>`, `<net/if.h>`, `<ifaddrs.h>`, `<posix-sockets.h>` | BSD socket layer with transparent CRT fd translation and interface inspection |
+| `posix-spawn` | `<spawn.h>`, `<posix-spawn.h>` | Process spawning (`posix_spawn`, `posix_spawnp`) |
+| `posix-stat` | `<sys/stat.h>`, `<sys/sysmacros.h>`, `<posix-stat.h>` | File attributes, permission modes, and device number macros |
+| `posix-stdatomic` | `<posix-stdatomic.h>` (`<stdatomic.h>`) | C11 atomic types and operations polyfill |
+| `posix-stdbool` | `<stdbool.h>`, `<posix-stdbool.h>` | Boolean type and constants |
+| `posix-stdint` | `<stdint.h>`, `<posix-stdint.h>` | Standard integer types and limits for C89 |
+| `posix-strings` | `<strings.h>`, `<posix-strings.h>` | Case-insensitive comparisons and legacy memory ops (`bzero`, `bcopy`, `ffs`) |
 | `posix-stropts` | `<stropts.h>` | Stream I/O definitions (`ioctl` command mappings) |
-| `posix-sys-ioctl` | `<sys/ioctl.h>` | Device and socket I/O control |
+| `posix-sys-ioctl` | `<sys/ioctl.h>`, `<posix-sys-ioctl.h>` | Device and socket I/O control |
 | `posix-sys-mman` | `<sys/mman.h>` | Subsystem redirection header for memory mapping |
-| `posix-sys-resource` | `<sys/resource.h>` | Resource usage and limits (`getrlimit`, `setrlimit`, `getrusage`) |
-| `posix-sys-select` | `<sys/select.h>` | Synchronous I/O multiplexing (`select`, `pselect`, `fd_set`) |
-| `posix-sys-uio` | `<sys/uio.h>` | Vectored I/O operations (`readv`, `writev`) |
-| `posix-syslog` | `<syslog.h>` | System logging facility (`openlog`, `syslog`, `closelog`) |
-| `posix-termios` | `<termios.h>` | Terminal control and baud rates |
-| `posix-time` | `<time.h>`, `<sys/time.h>` | High-resolution timers, `clock_gettime`, `gettimeofday` |
-| `posix-times` | `<sys/times.h>` | Process and child execution times (`times`, `struct tms`) |
-| `posix-types` | `<sys/types.h>` | Core POSIX data types (`pid_t`, `uid_t`, `gid_t`, `ssize_t`, etc.) |
-| `posix-ucontext` | `<ucontext.h>` | User-space context switching (`getcontext`, `setcontext`, `makecontext`) |
-| `posix-unwind` | `<unwind.h>` | Stack unwinding types and procedures |
-| `posix-utsname` | `<sys/utsname.h>` | System identification (`uname`, `struct utsname`) |
-| `posix-wait` | `<sys/wait.h>` | Process termination status macros and waiting (`wait`, `waitpid`) |
+| `posix-sys-resource` | `<sys/resource.h>`, `<posix-sys-resource.h>` | Resource usage and limits (`getrlimit`, `setrlimit`, `getrusage`) |
+| `posix-sys-select` | `<sys/select.h>`, `<posix-sys-select.h>` | Synchronous I/O multiplexing (`select`, `pselect`, `fd_set`) |
+| `posix-sys-uio` | `<sys/uio.h>`, `<posix-sys-uio.h>` | Vectored I/O operations (`readv`, `writev`) |
+| `posix-syslog` | `<syslog.h>`, `<posix-syslog.h>` | System logging facility (`openlog`, `syslog`, `closelog`) |
+| `posix-termios` | `<termios.h>`, `<posix-termios.h>` | Terminal control and baud rates |
+| `posix-time` | `<sys/time.h>`, `<posix-time.h>` | High-resolution timers, `clock_gettime`, `gettimeofday`, `nanosleep` |
+| `posix-times` | `<sys/times.h>`, `<posix-times.h>` | Process and child execution times (`times`, `struct tms`) |
+| `posix-types` | `<sys/types.h>`, `<posix-types.h>` | Core POSIX data types (`pid_t`, `uid_t`, `gid_t`, `ssize_t`, etc.) |
+| `posix-ucontext` | `<posix-ucontext.h>` (`<ucontext.h>`) | User-space context switching (`getcontext`, `setcontext`, `makecontext`) |
+| `posix-utsname` | `<sys/utsname.h>`, `<posix-utsname.h>` | System identification (`uname`, `struct utsname`) |
+| `posix-wait` | `<sys/wait.h>`, `<posix-wait.h>` | Process termination status macros and waiting (`wait`, `waitpid`) |
 
 ### Linux (16 Modules)
 | Module | Primary Headers Provided | Description |
 |---|---|---|
-| `linux-backtrace` | `<execinfo.h>` | Stack tracing helper utilities |
-| `linux-endian` | `<endian.h>` | Byte swapping macros (`htobe16`, `be32toh`, `le64toh`, etc.) |
-| `linux-epoll` | `<sys/epoll.h>` | Scalable I/O event notification (powered by `wepoll`) |
-| `linux-execinfo` | `<execinfo.h>` | GNU backtrace functionality (`backtrace`, `backtrace_symbols`) |
-| `linux-features` | `<features.h>` | GNU libc compatibility and feature flags |
-| `linux-getopt` | `<getopt.h>` | Command-line option parsing (`getopt`, `getopt_long`, `getopt_long_only`) |
-| `linux-hv-hloop` | `<linux/hyperv.h>` | Hyper-V and hypercall interface constants |
+| `linux-endian` | `<endian.h>`, `<byteswap.h>`, `<linux-endian.h>` | Byte swapping macros (`htobe16`, `be32toh`, `bswap_32`, etc.) |
+| `linux-epoll` | `<sys/epoll.h>`, `<linux-epoll.h>` | Scalable I/O event notification (powered by `wepoll`) |
+| `linux-err` | `<err.h>` | BSD/Linux formatted error and warning messages (`err`, `errx`, `warn`, `warnx`) |
+| `linux-execinfo` | `<linux-execinfo.h>` (`<execinfo.h>`) | GNU backtrace functionality (`backtrace`, `backtrace_symbols`) |
+| `linux-features` | `<features.h>`, `<linux-features.h>` | GNU libc compatibility and feature test flags |
+| `linux-getopt` | `<linux-getopt.h>` (`<getopt.h>`) | Command-line option parsing (`getopt`, `getopt_long`, `getopt_long_only`) |
 | `linux-magic` | `<linux/magic.h>` | Filesystem magic constants |
-| `linux-rdma` | `<rdma/rdma_cma.h>` | Remote Direct Memory Access (RDMA) type definitions |
-| `linux-sys-bitops` | `<sys/bitops.h>` | Bit manipulation operations (`ffs`, `fls`, popcount) |
-| `linux-sys-prctl` | `<sys/prctl.h>` | Process operations and name configuration |
-| `linux-sys-procfs` | `<sys/procfs.h>` | `/proc` data structures and register definitions |
-| `linux-sys-statfs` | `<sys/statfs.h>` | Filesystem capacity and status inspection |
-| `linux-sys-syscall` | `<sys/syscall.h>` | Linux syscall number constants |
-| `linux-sys-user` | `<sys/user.h>` | User structure and hardware register state |
-| `linux-systemd` | `<systemd/sd-daemon.h>` | Systemd daemon notification protocol (`sd_notify`, `sd_booted`) |
+| `linux-sys-bitops` | `<linux-sys-bitops.h>` (`<sys/bitops.h>`) | Bit manipulation operations (`ffs`, `fls`, popcount) |
+| `linux-sys-eventfd` | `<sys/eventfd.h>` | Event wait/notify descriptor mechanism (`eventfd`) |
+| `linux-sys-prctl` | `<linux-sys-prctl.h>` (`<sys/prctl.h>`) | Process operations and thread name configuration |
+| `linux-sys-procfs` | `<sys/sysinfo.h>`, `<linux-sys-procfs.h>` | System statistics (`sysinfo`) and `/proc` data structures |
+| `linux-sys-sendfile` | `<sys/sendfile.h>` | Zero-copy data transfer between file descriptors (`sendfile`) |
+| `linux-sys-statfs` | `<sys/statfs.h>`, `<sys/statvfs.h>`, `<mntent.h>`, `<linux-sys-statfs.h>` | Filesystem capacity, mount table parsing (`getmntent`), and status inspection |
+| `linux-sys-syscall` | `<linux-sys-syscall.h>` (`<sys/syscall.h>`) | Linux syscall number constants and `syscall` interface |
+| `linux-sys-timerfd` | `<sys/timerfd.h>` | Timer expiration notification descriptors (`timerfd_create`, `timerfd_settime`) |
+| `linux-sys-user` | `<linux-sys-user.h>` (`<sys/user.h>`) | User structure and hardware register state definitions |
 
-### BSD (10 Modules)
+### BSD (14 Modules)
 | Module | Primary Headers Provided | Description |
 |---|---|---|
-| `bsd-machine-endian` | `<machine/endian.h>` | Architecture-specific endianness macros |
-| `bsd-malloc-np` | `<malloc_np.h>` | Non-portable memory allocation (`malloc_size`, `malloc_usable_size`) |
-| `bsd-pthread-np` | `<pthread_np.h>` | Non-portable pthread routines (`pthread_set_name_np`, affinity) |
-| `bsd-sys-cpuset` | `<sys/cpuset.h>` | FreeBSD CPU affinity sets |
-| `bsd-sys-endian` | `<sys/endian.h>` | BSD byte ordering functions |
-| `bsd-sys-event` | `<sys/event.h>` | `kqueue` and `kevent` notification polyfills |
-| `bsd-sys-file` | `<sys/file.h>` | Advisory file locking (`flock`, `LOCK_SH`, `LOCK_EX`) |
-| `bsd-sys-param` | `<sys/param.h>` | System parameters, limits, and min/max macros |
-| `bsd-sys-sysctl` | `<sys/sysctl.h>` | System management and hardware inspection via `sysctl` |
-| `bsd-vm-param` | `<vm/param.h>` | Virtual memory architecture constants |
+| `bsd-machine-endian` | `<machine/endian.h>`, `<bsd-machine-endian.h>` | Architecture-specific endianness macros |
+| `bsd-malloc-np` | `<bsd-malloc-np.h>` (`<malloc_np.h>`) | Non-portable memory allocation (`malloc_size`, `malloc_usable_size`) |
+| `bsd-pthread-np` | `<bsd-pthread-np.h>` (`<pthread_np.h>`) | Non-portable pthread routines (`pthread_set_name_np`, affinity) |
+| `bsd-stdlib` | `<bsd/stdlib.h>` | BSD standard library extensions (`reallocarray`) |
+| `bsd-string` | `<bsd/string.h>` | Safe string operations (`strlcpy`, `strlcat`, `strcasestr`, `strsep`, `strverscmp`) |
+| `bsd-sys-cdefs` | `<sys/cdefs.h>` | BSD C compiler and preprocessor macro definitions |
+| `bsd-sys-cpuset` | `<bsd-sys-cpuset.h>` (`<sys/cpuset.h>`) | FreeBSD CPU affinity sets (`cpuset_getaffinity`, `cpuset_setaffinity`) |
+| `bsd-sys-endian` | `<bsd-sys-endian.h>` (`<sys/endian.h>`) | BSD byte ordering and encoding functions |
+| `bsd-sys-event` | `<bsd-sys-event.h>` (`<sys/event.h>`) | `kqueue` and `kevent` notification polyfills |
+| `bsd-sys-file` | `<bsd-sys-file.h>` (`<sys/file.h>`) | Advisory file locking (`flock`, `LOCK_SH`, `LOCK_EX`) |
+| `bsd-sys-param` | `<sys/param.h>`, `<bsd-sys-param.h>` | System parameters, limits, and min/max macros |
+| `bsd-sys-queue` | `<sys/queue.h>` | BSD queue, tail-queue, and linked list data structure macros |
+| `bsd-sys-sysctl` | `<bsd-sys-sysctl.h>` (`<sys/sysctl.h>`) | System management and hardware inspection via `sysctl` / `sysctlbyname` |
+| `bsd-sys-tree` | `<sys/tree.h>` | BSD splay and red-black tree data structure macros |
 
-### macOS (5 Modules)
+### macOS (1 Module)
 | Module | Primary Headers Provided | Description |
 |---|---|---|
-| `macos-availabilitymacros` | `<AvailabilityMacros.h>` | Apple SDK availability and version macros |
-| `macos-corefoundation` | `<CoreFoundation/CoreFoundation.h>` | CoreFoundation type definitions and string wrappers |
-| `macos-dyld` | `<mach-o/dyld.h>` | Dynamic linker inspection (`_NSGetExecutablePath`) |
-| `macos-mach` | `<mach/mach.h>`, `<mach/clock.h>`, `<mach/mach_time.h>` | Mach microkernel clocks, timebase info, and ports |
-| `macos-malloc` | `<malloc/malloc.h>` | macOS heap introspection and allocation queries |
+| `macos-mach` | `<mach/mach.h>`, `<mach/mach_init.h>`, `<mach/task.h>` | Mach microkernel clocks, timebase info, tasks, and ports |
 
 ### Solaris (3 Modules)
 | Module | Primary Headers Provided | Description |
 |---|---|---|
-| `solaris-port` | `<port.h>` | Solaris Event Ports API (`port_create`, `port_associate`) |
-| `solaris-sys-byteorder` | `<sys/byteorder.h>` | Solaris byte order conversion macros |
-| `solaris-sys-feature-tests` | `<sys/feature_tests.h>` | Solaris compiler and standards feature test macros |
-
-### Haiku OS (1 Module)
-| Module | Primary Headers Provided | Description |
-|---|---|---|
-| `haiku-os` | `<OS.h>`, `<kernel/OS.h>` | Haiku OS kernel timing, thread IDs, and system info |
+| `solaris-port` | `<solaris-port.h>` (`<port.h>`) | Solaris Event Ports API (`port_create`, `port_associate`, `port_get`) |
+| `solaris-sys-byteorder` | `<solaris-sys-byteorder.h>` (`<sys/byteorder.h>`) | Solaris byte order conversion macros |
+| `solaris-sys-feature-tests` | `<solaris-sys-feature-tests.h>` (`<sys/feature_tests.h>`) | Solaris compiler and standards feature test macros |
 
 ---
 
@@ -155,6 +169,9 @@ FetchContent_MakeAvailable(auto-win-msvc)
 # set(AUTO_WIN_MSVC_LTO ON)                     # Enable Link-Time Optimization (IPO)
 # set(AUTO_WIN_MSVC_RTC "RTC1")                 # Runtime Checks: "Default", "RTC1", "RTCs", "RTCu"
 # set(AUTO_WIN_MSVC_SINGLE_THREADED ON)         # Single-threaded CRT / _SINGLE_THREAD
+# set(AUTO_WIN_MSVC_BUILD_TESTING OFF)          # Toggle building the test suite
+# set(AUTO_WIN_MSVC_COVERAGE ON)                # Enable code coverage reporting
+# set(AUTO_WIN_MSVC_ASAN ON)                    # Enable AddressSanitizer (ASAN) on modern MSVC
 
 target_link_libraries(your_target PRIVATE auto-win-msvc)
 ```
@@ -205,19 +222,6 @@ If the ports are integrated into your vcpkg registry, you can pull either the me
 
 ---
 
-## 🏭 Real-World Downstream Integration
-
-`auto-win-msvc` is continuously tested and verified in downstream CI builds of major open-source projects ported to native Windows:
-
-| Project | Upstream / Port | Build System | Highlights |
-|---|---|---|---|
-| **Valkey** | [`SamuelMarks/valkey-windows`](https://github.com/SamuelMarks/valkey-windows) | MSVC / NMake / Release scripts | High-performance distributed key-value store, NSIS packaging |
-| **Redis** | [`SamuelMarks/redis-windows`](https://github.com/SamuelMarks/redis-windows) | MSVC / CTest | Validated against Redis 8+ test suites and NSIS packaging |
-| **Rsync** | [`SamuelMarks/rsync`](https://github.com/SamuelMarks/rsync) | CMake + FetchContent | Native POSIX file synchronizer built on Windows with vcpkg |
-| **Memcached** | [`SamuelMarks/memcached`](https://github.com/SamuelMarks/memcached) | CMake + FetchContent | Automated C99 VLA AST transformation, executes `memcached.exe -h` and `sizes.exe` |
-
----
-
 ## 🔌 Socket & Pipe Interoperability with Libevent
 
 `auto-win-msvc` provides POSIX file descriptor semantics on top of Windows CRT and Winsock:
@@ -240,6 +244,7 @@ If the ports are integrated into your vcpkg registry, you can pull either the me
 | **Cygwin** | ✅ Passing | Validated against the POSIX-on-Windows standard environment. |
 | **AppleClang (macOS)** | ✅ Passing | Strict ISO C90 verification with `-Wall -Wextra -pedantic -Werror`. |
 | **GCC & Clang (Linux)** | ✅ Passing | Tested under Linux container environments to ensure pure portable C89. |
+| **OpenWatcom v2 (32-bit DOS)** | ✅ Passing | Protected-Mode DOS (`DOS/4GW` / `CauseWay`, `-bt=dos`) with single-threaded TLS and POSIX shims. |
 
 ---
 

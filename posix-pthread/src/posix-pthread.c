@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 /* posix-pthread.c - Strict C89 Implementation */
 /* clang-format off */
 #include "posix-pthread.h"
@@ -16,53 +17,70 @@
 #ifndef EINVAL
 #define EINVAL 22
 #endif
+#ifndef EAGAIN
+#define EAGAIN 11
+#endif
+#ifndef ENOMEM
+#define ENOMEM 12
+#endif
 
-#if (!defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)) || defined(__CYGWIN__)
+#if (!defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) &&           \
+     !defined(__WATCOMC__)) ||                                                 \
+    defined(__CYGWIN__)
 /* Nothing to implement, native POSIX used */
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__DOS__) || defined(__MSDOS__) ||                                \
+    (defined(__WATCOMC__) && !defined(_WIN32))
 
-int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
-  if (!mutex || !attr) {
+#define POSIX_DOS_MAX_TLS_KEYS 64
+static int g_dos_tls_used[POSIX_DOS_MAX_TLS_KEYS];
+static void *g_dos_tls_values[POSIX_DOS_MAX_TLS_KEYS];
+static void (*g_dos_tls_destructors[POSIX_DOS_MAX_TLS_KEYS])(void *);
+
+int pthread_mutex_init(pthread_mutex_t *mutex,
+                       const pthread_mutexattr_t *attr) {
+  if (!mutex) {
+    errno = EINVAL;
+    return EINVAL;
+  }
   if (attr) {
     /* parameters checked */
   }
-    errno = EINVAL;
-    return -1;
-  }
-    return ENOSYS;
+  mutex->p = (void *)1;
+  return 0;
 }
 
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  mutex->p = NULL;
+  return 0;
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  return 0;
 }
 
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  return 0;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  return 0;
 }
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
@@ -207,40 +225,53 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-  if (key || destructor) {
-    /* parameters checked */
+  unsigned long i;
+  if (!key) {
+    errno = EINVAL;
+    return EINVAL;
   }
-  return ENOSYS;
+  for (i = 0; i < POSIX_DOS_MAX_TLS_KEYS; ++i) {
+    if (!g_dos_tls_used[i]) {
+      g_dos_tls_used[i] = 1;
+      g_dos_tls_values[i] = NULL;
+      g_dos_tls_destructors[i] = destructor;
+      *key = i;
+      return 0;
+    }
+  }
+  errno = EAGAIN;
+  return EAGAIN;
 }
 
 int pthread_key_delete(pthread_key_t key) {
-  if (!key) {
+  if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  g_dos_tls_used[key] = 0;
+  g_dos_tls_values[key] = NULL;
+  g_dos_tls_destructors[key] = NULL;
+  return 0;
 }
 
 void *pthread_getspecific(pthread_key_t key) {
-  if (key) {
-    /* parameters checked */
+  if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
+    return NULL;
   }
-  return NULL;
+  return g_dos_tls_values[key];
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value) {
-  if (value) {
-    /* parameters checked */
-  }
-  if (!key) {
+  if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return ENOSYS;
+  g_dos_tls_values[key] = (void *)(size_t)value;
+  return 0;
 }
 
 pthread_t pthread_self(void) {
-  return 0;
+  return (pthread_t)1;
 }
 
 int pthread_equal(pthread_t t1, pthread_t t2) {
@@ -248,9 +279,8 @@ int pthread_equal(pthread_t t1, pthread_t t2) {
 }
 
 void pthread_exit(void *retval) {
-  if (!retval) {
-    errno = EINVAL;
-    return -1;
+  if (retval) {
+    /* parameters checked */
   }
 }
 
@@ -412,7 +442,11 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
     errno = EINVAL;
     return EINVAL;
   }
-  return ENOSYS;
+  if (once_control->p == NULL) {
+    once_control->p = (void *)1;
+    init_routine();
+  }
+  return 0;
 }
 
 #else

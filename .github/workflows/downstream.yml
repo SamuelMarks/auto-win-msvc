@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [valkey, redis, rsync, memcached, dash, busybox]
+        project: [valkey, redis, rsync, memcached, dash, busybox, jq]
 
     steps:
       - name: Checkout auto-win-msvc
@@ -164,3 +164,11 @@ jobs:
           ) else (
               build\busybox.exe sh -c "echo BusyBox native Windows build successful"
           )
+
+      - name: Build jq
+        if: matrix.project == 'jq'
+        shell: cmd
+        run: |
+          cmake -B build_jq -S auto-win-msvc/cmake/jq-port -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=auto-win-msvc
+          cmake --build build_jq --config Release
+          ctest --test-dir build_jq -C Release --output-on-failure

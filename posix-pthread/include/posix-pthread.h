@@ -2,7 +2,8 @@
 #ifndef POSIX_PTHREAD_H
 #define POSIX_PTHREAD_H
 
-#if (!defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)) ||      \
+#if (!defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) &&           \
+     !defined(__WATCOMC__)) ||                                                 \
     defined(__CYGWIN__)
 /* Transparently use native POSIX threads */
 /* clang-format off */

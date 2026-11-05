@@ -3348,9 +3348,197 @@ int settimeofday(const void *tv, const void *tz) {
   return -1;
 }
 
+#elif (defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)) &&      \
+    !defined(_WIN32)
+
+#ifndef ENOSYS
+#define ENOSYS 38
 #endif
 
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+int fsync(int fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+int setenv(const char *name, const char *value, int overwrite) {
+  size_t nlen;
+  size_t vlen;
+  char *buf;
+  int rc;
+  if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (!overwrite && getenv(name) != NULL) {
+    return 0;
+  }
+  nlen = strlen(name);
+  vlen = value ? strlen(value) : 0;
+  buf = (char *)malloc(nlen + vlen + 2);
+  if (!buf) {
+    errno = ENOMEM;
+    return -1;
+  }
+  memcpy(buf, name, nlen);
+  buf[nlen] = '=';
+  if (vlen > 0) {
+    memcpy(buf + nlen + 1, value, vlen);
+  }
+  buf[nlen + 1 + vlen] = '\0';
+  rc = putenv(buf);
+  return rc == 0 ? 0 : -1;
+}
+
+int unsetenv(const char *name) { return setenv(name, "", 1); }
+
+char *strndup(const char *s, size_t n) {
+  size_t len;
+  char *new_s;
+  if (s == NULL) {
+    return NULL;
+  }
+  len = strlen(s);
+  if (len > n) {
+    len = n;
+  }
+  new_s = (char *)malloc(len + 1);
+  if (new_s == NULL) {
+    return NULL;
+  }
+  memcpy(new_s, s, len);
+  new_s[len] = '\0';
+  return new_s;
+}
+
+int vasprintf(char **strp, const char *fmt, va_list ap) {
+  int len;
+  char *buf;
+  va_list ap_copy;
+  if (!strp || !fmt) {
+    errno = EINVAL;
+    return -1;
+  }
+  ap_copy = ap;
+  len = vsnprintf(NULL, 0, fmt, ap_copy);
+  if (len < 0) {
+    *strp = NULL;
+    return -1;
+  }
+  buf = (char *)malloc((size_t)len + 1);
+  if (!buf) {
+    *strp = NULL;
+    errno = ENOMEM;
+    return -1;
+  }
+  vsnprintf(buf, (size_t)len + 1, fmt, ap);
+  *strp = buf;
+  return len;
+}
+
+int asprintf(char **strp, const char *fmt, ...) {
+  va_list ap;
+  int res;
+  va_start(ap, fmt);
+  res = vasprintf(strp, fmt, ap);
+  va_end(ap);
+  return res;
+}
+
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
+  size_t pos = 0;
+  int c;
+  if (lineptr == NULL || n == NULL || stream == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (*lineptr == NULL || *n == 0) {
+    *n = 128;
+    *lineptr = (char *)malloc(*n);
+    if (*lineptr == NULL) {
+      errno = ENOMEM;
+      return -1;
+    }
+  }
+  while ((c = fgetc(stream)) != EOF) {
+    if (pos + 2 >= *n) {
+      size_t new_size = *n * 2;
+      char *new_ptr = (char *)realloc(*lineptr, new_size);
+      if (new_ptr == NULL) {
+        errno = ENOMEM;
+        return -1;
+      }
+      *lineptr = new_ptr;
+      *n = new_size;
+    }
+    (*lineptr)[pos++] = (char)c;
+    if (c == delim) {
+      break;
+    }
+  }
+  if (pos == 0 && c == EOF) {
+    return -1;
+  }
+  (*lineptr)[pos] = '\0';
+  return (ssize_t)pos;
+}
+
+int mkstemp(char *tmpl) {
+  size_t len;
+  int attempt;
+  if (!tmpl) {
+    errno = EINVAL;
+    return -1;
+  }
+  len = strlen(tmpl);
+  if (len < 6 || strcmp(tmpl + len - 6, "XXXXXX") != 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  for (attempt = 0; attempt < 1000; ++attempt) {
+    int fd;
+    sprintf(tmpl + len - 6, "%06d", attempt);
+    fd = open(tmpl, O_CREAT | O_EXCL | O_RDWR, 0600);
+    if (fd >= 0) {
+      return fd;
+    }
+  }
+  errno = EEXIST;
+  return -1;
+}
+
+int fork(void) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int vfork(void) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int pipe(int pipefd[2]) {
+  if (pipefd) {
+    /* parameters checked */
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+int waitpid(int pid, int *status, int options) {
+  if (pid || status || options) {
+    /* parameters checked */
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+#endif
+
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 void ASSIGN_CONST_PTR(const void *pptr, void *v) {
   union {
     const void *cp;

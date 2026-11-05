@@ -900,8 +900,13 @@ static int is_virtual_proc_stat_posix(const char *pathname,
     statbuf->st_mode = (mode_t)((is_dir ? S_IFDIR : S_IFREG) | S_IRUSR |
                                 S_IXUSR | S_IRGRP | S_IROTH);
     statbuf->st_nlink = 1;
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+    statbuf->st_uid = 0;
+    statbuf->st_gid = 0;
+#else
     statbuf->st_uid = getuid();
     statbuf->st_gid = getgid();
+#endif
 #if !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
     statbuf->st_blksize = 4096;
 #endif
@@ -935,8 +940,13 @@ static int is_virtual_proc_stat_posix(const char *pathname,
     statbuf->st_mode = (mode_t)((is_dir ? S_IFDIR : S_IFREG) | S_IRUSR |
                                 S_IXUSR | S_IRGRP | S_IROTH);
     statbuf->st_nlink = 1;
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+    statbuf->st_uid = 0;
+    statbuf->st_gid = 0;
+#else
     statbuf->st_uid = getuid();
     statbuf->st_gid = getgid();
+#endif
 #if !defined(__STRICT_ANSI__) && defined(_DARWIN_C_SOURCE)
     statbuf->st_blksize = 4096;
 #endif
@@ -991,7 +1001,11 @@ int posix_lstat(const char *pathname, void *statbuf) {
     return 0;
   }
 #endif
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+  return stat(pathname, st);
+#else
   return lstat(pathname, st);
+#endif
 }
 
 #endif /* _WIN32 */

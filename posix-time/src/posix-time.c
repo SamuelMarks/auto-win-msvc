@@ -1,9 +1,12 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 /* posix-time.c - Strict C89 Implementation */
 /* clang-format off */
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef _WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0500
@@ -16,6 +19,200 @@
 
 #endif
 #include "posix-time.h"
+
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
+static const char *posix_parse_int(const char *s, int max_digits, int min_val,
+                                   int max_val, int *out_val) {
+  int val = 0;
+  int count = 0;
+  while (*s == ' ' || *s == '\t') {
+    s++;
+  }
+  while (count < max_digits && *s >= '0' && *s <= '9') {
+    val = val * 10 + (*s - '0');
+    s++;
+    count++;
+  }
+  if (count == 0 || val < min_val || val > max_val) {
+    return NULL;
+  }
+  *out_val = val;
+  return s;
+}
+
+static char *posix_strptime_impl(const char *buf, const char *fmt,
+                                 struct tm *tm) {
+  const char *s = buf;
+  const char *f = fmt;
+  int val = 0;
+
+  if (buf == NULL || fmt == NULL || tm == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  while (*f != '\0') {
+    if (isspace((unsigned char)*f)) {
+      while (isspace((unsigned char)*s)) {
+        s++;
+      }
+      f++;
+      continue;
+    }
+    if (*f != '%') {
+      if (*s != *f) {
+        return NULL;
+      }
+      s++;
+      f++;
+      continue;
+    }
+    f++;
+    if (*f == 'E' || *f == 'O') {
+      f++;
+    }
+    switch (*f) {
+    case '%':
+      if (*s != '%') {
+        return NULL;
+      }
+      s++;
+      break;
+    case 'n':
+    case 't':
+      while (isspace((unsigned char)*s)) {
+        s++;
+      }
+      break;
+    case 'Y':
+      s = posix_parse_int(s, 4, 0, 9999, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_year = val - 1900;
+      break;
+    case 'y':
+      s = posix_parse_int(s, 2, 0, 99, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_year = (val < 69) ? (val + 100) : val;
+      break;
+    case 'm':
+      s = posix_parse_int(s, 2, 1, 12, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_mon = val - 1;
+      break;
+    case 'd':
+    case 'e':
+      s = posix_parse_int(s, 2, 1, 31, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_mday = val;
+      break;
+    case 'H':
+      s = posix_parse_int(s, 2, 0, 23, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_hour = val;
+      break;
+    case 'I':
+      s = posix_parse_int(s, 2, 1, 12, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_hour = val % 12;
+      break;
+    case 'M':
+      s = posix_parse_int(s, 2, 0, 59, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_min = val;
+      break;
+    case 'S':
+      s = posix_parse_int(s, 2, 0, 60, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_sec = val;
+      break;
+    case 'j':
+      s = posix_parse_int(s, 3, 1, 366, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_yday = val - 1;
+      break;
+    case 'w':
+      s = posix_parse_int(s, 1, 0, 6, &val);
+      if (!s) {
+        return NULL;
+      }
+      tm->tm_wday = val;
+      break;
+    case 'F':
+      s = posix_strptime_impl(s, "%Y-%m-%d", tm);
+      if (!s) {
+        return NULL;
+      }
+      break;
+    case 'T':
+      s = posix_strptime_impl(s, "%H:%M:%S", tm);
+      if (!s) {
+        return NULL;
+      }
+      break;
+    case 'R':
+      s = posix_strptime_impl(s, "%H:%M", tm);
+      if (!s) {
+        return NULL;
+      }
+      break;
+    case 'D':
+      s = posix_strptime_impl(s, "%m/%d/%y", tm);
+      if (!s) {
+        return NULL;
+      }
+      break;
+    case 'Z':
+      while (isalpha((unsigned char)*s)) {
+        s++;
+      }
+      break;
+    case 'z':
+      if (*s == 'Z' || *s == 'z') {
+        s++;
+      } else if (*s == '+' || *s == '-') {
+        s++;
+        s = posix_parse_int(s, 2, 0, 23, &val);
+        if (!s) {
+          return NULL;
+        }
+        if (*s == ':') {
+          s++;
+        }
+        s = posix_parse_int(s, 2, 0, 59, &val);
+        if (!s) {
+          return NULL;
+        }
+      } else {
+        return NULL;
+      }
+      break;
+    default:
+      return NULL;
+    }
+    f++;
+  }
+  return (char *)(size_t)s;
+}
+#endif
 
 #ifdef _WIN32
 #if defined(_M_IX86)
@@ -391,84 +588,126 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 #endif
 }
 
-char *strptime(const char *buf, const char *fmt, struct tm *tm) {
-  if (buf == NULL || fmt == NULL || tm == NULL) {
-    errno = EINVAL;
+struct tm *gmtime_r(const time_t *timep, struct tm *result) {
+  if (!timep || !result)
     return NULL;
-  }
-  errno = ENOSYS;
+#if defined(_MSC_VER)
+  if (!gmtime_s(result, timep))
+    return result;
   return NULL;
+#else
+  {
+    struct tm *res = gmtime(timep);
+    if (!res)
+      return NULL;
+    *result = *res;
+    return result;
+  }
+#endif
 }
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+char *strptime(const char *buf, const char *fmt, struct tm *tm) {
+  return posix_strptime_impl(buf, fmt, tm);
+}
+
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 
 #ifndef ENOSYS
 #define ENOSYS 38
 #endif
 
+static struct itimerval g_dos_timers[3] = {
+    {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
+
 int getitimer(int which, struct itimerval *value) {
-  if (!value) {
+  if (which < ITIMER_REAL || which > ITIMER_PROF || !value) {
     errno = EINVAL;
     return -1;
   }
-  if (which) {
-    /* parameters checked */
-  }
-  errno = ENOSYS;
-  return -1;
+  *value = g_dos_timers[which];
+  return 0;
 }
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
-  if (!tv || !tz) {
-    errno = EINVAL;
-    return -1;
+  if (tv) {
+    clock_t c = clock();
+    tv->tv_sec = (long)time(NULL);
+    tv->tv_usec = (long)((c % CLOCKS_PER_SEC) * (1000000L / CLOCKS_PER_SEC));
   }
-  errno = ENOSYS;
-  return -1;
+  if (tz) {
+    tz->tz_minuteswest = 0;
+    tz->tz_dsttime = 0;
+  }
+  return 0;
 }
 
 int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue) {
-  if (!value || !ovalue) {
+  if (which < ITIMER_REAL || which > ITIMER_PROF || !value) {
     errno = EINVAL;
     return -1;
   }
-  if (which) {
-    /* parameters checked */
+  if (ovalue) {
+    *ovalue = g_dos_timers[which];
   }
-  errno = ENOSYS;
-  return -1;
+  g_dos_timers[which] = *value;
+  return 0;
 }
 
 int utimes(const char *filename, const struct timeval times[2]) {
-  if (filename == NULL || times == NULL) {
+  FILE *f;
+  if (filename == NULL) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  if (times) {
+    /* parameters checked */
+  }
+  f = fopen(filename, "rb");
+  if (!f) {
+    errno = ENOENT;
+    return -1;
+  }
+  fclose(f);
+  return 0;
 }
 
 int clock_gettime(int clk_id, struct timespec *tp) {
-  if (clk_id < 0 || tp == NULL) {
+  if (tp == NULL) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  if (clk_id == CLOCK_REALTIME) {
+    clock_t c = clock();
+    tp->tv_sec = time(NULL);
+    tp->tv_nsec = (long)((c % CLOCKS_PER_SEC) * (1000000000L / CLOCKS_PER_SEC));
+    return 0;
+  } else if (clk_id == CLOCK_MONOTONIC) {
+    clock_t c = clock();
+    tp->tv_sec = (time_t)(c / CLOCKS_PER_SEC);
+    tp->tv_nsec = (long)((c % CLOCKS_PER_SEC) * (1000000000L / CLOCKS_PER_SEC));
+    return 0;
+  }
+  errno = EINVAL;
   return -1;
 }
 
 int clock_settime(int clk_id, const struct timespec *tp) {
-  if (clk_id < 0 || tp == NULL) {
+  if (tp == NULL || tp->tv_nsec < 0 || tp->tv_nsec >= 1000000000L) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  if (clk_id != CLOCK_REALTIME) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = EPERM;
   return -1;
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-  if (req == NULL) {
+  if (req == NULL || req->tv_sec < 0 || req->tv_nsec < 0 ||
+      req->tv_nsec >= 1000000000L) {
     errno = EINVAL;
     return -1;
   }
@@ -476,8 +715,37 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     rem->tv_sec = 0;
     rem->tv_nsec = 0;
   }
-  errno = ENOSYS;
-  return -1;
+  return 0;
+}
+
+struct tm *localtime_r(const time_t *timep, struct tm *result) {
+  struct tm *res;
+  if (!timep || !result) {
+    return NULL;
+  }
+  res = localtime(timep);
+  if (!res) {
+    return NULL;
+  }
+  *result = *res;
+  return result;
+}
+
+struct tm *gmtime_r(const time_t *timep, struct tm *result) {
+  struct tm *res;
+  if (!timep || !result) {
+    return NULL;
+  }
+  res = gmtime(timep);
+  if (!res) {
+    return NULL;
+  }
+  *result = *res;
+  return result;
+}
+
+char *strptime(const char *buf, const char *fmt, struct tm *tm) {
+  return posix_strptime_impl(buf, fmt, tm);
 }
 
 #elif defined(__CYGWIN__)

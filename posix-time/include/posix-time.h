@@ -5,7 +5,7 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 
-#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 #if defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -18,9 +18,9 @@
 
 #endif
 
-#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 #include <time.h>
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(_WIN32)
 #include <winsock2.h>
 #endif
 #elif defined(__CYGWIN__)
@@ -45,7 +45,8 @@ extern "C" {
  */
 auto_win_msvc_error_t posix_time_get_info(int *out_available);
 
-#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__)
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
 
 #if defined(_WIN32)
 
@@ -262,6 +263,14 @@ int nanosleep(const struct timespec *req, struct timespec *rem);
  * @return A pointer to the result, or NULL on error.
  */
 struct tm *localtime_r(const time_t *timep, struct tm *result);
+
+/**
+ * @brief Thread-safe version of gmtime.
+ * @param timep A pointer to the time_t value to convert.
+ * @param result A pointer to a tm structure to store the result.
+ * @return A pointer to the result, or NULL on error.
+ */
+struct tm *gmtime_r(const time_t *timep, struct tm *result);
 
 /**
  * @brief Parse a time string into a struct tm.
