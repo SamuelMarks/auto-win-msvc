@@ -30,7 +30,8 @@ extern "C" {
  */
 auto_win_msvc_error_t linux_sys_statfs_init(int *out_status);
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 /**
  * @brief Structure representing file system statistics.
@@ -62,7 +63,7 @@ struct statfs {
   long f_spare[4];
 };
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 typedef unsigned __int64 linux_fsblkcnt_t;
 typedef unsigned __int64 linux_fsfilcnt_t;
 #elif defined(__GNUC__) || defined(__clang__)
@@ -134,7 +135,7 @@ int statvfs(const char *path, struct statvfs *buf);
  */
 int fstatvfs(int fd, struct statvfs *buf);
 
-#endif /* _MSC_VER || _WIN32 */
+#endif /* _MSC_VER || _WIN32 || __WATCOMC__ || __MSDOS__ || __DOS__ */
 
 #ifdef __cplusplus
 }

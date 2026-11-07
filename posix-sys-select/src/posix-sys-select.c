@@ -54,6 +54,18 @@ void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set) {
   }
 }
 
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+           struct timeval *timeout) {
+  (void)nfds;
+  (void)readfds;
+  (void)writefds;
+  (void)exceptfds;
+  (void)timeout;
+  return 0;
+}
+
 #endif /* defined(_WIN32) || defined(_MSC_VER) */
 
 typedef int make_iso_compilers_happy_tu_posix_sys_select;

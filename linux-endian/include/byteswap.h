@@ -9,6 +9,8 @@
 /* clang-format off */
 #if defined(_MSC_VER)
 #include <stdlib.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include "linux-endian.h"
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #include <machine/endian.h>
 #else

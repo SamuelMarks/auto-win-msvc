@@ -11,8 +11,11 @@
  */
 
 /* clang-format off */
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <stddef.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <stddef.h>
+#include <sys/types.h>
 #else
 #include <grp.h>
 #include <pwd.h>
@@ -34,15 +37,16 @@ typedef int error_type_t;
 #define ERR_NONE 0
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 
-#ifndef _UID_T_DEFINED
+#if !defined(_UID_T_DEFINED) && !defined(__WATCOMC__)
 #define _UID_T_DEFINED
 /** @brief POSIX user identifier type */
 typedef unsigned int uid_t;
 #endif
 
-#ifndef _GID_T_DEFINED
+#if !defined(_GID_T_DEFINED) && !defined(__WATCOMC__)
 #define _GID_T_DEFINED
 /** @brief POSIX group identifier type */
 typedef unsigned int gid_t;

@@ -185,6 +185,9 @@ html/
 latex/
 
 # Additional common ignores
+.vagrant/
+**/vagrant/**/.vagrant/
+**/vagrant/**/.watcom/
 tags
 TAGS
 cscope.*

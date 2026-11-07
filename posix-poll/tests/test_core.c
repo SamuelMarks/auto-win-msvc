@@ -90,7 +90,8 @@ TEST test_posix_ppoll(void) {
 #if defined(_WIN32) || defined(_MSC_VER)
   WSADATA wsa;
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
   sigmask = 0;
 #else
   sigemptyset(&sigmask);

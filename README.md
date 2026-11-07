@@ -7,7 +7,7 @@ auto-win-msvc
 [![Multi-Environment CI](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/multi-env-ci.yml/badge.svg)](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/multi-env-ci.yml)
 [![Downstream Integration](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/downstream.yml/badge.svg)](https://github.com/SamuelMarks/auto-win-msvc/actions/workflows/downstream.yml)
 
-**A Massive, Modular POSIX Compatibility Layer for MSVC, MinGW, and Cygwin**
+**A Massive, Modular POSIX Compatibility Layer for MSVC, MinGW, Cygwin, and OpenWatcom (for MS-DOS).**
 
 `auto-win-msvc` is a comprehensive suite of C89-compliant libraries designed to provide POSIX, Linux, BSD, macOS, and Solaris user-space APIs natively on Windows. Validated against Microsoft Visual C++ (MSVC 2005, 2022, 2026), MinGW-w64, Cygwin, GCC, and Clang, this monorepo expands across **77 distinct modules** to cover nearly 100% of standard user-space APIs.
 
@@ -30,7 +30,7 @@ auto-win-msvc
 
 ## 🏆 Current Feature Set & Implementation Details
 
-- **Massive Scope (77 Modules):** Modular polyfills spanning POSIX.1-2008, Linux, BSD (FreeBSD/NetBSD/OpenBSD), macOS (Mach), and Solaris headers.
+- **Massive Scope (78 Modules):** Modular polyfills spanning POSIX.1-2008, Linux, BSD (FreeBSD/NetBSD/OpenBSD), macOS (Mach), and Solaris headers.
 - **Strict ISO C90 (C89) Compliance:** Every module compiles under `-std=c90` / `/Za` / strict MSVC C89 for legacy and enterprise integration.
 - **Automated C99-to-C89 Source Transformation Engine:** Includes `AutoWinMsvcTransform.cmake` and `scripts/transform_sources.py` to rewrite unsupported C99 idioms (such as Variable Length Arrays) at configure time for seamless downstream compilation under MSVC.
 - **Universal Preprocessor & Error Shims:** Includes root-level headers (`<auto-win-msvc.h>`, `<auto-win-msvc-configure.h>`, `<auto-win-msvc-error.h>`, and `namespace_win_shim.h`) providing drop-in compiler attribute shims, central `auto_win_msvc_error_t` error handling, and `vfork`/`setjmp` emulation.
@@ -244,13 +244,36 @@ If the ports are integrated into your vcpkg registry, you can pull either the me
 | **Cygwin** | ✅ Passing | Validated against the POSIX-on-Windows standard environment. |
 | **AppleClang (macOS)** | ✅ Passing | Strict ISO C90 verification with `-Wall -Wextra -pedantic -Werror`. |
 | **GCC & Clang (Linux)** | ✅ Passing | Tested under Linux container environments to ensure pure portable C89. |
-| **OpenWatcom v2 (32-bit DOS)** | ✅ Passing | Protected-Mode DOS (`DOS/4GW` / `CauseWay`, `-bt=dos`) with single-threaded TLS and POSIX shims. |
+| **OpenWatcom v2 (MS-DOS 1.25, 2.0, 4.0)** | ✅ Passing | Protected-Mode (`DOS/32A` / `DOS/4GW`, `wcl386`) & Real-Mode (`wcl`) DOS with single-threaded TLS and POSIX shims, verified via `vagrant/dos/Vagrantfile`. |
 
 ---
 
-## 📄 License
+## 💾 MS-DOS 1.25, 2.0, and 4.0 Vagrant CI (`vagrant/dos/Vagrantfile`)
 
-This project is multi-licensed under:
-- **CC0 1.0 Universal** (`LICENSE-CC0`)
-- **Apache License 2.0** (`LICENSE-APACHE`)
-- **MIT License** (`LICENSE-MIT`)
+`auto-win-msvc` includes a multi-machine Vagrant environment in [`vagrant/dos/Vagrantfile`](vagrant/dos/Vagrantfile) that boots **Microsoft MS-DOS 1.25, 2.0, and 4.0** (`bento/msdos-1.25`, `bento/msdos-2.0`, `bento/msdos-4.0`), provisions **OpenWatcom v2**, cross-compiles `auto-win-msvc` with `Watcom WMake`, uploads the DOS `.EXE` test binaries over the COM1 serial/telnet bridge (`SERGET.COM`), and executes the CTest suite inside the live MS-DOS virtual machines:
+
+```sh
+cd vagrant/dos
+
+# Boot and run the OpenWatcom + CMake + CTest suite inside MS-DOS 1.25, 2.0, and 4.0
+vagrant up msdos-1.25 --provider=qemu
+vagrant up msdos-2.0 --provider=qemu
+vagrant up msdos-4.0 --provider=qemu
+
+# Re-run the CMake + CTest verification on a running MS-DOS VM
+vagrant provision msdos-4.0
+```
+
+---
+
+## 📜 License
+
+Licensed under any of:
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
+  <https://apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+- CC0 1.0 Universal ([LICENSE-CC0](LICENSE-CC0) or
+  <https://creativecommons.org/publicdomain/zero/1.0/>)
+
+at your option.

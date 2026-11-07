@@ -266,7 +266,11 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
     errno = EINVAL;
     return EINVAL;
   }
+#if defined(__I86__)
+  g_dos_tls_values[key] = (void *)(unsigned long)value;
+#else
   g_dos_tls_values[key] = (void *)(size_t)value;
+#endif
   return 0;
 }
 

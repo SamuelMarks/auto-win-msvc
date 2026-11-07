@@ -13,11 +13,12 @@
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
 #include <time.h>
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__WATCOMC__)
 #include <sys/types.h>
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 
 #ifdef _MSC_VER
 #ifndef _SSIZE_T_DEFINED
@@ -30,20 +31,21 @@ typedef int ssize_t;
 #endif
 #endif /* _MSC_VER */
 
-#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__) &&  \
+    !defined(__WATCOMC__)
 /** @brief Process ID type. */
 typedef int pid_t;
 #define _PID_T_DEFINED
 #define _PID_T_
 #endif
 
-#ifndef _UID_T_DEFINED
+#if !defined(_UID_T_DEFINED) && !defined(__WATCOMC__)
 /** @brief User ID type. */
 typedef int uid_t;
 #define _UID_T_DEFINED
 #endif
 
-#ifndef _GID_T_DEFINED
+#if !defined(_GID_T_DEFINED) && !defined(__WATCOMC__)
 /** @brief Group ID type. */
 typedef int gid_t;
 #define _GID_T_DEFINED
@@ -61,11 +63,15 @@ typedef int key_t;
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/types.h>
+#endif /* !_WIN32 */
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 
 /**
  * @brief Retrieves information on posix-ipc module availability.
@@ -78,7 +84,8 @@ auto_win_msvc_error_t posix_ipc_get_info(int *out_available);
 
 #endif /* !_WIN32 */
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 
 /* IPC Flags */
 #define IPC_CREAT 0001000  /**< @brief Create if key is nonexistent */

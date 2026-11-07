@@ -1008,6 +1008,78 @@ int posix_lstat(const char *pathname, void *statbuf) {
 #endif
 }
 
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+
+int fchmod(int fd, mode_t mode) {
+  (void)mode;
+  if (fd < 0 || fd >= 256) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
+  (void)flags;
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
+    errno = EBADF;
+    return -1;
+  }
+  return chmod(pathname, mode);
+}
+
+int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
+  (void)flags;
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname ||
+      !statbuf) {
+    errno = EBADF;
+    return -1;
+  }
+  return posix_stat(pathname, statbuf);
+}
+
+int futimens(int fd, const struct timespec times[2]) {
+  (void)times;
+  if (fd < 0 || fd >= 256) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
+              int flags) {
+  struct stat st;
+  (void)times;
+  (void)flags;
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
+    errno = EBADF;
+    return -1;
+  }
+  if (stat(pathname, &st) != 0) {
+    return -1;
+  }
+  return 0;
+}
+
+int mknod(const char *pathname, mode_t mode, dev_t dev) {
+  (void)pathname;
+  (void)mode;
+  (void)dev;
+  errno = EPERM;
+  return -1;
+}
+
+int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
+    errno = EBADF;
+    return -1;
+  }
+  return mknod(pathname, mode, dev);
+}
+
+#endif
+
 #endif /* _WIN32 */
 
 /* Prevent empty translation unit on ISO C compilers */

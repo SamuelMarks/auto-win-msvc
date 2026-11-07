@@ -8,7 +8,8 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
-#if !defined(_WIN32) || defined(__CYGWIN__)
+#if (!defined(_WIN32) || defined(__CYGWIN__)) && !defined(__WATCOMC__) &&      \
+    !defined(__MSDOS__) && !defined(__DOS__)
 #if !defined(_XOPEN_SOURCE)
 #define _XOPEN_SOURCE 700
 #endif
@@ -30,7 +31,8 @@ extern "C" {
  */
 auto_win_msvc_error_t posix_ucontext_get_info(int *out_available);
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__WATCOMC__) ||       \
+    defined(__MSDOS__) || defined(__DOS__)
 
 /**
  * @brief Structure representing a stack for context execution.

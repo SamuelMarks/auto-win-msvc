@@ -74,13 +74,29 @@ endif()
 
 if(NOT TARGET greatest)
 include(FetchContent)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 
 add_library(posix-sockets src/posix-sockets.c)
 set_target_properties(posix-sockets PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
-target_include_directories(posix-sockets PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+target_include_directories(posix-sockets PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-netinet/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-netdb/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-select/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-arpa/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-core/include>
+)
 
 
 if(WIN32 OR MSVC)

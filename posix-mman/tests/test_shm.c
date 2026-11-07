@@ -12,6 +12,9 @@
 #else
 #include <io.h>
 #endif
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <io.h>
+#include <unistd.h>
 #else
 #include <unistd.h>
 #if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
@@ -35,10 +38,12 @@ TEST test_shm_open(void) {
   fd = shm_open("/test_auto_win_msvc_shm", O_CREAT | O_RDWR, 0666);
   ASSERT(fd >= 0);
 
-#if !defined(_WIN32)
-  ASSERT_EQ(0, ftruncate(fd, 4096));
-#else
+#if defined(_WIN32)
   _chsize(fd, 4096);
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  ASSERT_EQ(0, chsize(fd, 4096));
+#else
+  ASSERT_EQ(0, ftruncate(fd, 4096));
 #endif
 
   ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);

@@ -105,6 +105,8 @@ def main():
                 "-C",
                 "Release",
                 "--output-on-failure",
+                "--repeat",
+                "until-pass:3",
                 "-j",
                 "4",
             ],

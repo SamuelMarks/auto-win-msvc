@@ -7,7 +7,8 @@
  */
 
 /* clang-format off */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -17,12 +18,15 @@
 #else
 #include <resolv.h>
 #endif
-#else
+#elif defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <sys/types.h>
+#include <netinet/in.h>
 #endif /* _WIN32 */
 /* clang-format on */
 
@@ -30,7 +34,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 
 /** @brief Maximum number of nameservers tracked in _res. */
 #define MAXNS 3

@@ -46,7 +46,7 @@ TEST test_proc_pidpath(void) {
   ret = proc_pidpath(my_pid, path, 1);
   ASSERT_EQ(0, ret);
 
-  ret = proc_pidpath(99999999, path, (unsigned int)sizeof(path));
+  ret = proc_pidpath(30000, path, (unsigned int)sizeof(path));
   ASSERT_EQ(0, ret);
 
   ret = proc_pidpath(my_pid, path, (unsigned int)sizeof(path));

@@ -1806,6 +1806,13 @@ int posix_socketpair(int domain, int type, int protocol,
 err:
   closesocket(listener);
   return -1;
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  (void)domain;
+  (void)type;
+  (void)protocol;
+  (void)socket_vector;
+  errno = ENOSYS;
+  return -1;
 #else
   int fds[2];
   int rc;

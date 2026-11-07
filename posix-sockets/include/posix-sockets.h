@@ -132,6 +132,113 @@
 #define SHUT_RDWR 2
 #endif
 
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <stddef.h>
+#include <errno.h>
+#include "posix-netinet-in.h"
+
+#ifndef AF_UNSPEC
+#define AF_UNSPEC 0
+#endif
+#ifndef AF_UNIX
+#define AF_UNIX 1
+#endif
+#ifndef AF_INET
+#define AF_INET 2
+#endif
+#ifndef AF_INET6
+#define AF_INET6 23
+#endif
+#ifndef PF_UNSPEC
+#define PF_UNSPEC AF_UNSPEC
+#endif
+#ifndef PF_UNIX
+#define PF_UNIX AF_UNIX
+#endif
+#ifndef PF_INET
+#define PF_INET AF_INET
+#endif
+#ifndef PF_INET6
+#define PF_INET6 AF_INET6
+#endif
+
+#ifndef SOCK_STREAM
+#define SOCK_STREAM 1
+#endif
+#ifndef SOCK_DGRAM
+#define SOCK_DGRAM 2
+#endif
+#ifndef SOCK_RAW
+#define SOCK_RAW 3
+#endif
+
+#ifndef SOL_SOCKET
+#define SOL_SOCKET 0xffff
+#endif
+#ifndef SO_REUSEADDR
+#define SO_REUSEADDR 0x0004
+#endif
+#ifndef SO_KEEPALIVE
+#define SO_KEEPALIVE 0x0008
+#endif
+#ifndef SO_BROADCAST
+#define SO_BROADCAST 0x0020
+#endif
+#ifndef SO_SNDBUF
+#define SO_SNDBUF 0x1001
+#endif
+#ifndef SO_RCVBUF
+#define SO_RCVBUF 0x1002
+#endif
+#ifndef SO_SNDTIMEO
+#define SO_SNDTIMEO 0x1005
+#endif
+#ifndef SO_RCVTIMEO
+#define SO_RCVTIMEO 0x1006
+#endif
+#ifndef SO_ERROR
+#define SO_ERROR 0x1007
+#endif
+#ifndef SO_TYPE
+#define SO_TYPE 0x1008
+#endif
+
+#ifndef SHUT_RD
+#define SHUT_RD 0
+#endif
+#ifndef SHUT_WR
+#define SHUT_WR 1
+#endif
+#ifndef SHUT_RDWR
+#define SHUT_RDWR 2
+#endif
+
+#ifndef _SOCKADDR_DEFINED
+#define _SOCKADDR_DEFINED
+struct sockaddr {
+  unsigned short sa_family;
+  char sa_data[14];
+};
+#endif
+
+#ifndef _SOCKADDR_STORAGE_DEFINED
+#define _SOCKADDR_STORAGE_DEFINED
+struct sockaddr_storage {
+  unsigned short ss_family;
+  char __ss_padding[126];
+};
+#endif
+
+#ifndef _SOCKLEN_T_DEFINED
+#define _SOCKLEN_T_DEFINED
+typedef int socklen_t;
+#endif
+
+#ifndef _SA_FAMILY_T_DEFINED
+#define _SA_FAMILY_T_DEFINED
+typedef unsigned short sa_family_t;
+#endif
+
 #else
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -172,7 +279,8 @@ typedef int posix_ssize_t;
 typedef int posix_socklen_t;
 typedef unsigned int posix_nfds_t;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 #include <posix-sys-uio.h>
 
 struct msghdr {
@@ -232,7 +340,7 @@ struct posix_in_pktinfo {
 #undef in_pktinfo
 #define in_pktinfo posix_in_pktinfo
 #endif
-#endif /* _WIN32 */
+#endif /* _WIN32 || __WATCOMC__ || __MSDOS__ || __DOS__ */
 
 #ifdef _WIN32
 #ifndef _TIMESPEC_DEFINED
@@ -596,7 +704,8 @@ auto_win_msvc_error_t posix_sockets_get_info(int *out_available);
 #define win_compat_sendmsg posix_sendmsg_native
 #define win_compat_recvmsg posix_recvmsg_native
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 /* Map POSIX names to our posix_ prefixes */
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define endhostent posix_endhostent

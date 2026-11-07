@@ -56,7 +56,8 @@ TEST test_uname(void) {
   int res;
   memset(&name, 0, sizeof(name));
   res = uname(&name);
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__DOS__) ||              \
+    defined(__MSDOS__) || defined(__WATCOMC__)
   ASSERT_EQ(0, res);
   ASSERT(strlen(name.sysname) > 0);
   ASSERT(strlen(name.nodename) > 0);

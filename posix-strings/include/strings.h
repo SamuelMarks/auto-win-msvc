@@ -14,6 +14,9 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <strings.h>
+#elif defined(__WATCOMC__)
+#include <../h/strings.h>
+#include "posix-strings.h"
 #else
 #include <strings.h>
 #endif

@@ -14,6 +14,8 @@
 #endif
 #if defined(_WIN32) || defined(_MSC_VER)
 #include <process.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <sys/types.h>
 #endif
 #if !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #ifndef _POSIX_C_SOURCE
@@ -50,7 +52,8 @@ auto_win_msvc_error_t posix_wait_get_info(int *out_available);
 /**
  * @brief PID type definition for Windows.
  */
-#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__) &&  \
+    !defined(__WATCOMC__)
 #define _PID_T_DEFINED
 #define _PID_T_
 typedef int pid_t;
@@ -59,7 +62,7 @@ typedef int pid_t;
 /**
  * @brief ID type definition for Windows.
  */
-#ifndef _ID_T_DEFINED
+#if !defined(_ID_T_DEFINED) && !defined(__WATCOMC__)
 #define _ID_T_DEFINED
 typedef int id_t;
 #endif

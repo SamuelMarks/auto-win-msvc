@@ -15,7 +15,8 @@
 #pragma GCC system_header
 #include_next <sys/queue.h>
 #endif
-#elif !defined(_WIN32)
+#elif !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&      \
+    !defined(__DOS__)
 #include <sys/queue.h>
 #endif
 

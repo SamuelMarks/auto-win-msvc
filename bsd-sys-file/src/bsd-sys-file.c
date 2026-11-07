@@ -13,6 +13,8 @@
 #include <io.h>
 #endif
 #include <winsock2.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <io.h>
 #else
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -32,7 +34,8 @@ extern int flock(int fd, int operation);
  * @brief Apply or remove an advisory lock on the open file.
  */
 int posix_flock(int fd, int operation) {
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
   (void)fd;
   (void)operation;
   return -1;

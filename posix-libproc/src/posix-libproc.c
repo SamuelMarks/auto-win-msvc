@@ -282,7 +282,11 @@ void *posix_proc_open(void) {
     }
     c->count = 1;
     c->entries[0].pid = (unsigned int)getpid();
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+    c->entries[0].ppid = 0;
+#else
     c->entries[0].ppid = (unsigned int)getppid();
+#endif
     c->entries[0].pgid = c->entries[0].pid;
     c->entries[0].state[0] = 'S';
     c->entries[0].state[1] = ' ';

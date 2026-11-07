@@ -14,6 +14,9 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <inttypes.h>
+#elif defined(__WATCOMC__)
+#include <../h/inttypes.h>
+#include "posix-inttypes.h"
 #else
 #include <inttypes.h>
 #endif

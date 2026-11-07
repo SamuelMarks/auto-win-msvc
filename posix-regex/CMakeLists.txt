@@ -88,10 +88,19 @@ endif()
 
 if(NOT TARGET greatest)
 include(FetchContent)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 
+if(NOT (CMAKE_SYSTEM_NAME STREQUAL "DOS" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "I86"))
 if(NOT TARGET pcre2-8 AND NOT TARGET pcre2::pcre2-8)
     find_package(pcre2 CONFIG QUIET)
     if(NOT pcre2_FOUND)
@@ -112,9 +121,13 @@ if(NOT TARGET pcre2-8 AND NOT TARGET pcre2::pcre2-8)
         set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
 
         FetchContent_MakeAvailable(pcre2)
+        if(CMAKE_C_COMPILER_ID MATCHES "Watcom" AND TARGET pcre2-8-static)
+            target_compile_options(pcre2-8-static PRIVATE -za99)
+        endif()
 
         set_directory_properties(PROPERTIES COMPILE_OPTIONS "${_old_opts}")
     endif()
+endif()
 endif()
 
 add_library(posix-regex src/posix-regex.c)
@@ -122,8 +135,10 @@ set_target_properties(posix-regex PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export
 target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 if(TARGET pcre2::pcre2-8)
     target_link_libraries(posix-regex PRIVATE pcre2::pcre2-8)
-else()
+elseif(TARGET pcre2-8)
     target_link_libraries(posix-regex PRIVATE pcre2-8)
+elseif(TARGET pcre2-8-static)
+    target_link_libraries(posix-regex PRIVATE pcre2-8-static)
 endif()
 
 file(GLOB TEST_SOURCES "tests/*.c")

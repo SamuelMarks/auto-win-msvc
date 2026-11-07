@@ -53,6 +53,11 @@ extern "C" {
 #define FIONBIO 0x8004667e
 #endif
 
+#ifndef ENOTSOCK
+/** @brief Socket operation on non-socket fallback error code. */
+#define ENOTSOCK 128
+#endif
+
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
     defined(__WATCOMC__)
 /**

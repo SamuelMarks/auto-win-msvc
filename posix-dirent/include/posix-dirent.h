@@ -83,7 +83,8 @@ void posix_rewinddir(DIR *dirp);
 
 #if (defined(__linux__) && !defined(__USE_MISC) &&                             \
      !defined(__USE_XOPEN2K8)) ||                                              \
-    (defined(__CYGWIN__) && defined(__STRICT_ANSI__))
+    (defined(__CYGWIN__) && defined(__STRICT_ANSI__)) ||                       \
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 extern int scandir(const char *dir, struct dirent ***namelist,
                    int (*filter)(const struct dirent *),
                    int (*compar)(const struct dirent **,

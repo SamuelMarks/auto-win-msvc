@@ -25,6 +25,8 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <signal.h>
 #else
 #include <poll.h>
 #include <signal.h>
@@ -36,7 +38,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 #define pollfd posix_pollfd
 /**
  * @brief Poll file descriptor structure for Windows.
@@ -51,7 +54,8 @@ struct posix_pollfd {
 };
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 #ifndef _NFDS_T_DEFINED
 #define _NFDS_T_DEFINED
 typedef unsigned long nfds_t;

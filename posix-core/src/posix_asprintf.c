@@ -14,7 +14,8 @@
 #endif
 
 /** \brief vasprintf function. */
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if (!defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)) &&               \
+    !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 int vasprintf(char **strp, const char *fmt, va_list ap) {
   int len;
   char *buf;

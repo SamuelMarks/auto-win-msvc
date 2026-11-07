@@ -226,8 +226,8 @@ LINUX_SYS_BITOPS_INLINE int posix_ffs(int x) {
   int i;
   if (!x)
     return 0;
-  for (i = 0; i < 32; i++) {
-    if (x & (1 << i))
+  for (i = 0; i < (int)(sizeof(unsigned int) * 8); i++) {
+    if ((unsigned int)x & (1U << i))
       return i + 1;
   }
   return 0;
@@ -243,8 +243,8 @@ LINUX_SYS_BITOPS_INLINE int posix_fls(int x) {
   int i;
   if (!x)
     return 0;
-  for (i = 31; i >= 0; i--) {
-    if (x & (1 << i))
+  for (i = (int)(sizeof(unsigned int) * 8) - 1; i >= 0; i--) {
+    if ((unsigned int)x & (1U << i))
       return i + 1;
   }
   return 0;

@@ -8,7 +8,8 @@
  */
 
 /* clang-format off */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <arpa/telnet.h>
@@ -22,7 +23,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 #ifndef IAC
 #define IAC 255
 #define DONT 254

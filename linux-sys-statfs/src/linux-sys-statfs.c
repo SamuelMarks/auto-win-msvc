@@ -224,6 +224,63 @@ int fstatvfs(int fd, struct statvfs *buf) {
   return statvfs(path, buf);
 }
 
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+#include <errno.h>
+#include <string.h>
+
+/** @brief statfs function for DOS. */
+int statfs(const char *path, struct statfs *buf) {
+  if (!buf || !path) {
+    errno = EFAULT;
+    return -1;
+  }
+  memset(buf, 0, sizeof(*buf));
+  buf->f_bsize = 512;
+  buf->f_frsize = 512;
+  buf->f_namelen = 12;
+  return 0;
+}
+
+/** @brief fstatfs function for DOS. */
+int fstatfs(int fd, struct statfs *buf) {
+  if (!buf) {
+    errno = EFAULT;
+    return -1;
+  }
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return statfs(".", buf);
+}
+
+/** @brief POSIX statvfs function for DOS. */
+int statvfs(const char *path, struct statvfs *buf) {
+  if (!buf || !path) {
+    errno = EFAULT;
+    return -1;
+  }
+  memset(buf, 0, sizeof(*buf));
+  buf->f_bsize = 512;
+  buf->f_frsize = 512;
+  buf->f_namemax = 12;
+  return 0;
+}
+
+/** @brief POSIX fstatvfs function for DOS. */
+int fstatvfs(int fd, struct statvfs *buf) {
+  if (!buf) {
+    errno = EFAULT;
+    return -1;
+  }
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return statvfs(".", buf);
+}
+
 #endif /* _MSC_VER || _WIN32 */
 
 /**

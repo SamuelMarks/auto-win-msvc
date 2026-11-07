@@ -5,7 +5,8 @@
 #endif
 
 /* clang-format off */
-#if !defined(_WIN32) && !defined(_MSC_VER)
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__WATCOMC__) &&         \
+    !defined(__MSDOS__) && !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <paths.h>
@@ -24,7 +25,8 @@ extern "C" {
  * @brief Standard path definitions for POSIX environments and Windows polyfill.
  */
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 /** @brief Default search path. */
 #ifndef _PATH_DEFPATH

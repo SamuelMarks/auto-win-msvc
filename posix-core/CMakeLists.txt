@@ -76,13 +76,27 @@ set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(posix-core PRIVATE auto_win_msvc_export_lib_EXPORTS)
 endif()
-target_include_directories(posix-core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+target_include_directories(posix-core PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-pwdgrp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-fcntl/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-wait/include>
+)
 
 enable_testing()
 if(NOT TARGET greatest)
 include(FetchContent)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 
 

@@ -295,6 +295,35 @@ int uname(struct utsname *name) {
   return 0;
 }
 
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+
+#include <stdlib.h>
+
+/**
+ * @brief Get system identification on MS-DOS / OpenWatcom.
+ */
+int uname(struct utsname *name) {
+  if (!name) {
+    errno = EFAULT;
+    return -1;
+  }
+  memset(name, 0, sizeof(struct utsname));
+  strncpy(name->sysname, "MS-DOS", _UTSNAME_LENGTH - 1);
+  strncpy(name->nodename, "dos", _UTSNAME_LENGTH - 1);
+#if defined(__WATCOMC__)
+  sprintf(name->release, "%u.%02u", (unsigned)_osmajor, (unsigned)_osminor);
+#else
+  strncpy(name->release, "4.00", _UTSNAME_LENGTH - 1);
+#endif
+  strncpy(name->version, name->release, _UTSNAME_LENGTH - 1);
+#if defined(_M_I386) || defined(__386__)
+  strncpy(name->machine, "i386", _UTSNAME_LENGTH - 1);
+#else
+  strncpy(name->machine, "i86", _UTSNAME_LENGTH - 1);
+#endif
+  return 0;
+}
+
 #elif !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 
 /**

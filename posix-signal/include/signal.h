@@ -14,6 +14,9 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <signal.h>
+#elif defined(__WATCOMC__)
+#include <../h/signal.h>
+#include "posix-signal.h"
 #else
 #include <signal.h>
 #endif

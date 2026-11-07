@@ -9,7 +9,8 @@
  */
 
 /* clang-format off */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <sys/times.h>
@@ -25,7 +26,8 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 #ifndef _STRUCT_TMS_DEFINED
 #define _STRUCT_TMS_DEFINED

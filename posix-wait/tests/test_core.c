@@ -107,7 +107,7 @@ TEST test_posix_wait_kill(void) {
   int rc;
   /* Killing non-existent negative PID */
   errno = 0;
-  rc = posix_wait_kill(-999999, 0);
+  rc = posix_wait_kill(-30000, 0);
   ASSERT_EQ(-1, rc);
 
 #if defined(_WIN32)

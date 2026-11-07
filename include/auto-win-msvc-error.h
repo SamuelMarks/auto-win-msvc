@@ -27,6 +27,17 @@ extern "C" {
 #define NO_DISCARD
 #endif
 
+#ifndef ETIMEDOUT
+#define ETIMEDOUT 138
+#endif
+#ifndef EWOULDBLOCK
+#ifdef EAGAIN
+#define EWOULDBLOCK EAGAIN
+#else
+#define EWOULDBLOCK 140
+#endif
+#endif
+
 /**
  * @brief Central error codes returned by auto-win-msvc operations.
  */

@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 /* clang-format off */
 #include "posix-ipc.h"
 #include <stddef.h>
@@ -22,6 +23,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <io.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #endif /* _WIN32 */
 /* clang-format on */
 
@@ -758,6 +765,245 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
       ReleaseMutex(mq->hMutex);
       return 0;
     }
+  }
+  return -1;
+}
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+key_t ftok(const char *path, int id) {
+  unsigned long h = 5381UL;
+  const char *p;
+  if (!path || access(path, 0) != 0) {
+    return (key_t)-1;
+  }
+  for (p = path; *p; ++p) {
+    h = ((h << 5) + h) + (unsigned char)(*p);
+  }
+  return (key_t)((((unsigned long)(id & 0xFF)) << 16) | (h & 0xFFFFUL));
+}
+
+#define DOS_MAX_IPC 16
+
+static struct {
+  int used;
+  key_t key;
+  size_t size;
+  void *ptr;
+} g_dos_shm[DOS_MAX_IPC];
+
+int shmget(key_t key, size_t size, int shmflg) {
+  int i;
+  if (key != IPC_PRIVATE) {
+    for (i = 0; i < DOS_MAX_IPC; ++i) {
+      if (g_dos_shm[i].used && g_dos_shm[i].key == key) {
+        if ((shmflg & IPC_CREAT) && (shmflg & IPC_EXCL)) {
+          return -1;
+        }
+        return i;
+      }
+    }
+  }
+  if (!(shmflg & IPC_CREAT) || size == 0) {
+    return -1;
+  }
+  for (i = 0; i < DOS_MAX_IPC; ++i) {
+    if (!g_dos_shm[i].used) {
+      g_dos_shm[i].ptr = calloc(1, size);
+      if (!g_dos_shm[i].ptr) {
+        return -1;
+      }
+      g_dos_shm[i].used = 1;
+      g_dos_shm[i].key = key;
+      g_dos_shm[i].size = size;
+      return i;
+    }
+  }
+  return -1;
+}
+
+void *shmat(int shmid, const void *shmaddr, int shmflg) {
+  (void)shmaddr;
+  (void)shmflg;
+  if (shmid < 0 || shmid >= DOS_MAX_IPC || !g_dos_shm[shmid].used) {
+    return (void *)-1;
+  }
+  return g_dos_shm[shmid].ptr;
+}
+
+int shmdt(const void *shmaddr) {
+  int i;
+  if (!shmaddr) {
+    return -1;
+  }
+  for (i = 0; i < DOS_MAX_IPC; ++i) {
+    if (g_dos_shm[i].used && g_dos_shm[i].ptr == shmaddr) {
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int shmctl(int shmid, int cmd, struct shmid_ds *buf) {
+  if (shmid < 0 || shmid >= DOS_MAX_IPC || !g_dos_shm[shmid].used) {
+    return -1;
+  }
+  if (cmd == IPC_RMID) {
+    free(g_dos_shm[shmid].ptr);
+    g_dos_shm[shmid].ptr = NULL;
+    g_dos_shm[shmid].used = 0;
+    return 0;
+  }
+  if (cmd == IPC_STAT && buf) {
+    memset(buf, 0, sizeof(*buf));
+    buf->shm_segsz = g_dos_shm[shmid].size;
+    return 0;
+  }
+  return -1;
+}
+
+static struct {
+  int used;
+  key_t key;
+  short val;
+} g_dos_sem[DOS_MAX_IPC];
+
+int semget(key_t key, int nsems, int semflg) {
+  int i;
+  (void)nsems;
+  if (key != IPC_PRIVATE) {
+    for (i = 0; i < DOS_MAX_IPC; ++i) {
+      if (g_dos_sem[i].used && g_dos_sem[i].key == key) {
+        return i;
+      }
+    }
+  }
+  if (!(semflg & IPC_CREAT)) {
+    return -1;
+  }
+  for (i = 0; i < DOS_MAX_IPC; ++i) {
+    if (!g_dos_sem[i].used) {
+      g_dos_sem[i].used = 1;
+      g_dos_sem[i].key = key;
+      g_dos_sem[i].val = 0;
+      return i;
+    }
+  }
+  return -1;
+}
+
+int semop(int semid, struct sembuf *sops, size_t nsops) {
+  size_t i;
+  if (semid < 0 || semid >= DOS_MAX_IPC || !g_dos_sem[semid].used || !sops) {
+    return -1;
+  }
+  for (i = 0; i < nsops; ++i) {
+    g_dos_sem[semid].val = (short)(g_dos_sem[semid].val + sops[i].sem_op);
+  }
+  return 0;
+}
+
+int semctl(int semid, int semnum, int cmd, ...) {
+  va_list ap;
+  (void)semnum;
+  if (semid < 0 || semid >= DOS_MAX_IPC || !g_dos_sem[semid].used) {
+    return -1;
+  }
+  if (cmd == SETVAL) {
+    va_start(ap, cmd);
+    g_dos_sem[semid].val = (short)va_arg(ap, int);
+    va_end(ap);
+    return 0;
+  }
+  if (cmd == GETVAL) {
+    return (int)g_dos_sem[semid].val;
+  }
+  if (cmd == IPC_RMID) {
+    g_dos_sem[semid].used = 0;
+    return 0;
+  }
+  return 0;
+}
+
+static struct {
+  int used;
+  key_t key;
+  long mtype;
+  char data[256];
+  size_t size;
+  int has_msg;
+} g_dos_msg[DOS_MAX_IPC];
+
+int msgget(key_t key, int msgflg) {
+  int i;
+  if (key != IPC_PRIVATE) {
+    for (i = 0; i < DOS_MAX_IPC; ++i) {
+      if (g_dos_msg[i].used && g_dos_msg[i].key == key) {
+        return i;
+      }
+    }
+  }
+  if (!(msgflg & IPC_CREAT)) {
+    return -1;
+  }
+  for (i = 0; i < DOS_MAX_IPC; ++i) {
+    if (!g_dos_msg[i].used) {
+      g_dos_msg[i].used = 1;
+      g_dos_msg[i].key = key;
+      g_dos_msg[i].has_msg = 0;
+      return i;
+    }
+  }
+  return -1;
+}
+
+int msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg) {
+  (void)msgflg;
+  if (msqid < 0 || msqid >= DOS_MAX_IPC || !g_dos_msg[msqid].used || !msgp) {
+    return -1;
+  }
+  g_dos_msg[msqid].mtype = *(const long *)msgp;
+  if (msgsz > sizeof(g_dos_msg[msqid].data)) {
+    msgsz = sizeof(g_dos_msg[msqid].data);
+  }
+  if (msgsz > 0) {
+    memcpy(g_dos_msg[msqid].data, (const char *)msgp + sizeof(long), msgsz);
+  }
+  g_dos_msg[msqid].size = msgsz;
+  g_dos_msg[msqid].has_msg = 1;
+  return 0;
+}
+
+ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg) {
+  size_t copy_sz;
+  (void)msgtyp;
+  (void)msgflg;
+  if (msqid < 0 || msqid >= DOS_MAX_IPC || !g_dos_msg[msqid].used || !msgp ||
+      !g_dos_msg[msqid].has_msg) {
+    return -1;
+  }
+  *(long *)msgp = g_dos_msg[msqid].mtype;
+  copy_sz = g_dos_msg[msqid].size < msgsz ? g_dos_msg[msqid].size : msgsz;
+  if (copy_sz > 0) {
+    memcpy((char *)msgp + sizeof(long), g_dos_msg[msqid].data, copy_sz);
+  }
+  g_dos_msg[msqid].has_msg = 0;
+  return (ssize_t)copy_sz;
+}
+
+int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
+  if (msqid < 0 || msqid >= DOS_MAX_IPC || !g_dos_msg[msqid].used) {
+    return -1;
+  }
+  if (cmd == IPC_RMID) {
+    g_dos_msg[msqid].used = 0;
+    return 0;
+  }
+  if (cmd == IPC_STAT && buf) {
+    memset(buf, 0, sizeof(*buf));
+    return 0;
+  }
+  if (cmd == IPC_SET) {
+    return 0;
   }
   return -1;
 }

@@ -10,19 +10,22 @@
  */
 
 /* clang-format off */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <net/if.h>
 #else
 #include <net/if.h>
 #endif
-#else
+#elif defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
 #endif
 /* clang-format on */
 
@@ -30,7 +33,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 #ifndef IFNAMSIZ
 /** \brief Maximum length of network interface name. */

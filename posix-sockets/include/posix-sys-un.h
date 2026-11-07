@@ -16,6 +16,8 @@
 #define HAVE_AFUNIX_H 1
 #endif
 #endif
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include "posix-sockets.h"
 #else
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
@@ -30,7 +32,8 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 #ifdef DISABLE_UNIX_SOCKET
 /* Unix domain sockets disabled by configuration */
@@ -45,9 +48,13 @@ extern "C" {
 
 #if !defined(HAVE_AFUNIX_H) && !defined(_SOCKADDR_UN_DEFINED)
 #define _SOCKADDR_UN_DEFINED
-/** \brief UNIX domain socket address structure for Windows. */
+/** \brief UNIX domain socket address structure for Windows/DOS. */
 struct sockaddr_un {
+#if defined(_WIN32) || defined(_MSC_VER)
   ADDRESS_FAMILY sun_family;
+#else
+  unsigned short sun_family;
+#endif
   char sun_path[108];
 };
 #endif

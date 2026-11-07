@@ -39,7 +39,8 @@ TEST test_memfd_create(void) {
 }
 
 TEST test_memfd_create_fail(void) {
-#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__) &&             \
+    !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
   int fd;
   char buf[256];
   int r;

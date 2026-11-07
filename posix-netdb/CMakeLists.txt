@@ -5,8 +5,16 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(posix-netdb STATIC src/posix-netdb.c)
-set_target_properties(posix-netdb PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
-target_include_directories(posix-netdb PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+set_target_properties(posix-netdb PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
+target_include_directories(posix-netdb PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-netinet/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio/include>
+)
 
 if(MSVC)
     target_compile_definitions(posix-netdb PRIVATE )
@@ -15,8 +23,16 @@ endif()
 enable_testing()
 if(NOT TARGET greatest)
 include(FetchContent)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 
 file(GLOB TEST_SOURCES "tests/*.c")

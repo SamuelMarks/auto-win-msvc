@@ -7,7 +7,7 @@
  */
 
 /* clang-format off */
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include "posix-libgen.h"
 #else
 #if defined(__GNUC__) || defined(__clang__)

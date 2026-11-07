@@ -698,7 +698,10 @@ auto_win_msvc_error_t posix_signal_reset(int *out_status) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+
+static posix_sighandler_t g_dos_sig_handlers[32] = {0};
+static unsigned long g_dos_sig_mask = 0;
 
 int posix_signal_sigemptyset(sigset_t *set) {
   if (!set)
@@ -735,15 +738,27 @@ int posix_signal_sigismember(const sigset_t *set, int signum) {
 }
 
 int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oset) {
-  if (how < 0 || set == NULL) {
+  if (oset != NULL) {
+    *oset = (sigset_t)g_dos_sig_mask;
+  }
+  if (set == NULL) {
+    return 0;
+  }
+  switch (how) {
+  case SIG_BLOCK:
+    g_dos_sig_mask |= (unsigned long)(*set);
+    break;
+  case SIG_UNBLOCK:
+    g_dos_sig_mask &= ~(unsigned long)(*set);
+    break;
+  case SIG_SETMASK:
+    g_dos_sig_mask = (unsigned long)(*set);
+    break;
+  default:
     errno = EINVAL;
     return -1;
   }
-  if (oset != NULL) {
-    *oset = 0;
-  }
-  errno = ENOSYS;
-  return -1;
+  return 0;
 }
 
 int posix_signal_sigpending(sigset_t *set) {
@@ -751,8 +766,8 @@ int posix_signal_sigpending(sigset_t *set) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  *set = 0;
+  return 0;
 }
 
 int posix_signal_sigsuspend(const sigset_t *mask) {
@@ -760,25 +775,39 @@ int posix_signal_sigsuspend(const sigset_t *mask) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  errno = EINTR;
   return -1;
 }
 
 int posix_signal_sigaction(int sig, const struct sigaction *act,
                            struct sigaction *oact) {
-  if (sig <= 0 || act == NULL) {
+  if (sig < 1 || sig > 31 || (act == NULL && oact == NULL)) {
     errno = EINVAL;
     return -1;
   }
   if (oact != NULL) {
-    /* oact valid */
+    memset(oact, 0, sizeof(*oact));
+    oact->sa_handler = g_dos_sig_handlers[sig];
   }
-  errno = ENOSYS;
-  return -1;
+  if (act != NULL) {
+    g_dos_sig_handlers[sig] = act->sa_handler;
+  }
+  return 0;
+}
+
+posix_sighandler_t posix_signal_signal(int signum, posix_sighandler_t handler) {
+  posix_sighandler_t prev;
+  if (signum < 1 || signum > 31) {
+    errno = EINVAL;
+    return (posix_sighandler_t)SIG_ERR;
+  }
+  prev = g_dos_sig_handlers[signum];
+  g_dos_sig_handlers[signum] = handler;
+  return prev ? prev : (posix_sighandler_t)SIG_DFL;
 }
 
 int posix_signal_kill(pid_t pid, int sig) {
-  if (pid == 0 || sig < 0) {
+  if (pid <= 0 || sig < 0) {
     errno = EINVAL;
     return -1;
   }

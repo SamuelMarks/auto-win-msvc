@@ -74,14 +74,14 @@ extern "C" {
  * connection. */
 #define EPOLLRDHUP 0x2000
 /** @brief Sets an exclusive wakeup mode for the epoll file descriptor. */
-#define EPOLLEXCLUSIVE (1U << 28)
+#define EPOLLEXCLUSIVE (1UL << 28)
 /** @brief Ensures system does not enter suspend while event is pending. */
-#define EPOLLWAKEUP (1U << 29)
+#define EPOLLWAKEUP (1UL << 29)
 /** @brief Sets the one-shot behavior for the associated file descriptor. */
-#define EPOLLONESHOT (1U << 30)
+#define EPOLLONESHOT (1UL << 30)
 /** @brief Sets the Edge Triggered behavior for the associated file descriptor.
  */
-#define EPOLLET (1U << 31)
+#define EPOLLET (1UL << 31)
 #endif
 
 #ifndef AUTO_WIN_MSVC_EPOLL_TYPES_DEFINED

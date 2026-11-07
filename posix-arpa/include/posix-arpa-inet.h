@@ -15,15 +15,27 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #endif
+#ifndef _IN_ADDR_DEFINED
+#define _IN_ADDR_DEFINED
 struct in_addr {
   unsigned long s_addr;
 };
+#endif
 #ifndef htonl
 #define htonl(x) ((((x) & 0xff000000UL) >> 24) | (((x) & 0x00ff0000UL) >> 8) | (((x) & 0x0000ff00UL) << 8) | (((x) & 0x000000ffUL) << 24))
+#endif
+#ifndef ntohl
+#define ntohl(x) htonl(x)
+#endif
+#ifndef htons
+#define htons(x) ((unsigned short)((((unsigned short)(x) & 0xff00U) >> 8) | (((unsigned short)(x) & 0x00ffU) << 8)))
+#endif
+#ifndef ntohs
+#define ntohs(x) htons(x)
 #endif
 #else
 #include <sys/types.h>
@@ -67,13 +79,14 @@ int posix_inet_aton(const char *cp, struct in_addr *inp);
  */
 unsigned long posix_inet_addr(const char *cp);
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__) || defined(__DOS__)
 #undef inet_aton
-/** @brief Macro mapping inet_aton to posix_inet_aton on Windows. */
+/** @brief Macro mapping inet_aton to posix_inet_aton on Windows/DOS. */
 #define inet_aton posix_inet_aton
 
 #ifndef inet_addr
-/** @brief Macro mapping inet_addr to posix_inet_addr on Windows. */
+/** @brief Macro mapping inet_addr to posix_inet_addr on Windows/DOS. */
 #define inet_addr posix_inet_addr
 #endif
 #endif

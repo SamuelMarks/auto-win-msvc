@@ -80,6 +80,37 @@ int ffsl(long i) { return __builtin_ffsl(i); }
  */
 int ffsll(posix_strings_llong i) { return __builtin_ffsll(i); }
 
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+/** @brief Finds the first (least significant) bit set in a long integer. */
+int ffsl(long i) {
+  unsigned long u = (unsigned long)i;
+  int bit = 1;
+  if (u == 0) {
+    return 0;
+  }
+  while ((u & 1UL) == 0) {
+    u >>= 1;
+    bit++;
+  }
+  return bit;
+}
+
+/** @brief Finds the first (least significant) bit set in a long long integer.
+ */
+int ffsll(posix_strings_llong i) {
+  unsigned __int64 u = (unsigned __int64)i;
+  int bit = 1;
+  if (u == 0) {
+    return 0;
+  }
+  while ((u & 1U) == 0) {
+    u >>= 1;
+    bit++;
+  }
+  return bit;
+}
+
 #endif /* _MSC_VER */
 
 /**

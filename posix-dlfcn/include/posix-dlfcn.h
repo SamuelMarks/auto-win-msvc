@@ -64,7 +64,11 @@ auto_win_msvc_error_t posix_dlfcn_get_info(int *out_available);
 #ifndef RTLD_NEXT
 /** @brief Special handle to find the next occurrence of a symbol in the search
  * order after the current library. */
+#if defined(__I86__)
+#define RTLD_NEXT ((void *)(unsigned long)-1)
+#else
 #define RTLD_NEXT ((void *)(size_t)-1)
+#endif
 #endif
 
 #ifndef _DL_INFO_DEFINED

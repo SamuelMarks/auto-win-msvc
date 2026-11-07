@@ -837,6 +837,9 @@ int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp, char *const argv[],
                 char *const envp[]) {
+  (void)pid;
+  (void)file_actions;
+  (void)attrp;
   if (!path || !argv || !envp) {
     errno = EINVAL;
     return -1;
@@ -849,6 +852,9 @@ int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp, char *const argv[],
                  char *const envp[]) {
+  (void)pid;
+  (void)file_actions;
+  (void)attrp;
   if (!file || !argv || !envp) {
     errno = EINVAL;
     return -1;

@@ -267,6 +267,61 @@ extern struct mntent *find_mount_point(const char *name, int subdir_too);
 #define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : sleep(s))
 #undef nanosleep
 #define nanosleep(req, rem) (((req) && (req)->tv_sec >= 2147483647) ? (exit(0), 0) : nanosleep((req), (rem)))
+#if defined(__GNUC__) || defined(__clang__)
+/** @brief Weak pointer slot tracking the active 10240-byte BusyBox vi text buffer. */
+void *__attribute__((weak)) awm_bb_vi_buf = NULL;
+/**
+ * @brief Allocates memory, prepending a 16-byte newline-filled guard prefix for BusyBox vi's 10240-byte text buffer.
+ * @param[in] sz Number of bytes to allocate.
+ * @return Pointer to allocated memory, or NULL on failure.
+ */
+static __inline void *awm_bb_malloc(size_t sz) {
+    if (sz == 10240) {
+        char *p = (char *)malloc(sz + 16);
+        if (p) {
+            memset(p, '\n', 16);
+            awm_bb_vi_buf = (void *)(p + 16);
+            return (void *)(p + 16);
+        }
+    }
+    return malloc(sz);
+}
+/**
+ * @brief Reallocates memory, preserving the 16-byte newline-filled guard prefix for BusyBox vi's text buffer.
+ * @param[in] ptr Existing allocation pointer.
+ * @param[in] sz New allocation size in bytes.
+ * @return Pointer to reallocated memory, or NULL on failure.
+ */
+static __inline void *awm_bb_realloc(void *ptr, size_t sz) {
+    if (ptr && ptr == awm_bb_vi_buf) {
+        char *p = (char *)realloc((char *)ptr - 16, sz + 16);
+        if (p) {
+            memset(p, '\n', 16);
+            awm_bb_vi_buf = (void *)(p + 16);
+            return (void *)(p + 16);
+        }
+    }
+    return realloc(ptr, sz);
+}
+/**
+ * @brief Frees memory, adjusting for the 16-byte guard prefix when freeing BusyBox vi's text buffer.
+ * @param[in] ptr Pointer to free.
+ */
+static __inline void awm_bb_free(void *ptr) {
+    if (ptr && ptr == awm_bb_vi_buf) {
+        awm_bb_vi_buf = NULL;
+        free((char *)ptr - 16);
+        return;
+    }
+    free(ptr);
+}
+#undef malloc
+#define malloc(sz) awm_bb_malloc(sz)
+#undef realloc
+#define realloc(ptr, sz) awm_bb_realloc((ptr), (sz))
+#undef free
+#define free(ptr) awm_bb_free(ptr)
+#endif
 #if !defined(__OPTIMIZE__) && (defined(__GNUC__) || defined(__clang__))
 void __attribute__((weak)) __gcov_dump(void) {}
 #undef _exit
@@ -927,10 +982,12 @@ static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
 #include <errno.h>
 #include <malloc.h>
 #include <setjmp.h>
+#include <sys/types.h>
 
-#ifndef _SSIZE_T_DEFINED
+#if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_DEFINED_)
 #define _SSIZE_T_DEFINED
-typedef intptr_t ssize_t;
+#define _SSIZE_T_DEFINED_
+typedef int ssize_t;
 #endif
 
 #ifndef PATH_MAX
@@ -999,6 +1056,7 @@ static __inline int getsubopt(char **optionp, char * const *tokens, char **value
     return -1;
 }
 
+#if !defined(__WATCOMC__) || (defined(_NO_EXT_KEYS) && !defined(_POSIX_SOURCE))
 /**
  * @brief Reads an entire line from stream into a dynamically allocated buffer on DOS/OpenWatcom.
  * @param[in,out] lineptr Pointer to buffer receiving line.
@@ -1046,6 +1104,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     (*lineptr)[pos] = '\0';
     return (ssize_t)pos;
 }
+#endif
 
 /**
  * @brief Locates the last path separator (forward slash or backslash) in str.

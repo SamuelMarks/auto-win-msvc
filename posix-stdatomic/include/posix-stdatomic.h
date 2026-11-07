@@ -96,6 +96,63 @@ typedef volatile unsigned long atomic_ulong;
 /** @brief Explicit memory barrier fence. */
 #define atomic_thread_fence(order) _ReadWriteBarrier()
 
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+static __inline long posix_dos_atomic_fetch_add(volatile long *obj, long val) {
+  long old_val = *obj;
+  *obj = old_val + val;
+  return old_val;
+}
+
+static __inline long posix_dos_atomic_exchange(volatile long *obj, long val) {
+  long old_val = *obj;
+  *obj = val;
+  return old_val;
+}
+
+/** @brief Atomically load the value of an atomic object. */
+#define atomic_load(obj) (*(obj))
+/** @brief Atomically load the value of an atomic object with explicit ordering.
+ */
+#define atomic_load_explicit(obj, order) (*(obj))
+
+/** @brief Atomically store a value into an atomic object. */
+#define atomic_store(obj, val)                                                 \
+  do {                                                                         \
+    *(obj) = (val);                                                            \
+  } while ((void)0, 0)
+/** @brief Atomically store a value into an atomic object with explicit
+ * ordering. */
+#define atomic_store_explicit(obj, val, order)                                 \
+  do {                                                                         \
+    *(obj) = (val);                                                            \
+  } while ((void)0, 0)
+
+/** @brief Atomically add to an atomic object and return old value. */
+#define atomic_fetch_add(obj, val)                                             \
+  posix_dos_atomic_fetch_add((volatile long *)(obj), (long)(val))
+/** @brief Atomically add to an atomic object with explicit ordering. */
+#define atomic_fetch_add_explicit(obj, val, order)                             \
+  posix_dos_atomic_fetch_add((volatile long *)(obj), (long)(val))
+
+/** @brief Atomically subtract from an atomic object and return old value. */
+#define atomic_fetch_sub(obj, val)                                             \
+  posix_dos_atomic_fetch_add((volatile long *)(obj), -(long)(val))
+/** @brief Atomically subtract from an atomic object with explicit ordering. */
+#define atomic_fetch_sub_explicit(obj, val, order)                             \
+  posix_dos_atomic_fetch_add((volatile long *)(obj), -(long)(val))
+
+/** @brief Atomically exchange value with an atomic object. */
+#define atomic_exchange(obj, val)                                              \
+  posix_dos_atomic_exchange((volatile long *)(obj), (long)(val))
+/** @brief Atomically exchange value with an atomic object with explicit
+ * ordering. */
+#define atomic_exchange_explicit(obj, val, order)                              \
+  posix_dos_atomic_exchange((volatile long *)(obj), (long)(val))
+
+/** @brief Explicit memory barrier fence. */
+#define atomic_thread_fence(order) ((void)(order))
+
 #else
 
 /** @brief Atomically load the value of an atomic object. */

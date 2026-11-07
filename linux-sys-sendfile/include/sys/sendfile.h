@@ -13,10 +13,10 @@
 #endif
 #if defined(_WIN32)
 
-#ifndef _OFF_T
+#if !defined(_OFF_T) && !defined(_OFF_T_DEFINED) && !defined(__WATCOMC__)
 typedef long off_t;
 #endif
-#if !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED)
+#if !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED) && !defined(__WATCOMC__)
 typedef long ssize_t;
 #endif
 #endif

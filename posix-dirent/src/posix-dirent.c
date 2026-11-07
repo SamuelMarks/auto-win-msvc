@@ -674,6 +674,80 @@ void posix_rewinddir(DIR *dirp) {
   rewinddir(dirp);
 }
 #endif
+
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+int scandir(const char *dirp, struct dirent ***namelist,
+            int (*filter)(const struct dirent *),
+            int (*compar)(const struct dirent **, const struct dirent **)) {
+  DIR *d;
+  struct dirent *entry;
+  struct dirent **names = NULL;
+  size_t count = 0;
+  size_t capacity = 10;
+
+  if (!dirp || !namelist) {
+    return -1;
+  }
+
+  d = opendir(dirp);
+  if (!d) {
+    return -1;
+  }
+
+  names = (struct dirent **)malloc(capacity * sizeof(struct dirent *));
+  if (!names) {
+    closedir(d);
+    return -1;
+  }
+
+  while ((entry = readdir(d)) != NULL) {
+    if (!filter || filter(entry)) {
+      struct dirent *copy = (struct dirent *)malloc(sizeof(struct dirent));
+      if (!copy) {
+        while (count > 0) {
+          free(names[--count]);
+        }
+        free(names);
+        closedir(d);
+        return -1;
+      }
+      memcpy(copy, entry, sizeof(struct dirent));
+
+      if (count >= capacity) {
+        size_t new_cap = capacity * 2;
+        struct dirent **new_names =
+            (struct dirent **)realloc(names, new_cap * sizeof(struct dirent *));
+        if (!new_names) {
+          free(copy);
+          while (count > 0) {
+            free(names[--count]);
+          }
+          free(names);
+          closedir(d);
+          return -1;
+        }
+        names = new_names;
+        capacity = new_cap;
+      }
+      names[count++] = copy;
+    }
+  }
+
+  closedir(d);
+
+  if (compar) {
+    qsort(names, count, sizeof(struct dirent *),
+          (int (*)(const void *, const void *))compar);
+  }
+
+  *namelist = names;
+  return (int)count;
+}
+
+int alphasort(const struct dirent **a, const struct dirent **b) {
+  return strcmp((*a)->d_name, (*b)->d_name);
+}
+#endif
 #endif /* _WIN32 */
 
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY

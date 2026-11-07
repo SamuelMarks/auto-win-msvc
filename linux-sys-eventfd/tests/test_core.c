@@ -29,7 +29,7 @@ TEST test_eventfd(void) {
   rc = eventfd(0, -1);
 
   errno = 0;
-  rc = eventfd(0xFFFFFFFFU, 0);
+  rc = eventfd(~0U, 0);
 
   errno = 0;
   rc = eventfd(0, 0);

@@ -533,13 +533,16 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 #endif
 
 #if !defined(__USE_XOPEN2K8) &&                                                \
-    (!defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L)
+        (!defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L) ||            \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 extern int fchmod(int fd, mode_t mode);
 extern int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
 extern int fstatat(int dirfd, const char *pathname, struct stat *statbuf,
                    int flags);
 extern int futimens(int fd, const struct timespec times[2]);
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 extern int lstat(const char *pathname, struct stat *statbuf);
+#endif
 extern int mknod(const char *pathname, mode_t mode, dev_t dev);
 extern int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 extern int utimensat(int dirfd, const char *pathname,

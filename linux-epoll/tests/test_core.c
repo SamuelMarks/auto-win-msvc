@@ -201,7 +201,7 @@ TEST test_epoll_constants_and_pwait(void) {
   int op_add = EPOLL_CTL_ADD;
   int op_mod = EPOLL_CTL_MOD;
   int op_del = EPOLL_CTL_DEL;
-  int cloexec = EPOLL_CLOEXEC;
+  unsigned long cloexec = (unsigned long)EPOLL_CLOEXEC;
   int dummy_sig = 0;
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP | EPOLLPRI |

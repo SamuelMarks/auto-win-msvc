@@ -12,6 +12,9 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include "posix-netinet-in.h"
+#include "posix-sockets.h"
 #else
 #include <netdb.h>
 #endif
@@ -38,14 +41,15 @@ auto_win_msvc_error_t posix_netdb_get_info(int *out_available) {
 }
 
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
-#define POSIX_NETDB_AI_CUSTOM_MAGIC 0x41574D53
+#define POSIX_NETDB_AI_CUSTOM_MAGIC 0x4157
 
 int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res) {
   if (res == NULL) {
     return -1;
   }
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
   if (nodename != NULL && nodename[0] >= '0' && nodename[0] <= '9') {
     const char *p = nodename;
     unsigned int parts[4] = {0, 0, 0, 0};
@@ -75,7 +79,8 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
     }
     if (valid_ipv4 && has_digit && part_idx == 3) {
       unsigned long ip_host =
-          (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+          ((unsigned long)parts[0] << 24) | ((unsigned long)parts[1] << 16) |
+          ((unsigned long)parts[2] << 8) | (unsigned long)parts[3];
       unsigned long ip_be = htonl(ip_host);
       struct addrinfo *ai = (struct addrinfo *)calloc(
           1, sizeof(struct addrinfo) + sizeof(struct sockaddr_in));
@@ -101,10 +106,17 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
       }
     }
   }
+#if defined(_WIN32)
 #ifdef UNICODE
   return GetAddrInfoA(nodename, servname, hints, res);
 #else
   return getaddrinfo(nodename, servname, hints, res);
+#endif
+#else
+  (void)nodename;
+  (void)servname;
+  (void)hints;
+  return -1;
 #endif
 #else
   return getaddrinfo(nodename, servname, hints, res);
@@ -115,13 +127,16 @@ void posix_freeaddrinfo(struct addrinfo *ai) {
   if (ai == NULL) {
     return;
   }
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
   if (ai->ai_flags == POSIX_NETDB_AI_CUSTOM_MAGIC) {
     free(ai);
     return;
   }
 #endif
+#if !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
   freeaddrinfo(ai);
+#endif
 }
 
 const char *posix_gai_strerror(int ecode) {
@@ -130,6 +145,8 @@ const char *posix_gai_strerror(int ecode) {
   }
 #if defined(_WIN32)
   return gai_strerrorA(ecode);
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  return "Unknown error";
 #else
   return gai_strerror(ecode);
 #endif

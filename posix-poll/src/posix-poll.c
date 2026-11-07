@@ -283,6 +283,8 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     defined(__CYGWIN__)
   return poll((struct pollfd *)fds, (nfds_t)nfds, timeout);
 #else
+  (void)fds;
+  (void)nfds;
   if (timeout > 0) {
     return 0;
   }

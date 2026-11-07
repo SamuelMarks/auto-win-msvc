@@ -14,7 +14,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
 #include <stddef.h>
 #else
 #if defined(__GNUC__) || defined(__clang__)
@@ -33,6 +33,50 @@ extern int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+#ifndef _TIMEVAL_DEFINED
+#define _TIMEVAL_DEFINED
+#define _STRUCT_TIMEVAL
+struct timeval {
+  long tv_sec;
+  long tv_usec;
+};
+#endif
+
+#ifndef FD_SETSIZE
+#define FD_SETSIZE 64
+#endif
+
+#ifndef _FD_SET_DEFINED
+#define _FD_SET_DEFINED
+typedef struct fd_set {
+  unsigned int fd_count;
+  int fd_array[FD_SETSIZE];
+} fd_set;
+#endif
+
+#ifndef FD_ZERO
+#define FD_ZERO(set) (((fd_set *)(set))->fd_count = 0)
+#endif
+#ifndef FD_SET
+#define FD_SET(fd, set)                                                        \
+  do {                                                                         \
+    if (((fd_set *)(set))->fd_count < FD_SETSIZE) {                            \
+      ((fd_set *)(set))->fd_array[((fd_set *)(set))->fd_count++] = (int)(fd);  \
+    }                                                                          \
+  } while (0)
+#endif
+#ifndef FD_CLR
+#define FD_CLR(fd, set) ((void)(fd), (void)(set))
+#endif
+#ifndef FD_ISSET
+#define FD_ISSET(fd, set) 0
+#endif
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+           struct timeval *timeout);
 #endif
 
 #if defined(_WIN32)

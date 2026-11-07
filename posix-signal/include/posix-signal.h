@@ -15,7 +15,7 @@
 #include "auto-win-msvc-error.h"
 #include <signal.h>
 #include <stddef.h>
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__WATCOMC__)
 #include <sys/types.h>
 #endif
 #include "posix-signal-ext.h"
@@ -137,14 +137,15 @@ typedef posix_sighandler_t __sighandler_t;
 typedef posix_sighandler_t sig_t;
 #endif
 
-#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__)
+#if !defined(_PID_T_DEFINED) && !defined(_PID_T_) && !defined(__MINGW32__) &&  \
+    !defined(__WATCOMC__)
 #define _PID_T_DEFINED
 #define _PID_T_
 /** \brief Process ID type. */
 typedef int pid_t;
 #endif
 
-#ifndef _UID_T_DEFINED
+#if !defined(_UID_T_DEFINED) && !defined(__WATCOMC__)
 #define _UID_T_DEFINED
 /** \brief User ID type. */
 typedef int uid_t;

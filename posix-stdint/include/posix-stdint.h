@@ -11,6 +11,9 @@
 #include <stddef.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <vcruntime.h>
+#elif defined(__WATCOMC__)
+#include <../h/stdint.h>
+#include <sys/types.h>
 #elif !defined(_WIN32)
 #include <sys/types.h>
 #endif
@@ -24,42 +27,49 @@ extern "C" {
 #define _STDINT
 #endif
 
-#if !defined(__int8_t_defined) && !defined(_INT8_T_DEFINED)
+#if !defined(_STDINT_H_INCLUDED)
+#if !defined(__int8_t_defined) && !defined(_INT8_T_DEFINED) &&                 \
+    !defined(_EXACT_WIDTH_INTS)
 #define _INT8_T_DEFINED
 #define __int8_t_defined
 /** @brief Signed 8-bit integer type. */
 typedef signed char int8_t;
 #endif
 
-#if !defined(__uint8_t_defined) && !defined(_UINT8_T_DEFINED)
+#if !defined(__uint8_t_defined) && !defined(_UINT8_T_DEFINED) &&               \
+    !defined(_EXACT_WIDTH_INTS)
 #define _UINT8_T_DEFINED
 #define __uint8_t_defined
 /** @brief Unsigned 8-bit integer type. */
 typedef unsigned char uint8_t;
 #endif
 
-#if !defined(__int16_t_defined) && !defined(_INT16_T_DEFINED)
+#if !defined(__int16_t_defined) && !defined(_INT16_T_DEFINED) &&               \
+    !defined(_EXACT_WIDTH_INTS)
 #define _INT16_T_DEFINED
 #define __int16_t_defined
 /** @brief Signed 16-bit integer type. */
 typedef short int16_t;
 #endif
 
-#if !defined(__uint16_t_defined) && !defined(_UINT16_T_DEFINED)
+#if !defined(__uint16_t_defined) && !defined(_UINT16_T_DEFINED) &&             \
+    !defined(_EXACT_WIDTH_INTS)
 #define _UINT16_T_DEFINED
 #define __uint16_t_defined
 /** @brief Unsigned 16-bit integer type. */
 typedef unsigned short uint16_t;
 #endif
 
-#if !defined(__int32_t_defined) && !defined(_INT32_T_DEFINED)
+#if !defined(__int32_t_defined) && !defined(_INT32_T_DEFINED) &&               \
+    !defined(_EXACT_WIDTH_INTS)
 #define _INT32_T_DEFINED
 #define __int32_t_defined
 /** @brief Signed 32-bit integer type. */
 typedef int int32_t;
 #endif
 
-#if !defined(__uint32_t_defined) && !defined(_UINT32_T_DEFINED)
+#if !defined(__uint32_t_defined) && !defined(_UINT32_T_DEFINED) &&             \
+    !defined(_EXACT_WIDTH_INTS)
 #define _UINT32_T_DEFINED
 #define __uint32_t_defined
 /** @brief Unsigned 32-bit integer type. */
@@ -67,7 +77,7 @@ typedef unsigned int uint32_t;
 #endif
 
 #if !defined(__int64_t_defined) && !defined(_INT64_T) &&                       \
-    !defined(_INT64_T_DEFINED)
+    !defined(_INT64_T_DEFINED) && !defined(_EXACT_WIDTH_INTS)
 #define _INT64_T_DEFINED
 #define _INT64_T
 #define __int64_t_defined
@@ -87,7 +97,7 @@ __extension__ typedef long long int64_t;
 #endif
 
 #if !defined(__uint64_t_defined) && !defined(_UINT64_T) &&                     \
-    !defined(_UINT64_T_DEFINED)
+    !defined(_UINT64_T_DEFINED) && !defined(_EXACT_WIDTH_INTS)
 #define _UINT64_T_DEFINED
 #define _UINT64_T
 #define __uint64_t_defined
@@ -139,6 +149,7 @@ typedef uint32_t uint_fast32_t;
 typedef int64_t int_fast64_t;
 /** @brief Fastest unsigned 64-bit integer type. */
 typedef uint64_t uint_fast64_t;
+#endif /* !_STDINT_H_INCLUDED */
 
 #ifndef _INTPTR_T_DEFINED
 #define _INTPTR_T_DEFINED

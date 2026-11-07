@@ -8,6 +8,8 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <dirent.h>
+#elif defined(__WATCOMC__)
+#include <../h/dirent.h>
 #else
 #include <dirent.h>
 #endif

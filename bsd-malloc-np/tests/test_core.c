@@ -17,30 +17,27 @@ static void dummy_cb(void *opaque, const char *str) {
 TEST test_bsd_malloc_np_init(void) {
   auto_win_msvc_error_t rc;
   int status;
-  (void)rc;
 
   status = 0;
   rc = bsd_malloc_np_init(NULL);
-  /* no branch macro */
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = bsd_malloc_np_init(&status);
-  /* no branch macro */
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, status);
 
-  /* no branch macro */
   PASS();
 }
 
 TEST test_je_malloc_stats_print(void) {
   error_type_t err;
-  (void)err;
 
   err = je_malloc_stats_print(NULL, NULL, NULL);
-  /* no branch macro */
+  ASSERT_EQ(-1, err);
 
   g_cb_buffer[0] = '\0';
   err = je_malloc_stats_print(dummy_cb, (void *)"opaque_data", "opts");
-  /* no branch macro */
-  /* ASSERT */
+  ASSERT_EQ(ERR_NONE, err);
   PASS();
 }
 

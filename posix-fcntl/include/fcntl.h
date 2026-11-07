@@ -6,6 +6,8 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <fcntl.h>
+#elif defined(__WATCOMC__)
+#include <../h/fcntl.h>
 #else
 #include <fcntl.h>
 #endif

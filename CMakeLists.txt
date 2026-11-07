@@ -201,8 +201,16 @@ if(AUTO_WIN_MSVC_BUILD_TESTING)
 enable_testing() # Enable testing at the root so ctest finds all tests
 
 include(FetchContent)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 # --- Code Coverage Configuration ---
 option(AUTO_WIN_MSVC_COVERAGE "Enable code coverage reporting" OFF)
@@ -237,6 +245,9 @@ if(WIN32 OR MSVC OR MINGW)
             get_directory_property(_saved_compile_options COMPILE_OPTIONS)
             set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
             FetchContent_MakeAvailable(pcre2)
+            if(CMAKE_C_COMPILER_ID MATCHES "Watcom" AND TARGET pcre2-8-static)
+                target_compile_options(pcre2-8-static PRIVATE -za99)
+            endif()
             set_directory_properties(PROPERTIES COMPILE_OPTIONS "${_saved_compile_options}")
         endif()
     endif()

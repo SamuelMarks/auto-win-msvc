@@ -33,7 +33,11 @@ TEST test_bitops_basic(void) {
   ASSERT_EQ(1, posix_fls(1));
   ASSERT_EQ(2, posix_fls(2));
   ASSERT_EQ(5, posix_fls(16));
+#if defined(__I86__)
+  ASSERT_EQ(15, posix_fls(0x4000));
+#else
   ASSERT_EQ(32, posix_fls(0x80000000));
+#endif
 
   /* __ffs */
   posix___ffs(0x10, &out_idx);
@@ -51,7 +55,7 @@ TEST test_bitops_basic(void) {
   /* Check fls64 */
   ASSERT_EQ(0, posix_fls64(0));
   ASSERT_EQ(1, posix_fls64(1));
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
   {
     unsigned __int64 val1 = 1;
     unsigned __int64 val2 = 1;

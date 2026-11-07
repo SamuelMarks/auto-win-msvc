@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__)
 #include <direct.h>
 #define MKDIR(d) _mkdir(d)
 #define RMDIR(d) _rmdir(d)

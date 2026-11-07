@@ -340,6 +340,15 @@ pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
   return -1;
 }
 
+int posix_wait_kill(pid_t pid, int sig) {
+  if (pid <= 0 || sig < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ESRCH;
+  return -1;
+}
+
 #endif /* MSDOS || WATCOMC */
 
 /* Non-standard Microsoft-compatible cwait */

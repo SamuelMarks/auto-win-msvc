@@ -775,7 +775,8 @@ TEST test_at_absolute_paths(void) {
   int res;
 
   memset(&st, 0, sizeof(st));
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
   if (_fullpath(fullpath, "test_stat_file.txt", sizeof(fullpath)) != NULL) {
     res = fstatat(AT_FDCWD, fullpath, &st, 0);
     ASSERT_EQ(0, res);
@@ -869,6 +870,10 @@ TEST test_umask(void) {
       ASSERT_EQ(0200, m2);
     }
   }
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+  m1 = umask(0200);
+  m2 = umask(m1);
+  ASSERT_EQ(0200, m2);
 #else
   m1 = umask(0022);
   m2 = umask(m1);

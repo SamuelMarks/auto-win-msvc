@@ -54,6 +54,7 @@ typedef int error_type_t;
 #endif
 #include <process.h>
 #include <share.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #if !defined(_MSC_VER) && !defined(__WATCOMC__)
@@ -202,7 +203,8 @@ typedef int gid_t;
 __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__DOS__) ||           \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 #ifndef STDIN_FILENO
 #define STDIN_FILENO 0
 #endif
@@ -211,7 +213,8 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #define STDIN_FILENO STDIN_FILENO
 #endif
 #endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__DOS__) ||           \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1
 #endif
@@ -220,7 +223,8 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #define STDOUT_FILENO STDOUT_FILENO
 #endif
 #endif
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__DOS__) ||           \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
@@ -1538,11 +1542,55 @@ int posix_fileno(FILE *stream);
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
+#ifndef F_DUPFD
+#define F_DUPFD 0
+#endif
+#ifndef F_GETFD
+#define F_GETFD 1
+#endif
+#ifndef F_SETFD
+#define F_SETFD 2
+#endif
+#ifndef F_GETFL
+#define F_GETFL 3
+#endif
+#ifndef F_SETFL
+#define F_SETFL 4
+#endif
+#ifndef F_GETLK
+#define F_GETLK 5
+#endif
+#ifndef F_SETLK
+#define F_SETLK 6
+#endif
+#ifndef F_SETLKW
+#define F_SETLKW 7
+#endif
+#ifndef F_DUPFD_CLOEXEC
+#define F_DUPFD_CLOEXEC 1030
+#endif
+#ifndef FD_CLOEXEC
+#define FD_CLOEXEC 1
+#endif
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x0004
+#endif
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0x0080
+#endif
 #ifndef ftruncate
 #define ftruncate(fd, len) chsize((int)(fd), (long)(len))
 #endif
+#ifndef _USECONDS_T_DEFINED
+#define _USECONDS_T_DEFINED
+typedef unsigned long useconds_t;
+#endif
 /** @brief Synchronizes file state on DOS/OpenWatcom. */
 int fsync(int fd);
+/** @brief Synchronizes file data on DOS/OpenWatcom. */
+int fdatasync(intptr_t fd);
+/** @brief File control operations on DOS/OpenWatcom. */
+int fcntl(intptr_t fd, int cmd, ...);
 /** @brief Sets an environment variable on DOS/OpenWatcom. */
 int setenv(const char *name, const char *value, int overwrite);
 /** @brief Unsets an environment variable on DOS/OpenWatcom. */
@@ -1556,8 +1604,14 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 int asprintf(char **strp, const char *fmt, ...);
 /** @brief Reads a delimited record from stream on DOS/OpenWatcom. */
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
+/** @brief Reads a line from stream on DOS/OpenWatcom. */
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+/** @brief Parses suboptions from a string on DOS/OpenWatcom. */
+int getsubopt(char **optionp, char *const *tokens, char **valuep);
 /** @brief Creates and opens a unique temporary file on DOS/OpenWatcom. */
 int mkstemp(char *tmpl);
+/** @brief Creates a unique temporary directory on DOS/OpenWatcom. */
+char *mkdtemp(char *tmpl);
 /** @brief Stubs fork on single-tasking DOS. */
 int fork(void);
 /** @brief Stubs vfork on single-tasking DOS. */
@@ -1566,6 +1620,110 @@ int vfork(void);
 int pipe(int pipefd[2]);
 /** @brief Stubs waitpid on single-tasking DOS. */
 int waitpid(int pid, int *status, int options);
+/** @brief Stubs alarm on DOS/OpenWatcom. */
+unsigned int alarm(unsigned int seconds);
+/** @brief Stubs ualarm on DOS/OpenWatcom. */
+useconds_t ualarm(useconds_t value, useconds_t interval);
+/** @brief Stubs pause on DOS/OpenWatcom. */
+int pause(void);
+/** @brief Stubs chown on DOS/OpenWatcom. */
+int chown(const char *pathname, uid_t owner, gid_t group);
+/** @brief Stubs fchown on DOS/OpenWatcom. */
+int fchown(intptr_t fd, uid_t owner, gid_t group);
+/** @brief Stubs lchown on DOS/OpenWatcom. */
+int lchown(const char *pathname, uid_t owner, gid_t group);
+/** @brief Stubs fchownat on DOS/OpenWatcom. */
+int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
+             int flags);
+/** @brief Stubs faccessat on DOS/OpenWatcom. */
+int faccessat(int dirfd, const char *pathname, int mode, int flags);
+/** @brief Stubs openat on DOS/OpenWatcom. */
+int openat(int dirfd, const char *pathname, int flags, ...);
+/** @brief Stubs link on DOS/OpenWatcom. */
+int link(const char *oldpath, const char *newpath);
+/** @brief Stubs linkat on DOS/OpenWatcom. */
+int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
+           int flags);
+/** @brief Stubs symlink on DOS/OpenWatcom. */
+int symlink(const char *target, const char *linkpath);
+/** @brief Stubs symlinkat on DOS/OpenWatcom. */
+int symlinkat(const char *target, int newdirfd, const char *linkpath);
+/** @brief Stubs readlink on DOS/OpenWatcom. */
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
+/** @brief Stubs readlinkat on DOS/OpenWatcom. */
+ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
+/** @brief Stubs pread on DOS/OpenWatcom. */
+ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset);
+/** @brief Stubs pwrite on DOS/OpenWatcom. */
+ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset);
+/** @brief Stubs sync on DOS/OpenWatcom. */
+void sync(void);
+/** @brief Stubs truncate on DOS/OpenWatcom. */
+int truncate(const char *path, off_t length);
+/** @brief Stubs lockf on DOS/OpenWatcom. */
+int lockf(intptr_t fd, int cmd, off_t len);
+/** @brief Stubs confstr on DOS/OpenWatcom. */
+size_t confstr(int name, char *buf, size_t len);
+/** @brief Stubs fpathconf on DOS/OpenWatcom. */
+long fpathconf(intptr_t fd, int name);
+/** @brief Stubs pathconf on DOS/OpenWatcom. */
+long pathconf(const char *pathname, int name);
+/** @brief Stubs sysconf on DOS/OpenWatcom. */
+long sysconf(int name);
+/** @brief Stubs gethostid on DOS/OpenWatcom. */
+long gethostid(void);
+/** @brief Stubs gethostname on DOS/OpenWatcom. */
+int gethostname(char *name, size_t len);
+/** @brief Stubs getlogin on DOS/OpenWatcom. */
+char *getlogin(void);
+/** @brief Stubs getlogin_r on DOS/OpenWatcom. */
+int getlogin_r(char *buf, size_t bufsize);
+/** @brief Stubs ttyname on DOS/OpenWatcom. */
+char *ttyname(intptr_t fd);
+/** @brief Stubs ttyname_r on DOS/OpenWatcom. */
+int ttyname_r(intptr_t fd, char *buf, size_t buflen);
+/** @brief Stubs tcgetpgrp on DOS/OpenWatcom. */
+pid_t tcgetpgrp(intptr_t fd);
+/** @brief Stubs tcsetpgrp on DOS/OpenWatcom. */
+int tcsetpgrp(intptr_t fd, pid_t pgrp);
+/** @brief Stubs getuid on DOS/OpenWatcom. */
+uid_t getuid(void);
+/** @brief Stubs geteuid on DOS/OpenWatcom. */
+uid_t geteuid(void);
+/** @brief Stubs getgid on DOS/OpenWatcom. */
+gid_t getgid(void);
+/** @brief Stubs getegid on DOS/OpenWatcom. */
+gid_t getegid(void);
+/** @brief Stubs getpgid on DOS/OpenWatcom. */
+pid_t getpgid(pid_t pid);
+/** @brief Stubs getpgrp on DOS/OpenWatcom. */
+pid_t getpgrp(void);
+/** @brief Stubs getppid on DOS/OpenWatcom. */
+pid_t getppid(void);
+/** @brief Stubs getsid on DOS/OpenWatcom. */
+pid_t getsid(pid_t pid);
+/** @brief Stubs setuid on DOS/OpenWatcom. */
+int setuid(uid_t uid);
+/** @brief Stubs seteuid on DOS/OpenWatcom. */
+int seteuid(uid_t euid);
+/** @brief Stubs setreuid on DOS/OpenWatcom. */
+int setreuid(uid_t ruid, uid_t euid);
+/** @brief Stubs setgid on DOS/OpenWatcom. */
+int setgid(gid_t gid);
+/** @brief Stubs setegid on DOS/OpenWatcom. */
+int setegid(gid_t egid);
+/** @brief Stubs setregid on DOS/OpenWatcom. */
+int setregid(gid_t rgid, gid_t egid);
+/** @brief Stubs setpgid on DOS/OpenWatcom. */
+int setpgid(pid_t pid, pid_t pgid);
+/** @brief Stubs setpgrp on DOS/OpenWatcom. */
+pid_t setpgrp(void);
+/** @brief Stubs setsid on DOS/OpenWatcom. */
+pid_t setsid(void);
+/** @brief Stubs getgroups on DOS/OpenWatcom. */
+int getgroups(int size, gid_t list[]);
+/** @brief Stubs setgroups on DOS/OpenWatcom. */
+int setgroups(size_t size, const gid_t *list);
 #endif
 
 #ifdef __cplusplus

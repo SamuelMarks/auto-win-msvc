@@ -12,7 +12,7 @@ int eventfd(unsigned int initval, int flags) {
     errno = EINVAL;
     return -1;
   }
-  if (initval == 0xFFFFFFFFU) {
+  if (initval == ~0U) {
     errno = EINVAL;
     return -1;
   }

@@ -210,7 +210,11 @@ static char *posix_strptime_impl(const char *buf, const char *fmt,
     }
     f++;
   }
+#if defined(__I86__)
+  return (char *)(unsigned long)s;
+#else
   return (char *)(size_t)s;
+#endif
 }
 #endif
 
@@ -706,7 +710,7 @@ int clock_settime(int clk_id, const struct timespec *tp) {
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-  if (req == NULL || req->tv_sec < 0 || req->tv_nsec < 0 ||
+  if (req == NULL || (long)req->tv_sec < 0 || req->tv_nsec < 0 ||
       req->tv_nsec >= 1000000000L) {
     errno = EINVAL;
     return -1;

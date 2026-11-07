@@ -3535,6 +3535,503 @@ int waitpid(int pid, int *status, int options) {
   return -1;
 }
 
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+  return getdelim(lineptr, n, '\n', stream);
+}
+
+int getsubopt(char **optionp, char *const *tokens, char **valuep) {
+  char *end;
+  char *opt;
+  int i;
+  if (optionp == NULL || *optionp == NULL || tokens == NULL || valuep == NULL) {
+    return -1;
+  }
+  opt = *optionp;
+  while (*opt == ' ' || *opt == '\t') {
+    opt++;
+  }
+  if (*opt == '\0') {
+    *optionp = opt;
+    *valuep = NULL;
+    return -1;
+  }
+  end = opt;
+  while (*end != '\0' && *end != ',') {
+    end++;
+  }
+  if (*end == ',') {
+    *end = '\0';
+    *optionp = end + 1;
+  } else {
+    *optionp = end;
+  }
+  *valuep = strchr(opt, '=');
+  if (*valuep != NULL) {
+    *(*valuep) = '\0';
+    (*valuep)++;
+  }
+  for (i = 0; tokens[i] != NULL; i++) {
+    if (strcmp(opt, tokens[i]) == 0) {
+      return i;
+    }
+  }
+  *valuep = opt;
+  return -1;
+}
+
+char *mkdtemp(char *tmpl) {
+  size_t len;
+  int attempt;
+  if (!tmpl) {
+    errno = EINVAL;
+    return NULL;
+  }
+  len = strlen(tmpl);
+  if (len < 6 || strcmp(tmpl + len - 6, "XXXXXX") != 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+  for (attempt = 0; attempt < 1000; ++attempt) {
+    sprintf(tmpl + len - 6, "%06d", attempt);
+    if (_mkdir(tmpl) == 0) {
+      return tmpl;
+    }
+  }
+  errno = EEXIST;
+  return NULL;
+}
+
+int clearenv(void) {
+  if (environ != NULL) {
+    environ[0] = NULL;
+  }
+  return 0;
+}
+
+int getpagesize(void) { return 4096; }
+
+char *realpath(const char *path, char *resolved_path) {
+  if (path == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+  if (resolved_path == NULL) {
+    return _fullpath(NULL, path, 260);
+  }
+  return _fullpath(resolved_path, path, 260);
+}
+
+int fchdir(int fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+int chroot(const char *path) {
+  if (path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+int fdatasync(intptr_t fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+int fcntl(intptr_t fd, int cmd, ...) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  if (cmd == F_DUPFD || cmd == F_DUPFD_CLOEXEC) {
+    return dup((int)fd);
+  }
+  if (cmd == F_GETFD || cmd == F_SETFD || cmd == F_GETFL || cmd == F_SETFL) {
+    return 0;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+unsigned int alarm(unsigned int seconds) {
+  (void)seconds;
+  return 0;
+}
+
+useconds_t ualarm(useconds_t value, useconds_t interval) {
+  (void)value;
+  (void)interval;
+  return 0;
+}
+
+int pause(void) {
+  errno = EINTR;
+  return -1;
+}
+
+int chown(const char *pathname, uid_t owner, gid_t group) {
+  (void)owner;
+  (void)group;
+  if (!pathname || access(pathname, 0) != 0) {
+    errno = ENOENT;
+    return -1;
+  }
+  return 0;
+}
+
+int fchown(intptr_t fd, uid_t owner, gid_t group) {
+  (void)owner;
+  (void)group;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+int lchown(const char *pathname, uid_t owner, gid_t group) {
+  return chown(pathname, owner, group);
+}
+
+int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group,
+             int flags) {
+  (void)dirfd;
+  (void)flags;
+  return chown(pathname, owner, group);
+}
+
+int faccessat(int dirfd, const char *pathname, int mode, int flags) {
+  (void)dirfd;
+  (void)flags;
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+  return access(pathname, mode);
+}
+
+int openat(int dirfd, const char *pathname, int flags, ...) {
+  int mode = 0;
+  (void)dirfd;
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (flags & O_CREAT) {
+    va_list ap;
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+    return open(pathname, flags, mode);
+  }
+  return open(pathname, flags);
+}
+
+int link(const char *oldpath, const char *newpath) {
+  (void)oldpath;
+  (void)newpath;
+  errno = ENOSYS;
+  return -1;
+}
+
+int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
+           int flags) {
+  (void)olddirfd;
+  (void)oldpath;
+  (void)newdirfd;
+  (void)newpath;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
+}
+
+int symlink(const char *target, const char *linkpath) {
+  (void)target;
+  (void)linkpath;
+  errno = ENOSYS;
+  return -1;
+}
+
+int symlinkat(const char *target, int newdirfd, const char *linkpath) {
+  (void)target;
+  (void)newdirfd;
+  (void)linkpath;
+  errno = ENOSYS;
+  return -1;
+}
+
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
+  (void)pathname;
+  (void)buf;
+  (void)bufsiz;
+  errno = EINVAL;
+  return -1;
+}
+
+ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
+  (void)dirfd;
+  return readlink(pathname, buf, bufsiz);
+}
+
+ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset) {
+  off_t old_pos;
+  int n;
+  if (fd < 0 || !buf || offset < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  old_pos = lseek((int)fd, 0, SEEK_CUR);
+  if (old_pos == (off_t)-1) {
+    return -1;
+  }
+  if (lseek((int)fd, offset, SEEK_SET) == (off_t)-1) {
+    return -1;
+  }
+  n = read((int)fd, buf, (unsigned int)count);
+  (void)lseek((int)fd, old_pos, SEEK_SET);
+  return (ssize_t)n;
+}
+
+ssize_t pwrite(intptr_t fd, const void *buf, size_t count, off_t offset) {
+  off_t old_pos;
+  int n;
+  if (fd < 0 || !buf || offset < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  old_pos = lseek((int)fd, 0, SEEK_CUR);
+  if (old_pos == (off_t)-1) {
+    return -1;
+  }
+  if (lseek((int)fd, offset, SEEK_SET) == (off_t)-1) {
+    return -1;
+  }
+  n = write((int)fd, buf, (unsigned int)count);
+  (void)lseek((int)fd, old_pos, SEEK_SET);
+  return (ssize_t)n;
+}
+
+void sync(void) {}
+
+int truncate(const char *path, off_t length) {
+  int fd;
+  int res;
+  if (!path || length < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  fd = open(path, O_RDWR);
+  if (fd < 0) {
+    return -1;
+  }
+  res = chsize(fd, (long)length);
+  close(fd);
+  return res;
+}
+
+int lockf(intptr_t fd, int cmd, off_t len) {
+  (void)cmd;
+  if (fd < 0 || len < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+
+size_t confstr(int name, char *buf, size_t len) {
+  if (name == _CS_PATH) {
+    const char *p = "C:\\DOS;C:\\BENTO";
+    size_t req = strlen(p) + 1;
+    if (buf && len > 0) {
+      strncpy(buf, p, len - 1);
+      buf[len - 1] = '\0';
+    }
+    return req;
+  }
+  errno = EINVAL;
+  return 0;
+}
+
+long fpathconf(intptr_t fd, int name) {
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  (void)name;
+  return 255;
+}
+
+long pathconf(const char *pathname, int name) {
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+  (void)name;
+  return 255;
+}
+
+long sysconf(int name) {
+  switch (name) {
+  case _SC_PAGESIZE:
+    return 4096;
+  case _SC_NPROCESSORS_ONLN:
+  case _SC_NPROCESSORS_CONF:
+    return 1;
+  case _SC_CLK_TCK:
+    return 100;
+  case _SC_OPEN_MAX:
+    return 20;
+  default:
+    return 1;
+  }
+}
+
+long gethostid(void) { return 0; }
+
+int gethostname(char *name, size_t len) {
+  if (!name || len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  strncpy(name, "msdos", len - 1);
+  name[len - 1] = '\0';
+  return 0;
+}
+
+char *getlogin(void) { return "dos"; }
+
+int getlogin_r(char *buf, size_t bufsize) {
+  if (!buf || bufsize < 4) {
+    return ERANGE;
+  }
+  strcpy(buf, "dos");
+  return 0;
+}
+
+char *ttyname(intptr_t fd) {
+  if (fd >= 0 && isatty((int)fd)) {
+    return "CON";
+  }
+  errno = ENOTTY;
+  return NULL;
+}
+
+int ttyname_r(intptr_t fd, char *buf, size_t buflen) {
+  if (!buf) {
+    return EINVAL;
+  }
+  if (fd >= 0 && isatty((int)fd)) {
+    if (buflen < 4) {
+      return ERANGE;
+    }
+    strcpy(buf, "CON");
+    return 0;
+  }
+  return ENOTTY;
+}
+
+pid_t tcgetpgrp(intptr_t fd) {
+  if (fd >= 0 && isatty((int)fd)) {
+    return 0;
+  }
+  errno = ENOTTY;
+  return -1;
+}
+
+int tcsetpgrp(intptr_t fd, pid_t pgrp) {
+  if (pgrp < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (fd >= 0 && isatty((int)fd)) {
+    return 0;
+  }
+  errno = ENOTTY;
+  return -1;
+}
+
+uid_t getuid(void) { return 0; }
+uid_t geteuid(void) { return 0; }
+gid_t getgid(void) { return 0; }
+gid_t getegid(void) { return 0; }
+pid_t getpgid(pid_t pid) {
+  if (pid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+pid_t getpgrp(void) { return 0; }
+pid_t getppid(void) { return 0; }
+pid_t getsid(pid_t pid) {
+  if (pid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+int setuid(uid_t uid) {
+  (void)uid;
+  return 0;
+}
+int seteuid(uid_t euid) {
+  (void)euid;
+  return 0;
+}
+int setreuid(uid_t ruid, uid_t euid) {
+  (void)ruid;
+  (void)euid;
+  return 0;
+}
+int setgid(gid_t gid) {
+  (void)gid;
+  return 0;
+}
+int setegid(gid_t egid) {
+  (void)egid;
+  return 0;
+}
+int setregid(gid_t rgid, gid_t egid) {
+  (void)rgid;
+  (void)egid;
+  return 0;
+}
+int setpgid(pid_t pid, pid_t pgid) {
+  if (pid < 0 || pgid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+pid_t setpgrp(void) { return 0; }
+pid_t setsid(void) { return 0; }
+int getgroups(int size, gid_t list[]) {
+  if (size < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (size > 0 && list != NULL) {
+    list[0] = 0;
+  }
+  return 1;
+}
+int setgroups(size_t size, const gid_t *list) {
+  if (size > 0 && list == NULL) {
+    errno = EFAULT;
+    return -1;
+  }
+  return 0;
+}
+
 #endif
 
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \

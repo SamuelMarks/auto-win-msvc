@@ -10,7 +10,8 @@
  */
 
 /* clang-format off */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+    !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <netinet/ip.h>
@@ -20,7 +21,7 @@
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #endif
-#else
+#elif defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -30,6 +31,9 @@
 #include <stdint.h>
 #endif
 #include "../posix-netinet-in.h"
+#else
+#include <stdint.h>
+#include "../posix-netinet-in.h"
 #endif
 /* clang-format on */
 
@@ -37,7 +41,8 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) || defined(_MSC_VER) || defined(__APPLE__)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__APPLE__) ||              \
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #ifndef _STRUCT_IPHDR_DEFINED
 #define _STRUCT_IPHDR_DEFINED 1
 /**
@@ -64,7 +69,8 @@ struct iphdr {
 #endif /* _STRUCT_IPHDR_DEFINED */
 #endif /* _WIN32 || _MSC_VER || __APPLE__ */
 
-#if defined(_WIN32) || defined(_MSC_VER)
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) ||            \
+    defined(__MSDOS__) || defined(__DOS__)
 
 #ifndef IPTOS_LOWDELAY
 /** \brief Minimize delay. */

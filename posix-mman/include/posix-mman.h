@@ -178,7 +178,11 @@ void *posix_cygwin_mmap(void *addr, size_t length, int prot, int flags, int fd,
 #endif
 #ifndef MAP_FAILED
 /** \brief MAP_FAILED macro. */
+#if defined(__I86__)
+#define MAP_FAILED ((void *)(unsigned long)-1)
+#else
 #define MAP_FAILED ((void *)(size_t)-1)
+#endif
 #endif
 
 /* msync flags */

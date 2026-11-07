@@ -14,6 +14,9 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <sys/stat.h>
+#elif defined(__WATCOMC__)
+#include <../h/sys/stat.h>
+#include "posix-stat.h"
 #else
 #include <sys/stat.h>
 #endif

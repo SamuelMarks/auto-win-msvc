@@ -14,6 +14,8 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <stddef.h>
 #else
 #include <netdb.h>
 #include <sys/socket.h>
@@ -23,6 +25,63 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+struct sockaddr;
+#ifndef _ADDRINFO_DEFINED
+#define _ADDRINFO_DEFINED
+struct addrinfo {
+  int ai_flags;
+  int ai_family;
+  int ai_socktype;
+  int ai_protocol;
+  size_t ai_addrlen;
+  char *ai_canonname;
+  struct sockaddr *ai_addr;
+  struct addrinfo *ai_next;
+};
+#endif
+
+#ifndef _HOSTENT_DEFINED
+#define _HOSTENT_DEFINED
+struct hostent {
+  char *h_name;
+  char **h_aliases;
+  int h_addrtype;
+  int h_length;
+  char **h_addr_list;
+};
+#endif
+
+#ifndef _NETENT_DEFINED
+#define _NETENT_DEFINED
+struct netent {
+  char *n_name;
+  char **n_aliases;
+  int n_addrtype;
+  unsigned long n_net;
+};
+#endif
+
+#ifndef _PROTOENT_DEFINED
+#define _PROTOENT_DEFINED
+struct protoent {
+  char *p_name;
+  char **p_aliases;
+  int p_proto;
+};
+#endif
+
+#ifndef _SERVENT_DEFINED
+#define _SERVENT_DEFINED
+struct servent {
+  char *s_name;
+  char **s_aliases;
+  int s_port;
+  char *s_proto;
+};
+#endif
 #endif
 
 #ifndef EAI_SYSTEM

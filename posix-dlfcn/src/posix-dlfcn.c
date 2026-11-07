@@ -364,7 +364,7 @@ int dlclose(void *handle) {
  */
 void *dlsym(void *handle, const char *name) {
   if (!handle) {
-    return -1;
+    return NULL;
   }
   if (!name) {
     return NULL;

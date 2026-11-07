@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 /* posix-pwdgrp.c - Strict C89 Implementation */
 
 /* Provide C89 compliant CRT secure overload definitions */
@@ -674,6 +675,191 @@ struct passwd *getpwuid(uid_t uid) {
 }
 
 /** \brief getgrouplist function. */
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
+  if (user == NULL || ngroups == NULL) {
+    return -1;
+  }
+  if (*ngroups < 1) {
+    *ngroups = 1;
+    return -1;
+  }
+  if (groups != NULL) {
+    groups[0] = group;
+  }
+  *ngroups = 1;
+  return 1;
+}
+
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+#include <errno.h>
+#include <string.h>
+
+static int s_dos_pw_idx = 0;
+static int s_dos_gr_idx = 0;
+static struct passwd s_dos_pwd;
+static char s_dos_pwd_buf[256];
+static struct group s_dos_grp;
+static char s_dos_grp_buf[256];
+
+static int fill_dos_passwd(struct passwd *pwd, char *buffer, size_t bufsize,
+                           struct passwd **result) {
+  if (!pwd || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (bufsize < 64) {
+    return ERANGE;
+  }
+  strcpy(buffer, "root");
+  pwd->pw_name = buffer;
+  strcpy(buffer + 5, "*");
+  pwd->pw_passwd = buffer + 5;
+  strcpy(buffer + 7, "root");
+  pwd->pw_gecos = buffer + 7;
+  strcpy(buffer + 12, "C:\\");
+  pwd->pw_dir = buffer + 12;
+  strcpy(buffer + 16, "COMMAND.COM");
+  pwd->pw_shell = buffer + 16;
+  pwd->pw_uid = 0;
+  pwd->pw_gid = 0;
+  *result = pwd;
+  return 0;
+}
+
+static int fill_dos_group(struct group *grp, char *buffer, size_t bufsize,
+                          struct group **result) {
+  size_t align_off;
+  if (!grp || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (bufsize < 64) {
+    return ERANGE;
+  }
+  strcpy(buffer, "root");
+  grp->gr_name = buffer;
+  strcpy(buffer + 5, "*");
+  grp->gr_passwd = buffer + 5;
+  grp->gr_gid = 0;
+  align_off = ((size_t)(buffer + 8)) % sizeof(char *);
+  if (align_off != 0) {
+    align_off = sizeof(char *) - align_off;
+  }
+  grp->gr_mem = (char **)(buffer + 8 + align_off);
+  grp->gr_mem[0] = NULL;
+  *result = grp;
+  return 0;
+}
+
+void setpwent(void) { s_dos_pw_idx = 0; }
+void endpwent(void) { s_dos_pw_idx = 0; }
+struct passwd *getpwent(void) {
+  struct passwd *res = NULL;
+  if (s_dos_pw_idx++ == 0) {
+    (void)fill_dos_passwd(&s_dos_pwd, s_dos_pwd_buf, sizeof(s_dos_pwd_buf),
+                          &res);
+  }
+  return res;
+}
+
+int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
+               size_t bufsize, struct passwd **result) {
+  if (!name || !pwd || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (strcmp(name, "root") == 0 || strcmp(name, "dos") == 0) {
+    return fill_dos_passwd(pwd, buffer, bufsize, result);
+  }
+  return 0;
+}
+
+struct passwd *getpwnam(const char *name) {
+  struct passwd *res = NULL;
+  if (name && (strcmp(name, "root") == 0 || strcmp(name, "dos") == 0)) {
+    (void)fill_dos_passwd(&s_dos_pwd, s_dos_pwd_buf, sizeof(s_dos_pwd_buf),
+                          &res);
+  }
+  return res;
+}
+
+int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
+               struct passwd **result) {
+  if (!pwd || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (uid == 0) {
+    return fill_dos_passwd(pwd, buffer, bufsize, result);
+  }
+  return 0;
+}
+
+struct passwd *getpwuid(uid_t uid) {
+  struct passwd *res = NULL;
+  if (uid == 0) {
+    (void)fill_dos_passwd(&s_dos_pwd, s_dos_pwd_buf, sizeof(s_dos_pwd_buf),
+                          &res);
+  }
+  return res;
+}
+
+void setgrent(void) { s_dos_gr_idx = 0; }
+void endgrent(void) { s_dos_gr_idx = 0; }
+struct group *getgrent(void) {
+  struct group *res = NULL;
+  if (s_dos_gr_idx++ == 0) {
+    (void)fill_dos_group(&s_dos_grp, s_dos_grp_buf, sizeof(s_dos_grp_buf),
+                         &res);
+  }
+  return res;
+}
+
+int getgrnam_r(const char *name, struct group *grp, char *buffer,
+               size_t bufsize, struct group **result) {
+  if (!name || !grp || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (strcmp(name, "root") == 0 || strcmp(name, "wheel") == 0 ||
+      strcmp(name, "users") == 0) {
+    return fill_dos_group(grp, buffer, bufsize, result);
+  }
+  return 0;
+}
+
+struct group *getgrnam(const char *name) {
+  struct group *res = NULL;
+  if (name && (strcmp(name, "root") == 0 || strcmp(name, "wheel") == 0 ||
+               strcmp(name, "users") == 0)) {
+    (void)fill_dos_group(&s_dos_grp, s_dos_grp_buf, sizeof(s_dos_grp_buf),
+                         &res);
+  }
+  return res;
+}
+
+int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
+               struct group **result) {
+  if (!grp || !buffer || !result) {
+    return EINVAL;
+  }
+  *result = NULL;
+  if (gid == 0) {
+    return fill_dos_group(grp, buffer, bufsize, result);
+  }
+  return 0;
+}
+
+struct group *getgrgid(gid_t gid) {
+  struct group *res = NULL;
+  if (gid == 0) {
+    (void)fill_dos_group(&s_dos_grp, s_dos_grp_buf, sizeof(s_dos_grp_buf),
+                         &res);
+  }
+  return res;
+}
+
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
   if (user == NULL || ngroups == NULL) {
     return -1;

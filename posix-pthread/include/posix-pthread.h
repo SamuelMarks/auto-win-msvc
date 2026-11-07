@@ -96,13 +96,15 @@ typedef unsigned long sigset_t;
 typedef int pid_t;
 #endif
 
-#ifndef _CLOCKID_T_DEFINED
+#if !defined(_CLOCKID_T_DEFINED) && !defined(_CLOCKID_T_DEFINED_)
 #define _CLOCKID_T_DEFINED
+#define _CLOCKID_T_DEFINED_
 typedef int clockid_t;
 #endif
 
-#ifndef _SCHED_PARAM_DEFINED
+#if !defined(_SCHED_PARAM_DEFINED) && !defined(SCHED_PARAM_DEFINED)
 #define _SCHED_PARAM_DEFINED
+#define SCHED_PARAM_DEFINED
 struct sched_param {
   int sched_priority;
 };

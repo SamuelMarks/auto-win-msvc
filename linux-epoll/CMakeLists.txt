@@ -103,8 +103,16 @@ endif()
 
 if(NOT DEFINED AUTO_WIN_MSVC_BUILD_TESTING OR AUTO_WIN_MSVC_BUILD_TESTING)
 if(NOT TARGET greatest)
-FetchContent_Declare(greatest SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../greatest")
+FetchContent_Declare(
+    greatest
+    GIT_REPOSITORY "https://github.com/SamuelMarks/greatest.git"
+    GIT_TAG "master"
+)
 FetchContent_MakeAvailable(greatest)
+if(NOT TARGET greatest)
+    add_library(greatest INTERFACE)
+    target_include_directories(greatest INTERFACE "${greatest_SOURCE_DIR}")
+endif()
 endif()
 endif()
 

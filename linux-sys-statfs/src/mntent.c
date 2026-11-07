@@ -101,7 +101,8 @@ char *hasmntopt(const struct mntent *mnt, const char *opt) {
 }
 
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||    \
-    defined(__NetBSD__)
+    defined(__NetBSD__) || defined(__WATCOMC__) || defined(__MSDOS__) ||       \
+    defined(__DOS__)
 
 static int s_apple_mnt_idx = 0;
 static struct mntent s_apple_mnt;

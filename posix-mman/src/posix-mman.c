@@ -743,15 +743,26 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   return fd;
 }
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+
+#include <io.h>
+
+#define DOS_MAX_MMAPS 32
+static struct {
+  void *ptr;
+  size_t length;
+  int fd;
+  off_t offset;
+  int is_shared;
+} g_dos_mmaps[DOS_MAX_MMAPS];
 
 int madvise(void *addr, size_t length, int advice) {
+  (void)advice;
   if (!addr || length == 0) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  return 0;
 }
 
 int mlock(const void *addr, size_t len) {
@@ -759,44 +770,100 @@ int mlock(const void *addr, size_t len) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  return 0;
 }
 
 int mlockall(int flags) {
-  if (flags != 1 && flags != 2 && flags != 3) {
+  if (flags == 0 || (flags & ~(MCL_CURRENT | MCL_FUTURE))) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  return 0;
 }
 
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset) {
-  if (!addr && length == 0) {
-    errno = EINVAL;
-    return (void *)-1;
+  void *buf;
+  int i;
+  (void)addr;
+  (void)prot;
+#if defined(__I86__)
+  if (length == 0 || length > 0xFFF0U) {
+#else
+  if (length == 0 || length > 0x1000000UL) {
+#endif
+    errno = ENOMEM;
+    return MAP_FAILED;
   }
-  errno = ENOSYS;
-  return (void *)-1;
+  if (!(flags & MAP_ANONYMOUS) && fd < 0) {
+    errno = EBADF;
+    return MAP_FAILED;
+  }
+  buf = calloc(1, length);
+  if (!buf) {
+    errno = ENOMEM;
+    return MAP_FAILED;
+  }
+  if (!(flags & MAP_ANONYMOUS) && fd >= 0) {
+    long old_pos = lseek(fd, 0L, SEEK_CUR);
+    if (lseek(fd, (long)offset, SEEK_SET) != -1L) {
+      (void)read(fd, buf, (unsigned int)length);
+    }
+    if (old_pos != -1L) {
+      (void)lseek(fd, old_pos, SEEK_SET);
+    }
+  }
+  for (i = 0; i < DOS_MAX_MMAPS; ++i) {
+    if (g_dos_mmaps[i].ptr == NULL) {
+      g_dos_mmaps[i].ptr = buf;
+      g_dos_mmaps[i].length = length;
+      g_dos_mmaps[i].fd = (flags & MAP_ANONYMOUS) ? -1 : fd;
+      g_dos_mmaps[i].offset = offset;
+      g_dos_mmaps[i].is_shared = (flags & MAP_SHARED) ? 1 : 0;
+      break;
+    }
+  }
+  return buf;
 }
 
 int mprotect(void *addr, size_t len, int prot) {
+  int i;
   if (!addr || len == 0 || prot < 0) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  for (i = 0; i < DOS_MAX_MMAPS; ++i) {
+    if (g_dos_mmaps[i].ptr == addr) {
+      return 0;
+    }
+  }
+  errno = ENOMEM;
   return -1;
 }
 
 int msync(void *addr, size_t length, int flags) {
+  int i;
+  (void)flags;
   if (!addr || length == 0) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  for (i = 0; i < DOS_MAX_MMAPS; ++i) {
+    if (g_dos_mmaps[i].ptr == addr) {
+      if (g_dos_mmaps[i].is_shared && g_dos_mmaps[i].fd >= 0) {
+        long old_pos = lseek(g_dos_mmaps[i].fd, 0L, SEEK_CUR);
+        if (lseek(g_dos_mmaps[i].fd, (long)g_dos_mmaps[i].offset, SEEK_SET) !=
+            -1L) {
+          (void)write(g_dos_mmaps[i].fd, addr, (unsigned int)length);
+        }
+        if (old_pos != -1L) {
+          (void)lseek(g_dos_mmaps[i].fd, old_pos, SEEK_SET);
+        }
+      }
+      return 0;
+    }
+  }
+  errno = EINVAL;
   return -1;
 }
 
@@ -805,43 +872,67 @@ int munlock(const void *addr, size_t len) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  return 0;
 }
 
-int munlockall(void) {
-  errno = ENOSYS;
-  return -1;
-}
+int munlockall(void) { return 0; }
 
 int munmap(void *addr, size_t length) {
+  int i;
   if (!addr || length == 0) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
+  for (i = 0; i < DOS_MAX_MMAPS; ++i) {
+    if (g_dos_mmaps[i].ptr == addr) {
+      if (g_dos_mmaps[i].is_shared && g_dos_mmaps[i].fd >= 0) {
+        long old_pos = lseek(g_dos_mmaps[i].fd, 0L, SEEK_CUR);
+        if (lseek(g_dos_mmaps[i].fd, (long)g_dos_mmaps[i].offset, SEEK_SET) !=
+            -1L) {
+          (void)write(g_dos_mmaps[i].fd, addr,
+                      (unsigned int)g_dos_mmaps[i].length);
+        }
+        if (old_pos != -1L) {
+          (void)lseek(g_dos_mmaps[i].fd, old_pos, SEEK_SET);
+        }
+      }
+      free(g_dos_mmaps[i].ptr);
+      g_dos_mmaps[i].ptr = NULL;
+      return 0;
+    }
+  }
+  errno = EINVAL;
   return -1;
+}
+
+static void dos_shm_filename(const char *name, char *out) {
+  unsigned int h = 5381U;
+  const char *p = name;
+  while (*p) {
+    h = ((h << 5) + h) + (unsigned char)(*p++);
+  }
+  sprintf(out, "shm%04x.tmp", h & 0xFFFFU);
 }
 
 int shm_open(const char *name, int oflag, mode_t mode) {
-  if (mode) {
-    /* parameters checked */
-  }
+  char fname[32];
+  (void)mode;
   if (!name) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  dos_shm_filename(name, fname);
+  return open(fname, oflag | O_BINARY, S_IREAD | S_IWRITE);
 }
 
 int shm_unlink(const char *name) {
+  char fname[32];
   if (!name) {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
+  dos_shm_filename(name, fname);
+  return unlink(fname);
 }
 
 #endif
@@ -922,6 +1013,25 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   errno = ENOSYS;
   return -1;
 #endif
+}
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+int posix_memfd_create(const char *name, unsigned int flags) {
+  char temp_file[32];
+  int fd;
+  unsigned int rnd_val;
+
+  if (name == NULL) {
+    errno = 14; /* EFAULT */
+    return -1;
+  }
+  if (flags & ~(MFD_CLOEXEC | MFD_ALLOW_SEALING | MFD_HUGETLB)) {
+    errno = EINVAL;
+    return -1;
+  }
+  rnd_val = (unsigned int)rand() % 10000U;
+  sprintf(temp_file, "mfd%04u.tmp", rnd_val);
+  fd = open(temp_file, O_RDWR | O_CREAT | O_EXCL, S_IREAD | S_IWRITE);
+  return fd;
 }
 #else
 int posix_memfd_create(const char *name, unsigned int flags) {

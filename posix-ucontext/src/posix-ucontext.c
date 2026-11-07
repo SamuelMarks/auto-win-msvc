@@ -278,6 +278,41 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
   return 0;
 }
 
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+
+int getcontext(ucontext_t *ucp) {
+  if (ucp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+int setcontext(const ucontext_t *ucp) {
+  if (ucp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
+void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
+  (void)ucp;
+  (void)func;
+  (void)argc;
+}
+
+int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
+  if (oucp == NULL || ucp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  errno = ENOSYS;
+  return -1;
+}
+
 #endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
 /**

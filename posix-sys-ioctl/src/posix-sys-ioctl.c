@@ -273,11 +273,16 @@ int posix_ioctl(intptr_t fd, unsigned long request, ...) {
 #elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
   return ioctl((int)fd, request, argp);
 #else
-  if (request == 0 && argp == NULL) {
-    errno = EINVAL;
-    return -1;
+  (void)fd;
+  if (request == (unsigned long)TIOCGWINSZ ||
+      request == (unsigned long)TIOCSWINSZ ||
+      request == (unsigned long)TIOCNOTTY ||
+      request == (unsigned long)FIONREAD || request == (unsigned long)FIONBIO) {
+    return 0;
   }
-  return 0;
+  (void)argp;
+  errno = EINVAL;
+  return -1;
 #endif
 }
 

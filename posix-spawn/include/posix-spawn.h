@@ -38,12 +38,13 @@ typedef unsigned long sigset_t;
 #define _SIGSET_T_DEFINED
 #endif
 
-#ifndef _SCHED_PARAM_DEFINED
+#if !defined(_SCHED_PARAM_DEFINED) && !defined(SCHED_PARAM_DEFINED)
 /** @brief Scheduling parameters structure. */
 struct sched_param {
   int sched_priority;
 };
 #define _SCHED_PARAM_DEFINED
+#define SCHED_PARAM_DEFINED
 #endif
 
 #elif defined(__MINGW32__)
@@ -75,12 +76,13 @@ typedef unsigned long sigset_t;
 #define _SIGSET_T_DEFINED
 #endif
 
-#ifndef _SCHED_PARAM_DEFINED
+#if !defined(_SCHED_PARAM_DEFINED) && !defined(SCHED_PARAM_DEFINED)
 /** @brief Scheduling parameters structure. */
 struct sched_param {
   int sched_priority;
 };
 #define _SCHED_PARAM_DEFINED
+#define SCHED_PARAM_DEFINED
 #endif
 
 #else /* POSIX */
