@@ -15,7 +15,8 @@
 extern "C" {
 #endif
 
-#if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32) || defined(_MSC_VER)
+#if defined(POSIX_SIGNAL_MSVC) || defined(_WIN32) || defined(_MSC_VER) ||      \
+    defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
 
 /** \brief Hangup detected on controlling terminal or death of controlling
  * process. */

@@ -8,9 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if (defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||      \
-     defined(__MSDOS__) || defined(__WATCOMC__)) &&                            \
-    !defined(__I86__)
+#if (defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)) &&     \
+    !defined(__I86__) && !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
 #ifndef PCRE2_STATIC
 #define PCRE2_STATIC 1
 #endif
@@ -30,7 +29,8 @@ auto_win_msvc_error_t posix_regex_init(int *out_status) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-#if defined(__I86__)
+#if defined(__I86__) || defined(__WATCOMC__) || defined(__MSDOS__) ||          \
+    defined(__DOS__)
 
 typedef struct {
   char *pattern;

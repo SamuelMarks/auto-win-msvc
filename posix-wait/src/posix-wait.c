@@ -312,20 +312,31 @@ int posix_wait_kill(pid_t pid, int sig) {
 
 #if defined(__MSDOS__) || defined(__WATCOMC__)
 
+extern int awm_vfork_try_reap(int pid, int *stat_loc);
+
+/** @brief Wait for a child process to stop or terminate on DOS. */
 pid_t wait(int *stat_loc) {
-  if (stat_loc) {
+  int rpid = awm_vfork_try_reap(-1, stat_loc);
+  if (rpid > 0) {
+    return (pid_t)rpid;
   }
   errno = ECHILD;
   return -1;
 }
 
+/** @brief Wait for a specific child process to stop or terminate on DOS. */
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
-  if (pid || stat_loc || options) {
+  int rpid;
+  (void)options;
+  rpid = awm_vfork_try_reap((int)pid, stat_loc);
+  if (rpid > 0) {
+    return (pid_t)rpid;
   }
   errno = ECHILD;
   return -1;
 }
 
+/** @brief Wait for a child process to change state on DOS. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   if (idtype || id || infop || options) {
   }
@@ -333,6 +344,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 
+/** @brief Wait for process termination with resource usage on DOS. */
 pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
   if (stat_loc || options || rusage) {
   }
@@ -340,6 +352,7 @@ pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
   return -1;
 }
 
+/** @brief Send a signal to a process on DOS. */
 int posix_wait_kill(pid_t pid, int sig) {
   if (pid <= 0 || sig < 0) {
     errno = EINVAL;

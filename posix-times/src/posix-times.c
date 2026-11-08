@@ -60,6 +60,16 @@ clock_t posix_times(struct tms *buf) {
   return (clock_t)0;
 }
 
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+clock_t posix_times(struct tms *buf) {
+  if (buf != NULL) {
+    buf->tms_utime = 0;
+    buf->tms_stime = 0;
+    buf->tms_cutime = 0;
+    buf->tms_cstime = 0;
+  }
+  return (clock_t)0;
+}
 #endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 /**

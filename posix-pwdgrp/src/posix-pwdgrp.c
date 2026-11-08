@@ -37,6 +37,10 @@
 #include <string.h>
 #include <winnls.h>
 #include "posix-pwdgrp.h"
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#include <errno.h>
+#include <string.h>
+#include "posix-pwdgrp.h"
 #else
 #include "posix-pwdgrp.h"
 #endif
@@ -692,9 +696,6 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
 
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 
-#include <errno.h>
-#include <string.h>
-
 static int s_dos_pw_idx = 0;
 static int s_dos_gr_idx = 0;
 static struct passwd s_dos_pwd;
@@ -752,8 +753,11 @@ static int fill_dos_group(struct group *grp, char *buffer, size_t bufsize,
   return 0;
 }
 
+/** @brief Rewind the password database to the beginning. */
 void setpwent(void) { s_dos_pw_idx = 0; }
+/** @brief Close the password database. */
 void endpwent(void) { s_dos_pw_idx = 0; }
+/** @brief Read the next entry from the password database. */
 struct passwd *getpwent(void) {
   struct passwd *res = NULL;
   if (s_dos_pw_idx++ == 0) {
@@ -763,6 +767,7 @@ struct passwd *getpwent(void) {
   return res;
 }
 
+/** @brief Search user database for a name (reentrant). */
 int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
                size_t bufsize, struct passwd **result) {
   if (!name || !pwd || !buffer || !result) {
@@ -775,6 +780,7 @@ int getpwnam_r(const char *name, struct passwd *pwd, char *buffer,
   return 0;
 }
 
+/** @brief Search user database for a name. */
 struct passwd *getpwnam(const char *name) {
   struct passwd *res = NULL;
   if (name && (strcmp(name, "root") == 0 || strcmp(name, "dos") == 0)) {
@@ -784,6 +790,7 @@ struct passwd *getpwnam(const char *name) {
   return res;
 }
 
+/** @brief Search user database for a user ID (reentrant). */
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
                struct passwd **result) {
   if (!pwd || !buffer || !result) {
@@ -796,6 +803,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
   return 0;
 }
 
+/** @brief Search user database for a user ID. */
 struct passwd *getpwuid(uid_t uid) {
   struct passwd *res = NULL;
   if (uid == 0) {
@@ -805,8 +813,11 @@ struct passwd *getpwuid(uid_t uid) {
   return res;
 }
 
+/** @brief Rewind the group database to the beginning. */
 void setgrent(void) { s_dos_gr_idx = 0; }
+/** @brief Close the group database. */
 void endgrent(void) { s_dos_gr_idx = 0; }
+/** @brief Read the next entry from the group database. */
 struct group *getgrent(void) {
   struct group *res = NULL;
   if (s_dos_gr_idx++ == 0) {
@@ -816,6 +827,7 @@ struct group *getgrent(void) {
   return res;
 }
 
+/** @brief Search group database for a name (reentrant). */
 int getgrnam_r(const char *name, struct group *grp, char *buffer,
                size_t bufsize, struct group **result) {
   if (!name || !grp || !buffer || !result) {
@@ -829,6 +841,7 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer,
   return 0;
 }
 
+/** @brief Search group database for a name. */
 struct group *getgrnam(const char *name) {
   struct group *res = NULL;
   if (name && (strcmp(name, "root") == 0 || strcmp(name, "wheel") == 0 ||
@@ -839,6 +852,7 @@ struct group *getgrnam(const char *name) {
   return res;
 }
 
+/** @brief Search group database for a group ID (reentrant). */
 int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
                struct group **result) {
   if (!grp || !buffer || !result) {
@@ -851,6 +865,7 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize,
   return 0;
 }
 
+/** @brief Search group database for a group ID. */
 struct group *getgrgid(gid_t gid) {
   struct group *res = NULL;
   if (gid == 0) {
@@ -860,6 +875,7 @@ struct group *getgrgid(gid_t gid) {
   return res;
 }
 
+/** @brief Get list of groups to which a user belongs. */
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
   if (user == NULL || ngroups == NULL) {
     return -1;

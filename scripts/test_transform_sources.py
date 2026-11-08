@@ -99,6 +99,18 @@ class TestTransformSources(unittest.TestCase):
         self.assertIn("#define MAX(a,b) ((a) > (b) ? (a) : (b))", res)
         self.assertIn("AWM_VA_APPLY(BLOCK_IDX,", res)
         self.assertIn("((char *)tm + offsets[i])", res)
+        minrx_src = nl.join(
+            [
+                '#include "charset.c"',
+                "return LITERAL(QVecInsert) {newly, &q->storage[k]};",
+                "return LITERAL(Subexp) {{NULL, NULL, 0}, 0, false};",
+                "return mkrep(c, LITERAL(Subexp) {lh.nodes, rh.maxstk, rh.hasmin}, true, false, nstk);",
+                "return LITERAL(Subexp) {lh.nodes, lh.maxstk, lh.hasmin};",
+            ]
+        )
+        minrx_res = transform_sources.transform_source_content(minrx_src)
+        self.assertIn("#undef min", minrx_res)
+        self.assertIn("QVecInsert _t;", minrx_res)
 
     def test_packed_structs(self) -> None:
         """Verify PACKED structs are wrapped in MSVC pragma pack."""
@@ -154,6 +166,23 @@ class TestTransformSources(unittest.TestCase):
         self.assertIn("#undef TRUE", res)
         self.assertIn("#undef PIPE_BUF", res)
         self.assertIn("#if BUILD_AS_NOMMU || defined(_WIN32)", res)
+        bb_src = nl.join(
+            [
+                "#define xstrtoul_range_sfx(str, l, u, sfx) 0",
+                "#elif UINT_MAX == ULONG_MAX",
+                "DEFINE_EQUIV_STR_CONV(int, i, l, u, ul)",
+                "#define fork_transformer fork_transformer_mmu",
+                "int FAST_FUNC setup_unzip_on_fd(int fd, int die_if_not_compressed)",
+                "{",
+                tab + "transformer_state_t *xstate = setup_transformer_on_fd(fd, die_if_not_compressed);",
+                tab + "fork_transformer_and_free(xstate);",
+                tab + "return 0;",
+                "}",
+            ]
+        )
+        bb_res = transform_sources.transform_source_content(bb_src)
+        self.assertIn("#elif 0", bb_res)
+        self.assertIn("unpack_gz_stream", bb_res)
 
     def test_file_transform_and_local_includes(self) -> None:
         """Verify transform_file and CLI main branches."""
@@ -179,6 +208,7 @@ class TestTransformSources(unittest.TestCase):
                     )
                 )
             out_c = os.path.join(tmpdir, "out", "test_in.c")
+            transform_sources.transform_file(in_c, out_c)
             transform_sources.transform_file(in_c, out_c)
             self.assertTrue(os.path.isfile(out_c))
 
@@ -220,5 +250,5 @@ class TestTransformSources(unittest.TestCase):
                 transform_sources.main()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -7,6 +7,7 @@
 #include "posix-utsname.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 /* clang-format on */
 
@@ -296,8 +297,6 @@ int uname(struct utsname *name) {
 }
 
 #elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
-
-#include <stdlib.h>
 
 /**
  * @brief Get system identification on MS-DOS / OpenWatcom.

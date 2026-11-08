@@ -1,8 +1,14 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
 /* clang-format off */
 #include "posix-arpa-inet.h"
 #include <limits.h>
 #include <stddef.h>
+#if defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#endif
 
 /* Redefine htonl locally to avoid system header inline branching (e.g. __builtin_constant_p) in coverage */
 #if defined(htonl) && !defined(_WIN32)
@@ -154,6 +160,61 @@ unsigned long posix_inet_addr(const char *cp) {
   }
   return val.s_addr;
 }
+
+#if defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+#ifndef EAFNOSUPPORT
+#define EAFNOSUPPORT EINVAL
+#endif
+#ifndef ENOSPC
+#define ENOSPC EINVAL
+#endif
+
+/** @brief Convert Internet host address to numbers-and-dots string. */
+char *posix_inet_ntoa(struct in_addr in) {
+  static char buf[16];
+  unsigned long a = ntohl(in.s_addr);
+  sprintf(buf, "%lu.%lu.%lu.%lu", (a >> 24) & 0xffUL, (a >> 16) & 0xffUL,
+          (a >> 8) & 0xffUL, a & 0xffUL);
+  return buf;
+}
+
+/** @brief Convert IPv4 and IPv6 addresses from text to binary form. */
+int posix_inet_pton(int af, const char *src, void *dst) {
+  if (src == NULL || dst == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (af == 2) { /* AF_INET */
+    struct in_addr addr;
+    if (posix_inet_aton(src, &addr) == 1) {
+      memcpy(dst, &addr, sizeof(addr));
+      return 1;
+    }
+    return 0;
+  }
+  errno = EAFNOSUPPORT;
+  return -1;
+}
+
+/** @brief Convert IPv4 and IPv6 addresses from binary to text form. */
+const char *posix_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  if (src == NULL || dst == NULL || size < 16) {
+    errno = ENOSPC;
+    return NULL;
+  }
+  if (af == 2) { /* AF_INET */
+    struct in_addr in;
+    unsigned long a;
+    memcpy(&in, src, sizeof(in));
+    a = ntohl(in.s_addr);
+    sprintf(dst, "%lu.%lu.%lu.%lu", (a >> 24) & 0xffUL, (a >> 16) & 0xffUL,
+            (a >> 8) & 0xffUL, a & 0xffUL);
+    return dst;
+  }
+  errno = EAFNOSUPPORT;
+  return NULL;
+}
+#endif
 
 typedef int make_iso_compilers_happy_tu_posix_arpa_inet;
 

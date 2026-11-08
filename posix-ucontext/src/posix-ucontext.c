@@ -280,6 +280,7 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
 
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 
+/** @brief Get user context stub for DOS. */
 int getcontext(ucontext_t *ucp) {
   if (ucp == NULL) {
     errno = EINVAL;
@@ -289,6 +290,7 @@ int getcontext(ucontext_t *ucp) {
   return -1;
 }
 
+/** @brief Restore user context stub for DOS. */
 int setcontext(const ucontext_t *ucp) {
   if (ucp == NULL) {
     errno = EINVAL;
@@ -298,12 +300,14 @@ int setcontext(const ucontext_t *ucp) {
   return -1;
 }
 
+/** @brief Modify user context stub for DOS. */
 void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
   (void)ucp;
   (void)func;
   (void)argc;
 }
 
+/** @brief Swap user context stub for DOS. */
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
   if (oucp == NULL || ucp == NULL) {
     errno = EINVAL;

@@ -9,7 +9,14 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
-#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+#if defined(_MSC_VER)
+#include <posix-stdint.h>
+#include <stdlib.h>
+#elif defined(__WATCOMC__)
+#include <posix-stdint.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#elif defined(__DOS__) || defined(__MSDOS__)
 #include <posix-stdint.h>
 #include <stdlib.h>
 #else
@@ -160,6 +167,7 @@ extern "C" {
 #define strtoumax _strtoui64
 #endif
 
+#if !defined(_INTTYPES_H_INCLUDED)
 #ifndef imaxabs
 #if defined(_MSC_VER)
 #define imaxabs _abs64
@@ -195,6 +203,7 @@ static __inline imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) {
   return result;
 }
 #endif
+#endif /* !_INTTYPES_H_INCLUDED */
 
 #endif /* defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||     \
           defined(__MSDOS__) */

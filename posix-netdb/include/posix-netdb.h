@@ -31,59 +31,106 @@ extern "C" {
 struct sockaddr;
 #ifndef _ADDRINFO_DEFINED
 #define _ADDRINFO_DEFINED
+/** @brief Address information structure for getaddrinfo on DOS. */
 struct addrinfo {
-  int ai_flags;
-  int ai_family;
-  int ai_socktype;
-  int ai_protocol;
-  size_t ai_addrlen;
-  char *ai_canonname;
-  struct sockaddr *ai_addr;
-  struct addrinfo *ai_next;
+  int ai_flags;             /**< Input flags. */
+  int ai_family;            /**< Address family of socket. */
+  int ai_socktype;          /**< Socket type. */
+  int ai_protocol;          /**< Protocol of socket. */
+  size_t ai_addrlen;        /**< Length of socket address. */
+  char *ai_canonname;       /**< Canonical name of service location. */
+  struct sockaddr *ai_addr; /**< Socket address of socket. */
+  struct addrinfo *ai_next; /**< Pointer to next in list. */
 };
 #endif
 
 #ifndef _HOSTENT_DEFINED
 #define _HOSTENT_DEFINED
+/** @brief Host database entry structure on DOS. */
 struct hostent {
-  char *h_name;
-  char **h_aliases;
-  int h_addrtype;
-  int h_length;
-  char **h_addr_list;
+  char *h_name;       /**< Official name of host. */
+  char **h_aliases;   /**< Alias list. */
+  int h_addrtype;     /**< Host address type. */
+  int h_length;       /**< Length of address. */
+  char **h_addr_list; /**< List of addresses from name server. */
 };
 #endif
 
 #ifndef _NETENT_DEFINED
 #define _NETENT_DEFINED
+/** @brief Network database entry structure on DOS. */
 struct netent {
-  char *n_name;
-  char **n_aliases;
-  int n_addrtype;
-  unsigned long n_net;
+  char *n_name;        /**< Official name of net. */
+  char **n_aliases;    /**< Alias list. */
+  int n_addrtype;      /**< Net address type. */
+  unsigned long n_net; /**< Network number. */
 };
 #endif
 
 #ifndef _PROTOENT_DEFINED
 #define _PROTOENT_DEFINED
+/** @brief Protocol database entry structure on DOS. */
 struct protoent {
-  char *p_name;
-  char **p_aliases;
-  int p_proto;
+  char *p_name;     /**< Official protocol name. */
+  char **p_aliases; /**< Alias list. */
+  int p_proto;      /**< Protocol number. */
 };
 #endif
 
 #ifndef _SERVENT_DEFINED
 #define _SERVENT_DEFINED
+/** @brief Service database entry structure on DOS. */
 struct servent {
-  char *s_name;
-  char **s_aliases;
-  int s_port;
-  char *s_proto;
+  char *s_name;     /**< Official service name. */
+  char **s_aliases; /**< Alias list. */
+  int s_port;       /**< Port number. */
+  char *s_proto;    /**< Protocol to use. */
 };
 #endif
 #endif
 
+#ifndef AI_PASSIVE
+#define AI_PASSIVE 0x0001
+#endif
+#ifndef AI_CANONNAME
+#define AI_CANONNAME 0x0002
+#endif
+#ifndef AI_NUMERICHOST
+#define AI_NUMERICHOST 0x0004
+#endif
+#ifndef AI_NUMERICSERV
+#define AI_NUMERICSERV 0x0008
+#endif
+#ifndef AI_V4MAPPED
+#define AI_V4MAPPED 0x0800
+#endif
+#ifndef AI_ALL
+#define AI_ALL 0x0100
+#endif
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG 0x0400
+#endif
+#ifndef NI_NOFQDN
+#define NI_NOFQDN 0x0001
+#endif
+#ifndef NI_NUMERICHOST
+#define NI_NUMERICHOST 0x0002
+#endif
+#ifndef NI_NAMEREQD
+#define NI_NAMEREQD 0x0004
+#endif
+#ifndef NI_NUMERICSERV
+#define NI_NUMERICSERV 0x0008
+#endif
+#ifndef NI_DGRAM
+#define NI_DGRAM 0x0010
+#endif
+#ifndef NI_MAXHOST
+#define NI_MAXHOST 1025
+#endif
+#ifndef NI_MAXSERV
+#define NI_MAXSERV 32
+#endif
 #ifndef EAI_SYSTEM
 /** \brief System error returned in errno. */
 #define EAI_SYSTEM 11

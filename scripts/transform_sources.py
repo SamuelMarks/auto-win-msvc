@@ -55,7 +55,7 @@ def _transform_packed_structs(content: str) -> str:
                 result.append(
                     NL.join(
                         [
-                            "#ifdef _MSC_VER",
+                            "#if defined(_MSC_VER) || defined(__WATCOMC__)",
                             "#pragma pack(push, 1)",
                             "#endif",
                             "",
@@ -66,7 +66,7 @@ def _transform_packed_structs(content: str) -> str:
                 result.append(
                     NL.join(
                         [
-                            "#ifdef _MSC_VER",
+                            "#if defined(_MSC_VER) || defined(__WATCOMC__)",
                             "#pragma pack(pop)",
                             "#endif",
                             "",
@@ -93,6 +93,7 @@ def transform_source_content(content: str) -> str:
     has_alloca = False
 
     def vla_alloca_repl(match: re.Match[str]) -> str:
+        """Replace dynamic VLA declarations with alloca() calls."""
         nonlocal has_alloca
         indent = match.group(1)
         type_str = match.group(2)
@@ -143,6 +144,7 @@ def transform_source_content(content: str) -> str:
     )
 
     def elvis_repl(m: re.Match[str]) -> str:
+        """Replace GNU Elvis (?:) operator with standard ternary operator."""
         if m.group(1) is not None:
             return m.group(1)
         return f"({m.group(2)} ? {m.group(2)} : {m.group(3)})"
@@ -154,6 +156,7 @@ def transform_source_content(content: str) -> str:
     )
 
     def self_init_repl(m: re.Match[str]) -> str:
+        """Replace x = x self-initialization with x = 0."""
         prefix = m.group(1)
         stars = (m.group(2) or "") + (m.group(3) or "")
         var = m.group(4)
@@ -189,7 +192,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "#elif defined(__i386__)" + NL + "# define BB_BIG_ENDIAN 0",
-        "#elif defined(__i386__) || defined(_WIN32) || defined(_MSC_VER)"
+        "#elif defined(__i386__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
         + "# define BB_BIG_ENDIAN 0",
     )
@@ -199,6 +202,7 @@ def transform_source_content(content: str) -> str:
         + "#define get_unaligned_be32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_BE32(v); })",
         NL.join(
             [
+                "#include <string.h>",
                 "static ALWAYS_INLINE uint32_t awm_bb_get_unaligned_le32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_LE32(v); }",
                 "static ALWAYS_INLINE uint32_t awm_bb_get_unaligned_be32(const void *buf) { uint32_t v; move_from_unaligned32(v, buf); return SWAP_BE32(v); }",
                 "#undef get_unaligned_le32",
@@ -315,7 +319,7 @@ def transform_source_content(content: str) -> str:
         NL.join(
             [
                 "#ifndef BB_GLOBAL_CONST",
-                "# if defined(_MSC_VER) || defined(_WIN32) || defined(__clang__)",
+                "# if defined(_MSC_VER) || defined(_WIN32) || defined(__clang__) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)",
                 "#  define BB_GLOBAL_CONST",
                 "# else",
                 "#  define BB_GLOBAL_CONST const",
@@ -332,6 +336,9 @@ def transform_source_content(content: str) -> str:
                 "void _ReadWriteBarrier(void);",
                 "#pragma intrinsic(_ReadWriteBarrier)",
                 "#define barrier() _ReadWriteBarrier()",
+                "#elif defined(__WATCOMC__)",
+                "#undef barrier",
+                "#define barrier()",
                 "#else",
                 '#define barrier() asm volatile ("":::"memory")',
                 "#endif",
@@ -402,7 +409,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "# define fork()          BUG_fork_is_unavailable_on_nommu()",
-        "# if !defined(_WIN32)"
+        "# if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__DOS__) && !defined(__MSDOS__)"
         + NL
         + "#  define fork()          BUG_fork_is_unavailable_on_nommu()"
         + NL
@@ -455,7 +462,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "const char *cp = strrchr(name, '/');",
-        "#if defined(_WIN32) || defined(_MSC_VER)"
+        "#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
         + TAB
         + "const char *cp_s1 = strrchr(name, '/');"
@@ -475,7 +482,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "const char *slash = strrchr(path, '/');",
-        "#if defined(_WIN32) || defined(_MSC_VER)"
+        "#if defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
         + TAB
         + "const char *sl_s1 = strrchr(path, '/');"
@@ -1319,13 +1326,13 @@ def transform_source_content(content: str) -> str:
         "#if !BB_MMU"
         + NL
         + '# error "Do not even bother, ash will not run on NOMMU machine"',
-        "#if !BB_MMU && !defined(_WIN32) && !defined(_MSC_VER)"
+        "#if !BB_MMU && !defined(_WIN32) && !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__DOS__) && !defined(__MSDOS__)"
         + NL
         + '# error "Do not even bother, ash will not run on NOMMU machine"',
     )
     content = content.replace(
         "#if BUILD_AS_NOMMU" + NL,
-        "#if BUILD_AS_NOMMU || defined(_WIN32)" + NL,
+        "#if BUILD_AS_NOMMU || defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)" + NL,
     )
     content = content.replace(
         "#define ISSPACE(a) ({ unsigned char xargs__isspace = (a) - 9; xargs__isspace == (' ' - 9) || xargs__isspace <= (13 - 9); })",
@@ -2044,6 +2051,217 @@ def transform_source_content(content: str) -> str:
         "((void *)tm + offsets[i])", "((char *)tm + offsets[i])"
     )
 
+    content = content.replace(
+        "ts.tv_nsec = statbuf.st_mtim.tv_nsec;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + TAB
+        + "ts.tv_nsec = 0;"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + TAB
+        + "ts.tv_nsec = statbuf.st_mtim.tv_nsec;"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "timebuf[0].tv_nsec = stbuf.st_atim.tv_nsec;"
+        + NL
+        + TAB
+        + TAB
+        + "timebuf[1].tv_nsec = stbuf.st_mtim.tv_nsec;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + TAB
+        + "timebuf[0].tv_nsec = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "timebuf[1].tv_nsec = 0;"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + TAB
+        + "timebuf[0].tv_nsec = stbuf.st_atim.tv_nsec;"
+        + NL
+        + TAB
+        + TAB
+        + "timebuf[1].tv_nsec = stbuf.st_mtim.tv_nsec;"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "static const char *human_time(struct timespec *ts)",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "static const char *human_time_dos(time_t t) { struct timespec ts; ts.tv_sec = t; ts.tv_nsec = 0; "
+        + "char fmt[sizeof(\"%Y-%m-%d %H:%M:%S.123456789 %z\") + 8]; setup_common_bufsiz(); "
+        + "sprintf(stpcpy(fmt, \"%Y-%m-%d %H:%M:%S\"), \".%09u %%z\", 0U); "
+        + "strftime(bb_common_bufsiz1, COMMON_BUFSIZE, fmt, localtime(&ts.tv_sec)); return bb_common_bufsiz1; }"
+        + NL
+        + "#define human_time(x) human_time_dos(*(x))"
+        + NL
+        + "#ifndef st_atim"
+        + NL
+        + "#define st_atim st_atime"
+        + NL
+        + "#define st_mtim st_mtime"
+        + NL
+        + "#define st_ctim st_ctime"
+        + NL
+        + "#endif"
+        + NL
+        + "#else"
+        + NL
+        + "#define human_time human_time_orig"
+        + NL
+        + "#endif"
+        + NL
+        + "static const char *human_time_orig(struct timespec *ts)",
+    )
+
+    content = content.replace(
+        "return get_cached(1, gid, gid2group_utoa);",
+        "return get_cached(1, (uid_t)gid, (char* FAST_FUNC (*)(uid_t))gid2group_utoa);",
+    )
+    content = content.replace(
+        "#define IS_BUILTIN_SPECIAL(b) ((b)->name[-1] & 1)"
+        + NL
+        + "/* \"regular\" builtins always take precedence over commands,"
+        + NL
+        + " * regardless of PATH=....%builtin... position */"
+        + NL
+        + "#define IS_BUILTIN_REGULAR(b) ((b)->name[-1] & 2)"
+        + NL
+        + "#define IS_BUILTIN_ASSIGN(b)  ((b)->name[-1] & 4)",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "#define IS_BUILTIN_SPECIAL(b) ((b)->name[0] & 1)"
+        + NL
+        + "#define IS_BUILTIN_REGULAR(b) ((b)->name[0] & 2)"
+        + NL
+        + "#define IS_BUILTIN_ASSIGN(b)  ((b)->name[0] & 4)"
+        + NL
+        + "static int pstrcmp_builtin(const void *a, const void *b) { return strcmp((const char *)a, (*(const char *const *)b) + 1); }"
+        + NL
+        + "#else"
+        + NL
+        + "#define IS_BUILTIN_SPECIAL(b) ((b)->name[-1] & 1)"
+        + NL
+        + "#define IS_BUILTIN_REGULAR(b) ((b)->name[-1] & 2)"
+        + NL
+        + "#define IS_BUILTIN_ASSIGN(b)  ((b)->name[-1] & 4)"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "name, builtintab, ARRAY_SIZE(builtintab), sizeof(builtintab[0]),"
+        + NL
+        + TAB
+        + TAB
+        + "pstrcmp",
+        "name, builtintab, ARRAY_SIZE(builtintab), sizeof(builtintab[0]),"
+        + NL
+        + "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + TAB
+        + "pstrcmp_builtin"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + TAB
+        + "pstrcmp"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "return builtintab[i].name;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + TAB
+        + "return builtintab[i].name + 1;"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + TAB
+        + "return builtintab[i].name;"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "builtintab[i].name);",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + TAB
+        + "builtintab[i].name + 1);"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + TAB
+        + "builtintab[i].name);"
+        + NL
+        + "#endif",
+    )
+    content = re.sub(
+        r'(\bBUILTIN_(?:NOSPEC|SPECIAL|REGULAR|SPEC_REG|ASSIGN|SPEC_ASSG|REG_ASSG|SPEC_REG_ASSG)\s+"[^"]*")\s*\+\s*1',
+        r"\1",
+        content,
+    )
+    content = content.replace("struct synstack synbase = { };", "struct synstack synbase = { 0 };")
+    content = content.replace("char msg[2] = { ch, '\\0' };", "char msg[2]; msg[0] = (char)ch; msg[1] = '\\0';")
+    content = content.replace(
+        'if (is_prefixed_with(name, "busybox"))',
+        'if (is_prefixed_with(name, "busybox") || strncasecmp(name, "busyb", 5) == 0)',
+    )
+    content = content.replace(
+        'lbb_prepare("busybox" IF_FEATURE_INDIVIDUAL(, argv));',
+        'lbb_prepare("busybox" IF_FEATURE_INDIVIDUAL(, argv));'
+        + NL
+        + "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + TAB
+        + 'if (!argv[0] || !argv[0][0] || (strncasecmp(bb_basename(argv[0]), "busyb", 5) != 0 && find_applet_by_name(bb_basename(argv[0])) < 0)) argv[0] = (char *)"busybox";'
+        + NL
+        + "#endif",
+    )
+    if '#include "charset.c"' in content or 'charset.c"' in content:
+        content = re.sub(
+            r'(#\s*include\s+"[^"]*charset\.c")',
+            r"#undef min" + NL + r"#undef max" + NL + r"\1",
+            content,
+        )
+    if "LITERAL(" in content:
+        content = re.sub(
+            r"return\s+mkrep\(c,\s*LITERAL\(Subexp\)\s*\{([^}]+)\},\s*([^;]+)\);",
+            r"{ Subexp _t; _t.nodes = lh.nodes; _t.maxstk = rh.maxstk;"
+            r" _t.hasmin = rh.hasmin; return mkrep(c, _t, \2); }",
+            content,
+        )
+        content = content.replace(
+            "return LITERAL(QVecInsert) {newly, &q->storage[k]};",
+            "{ QVecInsert _t; _t.newly = newly; _t.newnsp = &q->storage[k]; return _t; }",
+        )
+        content = content.replace(
+            "return LITERAL(Subexp) {{NULL, NULL, 0}, 0, false};",
+            "{ Subexp _tmp = {{NULL, NULL, 0}, 0, false}; return _tmp; }",
+        )
+        content = re.sub(
+            r"return\s+LITERAL\(Subexp\)\s*\{([^,]+),\s*([^,]+),\s*([^}]+)\};",
+            r"{ Subexp _t; _t.nodes = \1; _t.maxstk = \2; _t.hasmin = \3; return _t; }",
+            content,
+        )
+
     return content
 
 
@@ -2062,6 +2280,7 @@ def transform_file(input_path: str, output_path: str) -> None:
         original = f.read()
 
     def resolve_local_include(match: re.Match[str]) -> str:
+        """Transform and rewrite relative local #include directives."""
         inc_rel = match.group(1)
         candidate = os.path.normpath(os.path.join(in_dir, inc_rel))
         if os.path.isfile(candidate):
@@ -2073,7 +2292,8 @@ def transform_file(input_path: str, output_path: str) -> None:
             c_trans = transform_source_content(c_sub)
             if c_trans != c_text:
                 out_dir_abs = os.path.dirname(os.path.abspath(output_path))
-                gen_inc = os.path.join(out_dir_abs, inc_rel)
+                rel_target = os.path.basename(inc_rel) if os.path.isabs(inc_rel) else inc_rel
+                gen_inc = os.path.join(out_dir_abs, rel_target)
                 os.makedirs(os.path.dirname(gen_inc), exist_ok=True)
                 existing_inc = None
                 if os.path.isfile(gen_inc):

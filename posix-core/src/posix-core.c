@@ -27,6 +27,10 @@
 #if defined(_MSC_VER) && _MSC_VER >= 1600
 #include <stdint.h>
 #endif
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <dos.h>
+#include <fcntl.h>
+#include <process.h>
 #else
 #include <fcntl.h>
 #endif
@@ -57,11 +61,7 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
-#if defined(_DEBUG) && !defined(_DLL)
-    _CrtSetReportMode(2, 0);
-    _CrtSetReportMode(1, 0);
-    _CrtSetReportMode(0, 0);
-#endif
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
     h = (ptrdiff_t)_get_osfhandle((int)fd);
     _set_invalid_parameter_handler(old);
   }
@@ -2466,11 +2466,7 @@ int posix_isatty(intptr_t fd) {
     int ret;
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
-#if defined(_DEBUG) && !defined(_DLL)
-    _CrtSetReportMode(2, 0);
-    _CrtSetReportMode(1, 0);
-    _CrtSetReportMode(0, 0);
-#endif
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
     ret = _isatty((int)fd);
     _set_invalid_parameter_handler(old);
     return ret;
@@ -3527,14 +3523,6 @@ int pipe(int pipefd[2]) {
   return -1;
 }
 
-int waitpid(int pid, int *status, int options) {
-  if (pid || status || options) {
-    /* parameters checked */
-  }
-  errno = ENOSYS;
-  return -1;
-}
-
 ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
   return getdelim(lineptr, n, '\n', stream);
 }
@@ -3579,7 +3567,8 @@ int getsubopt(char **optionp, char *const *tokens, char **valuep) {
   return -1;
 }
 
-char *mkdtemp(char *tmpl) {
+#ifndef BB_VER
+char *mkdtemp_posix_dos(char *tmpl) {
   size_t len;
   int attempt;
   if (!tmpl) {
@@ -3600,6 +3589,7 @@ char *mkdtemp(char *tmpl) {
   errno = EEXIST;
   return NULL;
 }
+#endif
 
 int clearenv(void) {
   if (environ != NULL) {
@@ -4030,6 +4020,215 @@ int setgroups(size_t size, const gid_t *list) {
     return -1;
   }
   return 0;
+}
+
+/** @brief Determine the length of a fixed-size string. */
+size_t strnlen(const char *s, size_t maxlen) {
+  size_t len = 0;
+  if (!s) {
+    return 0;
+  }
+  while (len < maxlen && s[len] != '\0') {
+    len++;
+  }
+  return len;
+}
+
+/** @brief Reposition a file-position indicator in a stream. */
+int fseeko(FILE *stream, off_t offset, int whence) {
+  return fseek(stream, (long)offset, whence);
+}
+
+/** @brief Return the current file position of a stream. */
+off_t ftello(FILE *stream) { return (off_t)ftell(stream); }
+
+/** @brief Suspend execution for microsecond intervals. */
+int usleep(useconds_t usec) {
+  unsigned int ms = (unsigned int)(usec / 1000U);
+  if (ms > 0) {
+    delay(ms);
+  }
+  return 0;
+}
+
+/** @brief Initiate pipe streams to or from a process. */
+FILE *popen(const char *command, const char *type) {
+  (void)command;
+  (void)type;
+  errno = ENOSYS;
+  return NULL;
+}
+
+/** @brief Close a pipe stream to or from a process. */
+int pclose(FILE *stream) {
+  if (stream) {
+    fclose(stream);
+  }
+  return 0;
+}
+
+/** @brief Frame storing saved state across simulated DOS vfork calls. */
+typedef struct awm_dos_vfork_frame {
+  jmp_buf jb;          /**< Saved execution context. */
+  int saved_fds[16];   /**< Duplicated standard file descriptors. */
+  char saved_cwd[260]; /**< Saved working directory. */
+  void **globals_slot; /**< Pointer to BusyBox ptr_to_globals slot. */
+  void *saved_globals; /**< Saved globals pointer value. */
+} awm_dos_vfork_frame_t;
+
+static awm_dos_vfork_frame_t g_awm_dos_vfork_frames[8];
+static int g_awm_dos_vfork_depth = 0;
+static int g_awm_dos_next_pid = 40000;
+static int g_awm_dos_last_parent_pid = 0;
+static int g_awm_dos_reap_pids[16];
+static int g_awm_dos_reap_status[16];
+static int g_awm_dos_reap_count = 0;
+
+/** @brief Push a simulated vfork state frame on DOS. */
+int awm_vfork_push(void **globals_slot) {
+  int i;
+  awm_dos_vfork_frame_t *f;
+  if (g_awm_dos_vfork_depth >= 8) {
+    errno = EAGAIN;
+    return -1;
+  }
+  fflush(NULL);
+  f = &g_awm_dos_vfork_frames[g_awm_dos_vfork_depth++];
+  memset(f, 0, sizeof(*f));
+  (void)getcwd(f->saved_cwd, sizeof(f->saved_cwd));
+  f->globals_slot = globals_slot;
+  f->saved_globals = globals_slot ? *globals_slot : NULL;
+  for (i = 0; i < 3; i++) {
+    f->saved_fds[i] = dup(i);
+  }
+  for (i = 3; i < 16; i++) {
+    f->saved_fds[i] = -1;
+  }
+  return 0;
+}
+
+/** @brief Retrieve the active jmp_buf pointer for the current vfork frame. */
+void *awm_vfork_jb(void) {
+  return (void *)&g_awm_dos_vfork_frames[g_awm_dos_vfork_depth - 1].jb;
+}
+
+/** @brief Return the simulated child PID to the parent after vfork longjmp. */
+int awm_vfork_parent_pid(void) { return g_awm_dos_last_parent_pid; }
+
+/** @brief Return current nesting depth of simulated vfork frames. */
+int awm_vfork_depth(void) { return g_awm_dos_vfork_depth; }
+
+/** @brief Exit a simulated vfork child frame and restore parent context. */
+void awm_vfork_exit(int status) {
+  int i;
+  awm_dos_vfork_frame_t *f;
+  int child_pid;
+  fflush(NULL);
+  if (g_awm_dos_vfork_depth <= 0) {
+    _exit(status);
+    return;
+  }
+  f = &g_awm_dos_vfork_frames[--g_awm_dos_vfork_depth];
+  if (f->globals_slot) {
+    *f->globals_slot = f->saved_globals;
+  }
+  if (f->saved_cwd[0]) {
+    (void)chdir(f->saved_cwd);
+  }
+  for (i = 0; i < 3; i++) {
+    if (f->saved_fds[i] >= 0) {
+      (void)dup2(f->saved_fds[i], i);
+      (void)close(f->saved_fds[i]);
+    }
+  }
+  child_pid = ++g_awm_dos_next_pid;
+  if (g_awm_dos_reap_count < 16) {
+    g_awm_dos_reap_pids[g_awm_dos_reap_count] = child_pid;
+    g_awm_dos_reap_status[g_awm_dos_reap_count] = ((status & 0xff) << 8);
+    g_awm_dos_reap_count++;
+  }
+  g_awm_dos_last_parent_pid = child_pid;
+  longjmp(f->jb, 1);
+}
+
+/** @brief Reap a completed simulated vfork child process. */
+int awm_vfork_try_reap(int pid, int *stat_loc) {
+  int i;
+  for (i = 0; i < g_awm_dos_reap_count; i++) {
+    if (pid <= 0 || g_awm_dos_reap_pids[i] == pid) {
+      int rpid = g_awm_dos_reap_pids[i];
+      int wstatus = g_awm_dos_reap_status[i];
+      int j;
+      if (stat_loc) {
+        *stat_loc = wstatus;
+      }
+      for (j = i; j + 1 < g_awm_dos_reap_count; j++) {
+        g_awm_dos_reap_pids[j] = g_awm_dos_reap_pids[j + 1];
+        g_awm_dos_reap_status[j] = g_awm_dos_reap_status[j + 1];
+      }
+      g_awm_dos_reap_count--;
+      return rpid;
+    }
+  }
+  return 0;
+}
+
+/** @brief Execute a program on DOS and exit the simulated vfork frame. */
+int posix_execve(const char *pathname, char *const argv[], char *const envp[]) {
+  int rc;
+  if (!pathname || !argv) {
+    errno = EINVAL;
+    return -1;
+  }
+  fflush(NULL);
+  if (envp) {
+    rc = spawnve(P_WAIT, pathname, (const char *const *)argv,
+                 (const char *const *)envp);
+  } else {
+    rc = spawnv(P_WAIT, pathname, (const char *const *)argv);
+  }
+  if (rc == -1) {
+    return -1;
+  }
+  awm_vfork_exit(rc);
+  return -1;
+}
+
+/** @brief Execute a program by pathname with argument vector. */
+int posix_execv(const char *pathname, char *const argv[]) {
+  return posix_execve(pathname, argv, NULL);
+}
+
+/** @brief Execute a program searching PATH on DOS. */
+int posix_execvp(const char *file, char *const argv[]) {
+  int rc;
+  if (!file || !argv) {
+    errno = EINVAL;
+    return -1;
+  }
+  fflush(NULL);
+  rc = spawnvp(P_WAIT, file, (const char *const *)argv);
+  if (rc == -1) {
+    return -1;
+  }
+  awm_vfork_exit(rc);
+  return -1;
+}
+
+#undef execve
+#undef execv
+#undef execvp
+/** @brief Standard execve wrapper for DOS. */
+int execve(const char *pathname, char *const argv[], char *const envp[]) {
+  return posix_execve(pathname, argv, envp);
+}
+/** @brief Standard execv wrapper for DOS. */
+int execv(const char *pathname, char *const argv[]) {
+  return posix_execv(pathname, argv);
+}
+/** @brief Standard execvp wrapper for DOS. */
+int execvp(const char *file, char *const argv[]) {
+  return posix_execvp(file, argv);
 }
 
 #endif

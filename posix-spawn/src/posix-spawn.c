@@ -66,11 +66,7 @@ static ptrdiff_t safe_get_osfhandle(int fd) {
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(spawn_null_invalid_param_handler);
-#if defined(_DEBUG) && !defined(_DLL)
-    _CrtSetReportMode(2, 0);
-    _CrtSetReportMode(1, 0);
-    _CrtSetReportMode(0, 0);
-#endif
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
     h = (ptrdiff_t)_get_osfhandle(fd);
     _set_invalid_parameter_handler(old);
   }

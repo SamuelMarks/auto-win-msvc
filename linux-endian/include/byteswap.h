@@ -31,6 +31,30 @@ extern "C" {
 #define bswap_16(x) _byteswap_ushort((x))
 #define bswap_32(x) _byteswap_ulong((x))
 #define bswap_64(x) _byteswap_uint64((x))
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#define bswap_16(x)                                                            \
+  ((unsigned short)((((unsigned short)(x) & 0x00ffU) << 8) |                   \
+                    (((unsigned short)(x) & 0xff00U) >> 8)))
+#define bswap_32(x)                                                            \
+  ((unsigned int)((((unsigned int)(x) & 0x000000ffUL) << 24) |                 \
+                  (((unsigned int)(x) & 0x0000ff00UL) << 8) |                  \
+                  (((unsigned int)(x) & 0x00ff0000UL) >> 8) |                  \
+                  (((unsigned int)(x) & 0xff000000UL) >> 24)))
+#define bswap_64(x)                                                            \
+  ((unsigned __int64)((((unsigned __int64)(x) & 0x00000000000000ffULL)         \
+                       << 56) |                                                \
+                      (((unsigned __int64)(x) & 0x000000000000ff00ULL)         \
+                       << 40) |                                                \
+                      (((unsigned __int64)(x) & 0x0000000000ff0000ULL)         \
+                       << 24) |                                                \
+                      (((unsigned __int64)(x) & 0x00000000ff000000ULL) << 8) | \
+                      (((unsigned __int64)(x) & 0x000000ff00000000ULL) >> 8) | \
+                      (((unsigned __int64)(x) & 0x0000ff0000000000ULL) >>      \
+                       24) |                                                   \
+                      (((unsigned __int64)(x) & 0x00ff000000000000ULL) >>      \
+                       40) |                                                   \
+                      (((unsigned __int64)(x) & 0xff00000000000000ULL) >>      \
+                       56)))
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||    \
     defined(__NetBSD__)
 #define bswap_16(x) __bswap16((x))

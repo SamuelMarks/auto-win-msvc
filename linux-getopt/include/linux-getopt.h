@@ -52,6 +52,9 @@ struct option {
 
 #if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
     defined(__MSDOS__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
+#include <unistd.h>
+#else
 /** @brief Current option argument pointer. */
 extern char *optarg;
 /** @brief Current argv index. */
@@ -69,6 +72,7 @@ extern int optopt;
  * @return Option character, or -1 when done, or '?' on error.
  */
 int getopt(int argc, char *const argv[], const char *optstring);
+#endif
 
 /**
  * @brief Parses long command-line options.

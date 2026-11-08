@@ -135,7 +135,89 @@
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include <stddef.h>
 #include <errno.h>
+#include <sys/select.h>
 #include "posix-netinet-in.h"
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
+#endif
+#ifndef ELOOP
+#define ELOOP 40
+#endif
+#ifndef ENAMETOOLONG
+#define ENAMETOOLONG 36
+#endif
+#ifndef ENOTEMPTY
+#define ENOTEMPTY 39
+#endif
+#ifndef EINPROGRESS
+#define EINPROGRESS 115
+#endif
+#ifndef EALREADY
+#define EALREADY 114
+#endif
+#ifndef ENOTSOCK
+#define ENOTSOCK 88
+#endif
+#ifndef EDESTADDRREQ
+#define EDESTADDRREQ 89
+#endif
+#ifndef EMSGSIZE
+#define EMSGSIZE 90
+#endif
+#ifndef EPROTOTYPE
+#define EPROTOTYPE 91
+#endif
+#ifndef ENOPROTOOPT
+#define ENOPROTOOPT 92
+#endif
+#ifndef EPROTONOSUPPORT
+#define EPROTONOSUPPORT 93
+#endif
+#ifndef EOPNOTSUPP
+#define EOPNOTSUPP 95
+#endif
+#ifndef EAFNOSUPPORT
+#define EAFNOSUPPORT 97
+#endif
+#ifndef EADDRINUSE
+#define EADDRINUSE 98
+#endif
+#ifndef EADDRNOTAVAIL
+#define EADDRNOTAVAIL 99
+#endif
+#ifndef ENETDOWN
+#define ENETDOWN 100
+#endif
+#ifndef ENETUNREACH
+#define ENETUNREACH 101
+#endif
+#ifndef ENETRESET
+#define ENETRESET 102
+#endif
+#ifndef ECONNABORTED
+#define ECONNABORTED 103
+#endif
+#ifndef ECONNRESET
+#define ECONNRESET 104
+#endif
+#ifndef ENOBUFS
+#define ENOBUFS 105
+#endif
+#ifndef EISCONN
+#define EISCONN 106
+#endif
+#ifndef ENOTCONN
+#define ENOTCONN 107
+#endif
+#ifndef ETIMEDOUT
+#define ETIMEDOUT 110
+#endif
+#ifndef ECONNREFUSED
+#define ECONNREFUSED 111
+#endif
+#ifndef EHOSTUNREACH
+#define EHOSTUNREACH 113
+#endif
 
 #ifndef AF_UNSPEC
 #define AF_UNSPEC 0
@@ -170,6 +252,12 @@
 #endif
 #ifndef SOCK_RAW
 #define SOCK_RAW 3
+#endif
+#ifndef SOCK_RDM
+#define SOCK_RDM 4
+#endif
+#ifndef SOCK_SEQPACKET
+#define SOCK_SEQPACKET 5
 #endif
 
 #ifndef SOL_SOCKET

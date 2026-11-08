@@ -24,6 +24,8 @@ endif()
 
 set(BUILD_TESTING_SAVED "${BUILD_TESTING}")
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(AUTO_WIN_MSVC_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # 1. Fetch Oniguruma (for jq regular expressions)
 add_compile_definitions(inline=__inline)
@@ -147,18 +149,7 @@ endif()
 
 target_link_libraries(jq PRIVATE
     onig
-    posix-core
-    posix-time
-    posix-libgen
-    posix-stat
-    posix-pthread
-    posix-stdint
-    posix-inttypes
-    posix-stdbool
-    posix-alloca
-    posix-types
-    bsd-string
-    linux-getopt
+    auto-win-msvc
 )
 
 if(WIN32)

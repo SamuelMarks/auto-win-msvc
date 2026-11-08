@@ -318,6 +318,10 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #ifndef O_CLOEXEC
 #define O_CLOEXEC _O_NOINHERIT
 #endif
+#elif defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 #else
 #ifndef O_CLOEXEC
 #define O_CLOEXEC O_CLOEXEC

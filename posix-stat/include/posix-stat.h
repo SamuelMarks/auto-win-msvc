@@ -62,6 +62,7 @@
 #include <unistd.h>
 #endif
 #endif
+#include "posix-types.h"
 #include "auto-win-msvc-error.h"
 /* clang-format on */
 
@@ -204,13 +205,22 @@ typedef unsigned short mode_t;
 #endif
 #endif
 
+#if defined(S_IFLNK) && S_IFLNK == 0
+#undef S_IFLNK
+#endif
 #ifndef S_IFLNK
 /** @brief Symbolic link file type. */
 #define S_IFLNK 0120000
 #endif
+#if defined(S_IFSOCK) && S_IFSOCK == 0
+#undef S_IFSOCK
+#endif
 #ifndef S_IFSOCK
 /** @brief Socket file type. */
 #define S_IFSOCK 0140000
+#endif
+#if defined(S_IFBLK) && S_IFBLK == 0
+#undef S_IFBLK
 #endif
 #ifndef S_IFBLK
 /** @brief Block special file type. */
@@ -526,9 +536,11 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 /** @brief Shim for standard mkdir mapping to _mkdir on DOS/OpenWatcom. */
 #define mkdir(path, mode) _mkdir(path)
 #endif
-#ifndef lstat
-/** @brief Shim for lstat mapping to posix_lstat on DOS/OpenWatcom. */
-#define lstat posix_lstat
+#ifndef st_blocks
+#define st_blocks st_size
+#endif
+#ifndef st_blksize
+#define st_blksize st_attr
 #endif
 #endif
 

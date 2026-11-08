@@ -56,6 +56,7 @@ void auto_win_msvc_fd_clr(SOCKET fd, fd_set *set) {
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
 
+/** @brief Synchronous I/O multiplexing stub for DOS. */
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
            struct timeval *timeout) {
   (void)nfds;

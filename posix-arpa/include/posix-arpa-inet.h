@@ -79,6 +79,27 @@ int posix_inet_aton(const char *cp, struct in_addr *inp);
  */
 unsigned long posix_inet_addr(const char *cp);
 
+#if defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+/** @brief Convert Internet host address to numbers-and-dots string. */
+char *posix_inet_ntoa(struct in_addr in);
+/** @brief Convert IPv4 and IPv6 addresses from text to binary form. */
+int posix_inet_pton(int af, const char *src, void *dst);
+/** @brief Convert IPv4 and IPv6 addresses from binary to text form. */
+const char *posix_inet_ntop(int af, const void *src, char *dst, size_t size);
+#ifndef inet_ntoa
+/** @brief Macro mapping inet_ntoa to posix_inet_ntoa on DOS. */
+#define inet_ntoa posix_inet_ntoa
+#endif
+#ifndef inet_pton
+/** @brief Macro mapping inet_pton to posix_inet_pton on DOS. */
+#define inet_pton posix_inet_pton
+#endif
+#ifndef inet_ntop
+/** @brief Macro mapping inet_ntop to posix_inet_ntop on DOS. */
+#define inet_ntop posix_inet_ntop
+#endif
+#endif
+
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__MSDOS__) ||              \
     defined(__WATCOMC__) || defined(__DOS__)
 #undef inet_aton

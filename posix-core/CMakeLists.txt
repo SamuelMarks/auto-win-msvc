@@ -79,6 +79,7 @@ endif()
 target_include_directories(posix-core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-types/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-pwdgrp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-fcntl/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-wait/include>

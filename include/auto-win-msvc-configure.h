@@ -118,11 +118,15 @@ void _ReadWriteBarrier(void);
 #endif
 
 #include <stdlib.h>
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 #ifdef itoa
 #undef itoa
 #endif
 #define itoa itoa_ljust_internal
+#ifdef utoa
+#undef utoa
+#endif
+#define utoa utoa_ljust_internal
 #endif
 
 #ifndef __STDC_LIMIT_MACROS
@@ -190,7 +194,7 @@ typedef uint32_t uintptr_t;
 #endif
 #endif
 
-#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
 #ifndef HAVE_MEMRCHR
 #define HAVE_MEMRCHR 1
 #endif
@@ -232,7 +236,7 @@ typedef uint32_t uintptr_t;
 #endif
 #endif /* _MSC_VER || _WIN32 */
 
-#if defined(_MSC_VER) || defined(__clang__)
+#if defined(_MSC_VER) || defined(__clang__) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
 #ifndef BB_GLOBAL_CONST
 #define BB_GLOBAL_CONST
 #endif
@@ -357,6 +361,34 @@ void __attribute__((weak)) __gcov_dump(void) {}
 #include <sys/statfs.h>
 #include <mntent.h>
 #include <process.h>
+#include <io.h>
+#ifndef mktemp
+#define mktemp _mktemp
+#endif
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+#ifndef O_DIRECTORY
+#define O_DIRECTORY 0
+#endif
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0
+#endif
+#ifndef O_NDELAY
+#define O_NDELAY 0
+#endif
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
+#endif
+#ifndef O_SYNC
+#define O_SYNC 0
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
 extern struct mntent *find_mount_point(const char *name, int subdir_too);
 #undef mktemp
 #define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
@@ -983,6 +1015,85 @@ static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
 #include <malloc.h>
 #include <setjmp.h>
 #include <sys/types.h>
+#if defined(BB_VER) || defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H)
+#include <arpa/inet.h>
+#include <posix-core.h>
+#include <posix-strings.h>
+#include <bsd/string.h>
+#include <sys/sysinfo.h>
+#include <sys/statfs.h>
+#include <mntent.h>
+#include <process.h>
+#include <io.h>
+#ifndef mktemp
+#define mktemp _mktemp
+#endif
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+#ifndef O_DIRECTORY
+#define O_DIRECTORY 0
+#endif
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0
+#endif
+#ifndef O_NDELAY
+#define O_NDELAY 0
+#endif
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
+#endif
+#ifndef O_SYNC
+#define O_SYNC 0
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
+extern struct mntent *find_mount_point(const char *name, int subdir_too);
+struct globals;
+extern struct globals *ptr_to_globals;
+extern int awm_vfork_push(void **globals_slot);
+extern void *awm_vfork_jb(void);
+extern int awm_vfork_parent_pid(void);
+extern int awm_vfork_depth(void);
+extern void awm_vfork_exit(int status);
+extern int awm_vfork_try_reap(int pid, int *stat_loc);
+#undef vfork
+#define vfork() (awm_vfork_push((void **)&ptr_to_globals) ? -1 : (setjmp(*(jmp_buf *)awm_vfork_jb()) == 0 ? 0 : awm_vfork_parent_pid()))
+#undef fork
+#define fork() vfork()
+#undef exit
+#define exit(s) awm_vfork_exit(s)
+#undef _exit
+#define _exit(s) awm_vfork_exit(s)
+#endif
+#ifndef getc_unlocked
+#define getc_unlocked fgetc
+#endif
+#ifndef getchar_unlocked
+#define getchar_unlocked getchar
+#endif
+#ifndef putc_unlocked
+#define putc_unlocked fputc
+#endif
+#ifndef putchar_unlocked
+#define putchar_unlocked putchar
+#endif
+#ifndef fputs_unlocked
+#define fputs_unlocked fputs
+#endif
+#ifndef fgets_unlocked
+#define fgets_unlocked fgets
+#endif
+#ifndef ferror_unlocked
+#define ferror_unlocked ferror
+#endif
+#ifndef fileno_unlocked
+#define fileno_unlocked fileno
+#endif
 
 #if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_DEFINED_)
 #define _SSIZE_T_DEFINED
@@ -1018,6 +1129,7 @@ typedef jmp_buf sigjmp_buf;
  * @param[out] valuep Pointer to value string.
  * @return Index of matching token, or -1.
  */
+#ifndef POSIX_CORE_H
 static __inline int getsubopt(char **optionp, char * const *tokens, char **valuep) {
     char *subopt;
     int i;
@@ -1055,6 +1167,7 @@ static __inline int getsubopt(char **optionp, char * const *tokens, char **value
 
     return -1;
 }
+#endif /* !POSIX_CORE_H */
 
 #if !defined(__WATCOMC__) || (defined(_NO_EXT_KEYS) && !defined(_POSIX_SOURCE))
 /**

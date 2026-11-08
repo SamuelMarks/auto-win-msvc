@@ -39,6 +39,50 @@ extern "C" {
 #endif
 
 /**
+ * @brief Suppresses MSVC Debug CRT modal assertion/error/warning dialogs.
+ *
+ * Under static Debug CRT (/MTd), _CrtSetReportMode is statically linked and
+ * always safe to invoke. Under dynamic Debug CRT (/MDd, _DLL), Wine's builtin
+ * ucrtbased.dll leaves _CrtSetReportMode unimplemented and aborts if called,
+ * whereas native Windows ucrtbased.dll requires it to prevent modal dialogs.
+ */
+#if defined(_MSC_VER) && _MSC_VER >= 1400 && defined(_DEBUG)
+#if defined(_DLL)
+#define AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT()                                    \
+  do {                                                                         \
+    static int awm_is_wine = -1;                                               \
+    if (awm_is_wine < 0) {                                                     \
+      char *awm_w = NULL;                                                      \
+      size_t awm_wlen = 0;                                                     \
+      awm_is_wine =                                                            \
+          (_dupenv_s(&awm_w, &awm_wlen, "WINELOADER") == 0 && awm_w != NULL)   \
+              ? 1                                                              \
+              : 0;                                                             \
+      if (awm_w != NULL) {                                                     \
+        free(awm_w);                                                           \
+      }                                                                        \
+    }                                                                          \
+    if (!awm_is_wine) {                                                        \
+      _CrtSetReportMode(2, 0);                                                 \
+      _CrtSetReportMode(1, 0);                                                 \
+      _CrtSetReportMode(0, 0);                                                 \
+    }                                                                          \
+  } while ((void)0, 0)
+#else
+#define AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT()                                    \
+  do {                                                                         \
+    _CrtSetReportMode(2, 0);                                                   \
+    _CrtSetReportMode(1, 0);                                                   \
+    _CrtSetReportMode(0, 0);                                                   \
+  } while ((void)0, 0)
+#endif
+#else
+#define AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT()                                    \
+  do {                                                                         \
+  } while (0)
+#endif
+
+/**
  * @brief Central error codes returned by auto-win-msvc operations.
  */
 typedef enum NO_DISCARD auto_win_msvc_error {

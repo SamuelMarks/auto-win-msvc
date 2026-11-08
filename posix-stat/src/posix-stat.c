@@ -185,11 +185,7 @@ auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
   {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(null_invalid_param_handler);
-#if defined(_DEBUG) && !defined(_DLL)
-    _CrtSetReportMode(_CRT_ASSERT, 0);
-    _CrtSetReportMode(_CRT_ERROR, 0);
-    _CrtSetReportMode(_CRT_WARN, 0);
-#endif
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
     h = (ptrdiff_t)_get_osfhandle(fd);
     _set_invalid_parameter_handler(old);
   }
@@ -1010,6 +1006,7 @@ int posix_lstat(const char *pathname, void *statbuf) {
 
 #if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 
+/** @brief Change permissions of a file descriptor on DOS. */
 int fchmod(int fd, mode_t mode) {
   (void)mode;
   if (fd < 0 || fd >= 256) {
@@ -1019,6 +1016,7 @@ int fchmod(int fd, mode_t mode) {
   return 0;
 }
 
+/** @brief Change permissions of a file relative to a directory fd on DOS. */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   (void)flags;
   if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
@@ -1028,6 +1026,7 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   return chmod(pathname, mode);
 }
 
+/** @brief Obtain file status relative to a directory fd on DOS. */
 int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
   (void)flags;
   if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname ||
@@ -1038,6 +1037,7 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
   return posix_stat(pathname, statbuf);
 }
 
+/** @brief Set file timestamps by file descriptor on DOS. */
 int futimens(int fd, const struct timespec times[2]) {
   (void)times;
   if (fd < 0 || fd >= 256) {
@@ -1047,6 +1047,7 @@ int futimens(int fd, const struct timespec times[2]) {
   return 0;
 }
 
+/** @brief Set file timestamps relative to a directory fd on DOS. */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
               int flags) {
   struct stat st;
@@ -1062,6 +1063,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
   return 0;
 }
 
+/** @brief Create a filesystem node stub on DOS. */
 int mknod(const char *pathname, mode_t mode, dev_t dev) {
   (void)pathname;
   (void)mode;
@@ -1070,6 +1072,7 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
   return -1;
 }
 
+/** @brief Create a filesystem node relative to a directory fd on DOS. */
 int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
   if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
     errno = EBADF;

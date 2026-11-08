@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #endif
 #endif
+#include "posix-types.h"
 #include "posix-core.h"
 #include <sys/types.h>
 /* clang-format on */
@@ -47,7 +48,8 @@ typedef long off_t;
 typedef unsigned short mode_t;
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__) ||           \
+    defined(__DOS__)
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
 #endif
@@ -72,6 +74,8 @@ typedef unsigned short mode_t;
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
 #endif
+#endif
+#if defined(_WIN32)
 #ifndef creat
 #define creat posix_creat
 #endif

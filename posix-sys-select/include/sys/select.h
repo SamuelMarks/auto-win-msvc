@@ -39,28 +39,33 @@ extern "C" {
 #ifndef _TIMEVAL_DEFINED
 #define _TIMEVAL_DEFINED
 #define _STRUCT_TIMEVAL
+/** @brief Time value structure for select timeouts on DOS. */
 struct timeval {
-  long tv_sec;
-  long tv_usec;
+  long tv_sec;  /**< Seconds. */
+  long tv_usec; /**< Microseconds. */
 };
 #endif
 
 #ifndef FD_SETSIZE
+/** @brief Maximum number of descriptors in an fd_set on DOS. */
 #define FD_SETSIZE 64
 #endif
 
 #ifndef _FD_SET_DEFINED
 #define _FD_SET_DEFINED
+/** @brief File descriptor set structure for select on DOS. */
 typedef struct fd_set {
-  unsigned int fd_count;
-  int fd_array[FD_SETSIZE];
+  unsigned int fd_count;    /**< Number of descriptors in the set. */
+  int fd_array[FD_SETSIZE]; /**< Array of file descriptors. */
 } fd_set;
 #endif
 
 #ifndef FD_ZERO
+/** @brief Clear all descriptors from an fd_set. */
 #define FD_ZERO(set) (((fd_set *)(set))->fd_count = 0)
 #endif
 #ifndef FD_SET
+/** @brief Add a descriptor to an fd_set. */
 #define FD_SET(fd, set)                                                        \
   do {                                                                         \
     if (((fd_set *)(set))->fd_count < FD_SETSIZE) {                            \
@@ -69,12 +74,15 @@ typedef struct fd_set {
   } while (0)
 #endif
 #ifndef FD_CLR
+/** @brief Remove a descriptor from an fd_set. */
 #define FD_CLR(fd, set) ((void)(fd), (void)(set))
 #endif
 #ifndef FD_ISSET
+/** @brief Test if a descriptor is part of an fd_set. */
 #define FD_ISSET(fd, set) 0
 #endif
 
+/** @brief Synchronous I/O multiplexing stub for DOS. */
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
            struct timeval *timeout);
 #endif

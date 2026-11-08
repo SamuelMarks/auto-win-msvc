@@ -29,6 +29,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #endif
+#include "auto-win-msvc-error.h"
 /* clang-format on */
 
 #ifdef __cplusplus

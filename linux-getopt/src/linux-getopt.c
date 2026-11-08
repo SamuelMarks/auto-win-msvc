@@ -14,8 +14,9 @@ int linux_optopt = 0;
 
 static char *nextchar = NULL;
 
-#if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
-    defined(__MSDOS__) || defined(__WATCOMC__)
+#if (defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||               \
+     defined(__MSDOS__)) &&                                                    \
+    !defined(__WATCOMC__)
 char *optarg = NULL;
 int optind = 1;
 int opterr = 1;
@@ -163,6 +164,7 @@ int linux_getopt_long(int argc, char *const argv[], const char *optstring,
 
 #if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
     defined(__MSDOS__) || defined(__WATCOMC__)
+#if !defined(__WATCOMC__)
 int getopt(int argc, char *const argv[], const char *optstring) {
   int res;
   if (optind != linux_optind) {
@@ -176,6 +178,7 @@ int getopt(int argc, char *const argv[], const char *optstring) {
   optopt = linux_optopt;
   return res;
 }
+#endif
 
 int getopt_long(int argc, char *const argv[], const char *optstring,
                 const struct option *longopts, int *longindex) {
