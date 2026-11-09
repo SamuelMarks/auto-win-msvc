@@ -7,8 +7,10 @@
  * @brief Strict C89 POSIX signal compatibility interface and types.
  */
 
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#endif
 #endif
 
 /* clang-format off */

@@ -5,7 +5,7 @@
 #ifndef NAMESPACE_WIN_SHIM_H
 #define NAMESPACE_WIN_SHIM_H
 #endif
-#if !defined(_WIN32) && !defined(_MSC_VER)
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
