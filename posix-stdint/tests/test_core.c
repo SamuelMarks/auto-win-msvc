@@ -2,6 +2,7 @@
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "posix-stdint.h"
+#include "stdckdint.h"
 #include "greatest.h"
 #include <stdio.h>
 /* clang-format on */
@@ -95,6 +96,16 @@ TEST test_stdint_types_and_limits(void) {
 
   um = (uintmax_t)2;
   ASSERT_EQ((uintmax_t)2, um);
+
+  {
+    int r = 0;
+    ASSERT_EQ(0, ckd_add(&r, 10, 20));
+    ASSERT_EQ(30, r);
+    ASSERT_EQ(0, ckd_sub(&r, 50, 20));
+    ASSERT_EQ(30, r);
+    ASSERT_EQ(0, ckd_mul(&r, 6, 7));
+    ASSERT_EQ(42, r);
+  }
 
   PASS();
 }

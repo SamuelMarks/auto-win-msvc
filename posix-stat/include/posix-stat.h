@@ -336,6 +336,74 @@ typedef unsigned short mode_t;
 #endif
 #endif
 
+#ifndef UF_NODUMP
+/** @brief Do not dump file. */
+#define UF_NODUMP 0x00000001UL
+#endif
+#ifndef UF_IMMUTABLE
+/** @brief File may not be changed. */
+#define UF_IMMUTABLE 0x00000002UL
+#endif
+#ifndef UF_APPEND
+/** @brief Writes to file may only append. */
+#define UF_APPEND 0x00000004UL
+#endif
+#ifndef UF_OPAQUE
+/** @brief Directory is opaque wrt. union. */
+#define UF_OPAQUE 0x00000008UL
+#endif
+#ifndef UF_NOUNLINK
+/** @brief File may not be removed or renamed. */
+#define UF_NOUNLINK 0x00000010UL
+#endif
+#ifndef SF_ARCHIVED
+/** @brief File is archived. */
+#define SF_ARCHIVED 0x00010000UL
+#endif
+#ifndef SF_IMMUTABLE
+/** @brief Superuser: file may not be changed. */
+#define SF_IMMUTABLE 0x00020000UL
+#endif
+#ifndef SF_APPEND
+/** @brief Superuser: writes to file may only append. */
+#define SF_APPEND 0x00040000UL
+#endif
+#ifndef SF_NOUNLINK
+/** @brief Superuser: file may not be removed or renamed. */
+#define SF_NOUNLINK 0x00100000UL
+#endif
+#ifndef SF_SNAPSHOT
+/** @brief Snapshot inode. */
+#define SF_SNAPSHOT 0x00200000UL
+#endif
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+/**
+ * @brief Set file flags by path.
+ * @param[in] path File path.
+ * @param[in] flags File flags bitmask.
+ * @return 0 on success, -1 on failure.
+ */
+int chflags(const char *path, unsigned long flags);
+
+/**
+ * @brief Set file flags on symbolic link or file by path.
+ * @param[in] path File path.
+ * @param[in] flags File flags bitmask.
+ * @return 0 on success, -1 on failure.
+ */
+int lchflags(const char *path, unsigned long flags);
+
+/**
+ * @brief Set file flags by file descriptor.
+ * @param[in] fd File descriptor.
+ * @param[in] flags File flags bitmask.
+ * @return 0 on success, -1 on failure.
+ */
+int fchflags(int fd, unsigned long flags);
+#endif
+
 #if defined(_WIN32)
 #ifndef _BLKSIZE_T_DEFINED
 #define _BLKSIZE_T_DEFINED
@@ -519,6 +587,24 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev);
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
 
 /**
+ * @brief Creates a directory relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to directory to create.
+ * @param[in] mode Directory permissions.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int mkdirat(int dirfd, const char *pathname, mode_t mode);
+
+/**
+ * @brief Creates a FIFO special file relative to a directory file descriptor.
+ * @param[in] dirfd Directory file descriptor or AT_FDCWD.
+ * @param[in] pathname Path to FIFO to create.
+ * @param[in] mode FIFO permissions.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int mkfifoat(int dirfd, const char *pathname, mode_t mode);
+
+/**
  * @brief Sets file timestamps relative to a directory file descriptor.
  * @param[in] dirfd Directory file descriptor or AT_FDCWD.
  * @param[in] pathname Path to file.
@@ -557,6 +643,10 @@ extern int lstat(const char *pathname, struct stat *statbuf);
 #endif
 extern int mknod(const char *pathname, mode_t mode, dev_t dev);
 extern int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
+/** @brief Create a directory relative to a directory fd on DOS. */
+int mkdirat(int dirfd, const char *pathname, mode_t mode);
+/** @brief Create a FIFO relative to a directory fd on DOS. */
+int mkfifoat(int dirfd, const char *pathname, mode_t mode);
 extern int utimensat(int dirfd, const char *pathname,
                      const struct timespec times[2], int flags);
 #endif

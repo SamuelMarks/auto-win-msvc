@@ -159,6 +159,17 @@ typedef uint32_t uintptr_t;
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#if defined(__has_include)
+#if __has_include("bsd/stdlib.h")
+#include "bsd/stdlib.h"
+#endif
+#if __has_include("bsd/string.h")
+#include "bsd/string.h"
+#endif
+#elif defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+#include "bsd/stdlib.h"
+#include "bsd/string.h"
+#endif
 
 #ifndef UINT64_MAX
 #define UINT64_MAX 0xffffffffffffffffULL

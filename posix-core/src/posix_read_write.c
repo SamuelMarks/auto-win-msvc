@@ -1082,6 +1082,13 @@ int posix_open(const char *pathname, int flags, ...) {
     dwCreationDisposition = OPEN_ALWAYS;
   }
 
+  if ((flags & 3) == O_RDONLY && !(flags & (O_CREAT | O_TRUNC))) {
+    DWORD attr = GetFileAttributesA(pathname);
+    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+      dwFlagsAndAttributes |= 0x02000000; /* FILE_FLAG_BACKUP_SEMANTICS */
+    }
+  }
+
   hFile = CreateFileA(pathname, dwDesiredAccess, dwShareMode, NULL,
                       dwCreationDisposition, dwFlagsAndAttributes, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {

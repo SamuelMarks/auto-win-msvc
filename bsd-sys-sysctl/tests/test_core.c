@@ -2,7 +2,7 @@
 #endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
-#include "bsd-sys-sysctl.h"
+#include "sys/sysctl.h"
 #include <errno.h>
 #include <stdio.h>
 /* clang-format on */
@@ -14,50 +14,62 @@ extern int g_mock_sysconf_fail;
 
 TEST test_bsd_sys_sysctl_init(void) {
   auto_win_msvc_error_t rc;
-  int status;
+  int status = 0;
 
-  status = 0;
   rc = bsd_sys_sysctl_init(NULL);
-  (void)(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT);
-  (void)(rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = bsd_sys_sysctl_init(&status);
-  (void)(AUTO_WIN_MSVC_SUCCESS);
-  (void)(rc);
-
-  (void)(1);
-  (void)(status);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, status);
   PASS();
 }
 
 TEST test_sysctlbyname_windows(void) {
-#if defined(_WIN32)
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
   int ncpu;
+  int mib[4];
   size_t len;
+  size_t miblen;
+  char strbuf[64];
   int ret;
 
-  /* Invalid args */
   ret = sysctlbyname(NULL, NULL, NULL, NULL, 0);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
 
-  /* Unknown parameter */
   ret = sysctlbyname("unknown.param", NULL, NULL, NULL, 0);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
 
-  /* hw.ncpu */
+  len = 0;
+  ret = sysctlbyname("hw.ncpu", NULL, &len, NULL, 0);
+  ASSERT_EQ(0, ret);
+  ASSERT_EQ(sizeof(int), len);
+
   len = sizeof(ncpu);
   ret = sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0);
-  (void)(0);
-  (void)(ret);
-  (void)(ncpu > 0);
+  ASSERT_EQ(0, ret);
+  ASSERT(ncpu > 0);
 
-  /* Buffer too small */
   len = 1;
   ret = sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
+
+  miblen = 4;
+  ret = sysctlnametomib("hw.ncpu", mib, &miblen);
+  ASSERT_EQ(0, ret);
+  ASSERT_EQ(2U, miblen);
+  len = sizeof(ncpu);
+  ret = sysctl(mib, (unsigned int)miblen, &ncpu, &len, NULL, 0);
+  ASSERT_EQ(0, ret);
+
+  len = sizeof(strbuf);
+  ret = sysctlbyname("kern.ostype", strbuf, &len, NULL, 0);
+  ASSERT_EQ(0, ret);
+
+  len = sizeof(ncpu);
+  ret = sysctlbyname("hw.pagesize", &ncpu, &len, NULL, 0);
+  ASSERT_EQ(0, ret);
   PASS();
 #else
   SKIP();
@@ -66,23 +78,19 @@ TEST test_sysctlbyname_windows(void) {
 
 TEST test_bsd_sys_sysctl_get_ncpu(void) {
   auto_win_msvc_error_t rc;
-  int ncpu;
+  int ncpu = 0;
 
   rc = bsd_sys_sysctl_get_ncpu(NULL);
-  (void)(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT);
-  (void)(rc);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
-  ncpu = 0;
   rc = bsd_sys_sysctl_get_ncpu(&ncpu);
-  (void)(AUTO_WIN_MSVC_SUCCESS);
-  (void)(rc);
-  (void)(ncpu > 0);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT(ncpu > 0);
 
   g_mock_sysconf_fail = 1;
   rc = bsd_sys_sysctl_get_ncpu(&ncpu);
-  (void)(AUTO_WIN_MSVC_SUCCESS);
-  (void)(rc);
-  (void)(ncpu > 0);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT(ncpu > 0);
   g_mock_sysconf_fail = 0;
 
   PASS();

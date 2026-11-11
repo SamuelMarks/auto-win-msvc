@@ -74,14 +74,25 @@ int statfs(const char *path, struct statfs *buf) {
 
   if (GetDiskFreeSpaceExA(path, &freeBytesAvailable, &totalNumberOfBytes,
                           &totalNumberOfFreeBytes)) {
+    memset(buf, 0, sizeof(*buf));
     buf->f_type = 0; /* Unknown / Windows */
     buf->f_bsize = 4096;
+    buf->f_iosize = 4096;
     buf->f_blocks = (long)(totalNumberOfBytes.QuadPart / 4096);
     buf->f_bfree = (long)(totalNumberOfFreeBytes.QuadPart / 4096);
     buf->f_bavail = (long)(freeBytesAvailable.QuadPart / 4096);
     buf->f_files = 0;
     buf->f_ffree = 0;
     buf->f_namelen = 255;
+#if defined(_MSC_VER)
+    strncpy_s(buf->f_fstypename, sizeof(buf->f_fstypename), "ntfs", _TRUNCATE);
+    strncpy_s(buf->f_mntfromname, sizeof(buf->f_mntfromname), "C:", _TRUNCATE);
+    strncpy_s(buf->f_mntonname, sizeof(buf->f_mntonname), "C:\\", _TRUNCATE);
+#else
+    strncpy(buf->f_fstypename, "ntfs", sizeof(buf->f_fstypename) - 1);
+    strncpy(buf->f_mntfromname, "C:", sizeof(buf->f_mntfromname) - 1);
+    strncpy(buf->f_mntonname, "C:\\", sizeof(buf->f_mntonname) - 1);
+#endif
     return 0;
   }
 

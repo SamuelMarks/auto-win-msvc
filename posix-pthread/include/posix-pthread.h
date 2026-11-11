@@ -366,7 +366,9 @@ int pthread_setspecific(pthread_key_t key, const void *value);
 /** \brief pthread_setname_np function. */
 int pthread_setname_np(pthread_t thread, const char *name);
 /** \brief pthread_sigmask function. */
+#ifndef pthread_sigmask
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
+#endif
 /** \brief pthread_spin_destroy function. */
 int pthread_spin_destroy(pthread_spinlock_t *lock);
 /** \brief pthread_spin_init function. */

@@ -955,6 +955,28 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/posix-stdatomic/include)
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-stdatomic/include")
 endif()
 
+foreach(_new_mod
+    bsd-capsicum
+    bsd-libutil
+    bsd-fts
+    bsd-vis
+    bsd-stringlist
+    bsd-bitstring
+    bsd-sbuf
+    bsd-db
+    posix-nl-types
+    bsd-utmpx
+    bsd-kvm-procstat
+    bsd-rpc
+    bsd-dev-headers
+)
+    file(GLOB _mod_src "${CMAKE_CURRENT_SOURCE_DIR}/${_new_mod}/src/*.c")
+    list(APPEND MEGA_SOURCES ${_mod_src})
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_new_mod}/include")
+        list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/${_new_mod}/include")
+    endif()
+endforeach()
+
 
 if(AUTO_WIN_MSVC_COVERAGE)
     if(MSVC)
@@ -1095,12 +1117,10 @@ list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/include"
 endif()
 set(COMBINED_POSIX_INCLUDES "${CMAKE_BINARY_DIR}/posix_includes")
 file(MAKE_DIRECTORY "${COMBINED_POSIX_INCLUDES}")
-if(NOT EXISTS "${COMBINED_POSIX_INCLUDES}/.copied_stamp")
-    foreach(D IN LISTS MEGA_INCLUDES)
-        file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
-    endforeach()
-    file(WRITE "${COMBINED_POSIX_INCLUDES}/.copied_stamp" "1")
-endif()
+foreach(D IN LISTS MEGA_INCLUDES)
+    file(COPY "${D}/." DESTINATION "${COMBINED_POSIX_INCLUDES}")
+endforeach()
+file(WRITE "${COMBINED_POSIX_INCLUDES}/.copied_stamp" "2")
 target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_POSIX_INCLUDES}>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
 
@@ -1163,7 +1183,26 @@ endif()
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bsd-stdlib)
     add_subdirectory(bsd-stdlib)
     add_subdirectory(bsd-sys-cdefs)
-
 endif()
+
+foreach(_new_mod
+    bsd-capsicum
+    bsd-libutil
+    bsd-fts
+    bsd-vis
+    bsd-stringlist
+    bsd-bitstring
+    bsd-sbuf
+    bsd-db
+    posix-nl-types
+    bsd-utmpx
+    bsd-kvm-procstat
+    bsd-rpc
+    bsd-dev-headers
+)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_new_mod}")
+        add_subdirectory("${_new_mod}")
+    endif()
+endforeach()
 endif()
 message(STATUS "MEGA_INCLUDES = ${MEGA_INCLUDES}")

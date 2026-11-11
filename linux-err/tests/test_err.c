@@ -68,6 +68,12 @@ static void mock_strerror_s(char *buf, size_t size, int errnum) {
 #define errx my_errx
 #define warn my_warn
 #define warnx my_warnx
+#define vwarnc my_vwarnc
+#define verrc my_verrc
+#define warnc my_warnc
+#define errc my_errc
+#define err_set_file my_err_set_file
+#define err_set_exit my_err_set_exit
 
 #include "../src/err.c"
 
@@ -82,6 +88,12 @@ static void mock_strerror_s(char *buf, size_t size, int errnum) {
 #undef errx
 #undef warn
 #undef warnx
+#undef vwarnc
+#undef verrc
+#undef warnc
+#undef errc
+#undef err_set_file
+#undef err_set_exit
 
 #ifdef DEFINED_WIN32_FOR_TEST
 #undef _WIN32
@@ -199,6 +211,70 @@ TEST test_verrx(void) {
     PASS();
 }
 
+static void call_my_vwarnc(int code, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_vwarnc(code, fmt, ap);
+    va_end(ap);
+}
+
+static void call_my_verrc(int eval, int code, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    my_verrc(eval, code, fmt, ap);
+}
+
+static int g_custom_exit_called = 0;
+static void custom_exit_cb(int eval) {
+    g_custom_exit_called = eval;
+}
+
+TEST test_warnc(void) {
+    g_mock_stderr_buf[0] = '\0';
+    my_warnc(ENOENT, "test %d", 123);
+    my_warnc(ENOENT, NULL);
+    PASS();
+}
+
+TEST test_vwarnc(void) {
+    g_mock_stderr_buf[0] = '\0';
+    call_my_vwarnc(ENOENT, "test %d", 123);
+    PASS();
+}
+
+TEST test_errc(void) {
+    g_mock_stderr_buf[0] = '\0';
+    if (setjmp(g_mock_exit_env) == 0) {
+        my_errc(42, ENOENT, "test %d", 123);
+    }
+    PASS();
+}
+
+TEST test_verrc(void) {
+    g_mock_stderr_buf[0] = '\0';
+    if (setjmp(g_mock_exit_env) == 0) {
+        call_my_verrc(42, ENOENT, "test %d", 123);
+    }
+    PASS();
+}
+
+TEST test_err_set_file(void) {
+    my_err_set_file(stderr);
+    my_err_set_file(NULL);
+    PASS();
+}
+
+TEST test_err_set_exit(void) {
+    g_custom_exit_called = 0;
+    my_err_set_exit(custom_exit_cb);
+    if (setjmp(g_mock_exit_env) == 0) {
+        my_errx(7, "exit cb");
+    }
+    ASSERT_EQ(7, g_custom_exit_called);
+    my_err_set_exit(NULL);
+    PASS();
+}
+
 SUITE(err_suite) {
     RUN_TEST(test_warn);
     RUN_TEST(test_warn_null);
@@ -210,6 +286,12 @@ SUITE(err_suite) {
     RUN_TEST(test_vwarnx);
     RUN_TEST(test_verr);
     RUN_TEST(test_verrx);
+    RUN_TEST(test_warnc);
+    RUN_TEST(test_vwarnc);
+    RUN_TEST(test_errc);
+    RUN_TEST(test_verrc);
+    RUN_TEST(test_err_set_file);
+    RUN_TEST(test_err_set_exit);
 }
 
 GREATEST_MAIN_DEFS();

@@ -16,10 +16,10 @@
 #include_next <sys/types.h>
 #elif defined(__WATCOMC__)
 #include <../h/sys/types.h>
-#include "posix-types.h"
 #else
 #include <sys/types.h>
 #endif
+#include "posix-types.h"
 #else
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/sys/types.h>
@@ -32,6 +32,11 @@
 #include <sys/types.h>
 #endif
 #include "posix-types.h"
+#endif
+#if defined(__has_include)
+#if __has_include(<sys/cdefs.h>)
+#include <sys/cdefs.h>
+#endif
 #endif
 /* clang-format on */
 

@@ -1,5 +1,4 @@
 #ifndef POSIX_STDINT_H
-#define POSIX_STDINT_H
 
 /**
  * @file posix-stdint.h
@@ -18,6 +17,9 @@
 #include <sys/types.h>
 #endif
 /* clang-format on */
+
+#ifndef POSIX_STDINT_H
+#define POSIX_STDINT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -495,4 +497,5 @@ auto_win_msvc_error_t posix_stdint_get_info(int *out_available);
 }
 #endif /* __cplusplus */
 
+#endif /* POSIX_STDINT_H */
 #endif /* POSIX_STDINT_H */

@@ -239,21 +239,34 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   const char *s;
   const char *end_ptr = NULL;
   const char *start_ptr = NULL;
+  const char *sub_str = string;
+  char *temp_sub = NULL;
+  regoff_t base_off = 0;
   size_t i;
 
-  (void)eflags;
   if (preg == NULL || string == NULL || preg->re_guts == NULL) {
     return REG_INVARG;
+  }
+  if ((eflags & REG_STARTEND) && pmatch != NULL &&
+      pmatch[0].rm_eo >= pmatch[0].rm_so && pmatch[0].rm_so >= 0) {
+    size_t sub_len = (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
+    base_off = pmatch[0].rm_so;
+    temp_sub = (char *)malloc(sub_len + 1);
+    if (temp_sub != NULL) {
+      memcpy(temp_sub, string + base_off, sub_len);
+      temp_sub[sub_len] = '\0';
+      sub_str = temp_sub;
+    }
   }
   re = (const dos16_regex_t *)preg->re_guts;
   pat = re->pattern;
   if (pat[0] == '^') {
-    end_ptr = dos16_match_here(pat + 1, string, re->cflags);
+    end_ptr = dos16_match_here(pat + 1, sub_str, re->cflags);
     if (end_ptr != NULL) {
-      start_ptr = string;
+      start_ptr = sub_str;
     }
   } else {
-    s = string;
+    s = sub_str;
     do {
       end_ptr = dos16_match_here(pat, s, re->cflags);
       if (end_ptr != NULL) {
@@ -264,15 +277,21 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   }
 
   if (end_ptr == NULL) {
+    if (temp_sub != NULL)
+      free(temp_sub);
     return REG_NOMATCH;
   }
   if (pmatch != NULL && nmatch > 0) {
-    pmatch[0].rm_so = (regoff_t)(start_ptr - string);
-    pmatch[0].rm_eo = (regoff_t)(end_ptr - string);
+    pmatch[0].rm_so = base_off + (regoff_t)(start_ptr - sub_str);
+    pmatch[0].rm_eo = base_off + (regoff_t)(end_ptr - sub_str);
+    if (temp_sub != NULL)
+      free(temp_sub);
     for (i = 1; i < nmatch; i++) {
       pmatch[i].rm_so = -1;
       pmatch[i].rm_eo = -1;
     }
+  } else if (temp_sub != NULL) {
+    free(temp_sub);
   }
   return 0;
 }
@@ -390,8 +409,14 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
     return REG_ESPACE;
   }
 
-  rc = pcre2_match(re, (PCRE2_SPTR)string, PCRE2_ZERO_TERMINATED, 0, options,
-                   match_data, NULL);
+  if ((eflags & REG_STARTEND) && pmatch != NULL &&
+      pmatch[0].rm_eo >= pmatch[0].rm_so && pmatch[0].rm_so >= 0) {
+    rc = pcre2_match(re, (PCRE2_SPTR)string, (PCRE2_SIZE)pmatch[0].rm_eo,
+                     (PCRE2_SIZE)pmatch[0].rm_so, options, match_data, NULL);
+  } else {
+    rc = pcre2_match(re, (PCRE2_SPTR)string, PCRE2_ZERO_TERMINATED, 0, options,
+                     match_data, NULL);
+  }
 
   if (rc < 0) {
     pcre2_match_data_free(match_data);

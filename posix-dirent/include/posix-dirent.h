@@ -149,6 +149,20 @@ struct dirent *readdir(DIR *dirp);
 int closedir(DIR *dirp);
 
 /**
+ * @brief Opens a directory stream from an open directory file descriptor.
+ * @param fd Open directory file descriptor.
+ * @return A pointer to the directory stream, or NULL if an error occurred.
+ */
+DIR *fdopendir(int fd);
+
+/**
+ * @brief Returns the file descriptor associated with a directory stream.
+ * @param dirp The directory stream.
+ * @return File descriptor, or -1 on error.
+ */
+int dirfd(DIR *dirp);
+
+/**
  * @brief Resets the position of the directory stream to the beginning of the
  * directory.
  * @param dirp The directory stream.

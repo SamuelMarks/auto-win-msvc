@@ -707,6 +707,43 @@ posix_resolve_at_path(int dirfd, const char *pathname, char **buf_out) {
   }
 }
 
+/** \brief unlinkat function. */
+int unlinkat(int dirfd, const char *pathname, int flags) {
+  char *buf = NULL;
+  int rc;
+  if (posix_resolve_at_path(dirfd, pathname, &buf) != AUTO_WIN_MSVC_SUCCESS) {
+    return -1;
+  }
+  if (flags & AT_REMOVEDIR) {
+    rc = _rmdir(buf);
+  } else {
+    rc = _unlink(buf);
+  }
+  free(buf);
+  return rc;
+}
+
+/** \brief renameat function. */
+int renameat(int olddirfd, const char *oldpath, int newdirfd,
+             const char *newpath) {
+  char *old_buf = NULL;
+  char *new_buf = NULL;
+  int rc;
+  if (posix_resolve_at_path(olddirfd, oldpath, &old_buf) !=
+      AUTO_WIN_MSVC_SUCCESS) {
+    return -1;
+  }
+  if (posix_resolve_at_path(newdirfd, newpath, &new_buf) !=
+      AUTO_WIN_MSVC_SUCCESS) {
+    free(old_buf);
+    return -1;
+  }
+  rc = rename(old_buf, new_buf);
+  free(old_buf);
+  free(new_buf);
+  return rc;
+}
+
 /** \brief openat function. */
 int openat(int dirfd, const char *pathname, int flags, ...) {
   char *buf;
@@ -3770,6 +3807,71 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
   (void)dirfd;
   return readlink(pathname, buf, bufsiz);
+}
+
+/** @brief Unlink a file or directory relative to a directory fd on DOS. */
+int unlinkat(int dirfd, const char *pathname, int flags) {
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
+    errno = EBADF;
+    return -1;
+  }
+  if (flags & AT_REMOVEDIR) {
+    return rmdir(pathname);
+  }
+  return unlink(pathname);
+}
+
+/** @brief Rename a file relative to directory fds on DOS. */
+int renameat(int olddirfd, const char *oldpath, int newdirfd,
+             const char *newpath) {
+  if ((olddirfd != AT_FDCWD && (olddirfd < 0 || olddirfd >= 256)) ||
+      (newdirfd != AT_FDCWD && (newdirfd < 0 || newdirfd >= 256)) || !oldpath ||
+      !newpath) {
+    errno = EBADF;
+    return -1;
+  }
+  return rename(oldpath, newpath);
+}
+
+/** @brief Create a unique temporary directory on DOS. */
+char *mkdtemp(char *template_str) {
+  static unsigned int s_seq = 0;
+  size_t len;
+  unsigned int attempt;
+  if (!template_str) {
+    errno = EINVAL;
+    return NULL;
+  }
+  len = strlen(template_str);
+  if (len < 6 || strcmp(template_str + len - 6, "XXXXXX") != 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+  for (attempt = 0; attempt < 1000; attempt++) {
+    unsigned int val = (++s_seq) + attempt * 37U;
+    size_t i;
+    for (i = 0; i < 6; i++) {
+      template_str[len - 6 + i] = (char)('a' + (val % 26));
+      val /= 26;
+    }
+    if ((mkdir)(template_str) == 0) {
+      return template_str;
+    }
+  }
+  errno = EEXIST;
+  return NULL;
+}
+
+/** @brief Stub password encryption function on DOS. */
+char *crypt(const char *key, const char *salt) {
+  static char s_crypt_buf[64];
+  (void)salt;
+  if (!key) {
+    return NULL;
+  }
+  strncpy(s_crypt_buf, key, sizeof(s_crypt_buf) - 1);
+  s_crypt_buf[sizeof(s_crypt_buf) - 1] = '\0';
+  return s_crypt_buf;
 }
 
 ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset) {

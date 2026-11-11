@@ -19,7 +19,7 @@ function(_auto_win_msvc_busybox_post_configure)
 endfunction()
 
 function(auto_win_msvc_transform_sources)
-    cmake_parse_arguments(TRANSFORM "TRANSFORM_HEADERS" "OUTPUT_DIR;OUTPUT_VAR" "SOURCES;INCLUDE_DIRS" ${ARGN})
+    cmake_parse_arguments(TRANSFORM "TRANSFORM_HEADERS" "OUTPUT_DIR;OUTPUT_VAR;RENAME_MAIN" "SOURCES;INCLUDE_DIRS" ${ARGN})
 
     if(NOT TRANSFORM_OUTPUT_DIR)
         set(TRANSFORM_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/src_gen")
@@ -136,16 +136,21 @@ function(auto_win_msvc_transform_sources)
         endif()
         set(_seen_target_${src_name} 1)
 
+        set(_extra_transform_args "")
+        if(TRANSFORM_RENAME_MAIN)
+            list(APPEND _extra_transform_args "--rename-main" "${TRANSFORM_RENAME_MAIN}")
+        endif()
+
         # Transform immediately at configure time so headers/sources exist for tooling
         execute_process(
-            COMMAND "${_python_bin}" "${_transform_script}" "${src_abs}" "${out_src}"
+            COMMAND "${_python_bin}" "${_transform_script}" ${_extra_transform_args} "${src_abs}" "${out_src}"
             RESULT_VARIABLE _res
         )
 
         # Register build-time dependency for automated rebuilds if source changes
         add_custom_command(
             OUTPUT "${out_src}"
-            COMMAND "${_python_bin}" "${_transform_script}" "${src_abs}" "${out_src}"
+            COMMAND "${_python_bin}" "${_transform_script}" ${_extra_transform_args} "${src_abs}" "${out_src}"
             DEPENDS "${src_abs}" "${_transform_script}"
             COMMENT "Transforming ${src_name} for MSVC compatibility"
             VERBATIM

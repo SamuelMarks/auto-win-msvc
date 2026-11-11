@@ -1,0 +1,15 @@
+project(posix-nl-types LANGUAGES C)
+if(NOT MSVC AND NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
+    add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _POSIX_C_SOURCE=200809L _DARWIN_C_SOURCE)
+endif()
+
+file(GLOB SOURCES "src/*.c")
+add_library(posix-nl-types STATIC ${SOURCES})
+target_include_directories(posix-nl-types PUBLIC "include")
+
+enable_testing()
+file(GLOB TEST_SOURCES "tests/*.c")
+add_executable(test_posix-nl-types ${TEST_SOURCES})
+target_include_directories(test_posix-nl-types PRIVATE ${greatest_SOURCE_DIR})
+target_link_libraries(test_posix-nl-types PRIVATE posix-nl-types)
+add_test(NAME test_posix-nl-types COMMAND test_posix-nl-types)

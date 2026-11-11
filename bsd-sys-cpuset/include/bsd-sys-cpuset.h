@@ -105,15 +105,20 @@ typedef struct {
                              (1UL << ((cpu) % _CPU_SET_ULONG_BITS))) != 0)     \
                          : 0)
 
+#ifndef _CPULEVEL_T_DEFINED
+#define _CPULEVEL_T_DEFINED
 /** @brief CPU level type. */
 typedef int cpulevel_t;
 /** @brief CPU target which type. */
 typedef int cpuwhich_t;
+#endif
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
     !defined(__NetBSD__) && !defined(__linux__) && !defined(__CYGWIN__)
-#if !defined(__id_t_defined) && !defined(_ID_T) && !defined(_DEFINED_id_t)
+#if !defined(__id_t_defined) && !defined(_ID_T) && !defined(_DEFINED_id_t) &&  \
+    !defined(_ID_T_DEFINED)
 #define _ID_T
+#define _ID_T_DEFINED
 #define __id_t_defined
 #define _DEFINED_id_t
 /** @brief Identifier type. */

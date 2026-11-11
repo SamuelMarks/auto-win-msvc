@@ -457,6 +457,92 @@ int scandir(const char *dirp, struct dirent ***namelist,
 int alphasort(const struct dirent **a, const struct dirent **b) {
   return strcmp((*a)->d_name, (*b)->d_name);
 }
+
+#if !defined(__WATCOMC__) && !defined(__DOS__) && !defined(__MSDOS__)
+__declspec(dllimport) void *__stdcall
+GetModuleHandleA(const char *lpModuleName);
+__declspec(dllimport) void *__stdcall GetProcAddress(void *hModule,
+                                                     const char *lpProcName);
+__declspec(dllimport) void *__stdcall
+CreateFileA(const char *lpFileName, unsigned long dwDesiredAccess,
+            unsigned long dwShareMode, void *lpSecurityAttributes,
+            unsigned long dwCreationDisposition,
+            unsigned long dwFlagsAndAttributes, void *hTemplateFile);
+#endif
+
+/** \brief fdopendir function. */
+DIR *fdopendir(int fd) {
+#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+  (void)fd;
+  errno = ENOSYS;
+  return NULL;
+#else
+  char path_buf[4096];
+  intptr_t hFile;
+  void *kernel32;
+  unsigned long(__stdcall * pGetFinalPathNameByHandleA)(
+      void *, char *, unsigned long, unsigned long) = NULL;
+  unsigned long len;
+  DIR *d;
+  if (fd < 0) {
+    errno = EBADF;
+    return NULL;
+  }
+  hFile = _get_osfhandle(fd);
+  if (hFile == (intptr_t)-1 || hFile == (intptr_t)-2) {
+    errno = EBADF;
+    return NULL;
+  }
+  kernel32 = GetModuleHandleA("kernel32.dll");
+  if (!kernel32) {
+    errno = ENOSYS;
+    return NULL;
+  }
+  *(void **)(&pGetFinalPathNameByHandleA) =
+      GetProcAddress(kernel32, "GetFinalPathNameByHandleA");
+  if (!pGetFinalPathNameByHandleA) {
+    errno = ENOSYS;
+    return NULL;
+  }
+  len = pGetFinalPathNameByHandleA((void *)hFile, path_buf,
+                                   (unsigned long)sizeof(path_buf), 0);
+  if (len == 0 || len >= sizeof(path_buf)) {
+    errno = EBADF;
+    return NULL;
+  }
+  if (len >= 4 && path_buf[0] == '\\' && path_buf[1] == '\\' &&
+      path_buf[2] == '?' && path_buf[3] == '\\') {
+    memmove(path_buf, path_buf + 4, len - 3);
+  }
+  d = opendir(path_buf);
+  if (d != NULL) {
+    _close(fd);
+  }
+  return d;
+#endif
+}
+
+/** \brief dirfd function. */
+int dirfd(DIR *dirp) {
+#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+  (void)dirp;
+  errno = ENOSYS;
+  return -1;
+#else
+  void *hDir;
+  if (!dirp || !dirp->name) {
+    errno = EINVAL;
+    return -1;
+  }
+  hDir =
+      CreateFileA(dirp->name, 0x80000000UL, 7UL, NULL, 3UL, 0x02000000UL, NULL);
+  if (hDir == (void *)(intptr_t)-1) {
+    errno = ENOENT;
+    return -1;
+  }
+  return _open_osfhandle((intptr_t)hDir, 0);
+#endif
+}
 #else
 #undef opendir
 #undef readdir
@@ -746,6 +832,25 @@ int scandir(const char *dirp, struct dirent ***namelist,
 
 int alphasort(const struct dirent **a, const struct dirent **b) {
   return strcmp((*a)->d_name, (*b)->d_name);
+}
+
+/** @brief Opens a directory stream from a file descriptor on DOS. */
+DIR *fdopendir(int fd) {
+  if (fd < 0) {
+    errno = EBADF;
+    return NULL;
+  }
+  return opendir(".");
+}
+
+/** @brief Returns the file descriptor associated with a directory stream on
+ * DOS. */
+int dirfd(DIR *dirp) {
+  if (!dirp) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
 }
 #endif
 #endif /* _WIN32 */

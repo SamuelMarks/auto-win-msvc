@@ -1,5 +1,6 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
-    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) ||          \
+    defined(__linux__) || defined(__CYGWIN__)
 /* posix-pwdgrp.c - Strict C89 Implementation */
 
 /* Provide C89 compliant CRT secure overload definitions */
@@ -39,9 +40,11 @@
 #include "posix-pwdgrp.h"
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include "posix-pwdgrp.h"
 #else
+#include <stdio.h>
 #include "posix-pwdgrp.h"
 #endif
 /* clang-format on */
@@ -897,6 +900,104 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
 typedef int dummy_posix_pwdgrp_c_typedef;
 
 #endif /* _WIN32 */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+
+static char g_uid_num_buf[32];
+static char g_gid_num_buf[32];
+
+const char *user_from_uid(uid_t uid, int nouser) {
+  struct passwd *pw = getpwuid(uid);
+  if (pw != NULL && pw->pw_name != NULL) {
+    return pw->pw_name;
+  }
+  if (nouser) {
+    return NULL;
+  }
+#if defined(_MSC_VER)
+  sprintf_s(g_uid_num_buf, sizeof(g_uid_num_buf), "%u", (unsigned int)uid);
+#else
+  sprintf(g_uid_num_buf, "%u", (unsigned int)uid);
+#endif
+  return g_uid_num_buf;
+}
+
+int uid_from_user(const char *name, uid_t *uid) {
+  struct passwd *pw;
+  if (name == NULL || uid == NULL) {
+    return -1;
+  }
+  pw = getpwnam(name);
+  if (pw == NULL) {
+    return -1;
+  }
+  *uid = pw->pw_uid;
+  return 0;
+}
+
+const char *group_from_gid(gid_t gid, int nogroup) {
+  struct group *gr = getgrgid(gid);
+  if (gr != NULL && gr->gr_name != NULL) {
+    return gr->gr_name;
+  }
+  if (nogroup) {
+    return NULL;
+  }
+#if defined(_MSC_VER)
+  sprintf_s(g_gid_num_buf, sizeof(g_gid_num_buf), "%u", (unsigned int)gid);
+#else
+  sprintf(g_gid_num_buf, "%u", (unsigned int)gid);
+#endif
+  return g_gid_num_buf;
+}
+
+int gid_from_group(const char *name, gid_t *gid) {
+  struct group *gr;
+  if (name == NULL || gid == NULL) {
+    return -1;
+  }
+  gr = getgrnam(name);
+  if (gr == NULL) {
+    return -1;
+  }
+  *gid = gr->gr_gid;
+  return 0;
+}
+
+int setpassent(int stayopen) {
+  (void)stayopen;
+  setpwent();
+  return 1;
+}
+
+int setgroupent(int stayopen) {
+  (void)stayopen;
+  setgrent();
+  return 1;
+}
+
+int pwcache_userdb(int (*a_setpassent)(int), void (*a_endpwent)(void),
+                   struct passwd *(*a_getpwnam)(const char *),
+                   struct passwd *(*a_getpwuid)(uid_t)) {
+  (void)a_setpassent;
+  (void)a_endpwent;
+  (void)a_getpwnam;
+  (void)a_getpwuid;
+  return 0;
+}
+
+int pwcache_groupdb(int (*a_setgroupent)(int), void (*a_endgrent)(void),
+                    struct group *(*a_getgrnam)(const char *),
+                    struct group *(*a_getgrgid)(gid_t)) {
+  (void)a_setgroupent;
+  (void)a_endgrent;
+  (void)a_getgrnam;
+  (void)a_getgrgid;
+  return 0;
+}
+
+#endif /* !BSD && !__APPLE__ */
 
 /* Prevent empty translation unit */
 int dummy_posix_pwdgrp(void) { return 0; }

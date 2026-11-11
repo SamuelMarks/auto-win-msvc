@@ -7,7 +7,7 @@
  */
 
 /* clang-format off */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
 #include <stdlib.h>
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include "linux-endian.h"
@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
 #define bswap_16(x) _byteswap_ushort((x))
 #define bswap_32(x) _byteswap_ulong((x))
 #define bswap_64(x) _byteswap_uint64((x))

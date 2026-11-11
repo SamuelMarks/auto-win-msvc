@@ -139,8 +139,74 @@ def transform_source_content(content: str) -> str:
             + content
         )
 
+    content = content.replace(
+        "    if (strcmp(\"UTF-8\", nl_langinfo(CODESET)))"
+        + NL
+        + "      uselocale(newlocale(LC_CTYPE_MASK, \"C.UTF-8\", 0) ? :"
+        + NL
+        + "        newlocale(LC_CTYPE_MASK, \"en_US.UTF-8\", 0));",
+        "#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__DOS__)"
+        + NL
+        + "    if (strcmp(\"UTF-8\", nl_langinfo(CODESET))) {"
+        + NL
+        + "      locale_t _loc = newlocale(LC_CTYPE_MASK, \"C.UTF-8\", 0);"
+        + NL
+        + "      uselocale(_loc ? _loc : newlocale(LC_CTYPE_MASK, \"en_US.UTF-8\", 0));"
+        + NL
+        + "    }"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "static const int NEED_OPTIONS ="
+        + NL
+        + "#include \"generated/newtoys.h\""
+        + NL
+        + "0;  // Ends the opts || opts || opts...",
+        "static const int NEED_OPTIONS = 1;",
+    )
+    content = content.replace(
+        "struct toy_list *toy_find(char *name)" + NL + "{",
+        "struct toy_list *toy_find(char *name)"
+        + NL
+        + "{"
+        + NL
+        + "  char _nbuf[64];"
+        + NL
+        + "  if (name) {"
+        + NL
+        + "    size_t _nlen = strlen(name);"
+        + NL
+        + "    if (_nlen > 4 && _nlen < sizeof(_nbuf) && !strcasecmp(name + _nlen - 4, \".exe\")) {"
+        + NL
+        + "      memcpy(_nbuf, name, _nlen - 4);"
+        + NL
+        + "      _nbuf[_nlen - 4] = 0;"
+        + NL
+        + "      name = _nbuf;"
+        + NL
+        + "    }"
+        + NL
+        + "    if (!strncasecmp(name, \"toybox\", 6)) return toy_list;"
+        + NL
+        + "  }",
+    )
+    content = content.replace(
+        "if (!toys.exitval) toys.exitval = (toys.which->flags>>24) ? : 1;",
+        "if (!toys.exitval) toys.exitval = (toys.which->flags>>24) ? (toys.which->flags>>24) : 1;",
+    )
+    content = content.replace(
+        "return i ? : ((struct v_vector *)a)->serial - ((struct v_vector *)b)->serial;",
+        "return i ? i : (((struct v_vector *)a)->serial - ((struct v_vector *)b)->serial);",
+    )
+    content = content.replace(
+        "return TT.I ? : FLAG(z)?\"gzip\" : FLAG(j)?\"bzip2\" : FLAG(Z)?\"zstd\" : \"xz\";",
+        "return TT.I ? TT.I : (FLAG(z)?\"gzip\" : FLAG(j)?\"bzip2\" : FLAG(Z)?\"zstd\" : \"xz\");",
+    )
+
+
     elvis_pattern = re.compile(
-        r'("(?:\\.|[^"\\\x0a])*"|/\*[\s\S]*?\*/|//[^\x0a]*)|(\([a-zA-Z0-9_ %+\-*/&|^~<>!=]+\)|[a-zA-Z0-9_]+(?:\([^;\x0a?]*\)|(?:\s*(?:->|\.)\s*[a-zA-Z0-9_]+))*)\s*\?\s*:\s*([a-zA-Z0-9_]+\([^;\x0a()]*\)|[^,\);\x0a]+)'
+        r'("(?:\\.|[^"\\\x0a])*"|/\*[\s\S]*?\*/|//[^\x0a]*)|(\*?[a-zA-Z0-9_]+(?:\[[^\]]+\])?(?:\([^;\x0a?()]*\)|(?:\s*(?:->|\.)\s*[a-zA-Z0-9_]+))*|\([a-zA-Z0-9_ %+\-*/&|^~<>!=<>]+\))\s*\?\s*:\s*("(?:\\.|[^"\\\x0a])*"|[a-zA-Z0-9_]+\([^;\x0a()]*\)|[^,\);\x0a]+)'
     )
 
     def elvis_repl(m: re.Match[str]) -> str:
@@ -288,7 +354,10 @@ def transform_source_content(content: str) -> str:
                     "#if defined(_WIN32)",
                     "#include <setjmp.h>",
                     "#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))",
+                    "#ifndef AWM_CLEAR_JMP_FRAME_DEFINED",
+                    "#define AWM_CLEAR_JMP_FRAME_DEFINED",
                     "static __inline int awm_clear_jmp_frame(_JBTYPE *env, int rc) { ((unsigned __int64 *)env)[0] = 0; return rc; }",
+                    "#endif",
                     "#undef setjmp",
                     "#define setjmp(env) awm_clear_jmp_frame((env), _setjmp(env))",
                     "#endif",
@@ -2262,10 +2331,1115 @@ def transform_source_content(content: str) -> str:
             content,
         )
 
+    content = content.replace(
+        "#define minof(a, b) ({typeof(a) aa = (a); typeof(b) bb = (b); aa<bb ? aa : bb;})"
+        + NL
+        + "#define maxof(a, b) ({typeof(a) aa = (a); typeof(b) bb = (b); aa>bb ? aa : bb;})",
+        "#define minof(a, b) ((a) < (b) ? (a) : (b))"
+        + NL
+        + "#define maxof(a, b) ((a) > (b) ? (a) : (b))",
+    )
+    content = content.replace(
+        "  char type[0];",
+        "  char type[1];",
+    )
+    content = content.replace(
+        "pid_t xpclose(pid_t pid, int pipe);",
+        "int xpclose(pid_t pid, int pipe);",
+    )
+
+    content = content.replace(
+        "#define IS_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)",
+        "#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)"
+        + NL
+        + "#define IS_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)"
+        + NL
+        + "#else"
+        + NL
+        + "#define IS_LITTLE_ENDIAN 1"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "#if __has_include(<shadow.h>)" + NL + "#include <shadow.h>" + NL + "#endif",
+        "#if defined(__linux__)" + NL + "#include <shadow.h>" + NL + "#endif",
+    )
+    content = content.replace(
+        "#if __has_include(<utmpx.h>)",
+        "#if defined(__linux__)",
+    )
+    content = content.replace(
+        "#if __has_include (<sys/random.h>)",
+        "#if defined(__linux__)",
+    )
+    content = content.replace(
+        "#if defined(__APPLE__) || defined(__linux__)" + NL + "// Linux and macOS has both have getxattr",
+        "#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)" + NL + "// Linux and macOS has both have getxattr",
+    )
+    content = content.replace(
+        "#elif defined(__GLIBC__)" + NL + "// Work around a glibc bug",
+        "#elif defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "#include <stdarg.h>"
+        + NL
+        + "#include <stdlib.h>"
+        + NL
+        + "#include <string.h>"
+        + NL
+        + "#include <time.h>"
+        + NL
+        + "#include <wchar.h>"
+        + NL
+        + "#if defined(_WIN32) && !defined(__WATCOMC__)"
+        + NL
+        + "#include <sys/utime.h>"
+        + NL
+        + "#endif"
+        + NL
+        + "#include <strings.h>"
+        + NL
+        + "#if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_DEFINED_) && !defined(__WATCOMC__)"
+        + NL
+        + "#define _SSIZE_T_DEFINED"
+        + NL
+        + "typedef long ssize_t;"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef _SC_ARG_MAX"
+        + NL
+        + "#define _SC_ARG_MAX 1"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef _SC_PAGESIZE"
+        + NL
+        + "#define _SC_PAGESIZE 30"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef _SC_NPROCESSORS_ONLN"
+        + NL
+        + "#define _SC_NPROCESSORS_ONLN 84"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef PRIO_PROCESS"
+        + NL
+        + "#define PRIO_PROCESS 0"
+        + NL
+        + "#define PRIO_PGRP 1"
+        + NL
+        + "#define PRIO_USER 2"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef CLD_EXITED"
+        + NL
+        + "#define CLD_EXITED 1"
+        + NL
+        + "#define CLD_KILLED 2"
+        + NL
+        + "#define CLD_DUMPED 3"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef TIOCSCTTY"
+        + NL
+        + "#define TIOCSCTTY 0x540E"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef ECHOCTL"
+        + NL
+        + "#define ECHOCTL 0001000"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef ECHOKE"
+        + NL
+        + "#define ECHOKE 0004000"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef initgroups"
+        + NL
+        + "#define initgroups(user, group) (0)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef syscall"
+        + NL
+        + "#define syscall(...) (-1L)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef O_ACCMODE"
+        + NL
+        + "#define O_ACCMODE (O_RDONLY|O_WRONLY|O_RDWR)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef ENODATA"
+        + NL
+        + "#define ENODATA 61"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef ENOTSUP"
+        + NL
+        + "#define ENOTSUP 95"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef h_errno"
+        + NL
+        + "#define h_errno errno"
+        + NL
+        + "#endif"
+        + NL
+        + "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "static inline struct timespec awm_stat_ts(time_t sec) { struct timespec ts; ts.tv_sec = sec; ts.tv_nsec = 0; return ts; }"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef getpriority"
+        + NL
+        + "#define getpriority(which, who) (0)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef setpriority"
+        + NL
+        + "#define setpriority(which, who, prio) (0)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef srandom"
+        + NL
+        + "#define srandom srand"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef random"
+        + NL
+        + "#define random rand"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef nice"
+        + NL
+        + "#define nice(inc) (0)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef sethostname"
+        + NL
+        + "#define sethostname(name, len) (-1)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef settimeofday"
+        + NL
+        + "#define settimeofday(tv, tz) (-1)"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef wait4"
+        + NL
+        + "#define wait4(pid, status, options, rusage) ((rusage) ? memset((rusage), 0, sizeof(*(rusage))) : 0, waitpid((pid), (status), (options)))"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef vsyslog"
+        + NL
+        + "#define vsyslog(pri, fmt, ap) ((void)(pri), (void)(fmt), (void)(ap))"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef cfsetspeed"
+        + NL
+        + "#define cfsetspeed(t, s) (cfsetispeed((t), (s)), cfsetospeed((t), (s)))"
+        + NL
+        + "#endif"
+        + NL
+        + "#ifndef getopt_long_only"
+        + NL
+        + "#define getopt_long_only getopt_long"
+        + NL
+        + "#endif"
+        + NL
+        + "static inline int awm_wcwidth(wchar_t ucs) { if (ucs == 0) return 0; if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) return -1; return 1; }"
+        + NL
+        + "#ifndef wcwidth"
+        + NL
+        + "#define wcwidth awm_wcwidth"
+        + NL
+        + "#endif"
+        + NL
+        + "static inline char *awm_strcasestr(const char *h, const char *n) { size_t nl = strlen(n); if (!nl) return (char *)h; for (; *h; h++) if (!strncasecmp(h, n, nl)) return (char *)h; return 0; }"
+        + NL
+        + "#ifndef strcasestr"
+        + NL
+        + "#define strcasestr awm_strcasestr"
+        + NL
+        + "#endif"
+        + NL
+        + "static inline void *awm_memmem(const void *l, size_t l_len, const void *s, size_t s_len) { const char *cl = (const char *)l, *cs = (const char *)s; size_t i; if (!s_len) return (void *)cl; if (l_len < s_len) return 0; for (i = 0; i <= l_len - s_len; i++) if (!memcmp(cl + i, cs, s_len)) return (void *)(cl + i); return 0; }"
+        + NL
+        + "#ifndef memmem"
+        + NL
+        + "#define memmem awm_memmem"
+        + NL
+        + "#endif"
+        + NL
+        + "#if !defined(_TIMER_T_DEFINED) && !defined(_TIMER_T_DEFINED_) && !defined(__WATCOMC__)"
+        + NL
+        + "#define _TIMER_T_DEFINED"
+        + NL
+        + "typedef void *timer_t;"
+        + NL
+        + "#endif"
+        + NL
+        + "#if defined(__WATCOMC__)"
+        + NL
+        + "#undef timer_t"
+        + NL
+        + "#define timer_t void *"
+        + NL
+        + "#endif"
+        + NL
+        + "#if !defined(_ITIMERSPEC_DEFINED) && !defined(__MINGW32__)"
+        + NL
+        + "#define _ITIMERSPEC_DEFINED"
+        + NL
+        + "struct itimerspec { struct timespec it_interval; struct timespec it_value; };"
+        + NL
+        + "#endif"
+        + NL
+        + "struct sigevent;"
+        + NL
+        + "int timer_create_wrap(clockid_t c, struct sigevent *se, timer_t *t);"
+        + NL
+        + "#define timer_create(...) timer_create_wrap(__VA_ARGS__)"
+        + NL
+        + "int timer_settime_wrap(timer_t t, int flags, struct itimerspec *val, struct itimerspec *old);"
+        + NL
+        + "#define timer_settime(...) timer_settime_wrap(__VA_ARGS__)"
+        + NL
+        + "#elif defined(__GLIBC__)"
+        + NL
+        + "// Work around a glibc bug",
+    )
+    content = content.replace(
+        "enum {" + NL + "  empty = 1 << 9," + NL + "  eol = 1 << 10," + NL + "  eof = 1 << 11," + NL + "  space = 1 << 12" + NL + "};",
+        "#undef eof" + NL + "#define eof awm_toybox_eof" + NL + "enum {" + NL + "  empty = 1 << 9," + NL + "  eol = 1 << 10," + NL + "  eof = 1 << 11," + NL + "  space = 1 << 12" + NL + "};",
+    )
+
+    content = content.replace(
+        "#if __has_include(<sys/random.h>) && (!defined(__ANDROID__) || __ANDROID_API__>28)",
+        "#if defined(__linux__)",
+    )
+    content = content.replace(
+        "#elif defined(__linux__)" + NL + NL + "#include <mntent.h>",
+        "#elif defined(__linux__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + NL
+        + "#include <mntent.h>",
+    )
+    content = content.replace(
+        "#elif defined(__linux__)" + NL + NL + "#include <sys/inotify.h>",
+        "#elif defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "struct xnotify *xnotify_init(int max) { struct xnotify *not = xzalloc(sizeof(struct xnotify)); not->max = max; not->paths = xmalloc(max * sizeof(char *)); not->fds = xmalloc(max * 2 * sizeof(int)); return not; }"
+        + NL
+        + "int xnotify_add(struct xnotify *not, int fd, char *path) { int i = 2*not->count; if (not->max == not->count) error_exit(\"xnotify_add overflow\"); not->fds[i] = -1; not->fds[i+1] = fd; not->paths[not->count++] = path; return 0; }"
+        + NL
+        + "int xnotify_wait(struct xnotify *not, char **path) { (void)not; (void)path; return -1; }"
+        + NL
+        + "#elif defined(__linux__)"
+        + NL
+        + NL
+        + "#include <sys/inotify.h>",
+    )
+    content = content.replace(
+        "#elif defined(__IsBSD__)" + NL + "#warning no xattr support in BSD",
+        "#elif defined(__IsBSD__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "ssize_t xattr_get(const char *p, const char *n, void *v, size_t s) { (void)p;(void)n;(void)v;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_lget(const char *p, const char *n, void *v, size_t s) { (void)p;(void)n;(void)v;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_fget(int fd, const char *n, void *v, size_t s) { (void)fd;(void)n;(void)v;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_list(const char *p, char *l, size_t s) { (void)p;(void)l;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_llist(const char *p, char *l, size_t s) { (void)p;(void)l;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_flist(int fd, char *l, size_t s) { (void)fd;(void)l;(void)s; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_set(const char *p, const char *n, const void *v, size_t s, int f) { (void)p;(void)n;(void)v;(void)s;(void)f; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_lset(const char *p, const char *n, const void *v, size_t s, int f) { (void)p;(void)n;(void)v;(void)s;(void)f; errno = ENOSYS; return -1; }"
+        + NL
+        + "ssize_t xattr_fset(int fd, const char *n, const void *v, size_t s, int f) { (void)fd;(void)n;(void)v;(void)s;(void)f; errno = ENOSYS; return -1; }",
+    )
+    content = content.replace(
+        "#else" + NL + "#error" + NL + "  return dev&0xff;",
+        "#else" + NL + "  return dev&0xff;",
+    )
+    content = content.replace(
+        "#else" + NL + "#error" + NL + "  return dev>>8;",
+        "#else" + NL + "  return dev>>8;",
+    )
+    content = content.replace(
+        "#else" + NL + "#error" + NL + "  return (major<<8)|minor;",
+        "#else" + NL + "  return (major<<8)|minor;",
+    )
+    content = content.replace(
+        "  if (!s) sprintf(s = libbuf, \"0x%x\", (unsigned)statfs->f_type);" + NL + "  return s;" + NL + "#else" + NL + "#error" + NL + "#endif",
+        "  if (!s) sprintf(s = libbuf, \"0x%x\", (unsigned)statfs->f_type);" + NL + "  return s;" + NL + "#else" + NL + "  (void)statfs; return \"unknown\";" + NL + "#endif",
+    )
+    content = content.replace(
+        "#elif defined(__GLIBC__)" + NL + "int timer_create_wrap(",
+        "#elif defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "int timer_create_wrap(clockid_t c, struct sigevent *se, timer_t *t) { (void)c; (void)se; if (t) *t = 0; return 0; }"
+        + NL
+        + "int timer_settime_wrap(timer_t t, int flags, struct itimerspec *val, struct itimerspec *old) { (void)t; (void)flags; (void)val; (void)old; return 0; }"
+        + NL
+        + "#elif defined(__GLIBC__)"
+        + NL
+        + "int timer_create_wrap(",
+    )
+
+    content = content.replace(
+        "char *getbasename(char *name)"
+        + NL
+        + "{"
+        + NL
+        + "  char *s = strrchr(name, '/');"
+        + NL
+        + NL
+        + "  if (s) return s+1;"
+        + NL
+        + NL
+        + "  return name;"
+        + NL
+        + "}",
+        "char *getbasename(char *name)"
+        + NL
+        + "{"
+        + NL
+        + "  char *s = strrchr(name, '/');"
+        + NL
+        + "  char *bs = strrchr(name, '\\\\');"
+        + NL
+        + "  if (bs && (!s || bs > s)) s = bs;"
+        + NL
+        + "  if (s) return s+1;"
+        + NL
+        + "  return name;"
+        + NL
+        + "}",
+    )
+
+    content = content.replace(
+        "path = xmalloc(len)+len-ll;",
+        "path = (char *)xmalloc(len)+len-ll;",
+    )
+    content = content.replace(
+        "else if (node->dirfd != -1) dir = fdopendir(xdup(node->dirfd));",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "  else if (node->dirfd != -1) { char *dp = dirtree_path(node, 0); dir = opendir(dp); free(dp); }"
+        + NL
+        + "#else"
+        + NL
+        + "  else if (node->dirfd != -1) dir = fdopendir(xdup(node->dirfd));"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "    if ((flags&DIRTREE_SYMFOLLOW) && entry->d_type==DT_LNK"
+        + NL
+        + "      && !S_ISLNK(new->st.st_mode)) new->again |= DIRTREE_SYMFOLLOW;"
+        + NL
+        + "    if (!new->st.st_blksize && !new->st.st_mode)"
+        + NL
+        + "      new->st.st_mode = entry->d_type<<12;",
+        "#if !defined(__WATCOMC__) && !defined(__DOS__) && !defined(__MSDOS__)"
+        + NL
+        + "    if ((flags&DIRTREE_SYMFOLLOW) && entry->d_type==DT_LNK"
+        + NL
+        + "      && !S_ISLNK(new->st.st_mode)) new->again |= DIRTREE_SYMFOLLOW;"
+        + NL
+        + "    if (!new->st.st_blksize && !new->st.st_mode)"
+        + NL
+        + "      new->st.st_mode = entry->d_type<<12;"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "buf += fd;",
+        "buf = (char *)buf + fd;",
+    )
+
+    content = content.replace(
+        "memcpy(TT.obuf+TT.opos, buf+i, j);",
+        "memcpy(TT.obuf+TT.opos, (char *)buf+i, j);",
+    )
+
+    content = content.replace(
+        "else s = memcpy(s, (wc==127) ? \"DEL\" : low+wc*3, 3)+3;",
+        "else s = (char *)memcpy(s, (wc==127) ? \"DEL\" : low+wc*3, 3)+3;",
+    )
+
+    content = content.replace(
+        "buf[3] = 250; // precision -6, minimum allowed",
+        "buf[3] = (char)250; // precision -6, minimum allowed",
+    )
+
+    content = content.replace(
+        "#define FOR_fsync",
+        "#ifndef O_NOATIME" + NL + "#define O_NOATIME 0" + NL + "#endif" + NL
+        + "#if defined(__APPLE__)" + NL
+        + "#ifndef fdatasync" + NL + "#define fdatasync fsync" + NL + "#endif" + NL + "#endif" + NL
+        + "#define FOR_fsync",
+    )
+
+    content = content.replace(
+        "    printf(\", %s float\","
+        + NL
+        + "      (char *[]){\"soft\", \"single\", \"double\", \"quad\"}[(flags&0x6)/2]);",
+        "    { static char *const _fp[] = {\"soft\", \"single\", \"double\", \"quad\"};"
+        + NL
+        + "      printf(\", %s float\", _fp[(flags&0x6)/2]); }",
+    )
+
+    content = content.replace(
+        "if (result<(unsigned []){0x80,0x800,0x10000}[c-2]) return -1;",
+        "{ static const unsigned _ov[] = {0x80,0x800,0x10000}; if (result<_ov[c-2]) return -1; }",
+    )
+
+    content = content.replace(
+        "  transform = (void *[]){md5_transform, sha1_transform, sha2_32_transform,"
+        + NL
+        + "    sha2_32_transform, sha2_64_transform, sha2_64_transform}[method];"
+        + NL
+        + "  digestlen = (char []){16, 20, 28, 32, 48, 64}[method];"
+        + NL
+        + "  chunksize = 64<<(method>=4);"
+        + NL
+        + "  if (method<=1)"
+        + NL
+        + "    memcpy(hash->state.i32, (unsigned []){0x67452301, 0xEFCDAB89, 0x98BADCFE,"
+        + NL
+        + "      0x10325476, 0xC3D2E1F0}, 20);"
+        + NL
+        + "  else if (method==2)"
+        + NL
+        + "    memcpy(hash->state.i32, (unsigned []){0xc1059ed8, 0x367cd507, 0x3070dd17,"
+        + NL
+        + "      0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4}, 32);"
+        + NL
+        + "  else if (method==3)"
+        + NL
+        + "    memcpy(hash->state.i32, (unsigned []){0x6a09e667, 0xbb67ae85, 0x3c6ef372,"
+        + NL
+        + "      0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19}, 32);"
+        + NL
+        + "  else if (method==4)"
+        + NL
+        + "    memcpy(hash->state.i64, (unsigned long long []){0xcbbb9d5dc1059ed8,"
+        + NL
+        + "      0x629a292a367cd507, 0x9159015a3070dd17, 0x152fecd8f70e5939,"
+        + NL
+        + "      0x67332667ffc00b31, 0x8eb44a8768581511, 0xdb0c2e0d64f98fa7,"
+        + NL
+        + "      0x47b5481dbefa4fa4}, 64);"
+        + NL
+        + "  else memcpy(hash->state.i64, (unsigned long long []){0x6a09e667f3bcc908,"
+        + NL
+        + "      0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,"
+        + NL
+        + "      0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b,"
+        + NL
+        + "      0x5be0cd19137e2179}, 64);",
+        "  { static void *const _tr[] = {md5_transform, sha1_transform, sha2_32_transform,"
+        + NL
+        + "      sha2_32_transform, sha2_64_transform, sha2_64_transform};"
+        + NL
+        + "    static const char _dl[] = {16, 20, 28, 32, 48, 64};"
+        + NL
+        + "    static const unsigned _s1[] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};"
+        + NL
+        + "    static const unsigned _s2[] = {0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4};"
+        + NL
+        + "    static const unsigned _s3[] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};"
+        + NL
+        + "    static const unsigned long long _s4[] = {0xcbbb9d5dc1059ed8ULL, 0x629a292a367cd507ULL, 0x9159015a3070dd17ULL, 0x152fecd8f70e5939ULL, 0x67332667ffc00b31ULL, 0x8eb44a8768581511ULL, 0xdb0c2e0d64f98fa7ULL, 0x47b5481dbefa4fa4ULL};"
+        + NL
+        + "    static const unsigned long long _s5[] = {0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL, 0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL, 0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};"
+        + NL
+        + "    transform = _tr[method];"
+        + NL
+        + "    digestlen = _dl[method];"
+        + NL
+        + "    chunksize = 64<<(method>=4);"
+        + NL
+        + "    if (method<=1) memcpy(hash->state.i32, _s1, 20);"
+        + NL
+        + "    else if (method==2) memcpy(hash->state.i32, _s2, 32);"
+        + NL
+        + "    else if (method==3) memcpy(hash->state.i32, _s3, 32);"
+        + NL
+        + "    else if (method==4) memcpy(hash->state.i64, _s4, 64);"
+        + NL
+        + "    else memcpy(hash->state.i64, _s5, 64); }",
+    )
+
+    content = content.replace(
+        "len = (char []){0,3,2}[base/8];",
+        "{ static const char _bl[] = {0,3,2}; len = _bl[base/8]; }",
+    )
+
+    content = content.replace(
+        "if ((i = ((char []){80,80,48,16,32,0,64,2,1,8,96,4}[i])<<9)>=4096)",
+        "{ static const char _tm[] = {80,80,48,16,32,0,64,2,1,8,96,4}; i = _tm[i]<<9; } if (i>=4096)",
+    )
+
+    content = content.replace(
+        "  if (FLAG(s) && xrun((char *[]){\"strip\", \"-p\", TT.destname, 0}))"
+        + NL
+        + "    toys.exitval = 1;",
+        "  if (FLAG(s)) { char *_sa[4]; _sa[0] = \"strip\"; _sa[1] = \"-p\"; _sa[2] = TT.destname; _sa[3] = 0; if (xrun(_sa)) toys.exitval = 1; }",
+    )
+
+    content = content.replace(
+        "  if (FLAG(i)) memcpy(dsuapm+1, (char *[]){\"Inodes\", \"IUsed\", \"IFree\", \"IUse%\"},"
+        + NL
+        + "                      sizeof(char *)*4);",
+        "  if (FLAG(i)) { static char *const _in[] = {\"Inodes\", \"IUsed\", \"IFree\", \"IUse%\"}; memcpy(dsuapm+1, _in, sizeof(char *)*4); }",
+    )
+
+    content = content.replace(
+        "for (ss = *ss ? ss : (char *[]){\".\", 0}; *ss; ss++) {",
+        "{ static char *_dot[] = {\".\", 0}; for (ss = *ss ? ss : _dot; *ss; ss++) {",
+    ).replace(
+        "    }" + NL + "  } else loopfiles_rw(",
+        "    } }" + NL + "  } else loopfiles_rw(",
+    )
+
+    content = content.replace(
+        "  char **ss = (char *[]){\".\"};",
+        "  static char *_dot[] = {\".\"}; char **ss = _dot;",
+    )
+    content = content.replace(
+        "          time_t thyme = (int []){new->st.st_atime, new->st.st_ctime,"
+        + NL
+        + "                                  new->st.st_mtime}[stridx(\"acm\", *s)];",
+        "          int _th[3]; time_t thyme; _th[0] = new->st.st_atime; _th[1] = new->st.st_ctime; _th[2] = new->st.st_mtime; thyme = _th[stridx(\"acm\", *s)];",
+    )
+    content = content.replace(
+        "            units = (int []){86400, 3600, 60, 1}[uu];",
+        "            { static const int _u[] = {86400, 3600, 60, 1}; units = _u[uu]; }",
+    )
+
+    content = content.replace(
+        "else TT.hdr.mode |= (char []){8,8,10,2,6,4,1,8}[tar.type-'0']<<12;",
+        "else { static const char _tm[] = {8,8,10,2,6,4,1,8}; TT.hdr.mode |= _tm[tar.type-'0']<<12; }",
+    )
+    content = content.replace(
+        "          pid = xpopen((char *[]){\"sh\", \"-c\", TT.to_command, NULL}, &fd, 0);",
+        "          { char *_sh[4]; _sh[0] = \"sh\"; _sh[1] = \"-c\"; _sh[2] = TT.to_command; _sh[3] = NULL; pid = xpopen(_sh, &fd, 0); }",
+    )
+    content = content.replace(
+        "      TT.pid = xpopen_both(zcat ? (char *[]){zcat->str, 0} :"
+        + NL
+        + "        (char *[]){get_archiver(), \"-d\", 0}, pipefd);",
+        "      { char *_za[3]; if (zcat) { _za[0] = zcat->str; _za[1] = 0; } else { _za[0] = get_archiver(); _za[1] = \"-d\"; _za[2] = 0; } TT.pid = xpopen_both(_za, pipefd); }",
+    )
+    content = content.replace(
+        "      TT.pid = xpopen_both((char *[]){get_archiver(), 0}, pipefd);",
+        "      { char *_za[2]; _za[0] = get_archiver(); _za[1] = 0; TT.pid = xpopen_both(_za, pipefd); }",
+    )
+    content = content.replace(
+        "struct timespec times[2] = {{sec, 0},{sec, 0}};",
+        "struct timespec times[2]; times[0].tv_sec = sec; times[0].tv_nsec = 0; times[1].tv_sec = sec; times[1].tv_nsec = 0;",
+    )
+    content = content.replace(
+        "int pipefd[2] = {hdr ? -1 : TT.fd, -1}, i, pid;",
+        "int pipefd[2], i, pid; pipefd[0] = hdr ? -1 : TT.fd; pipefd[1] = -1;",
+    )
+    content = content.replace(
+        "int pipefd[2] = {-1, TT.fd};",
+        "int pipefd[2]; pipefd[0] = -1; pipefd[1] = TT.fd;",
+    )
+
+    content = content.replace(
+        "    error_exit_raw((char *[]){\"Unsupported options in the .xz headers\","
+        + NL
+        + "      \"File is corrupt\"}[ret-2]);",
+        "    { static char *const _em[] = {\"Unsupported options in the .xz headers\", \"File is corrupt\"}; error_exit_raw(_em[ret-2]); }",
+    )
+
+    content = content.replace(
+        "  *f = (struct zfile){TT.zfiles, xstrdup(fn), fp, mode, file_or_pipe,"
+        + NL
+        + "                isatty(fileno(fp)), is_std_file, 0, 0, 0, 0, 0};",
+        "  f->next = TT.zfiles; f->fn = xstrdup(fn); f->fp = fp; f->mode = mode;"
+        + NL
+        + "  f->file_or_pipe = file_or_pipe; f->is_tty = isatty(fileno(fp)); f->is_std_file = is_std_file;",
+    )
+    content = content.replace(
+        "*TT.cfile = (struct zfile){0};",
+        "memset(TT.cfile, 0, sizeof(struct zfile));",
+    )
+    content = content.replace(
+        "r = (p->fp) ? (p->file_or_pipe ? fclose : pclose)(p->fp) : -1;",
+        "r = (p->fp) ? (p->file_or_pipe ? fclose(p->fp) : pclose(p->fp)) : -1;",
+    )
+    content = content.replace(
+        "FILE *fp = (file_or_pipe ? fopen : popen)(fn, mode);",
+        "FILE *fp = file_or_pipe ? fopen(fn, mode) : popen(fn, mode);",
+    )
+
+    _esc_e_re = re.compile(
+        r'("(?:\\.|[^"\\\x0a])*"|\x27(?:\\.|[^\x27\\\x0a])*\x27)'
+    )
+    content = _esc_e_re.sub(
+        lambda m: re.sub(r"(?<!\\)\\e", lambda _: BS + "033", m.group(0)),
+        content,
+    )
+
+    content = re.sub(
+        r"\breturn\s+((?:error_msg|perror_msg|perror_msg_raw|xprintf|xputs|xputsn|xputc|forget_arg|header_time|error_time|flagshow|do_help|show_status|arg_add|skippy|newline)\s*\([^;]*\));",
+        r"{ \1; return; }",
+        content,
+    )
+
+    content = content.replace(
+        "char *pp[] = {\"0%3o%n\"+!echo,\"x%2x%n\",\"u%4x%n\",\"U%8x%n\"};",
+        "char *pp[4]; pp[0] = \"0%3o%n\"+!echo; pp[1] = \"x%2x%n\"; pp[2] = \"u%4x%n\"; pp[3] = \"U%8x%n\";",
+    )
+    content = content.replace(
+        "    if (sscanf(*c, (char *[]){\"0%3o%n\"+!echo, \"x%2x%n\", \"u%4x%n\", \"U%6x%n\"}[i],"
+        + NL
+        + "        &idx, &off) > 0)",
+        "    { char *pp[4]; pp[0] = \"0%3o%n\"+!echo; pp[1] = \"x%2x%n\"; pp[2] = \"u%4x%n\"; pp[3] = \"U%6x%n\";"
+        + NL
+        + "    if (sscanf(*c, pp[i], &idx, &off) > 0)",
+    )
+    content = content.replace(
+        "      return idx;" + NL + "    }" + NL + "  }" + NL + NL + "  if (-1 == (idx = stridx(",
+        "      return idx;" + NL + "    } }" + NL + "  }" + NL + NL + "  if (-1 == (idx = stridx(",
+    )
+
+    content = content.replace(
+        "  char *s = str, *p, *oldtz = 0, *formats[] = {\"%Y-%m-%d %T\", \"%Y-%m-%dT%T\","
+        + NL
+        + "    \"%a %b %e %H:%M:%S %Z %Y\", // date(1) output format in POSIX/C locale."
+        + NL
+        + "    \"%H:%M:%S\", \"%Y-%m-%d %H:%M\", \"%Y-%m-%d\", \"%H:%M\", \"%m%d%H%M\","
+        + NL
+        + "    endian ? \"%m%d%H%M%y\" : \"%y%m%d%H%M\","
+        + NL
+        + "    endian ? \"%m%d%H%M%C%y\" : \"%C%y%m%d%H%M\"};",
+        "  char *s = str, *p, *oldtz = 0, *formats[10];"
+        + NL
+        + "  formats[0] = \"%Y-%m-%d %T\"; formats[1] = \"%Y-%m-%dT%T\";"
+        + NL
+        + "  formats[2] = \"%a %b %e %H:%M:%S %Z %Y\"; formats[3] = \"%H:%M:%S\";"
+        + NL
+        + "  formats[4] = \"%Y-%m-%d %H:%M\"; formats[5] = \"%Y-%m-%d\";"
+        + NL
+        + "  formats[6] = \"%H:%M\"; formats[7] = \"%m%d%H%M\";"
+        + NL
+        + "  formats[8] = endian ? \"%m%d%H%M%y\" : \"%y%m%d%H%M\";"
+        + NL
+        + "  formats[9] = endian ? \"%m%d%H%M%C%y\" : \"%C%y%m%d%H%M\";",
+    )
+
+    content = content.replace(
+        "  struct flock lock = {.l_type = F_WRLCK};",
+        "#if !defined(__WATCOMC__) && !defined(__DOS__) && !defined(__MSDOS__)"
+        + NL
+        + "  struct flock lock = {.l_type = F_WRLCK};"
+        + NL
+        + "#else"
+        + NL
+        + "  int lock = 0;"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "    dd = (double []){first, increment, last}[ii];",
+        "    { double _da[3]; _da[0] = first; _da[1] = increment; _da[2] = last; dd = _da[ii]; }",
+    )
+
+    content = content.replace(
+        "  char *labels[] = {\"\\nreal\"+FLAG(p), \"user\", \"sys\"}, **label = labels,"
+        + NL
+        + "       *vlabels[] ={\"Real\", \"User\", \"System\"}, tab = toys.optflags ? ' ' : '\\t';",
+        "  char *labels[3], **label = labels, *vlabels[] = {\"Real\", \"User\", \"System\"}, tab = toys.optflags ? ' ' : '\\t';"
+        + NL
+        + "  labels[0] = \"\\nreal\"+FLAG(p); labels[1] = \"user\"; labels[2] = \"sys\";",
+    )
+
+    content = content.replace(
+        "if (FLAG(V)) return (void)puts(\"mcookie from toybox\");",
+        "if (FLAG(V)) { puts(\"mcookie from toybox\"); return; }",
+    )
+
+    content = re.sub(r"=\s*\{\s*\}", "= {0}", content)
+    content = content.replace(",{}}", ",{0}}")
+
+    content = content.replace(
+        "enum toktypes {" + NL + "    // EOF (use -1 from stdio.h)" + NL + "    ERROR = 2,",
+        "#undef ERROR" + NL + "enum toktypes {" + NL + "    // EOF (use -1 from stdio.h)" + NL + "    ERROR = 2,",
+    )
+    content = content.replace(
+        "#define ZVINIT(flags, num, ptr) {(flags), (double)(num), {(ptr)}}",
+        "static inline struct zvalue awm_zvinit(unsigned f, double n, void *p) { struct zvalue v; v.flags = f; v.num = n; v.vst = (struct zstring *)p; return v; }"
+        + NL
+        + "#define ZVINIT(flags, num, ptr) awm_zvinit((flags), (double)(num), (void *)(ptr))",
+    )
+    content = content.replace(
+        "#define ZMSLOTINIT(hash, key, val) {hash, key, val}",
+        "static inline struct zmap_slot awm_zmslotinit(unsigned h, struct zstring *k, struct zvalue v) { struct zmap_slot s; s.hash = h; s.key = k; s.val = v; return s; }"
+        + NL
+        + "#define ZMSLOTINIT(hash, key, val) awm_zmslotinit((hash), (key), (val))",
+    )
+    content = content.replace(
+        "static struct zvalue uninit_zvalue = ZVINIT(0, 0.0, 0);"
+        + NL
+        + NL
+        + "// This will be reassigned in init_globals() with an empty string."
+        + NL
+        + "// It's a special value used for \"uninitialized\" field vars"
+        + NL
+        + "// referenced past $NF. See push_field()."
+        + NL
+        + "static struct zvalue uninit_string_zvalue = ZVINIT(0, 0.0, 0);",
+        "static struct zvalue uninit_zvalue = {0, 0.0, {0}};"
+        + NL
+        + "static struct zvalue uninit_string_zvalue = {0, 0.0, {0}};",
+    )
+    content = content.replace("(struct zvalue)ZVINIT(", "ZVINIT(")
+
+    content = content.replace(
+        "struct timespec times[] = {sb.st_atim, sb.st_mtim};",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "    struct timespec times[2]; times[0] = awm_stat_ts(sb.st_atime); times[1] = awm_stat_ts(sb.st_mtime);"
+        + NL
+        + "#else"
+        + NL
+        + "    struct timespec times[] = {sb.st_atim, sb.st_mtim};"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "      } else if (!(FLAG(u) && nanodiff(&try->st.st_mtim, &cst.st_mtim)>0)",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "      } else if (!(FLAG(u) && try->st.st_mtime < cst.st_mtime)"
+        + NL
+        + "#else"
+        + NL
+        + "      } else if (!(FLAG(u) && nanodiff(&try->st.st_mtim, &cst.st_mtim)>0)"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "struct timespec times[] = {try->st.st_atim, try->st.st_mtim};",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "      struct timespec times[2]; times[0] = awm_stat_ts(try->st.st_atime); times[1] = awm_stat_ts(try->st.st_mtime);"
+        + NL
+        + "#else"
+        + NL
+        + "      struct timespec times[] = {try->st.st_atim, try->st.st_mtim};"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "  else if (type == 'x') date_stat_format(&stat->st_atim);"
+        + NL
+        + "  else if (type == 'X') out('u', stat->st_atime);"
+        + NL
+        + "  else if (type == 'y') date_stat_format(&stat->st_mtim);"
+        + NL
+        + "  else if (type == 'Y') out('u', stat->st_mtime);"
+        + NL
+        + "  else if (type == 'z') date_stat_format(&stat->st_ctim);",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "  else if (type == 'x') { struct timespec _ts = awm_stat_ts(stat->st_atime); date_stat_format(&_ts); }"
+        + NL
+        + "  else if (type == 'X') out('u', stat->st_atime);"
+        + NL
+        + "  else if (type == 'y') { struct timespec _ts = awm_stat_ts(stat->st_mtime); date_stat_format(&_ts); }"
+        + NL
+        + "  else if (type == 'Y') out('u', stat->st_mtime);"
+        + NL
+        + "  else if (type == 'z') { struct timespec _ts = awm_stat_ts(stat->st_ctime); date_stat_format(&_ts); }"
+        + NL
+        + "#else"
+        + NL
+        + "  else if (type == 'x') date_stat_format(&stat->st_atim);"
+        + NL
+        + "  else if (type == 'X') out('u', stat->st_atime);"
+        + NL
+        + "  else if (type == 'y') date_stat_format(&stat->st_mtim);"
+        + NL
+        + "  else if (type == 'Y') out('u', stat->st_mtime);"
+        + NL
+        + "  else if (type == 'z') date_stat_format(&stat->st_ctim);"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "  printf(\"%s %s\\t%s\\n\", prefix, quoted_file,"
+        + NL
+        + "    format_iso_time(date, sizeof(date), &sb->st_mtim));",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "  { struct timespec _ts = awm_stat_ts(sb->st_mtime); printf(\"%s %s\\t%s\\n\", prefix, quoted_file, format_iso_time(date, sizeof(date), &_ts)); }"
+        + NL
+        + "#else"
+        + NL
+        + "  printf(\"%s %s\\t%s\\n\", prefix, quoted_file,"
+        + NL
+        + "    format_iso_time(date, sizeof(date), &sb->st_mtim));"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "        int macoff[] = {offsetof(struct stat, st_mtim),"
+        + NL
+        + "          offsetof(struct stat, st_atim), offsetof(struct stat, st_ctim)};",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "        int macoff[] = {offsetof(struct stat, st_mtime), offsetof(struct stat, st_atime), offsetof(struct stat, st_ctime)};"
+        + NL
+        + "#else"
+        + NL
+        + "        int macoff[] = {offsetof(struct stat, st_mtim),"
+        + NL
+        + "          offsetof(struct stat, st_atim), offsetof(struct stat, st_ctim)};"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "                sprintf(buf, \"%lld.%ld\", (long long)new->st.st_mtim.tv_sec,"
+        + NL
+        + "                             new->st.st_mtim.tv_nsec);",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "                sprintf(buf, \"%lld.0\", (long long)new->st.st_mtime);"
+        + NL
+        + "#else"
+        + NL
+        + "                sprintf(buf, \"%lld.%ld\", (long long)new->st.st_mtim.tv_sec,"
+        + NL
+        + "                             new->st.st_mtim.tv_nsec);"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "  if (flags&FLAG_t) ts1 = &a->st.st_mtim, ts2 = &b->st.st_mtim;"
+        + NL
+        + "  if (flags&FLAG_u) ts1 = &a->st.st_atim, ts2 = &b->st.st_atim;"
+        + NL
+        + "  if (flags&FLAG_c) ts1 = &a->st.st_ctim, ts2 = &b->st.st_ctim;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "  struct timespec _tsa, _tsb;"
+        + NL
+        + "  if (flags&FLAG_t) { _tsa = awm_stat_ts(a->st.st_mtime); _tsb = awm_stat_ts(b->st.st_mtime); ts1 = &_tsa; ts2 = &_tsb; }"
+        + NL
+        + "  if (flags&FLAG_u) { _tsa = awm_stat_ts(a->st.st_atime); _tsb = awm_stat_ts(b->st.st_atime); ts1 = &_tsa; ts2 = &_tsb; }"
+        + NL
+        + "  if (flags&FLAG_c) { _tsa = awm_stat_ts(a->st.st_ctime); _tsb = awm_stat_ts(b->st.st_ctime); ts1 = &_tsa; ts2 = &_tsb; }"
+        + NL
+        + "#else"
+        + NL
+        + "  if (flags&FLAG_t) ts1 = &a->st.st_mtim, ts2 = &b->st.st_mtim;"
+        + NL
+        + "  if (flags&FLAG_u) ts1 = &a->st.st_atim, ts2 = &b->st.st_atim;"
+        + NL
+        + "  if (flags&FLAG_c) ts1 = &a->st.st_ctim, ts2 = &b->st.st_ctim;"
+        + NL
+        + "#endif",
+    )
+    content = content.replace(
+        "s += sprintf(s, \":%02d.%09d \", tm->tm_sec, (int)st->st_mtim.tv_nsec);",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "        s += sprintf(s, \":%02d.000000000 \", tm->tm_sec);"
+        + NL
+        + "#else"
+        + NL
+        + "        s += sprintf(s, \":%02d.%09d \", tm->tm_sec, (int)st->st_mtim.tv_nsec);"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "ts = st.st_mtim;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "      ts = awm_stat_ts(st.st_mtime);"
+        + NL
+        + "#else"
+        + NL
+        + "      ts = st.st_mtim;"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "      if (i==14) return (st1.st_mtim.tv_sec < st2.st_mtim.tv_sec) ||"
+        + NL
+        + "        (st1.st_mtim.tv_sec == st2.st_mtim.tv_sec &&"
+        + NL
+        + "        st1.st_mtim.tv_nsec < st2.st_mtim.tv_nsec);"
+        + NL
+        + "      if (i==16) return (st1.st_mtim.tv_sec > st2.st_mtim.tv_sec) ||"
+        + NL
+        + "        (st1.st_mtim.tv_sec == st2.st_mtim.tv_sec &&"
+        + NL
+        + "        st1.st_mtim.tv_nsec > st2.st_mtim.tv_nsec);",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "      if (i==14) return st1.st_mtime < st2.st_mtime;"
+        + NL
+        + "      if (i==16) return st1.st_mtime > st2.st_mtime;"
+        + NL
+        + "#else"
+        + NL
+        + "      if (i==14) return (st1.st_mtim.tv_sec < st2.st_mtim.tv_sec) ||"
+        + NL
+        + "        (st1.st_mtim.tv_sec == st2.st_mtim.tv_sec &&"
+        + NL
+        + "        st1.st_mtim.tv_nsec < st2.st_mtim.tv_nsec);"
+        + NL
+        + "      if (i==16) return (st1.st_mtim.tv_sec > st2.st_mtim.tv_sec) ||"
+        + NL
+        + "        (st1.st_mtim.tv_sec == st2.st_mtim.tv_sec &&"
+        + NL
+        + "        st1.st_mtim.tv_nsec > st2.st_mtim.tv_nsec);"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "    ts[0] = st.st_atim;" + NL + "    ts[1] = st.st_mtim;",
+        "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "    ts[0] = awm_stat_ts(st.st_atime); ts[1] = awm_stat_ts(st.st_mtime);"
+        + NL
+        + "#else"
+        + NL
+        + "    ts[0] = st.st_atim; ts[1] = st.st_mtim;"
+        + NL
+        + "#endif",
+    )
+
+    content = _transform_freebsd_c99_c11(content)
+
     return content
 
 
-def transform_file(input_path: str, output_path: str) -> None:
+def _transform_freebsd_c99_c11(
+    content: str, rename_main: str = ""
+) -> str:
+    """
+    Apply FreeBSD-specific C99/C11/GNU C to C89/MSVC/OpenWatcom rewrites:
+    - 1-argument setmode(expr) -> bsd_setmode(expr)
+    - __FBSDID / __RCSID / __SCCSID / __COPYRIGHT / DATA_SET / TEXT_SET normalization
+    - C99 array parameter qualifiers (static, __min_size, restrict) -> pointer
+    - C11 _Noreturn, _Thread_local, _Atomic, _Alignas, _Alignof, _Static_assert
+    - Optional main() entry-point renaming for multicall builds
+    """
+    # 6.2 Normalize top-level __FBSDID("..."); and linker set macros
+    content = re.sub(
+        r"^\s*__(?:FBSDID|RCSID|SCCSID|COPYRIGHT)\s*\(\s*\"[^\"]*\"\s*\)\s*;?",
+        "typedef int __awm_fbsdid_tu_guard;",
+        content,
+        flags=re.MULTILINE,
+    )
+    content = re.sub(
+        r"^\s*(?:DATA_SET|TEXT_SET|BSS_SET|SET_DECLARE)\s*\([^;\n]+\)\s*;?",
+        "typedef int __awm_linkerset_tu_guard;",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.1 Rewrite 1-argument setmode(arg) to bsd_setmode(arg) without touching 2-arg setmode(fd, mode)
+    def replace_setmode_1arg(match: re.Match[str]) -> str:
+        prefix = match.group(1)
+        args_str = match.group(2)
+        depth = 0
+        has_top_comma = False
+        for ch in args_str:
+            if ch in "([":
+                depth += 1
+            elif ch in ")]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                has_top_comma = True
+                break
+        if not has_top_comma:
+            return f"{prefix}bsd_setmode({args_str})"
+        return match.group(0)
+
+    content = re.sub(
+        r"(?<![a-zA-Z0-9_])(\s*)setmode\s*\(([^;{}()\n]*(?:\([^()]*\)[^;{}()\n]*)*)\)",
+        replace_setmode_1arg,
+        content,
+    )
+
+    # 6.3 Handle C99 array size qualifiers in function parameters:
+    # e.g. char buf[static 16], char buf[__min_size(16)], char buf[restrict 16], char buf[__restrict]
+    content = re.sub(
+        r"(\b[a-zA-Z_][a-zA-Z0-9_]*)\s*\[\s*(?:static\b|__min_size\s*\([^)]*\)|restrict\b|__restrict\b)[^\]]*\]",
+        r"*\1",
+        content,
+    )
+
+    # 6.4 Handle C11 _Noreturn, _Thread_local
+    content = re.sub(r"\b_Noreturn\b", "__dead2", content)
+    content = re.sub(
+        r"\b_Thread_local\b",
+        "/* _Thread_local */",
+        content,
+    )
+
+    # 6.5 Optional main() renaming
+    if rename_main:
+        content = re.sub(
+            r"\bint\s+main\s*\(",
+            f"int {rename_main}(",
+            content,
+        )
+
+    return content
+
+
+def transform_file(
+    input_path: str, output_path: str, rename_main: str = ""
+) -> None:
     """
     Read an input C source/header file, apply C89/MSVC transformations,
     rewrite relative local includes if needed, and write to output_path.
@@ -2312,6 +3486,10 @@ def transform_file(input_path: str, output_path: str) -> None:
         )
 
     transformed = transform_source_content(original)
+    if rename_main:
+        transformed = _transform_freebsd_c99_c11(
+            transformed, rename_main=rename_main
+        )
 
     out_dir = os.path.dirname(os.path.abspath(output_path))
     os.makedirs(out_dir, exist_ok=True)
@@ -2341,6 +3519,11 @@ def main() -> None:
     parser.add_argument(
         "--out-dir", "-d", help="Output directory for generated sources"
     )
+    parser.add_argument(
+        "--rename-main",
+        default="",
+        help="Optional symbol name to rename main() to for multicall binaries",
+    )
 
     args = parser.parse_args()
 
@@ -2348,14 +3531,18 @@ def main() -> None:
         if len(args.inputs) != 1:
             print("Error: --output can only be used with a single input file.")
             sys.exit(1)
-        transform_file(args.inputs[0], args.output)
+        transform_file(
+            args.inputs[0], args.output, rename_main=args.rename_main
+        )
     elif args.out_dir:
         for inp in args.inputs:
             rel_name = os.path.basename(inp)
             out_file = os.path.join(args.out_dir, rel_name)
-            transform_file(inp, out_file)
+            transform_file(inp, out_file, rename_main=args.rename_main)
     elif len(args.inputs) == 2 and not os.path.isdir(args.inputs[1]):
-        transform_file(args.inputs[0], args.inputs[1])
+        transform_file(
+            args.inputs[0], args.inputs[1], rename_main=args.rename_main
+        )
     else:
         print(
             "Usage: transform_sources.py <input> <output> OR --out-dir <dir> <files...>"

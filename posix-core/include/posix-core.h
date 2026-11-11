@@ -857,6 +857,11 @@ int chroot(const char *path);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief openat */
 int openat(int dirfd, const char *pathname, int flags, ...);
+/** @brief unlinkat */
+int unlinkat(int dirfd, const char *pathname, int flags);
+/** @brief renameat */
+int renameat(int olddirfd, const char *oldpath, int newdirfd,
+             const char *newpath);
 #else
 /* openat */
 #endif
@@ -1182,6 +1187,15 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief readlinkat */
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
+/** @brief Unlink a file or directory relative to a directory fd on DOS. */
+int unlinkat(int dirfd, const char *pathname, int flags);
+/** @brief Rename a file relative to directory fds on DOS. */
+int renameat(int olddirfd, const char *oldpath, int newdirfd,
+             const char *newpath);
+/** @brief Create a unique temporary directory on DOS. */
+char *mkdtemp(char *template_str);
+/** @brief Stub password encryption function on DOS. */
+char *crypt(const char *key, const char *salt);
 #else
 /* readlinkat */
 #endif
@@ -1656,6 +1670,15 @@ int symlinkat(const char *target, int newdirfd, const char *linkpath);
 ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
 /** @brief Stubs readlinkat on DOS/OpenWatcom. */
 ssize_t readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
+/** @brief Unlink a file or directory relative to a directory fd on DOS. */
+int unlinkat(int dirfd, const char *pathname, int flags);
+/** @brief Rename a file relative to directory fds on DOS. */
+int renameat(int olddirfd, const char *oldpath, int newdirfd,
+             const char *newpath);
+/** @brief Create a unique temporary directory on DOS. */
+char *mkdtemp(char *template_str);
+/** @brief Stub password encryption function on DOS. */
+char *crypt(const char *key, const char *salt);
 /** @brief Stubs pread on DOS/OpenWatcom. */
 ssize_t pread(intptr_t fd, void *buf, size_t count, off_t offset);
 /** @brief Stubs pwrite on DOS/OpenWatcom. */

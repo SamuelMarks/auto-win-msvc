@@ -70,7 +70,14 @@ typedef int id_t;
 /**
  * @brief ID type enumeration.
  */
+#if !defined(_IDTYPE_T_DEFINED) && !defined(_IDTYPE_T_DECLARED)
+#define _IDTYPE_T_DEFINED
+#define _IDTYPE_T_DECLARED
 typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
+#define P_ALL P_ALL
+#define P_PID P_PID
+#define P_PGID P_PGID
+#endif
 
 /**
  * @brief Signal info structure for waitid.

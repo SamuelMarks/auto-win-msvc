@@ -20,6 +20,14 @@
 #else
 #include "posix-core.h"
 #endif
+#if defined(__has_include)
+#if __has_include("bsd/stdlib.h")
+#include "bsd/stdlib.h"
+#endif
+#if __has_include("bsd/string.h")
+#include "bsd/string.h"
+#endif
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus

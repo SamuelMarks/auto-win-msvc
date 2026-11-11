@@ -1,5 +1,4 @@
 #ifndef STDINT_WRAPPER_H
-#define STDINT_WRAPPER_H
 
 /**
  * @file stdint.h
@@ -10,6 +9,9 @@
 #include "posix-stdint.h"
 /* clang-format on */
 
+#ifndef STDINT_WRAPPER_H
+#define STDINT_WRAPPER_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,4 +20,5 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
+#endif /* STDINT_WRAPPER_H */
 #endif /* STDINT_WRAPPER_H */

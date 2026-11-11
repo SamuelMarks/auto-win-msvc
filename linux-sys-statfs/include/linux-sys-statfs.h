@@ -41,6 +41,8 @@ struct statfs {
   long f_type;
   /** @brief Optimal transfer block size. */
   long f_bsize;
+  /** @brief Optimal transfer block size (FreeBSD). */
+  long f_iosize;
   /** @brief Total data blocks in filesystem. */
   long f_blocks;
   /** @brief Free blocks in filesystem. */
@@ -51,6 +53,16 @@ struct statfs {
   long f_files;
   /** @brief Free file nodes in filesystem. */
   long f_ffree;
+  /** @brief Count of sync writes since mount. */
+  long f_syncwrites;
+  /** @brief Count of async writes since mount. */
+  long f_asyncwrites;
+  /** @brief Count of sync reads since mount. */
+  long f_syncreads;
+  /** @brief Count of async reads since mount. */
+  long f_asyncreads;
+  /** @brief User that mounted the filesystem. */
+  unsigned int f_owner;
   /** @brief Filesystem ID. */
   long f_fsid[2];
   /** @brief Maximum length of filenames. */
@@ -61,6 +73,12 @@ struct statfs {
   long f_flags;
   /** @brief Padding bytes reserved. */
   long f_spare[4];
+  /** @brief Filesystem type name. */
+  char f_fstypename[16];
+  /** @brief Mounted filesystem source name. */
+  char f_mntfromname[1024];
+  /** @brief Directory on which mounted. */
+  char f_mntonname[1024];
 };
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)

@@ -17,9 +17,8 @@
 #else
 #include <pwd.h>
 #endif
-#else
-#include "posix-pwdgrp.h"
 #endif
+#include "posix-pwdgrp.h"
 /* clang-format on */
 
 #ifdef __cplusplus

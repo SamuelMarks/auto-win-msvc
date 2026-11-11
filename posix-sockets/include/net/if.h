@@ -10,6 +10,7 @@
  */
 
 /* clang-format off */
+#include <sys/cdefs.h>
 #if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
     !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)

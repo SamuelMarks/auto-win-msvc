@@ -250,5 +250,23 @@ class TestTransformSources(unittest.TestCase):
                 transform_sources.main()
 
 
+    def test_toybox_transformations(self):
+        """Test Toybox-specific source transformations."""
+        src = """
+#define minof(a, b) ({typeof(a) aa = (a); typeof(b) bb = (b); aa<bb ? aa : bb;})
+#define maxof(a, b) ({typeof(a) aa = (a); typeof(b) bb = (b); aa>bb ? aa : bb;})
+void f(void) {
+  const char *esc = "\\e[0m";
+  char x[2] = {};
+  return error_msg("bad");
+}
+"""
+        res = transform_sources.transform_source_content(src)
+        self.assertIn("#define minof(a, b) ((a) < (b) ? (a) : (b))", res)
+        self.assertIn("\\033[0m", res)
+        self.assertIn("= {0}", res)
+        self.assertIn("{ error_msg(\"bad\"); return; }", res)
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

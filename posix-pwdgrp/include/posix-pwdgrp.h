@@ -67,9 +67,13 @@ struct passwd {
                     */
   uid_t pw_uid;    /**< Numerical user ID (maps to Windows SID RID). */
   gid_t pw_gid;    /**< Numerical group ID. */
+  long pw_change;  /**< Password change time. */
+  char *pw_class;  /**< User access class. */
   char *pw_gecos;  /**< User name or comment. */
   char *pw_dir;    /**< Initial working directory (user profile path). */
   char *pw_shell;  /**< Program to use as shell. */
+  long pw_expire;  /**< Account expiration time. */
+  int pw_fields;   /**< Internal: fields filled in. */
 };
 #endif
 
@@ -234,6 +238,73 @@ extern int getpwnam_r(const char *name, struct passwd *pwd, char *buf,
 #endif
 
 #endif /* _WIN32 */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+/**
+ * @brief Return user name for a given UID.
+ * @param[in] uid User ID.
+ * @param[in] nouser If non-zero, return NULL if UID is unknown, otherwise
+ * numeric string.
+ * @return User name string or NULL.
+ */
+const char *user_from_uid(uid_t uid, int nouser);
+
+/**
+ * @brief Look up UID for a given user name.
+ * @param[in] name User name.
+ * @param[out] uid Pointer receiving UID.
+ * @return 0 on success, -1 if not found.
+ */
+int uid_from_user(const char *name, uid_t *uid);
+
+/**
+ * @brief Return group name for a given GID.
+ * @param[in] gid Group ID.
+ * @param[in] nogroup If non-zero, return NULL if GID is unknown, otherwise
+ * numeric string.
+ * @return Group name string or NULL.
+ */
+const char *group_from_gid(gid_t gid, int nogroup);
+
+/**
+ * @brief Look up GID for a given group name.
+ * @param[in] name Group name.
+ * @param[out] gid Pointer receiving GID.
+ * @return 0 on success, -1 if not found.
+ */
+int gid_from_group(const char *name, gid_t *gid);
+
+/**
+ * @brief Rewind password database and optionally keep open.
+ * @param[in] stayopen Non-zero to keep database open.
+ * @return Always 1.
+ */
+int setpassent(int stayopen);
+
+/**
+ * @brief Rewind group database and optionally keep open.
+ * @param[in] stayopen Non-zero to keep database open.
+ * @return Always 1.
+ */
+int setgroupent(int stayopen);
+
+/**
+ * @brief Register custom user database lookup callbacks.
+ * @return Always 0.
+ */
+int pwcache_userdb(int (*a_setpassent)(int), void (*a_endpwent)(void),
+                   struct passwd *(*a_getpwnam)(const char *),
+                   struct passwd *(*a_getpwuid)(uid_t));
+
+/**
+ * @brief Register custom group database lookup callbacks.
+ * @return Always 0.
+ */
+int pwcache_groupdb(int (*a_setgroupent)(int), void (*a_endgrent)(void),
+                    struct group *(*a_getgrnam)(const char *),
+                    struct group *(*a_getgrgid)(gid_t));
+#endif
 
 #ifdef __cplusplus
 }

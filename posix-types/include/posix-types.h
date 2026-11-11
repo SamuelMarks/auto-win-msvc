@@ -395,6 +395,240 @@ typedef int mqd_t;
 #endif
 #endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#else
+#ifndef _A_W_M_STDINT_TYPES_DEFINED
+#define _A_W_M_STDINT_TYPES_DEFINED
+typedef __int8 int8_t;
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef unsigned __int16 uint16_t;
+typedef __int32 int32_t;
+typedef unsigned __int32 uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+#ifdef _WIN64
+typedef int64_t intptr_t;
+typedef uint64_t uintptr_t;
+#else
+typedef int32_t intptr_t;
+typedef uint32_t uintptr_t;
+#endif
+#endif
+#endif
+
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__MSDOS__) ||         \
+    defined(__DOS__) || defined(__WATCOMC__) ||                                \
+    (defined(__APPLE__) && defined(_POSIX_C_SOURCE) &&                         \
+     !defined(_DARWIN_C_SOURCE)) ||                                            \
+    (defined(__linux__) && !defined(__USE_MISC)) ||                            \
+    (defined(__CYGWIN__) && !__BSD_VISIBLE)
+
+#if !defined(_BSD_SOURCE_TYPES_DEFINED) && !defined(_U_CHAR_DEFINED) &&        \
+    !defined(__u_char_defined)
+#define _BSD_SOURCE_TYPES_DEFINED
+#define _U_CHAR_DEFINED
+#define __u_char_defined
+#if !defined(_WINSOCKAPI_) && !defined(_WINSOCK2API_)
+#ifndef _U_CHAR
+#define _U_CHAR
+typedef unsigned char u_char;
+#endif
+#ifndef _U_SHORT
+#define _U_SHORT
+typedef unsigned short u_short;
+#endif
+#ifndef _U_INT
+#define _U_INT
+typedef unsigned int u_int;
+#endif
+#ifndef _U_LONG
+#define _U_LONG
+typedef unsigned long u_long;
+#endif
+#endif
+#endif
+
+#ifndef _UNCHAR_DEFINED
+#define _UNCHAR_DEFINED
+typedef unsigned char unchar;
+#endif
+#ifndef _USHORT_DEFINED
+#define _USHORT_DEFINED
+typedef unsigned short ushort;
+#endif
+#if !defined(_UINT_DEFINED) && !defined(__DARWIN_UINT)
+#define _UINT_DEFINED
+#define __DARWIN_UINT
+typedef unsigned int uint;
+#endif
+#ifndef _ULONG_DEFINED
+#define _ULONG_DEFINED
+typedef unsigned long ulong;
+#endif
+
+#endif /* BSD u_char/u_short/u_int/u_long shorthand types */
+
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__MSDOS__) ||         \
+    defined(__DOS__) || defined(__WATCOMC__) ||                                \
+    (defined(__linux__) && !defined(__USE_MISC)) ||                            \
+    (defined(__CYGWIN__) && !__BSD_VISIBLE)
+
+#if !defined(_U_INT8_T_DEFINED) && !defined(__BIT_TYPES_DEFINED__)
+#define _U_INT8_T_DEFINED
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
+typedef uint64_t u_int64_t;
+#endif
+
+#if !defined(_CADDR_T_DEFINED) && !defined(_CADDR_T) &&                        \
+    !defined(__daddr_t_defined)
+#define _CADDR_T_DEFINED
+#define _CADDR_T
+typedef char *caddr_t;
+#endif
+
+#if !defined(_DADDR_T_DEFINED) && !defined(_DADDR_T) &&                        \
+    !defined(__daddr_t_defined)
+#define _DADDR_T_DEFINED
+#define _DADDR_T
+#define __daddr_t_defined
+typedef int64_t daddr_t;
+#endif
+
+#if !defined(_REGISTER_T_DEFINED) && !defined(_REGISTER_T) &&                  \
+    !defined(__BIT_TYPES_DEFINED__)
+#define _REGISTER_T_DEFINED
+#define _REGISTER_T
+typedef intptr_t register_t;
+#endif
+
+#endif /* _WIN32 || DOS || WATCOMC || strict Linux/Cygwin */
+
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__MSDOS__) ||         \
+    defined(__DOS__) || defined(__WATCOMC__)
+
+#if !defined(_IDTYPE_T_DEFINED) && !defined(_IDTYPE_T_DECLARED)
+#define _IDTYPE_T_DEFINED
+#define _IDTYPE_T_DECLARED
+typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
+#define P_ALL P_ALL
+#define P_PID P_PID
+#define P_PGID P_PGID
+#endif
+
+#ifndef _FD_MASK_DEFINED
+#define _FD_MASK_DEFINED
+typedef unsigned long fd_mask;
+#endif
+#ifndef NFDBITS
+#define NFDBITS (sizeof(fd_mask) * 8)
+#endif
+#ifndef howmany
+#define howmany(x, y) (((x) + ((y) - 1)) / (y))
+#endif
+
+#endif /* _WIN32 || DOS || WATCOMC */
+
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+
+#if !defined(__APPLE__) && !(defined(__linux__) && defined(__USE_MISC))
+#ifndef _QUAD_T_DEFINED
+#define _QUAD_T_DEFINED
+typedef int64_t quad_t;
+typedef uint64_t u_quad_t;
+#endif
+#endif
+
+#if !defined(__APPLE__)
+#ifndef _QADDR_T_DEFINED
+#define _QADDR_T_DEFINED
+typedef quad_t *qaddr_t;
+#endif
+#endif
+
+#ifndef _C_CADDR_T_DEFINED
+#define _C_CADDR_T_DEFINED
+typedef const char *c_caddr_t;
+#endif
+
+#ifndef _U_DADDR_T_DEFINED
+#define _U_DADDR_T_DEFINED
+typedef uint64_t u_daddr_t;
+#endif
+
+#if !defined(__APPLE__)
+#ifndef _FIXPT_T_DEFINED
+#define _FIXPT_T_DEFINED
+typedef uint32_t fixpt_t;
+#endif
+#ifndef _SEGSZ_T_DEFINED
+#define _SEGSZ_T_DEFINED
+typedef int64_t segsz_t;
+typedef int64_t swblk_t;
+#endif
+#ifndef _VM_TYPES_DEFINED
+#define _VM_TYPES_DEFINED
+typedef uintptr_t vm_offset_t;
+typedef int64_t vm_ooffset_t;
+typedef uintptr_t vm_paddr_t;
+typedef uint64_t vm_pindex_t;
+typedef uintptr_t vm_size_t;
+#endif
+#ifndef _FFLAGS_T_DEFINED
+#define _FFLAGS_T_DEFINED
+typedef uint32_t fflags_t;
+#endif
+#else
+typedef int64_t vm_ooffset_t;
+typedef uint64_t vm_pindex_t;
+#endif /* !__APPLE__ */
+
+#ifndef _LWPID_T_DEFINED
+#define _LWPID_T_DEFINED
+typedef int32_t lwpid_t;
+#endif
+
+#ifndef _SBINTIME_T_DEFINED
+#define _SBINTIME_T_DEFINED
+typedef int64_t sbintime_t;
+#endif
+
+#ifndef _KVADDR_T_DEFINED
+#define _KVADDR_T_DEFINED
+typedef uint64_t kvaddr_t;
+typedef uint64_t ksize_t;
+#endif
+
+#ifndef _U_REGISTER_T_DEFINED
+#define _U_REGISTER_T_DEFINED
+typedef uintptr_t u_register_t;
+typedef intptr_t syscallarg_t;
+#endif
+
+#ifndef _ACCMODE_T_DEFINED
+#define _ACCMODE_T_DEFINED
+typedef int accmode_t;
+#endif
+
+#if !defined(_CPULEVEL_T_DEFINED) && !defined(BSD_SYS_CPUSET_H)
+#define _CPULEVEL_T_DEFINED
+typedef int cpulevel_t;
+typedef int cpuwhich_t;
+#endif
+
+#ifndef _CAP_RIGHTS_T_DEFINED
+#define _CAP_RIGHTS_T_DEFINED
+struct cap_rights {
+  uint64_t cr_rights[2];
+};
+typedef struct cap_rights cap_rights_t;
+#endif
+
+#endif /* !BSD */
+
 /**
  * @brief Retrieves information on posix-types availability.
  * @param[out] out_available Pointer to integer receiving availability status

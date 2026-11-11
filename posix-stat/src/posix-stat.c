@@ -776,6 +776,28 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
  * @param[in] dev Device identifier.
  * @return 0 on success, -1 on failure with errno set.
  */
+/** \brief mkdirat function. */
+int mkdirat(int dirfd, const char *pathname, mode_t mode) {
+  char path_buf[4096];
+  auto_win_msvc_error_t rc;
+  (void)mode;
+  rc = posix_stat_resolve_at_path(dirfd, pathname, path_buf, sizeof(path_buf));
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    errno = auto_win_msvc_error_to_errno(rc);
+    return -1;
+  }
+  return _mkdir(path_buf);
+}
+
+/** \brief mkfifoat function. */
+int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
+  (void)dirfd;
+  (void)pathname;
+  (void)mode;
+  errno = ENOSYS;
+  return -1;
+}
+
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
   char fullpath[MAX_PATH];
   auto_win_msvc_error_t rc;
@@ -1081,9 +1103,53 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
   return mknod(pathname, mode, dev);
 }
 
+/** @brief Create a directory relative to a directory fd on DOS. */
+int mkdirat(int dirfd, const char *pathname, mode_t mode) {
+  (void)mode;
+  if ((dirfd != AT_FDCWD && (dirfd < 0 || dirfd >= 256)) || !pathname) {
+    errno = EBADF;
+    return -1;
+  }
+  return (mkdir)(pathname);
+}
+
+/** @brief Create a FIFO relative to a directory fd on DOS. */
+int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
+  (void)dirfd;
+  (void)pathname;
+  (void)mode;
+  errno = ENOSYS;
+  return -1;
+}
+
 #endif
 
 #endif /* _WIN32 */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+int chflags(const char *path, unsigned long flags) {
+  (void)flags;
+  if (path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+int lchflags(const char *path, unsigned long flags) {
+  return chflags(path, flags);
+}
+
+int fchflags(int fd, unsigned long flags) {
+  (void)flags;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  return 0;
+}
+#endif
 
 /* Prevent empty translation unit on ISO C compilers */
 typedef int make_iso_compilers_happy_tu_posix_stat;
