@@ -1,6 +1,6 @@
 /**
  * @file posix-utsname.c
- * @brief Implementation of POSIX uname() for MSVC.
+ * @brief Implementation of POSIX uname() for MSVC and Windows.
  */
 
 /* clang-format off */
@@ -10,22 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 /* clang-format on */
-
-#ifndef NUM_FORMAT_CAST
-#if defined(_MSC_VER)
-#define NUM_FORMAT_CAST __int64
-#else
-#define NUM_FORMAT_CAST long
-#endif
-#endif
-
-#ifndef NUM_FORMAT
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%ld"
-#endif
-#endif
 
 #ifndef EFAULT
 #define EFAULT 14
@@ -37,23 +21,18 @@
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 
-/* Use safe CRT functions if available */
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define USE_SAFE_CRT
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(_MSC_VER)
 #define UTS_WINAPI __stdcall
-/** \brief UTS_DECLSPEC_IMPORT macro. */
+/** @brief DLL import attribute on MSVC. */
 #define UTS_DECLSPEC_IMPORT __declspec(dllimport)
 #else
-/** \brief UTS_WINAPI macro. */
+/** @brief stdcall calling convention on MinGW/GCC. */
 #define UTS_WINAPI __attribute__((stdcall))
-/** \brief UTS_DECLSPEC_IMPORT macro. */
+/** @brief DLL import attribute on MinGW/GCC. */
 #define UTS_DECLSPEC_IMPORT __attribute__((dllimport))
 #endif
 
@@ -109,19 +88,19 @@ typedef struct _UTS_RTL_OSVERSIONINFOW {
 typedef UTS_LONG(UTS_WINAPI *RtlGetVersion_Func)(UTS_RTL_OSVERSIONINFOW *);
 typedef UTS_LONG(UTS_WINAPI *UTS_FARPROC)(void);
 
-/** \brief GetComputerNameA function. */
+/** @brief Retrieves NetBIOS name of local computer. */
 UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI GetComputerNameA(UTS_LPSTR lpBuffer,
                                                          UTS_LPDWORD nSize);
-/** \brief GetModuleHandleA function. */
+/** @brief Retrieves module handle for loaded DLL. */
 UTS_DECLSPEC_IMPORT UTS_HMODULE UTS_WINAPI
 GetModuleHandleA(UTS_LPCSTR lpModuleName);
-/** \brief GetProcAddress function. */
+/** @brief Retrieves exported procedure address from DLL. */
 UTS_DECLSPEC_IMPORT UTS_FARPROC UTS_WINAPI
 GetProcAddress(UTS_HMODULE hModule, UTS_LPCSTR lpProcName);
-/** \brief GetSystemInfo function. */
+/** @brief Retrieves hardware processor architecture information. */
 UTS_DECLSPEC_IMPORT void UTS_WINAPI
 GetSystemInfo(UTS_SYSTEM_INFO *lpSystemInfo);
-/** \brief GetVersionExA function. */
+/** @brief Retrieves Windows version information. */
 UTS_DECLSPEC_IMPORT UTS_BOOL UTS_WINAPI
 GetVersionExA(UTS_OSVERSIONINFOA *lpVersionInformation);
 
@@ -135,11 +114,36 @@ GetVersionExA(UTS_OSVERSIONINFOA *lpVersionInformation);
 }
 #endif
 
-/**
- * @brief Get system identification.
- */
-int uname(struct utsname *name) {
+#ifndef UTS_MOCK_GetComputerNameA
+#define UTS_MOCK_GetComputerNameA GetComputerNameA
+#endif
+#ifndef UTS_MOCK_GetModuleHandleA
+#define UTS_MOCK_GetModuleHandleA GetModuleHandleA
+#endif
+#ifndef UTS_MOCK_GetProcAddress
+#define UTS_MOCK_GetProcAddress GetProcAddress
+#endif
+#ifndef UTS_MOCK_GetSystemInfo
+#define UTS_MOCK_GetSystemInfo GetSystemInfo
+#endif
+#ifndef UTS_MOCK_GetVersionExA
+#define UTS_MOCK_GetVersionExA GetVersionExA
+#endif
 
+#ifndef UTS_NUM_FORMAT
+#define UTS_NUM_FORMAT "%lu"
+#endif
+
+static void uts_copy_str(char *dst, const char *src) {
+#if defined(_MSC_VER)
+  strncpy_s(dst, _UTSNAME_LENGTH, src, _TRUNCATE);
+#else
+  strncpy(dst, src, _UTSNAME_LENGTH - 1);
+  dst[_UTSNAME_LENGTH - 1] = '\0';
+#endif
+}
+
+static int uname_win_impl(struct utsname *name) {
   UTS_OSVERSIONINFOA osvi;
   UTS_SYSTEM_INFO si;
   UTS_DWORD nodename_len = _UTSNAME_LENGTH;
@@ -153,37 +157,26 @@ int uname(struct utsname *name) {
   }
 
   memset(name, 0, sizeof(struct utsname));
+  uts_copy_str(name->sysname, "Windows_NT");
 
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-  strncpy_s(name->sysname, _UTSNAME_LENGTH, "Windows_NT", _TRUNCATE);
-#else
-  strncpy(name->sysname, "Windows_NT", _UTSNAME_LENGTH - 1);
-  name->sysname[_UTSNAME_LENGTH - 1] = '\0';
-#endif
-
-  if (!GetComputerNameA(name->nodename, &nodename_len)) {
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->nodename, _UTSNAME_LENGTH, "unknown", _TRUNCATE);
-#else
-    strncpy(name->nodename, "unknown", _UTSNAME_LENGTH - 1);
-    name->nodename[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+  if (!UTS_MOCK_GetComputerNameA(name->nodename, &nodename_len)) {
+    uts_copy_str(name->nodename, "unknown");
   }
 
   memset(&osvi, 0, sizeof(UTS_OSVERSIONINFOA));
   osvi.dwOSVersionInfoSize = sizeof(UTS_OSVERSIONINFOA);
 
-  hModNtdll = GetModuleHandleA("ntdll.dll");
+  hModNtdll = UTS_MOCK_GetModuleHandleA("ntdll.dll");
   pRtlGetVersion = NULL;
   if (hModNtdll) {
-    pRtlGetVersion =
-        (RtlGetVersion_Func)(size_t)GetProcAddress(hModNtdll, "RtlGetVersion");
+    pRtlGetVersion = (RtlGetVersion_Func)(size_t)UTS_MOCK_GetProcAddress(
+        hModNtdll, "RtlGetVersion");
   }
 
   if (pRtlGetVersion) {
     memset(&rosvi, 0, sizeof(UTS_RTL_OSVERSIONINFOW));
     rosvi.dwOSVersionInfoSize = sizeof(UTS_RTL_OSVERSIONINFOW);
-    if (pRtlGetVersion(&rosvi) == 0) { /* STATUS_SUCCESS */
+    if (pRtlGetVersion(&rosvi) == 0) {
       osvi.dwMajorVersion = rosvi.dwMajorVersion;
       osvi.dwMinorVersion = rosvi.dwMinorVersion;
       osvi.dwBuildNumber = rosvi.dwBuildNumber;
@@ -193,108 +186,54 @@ int uname(struct utsname *name) {
   }
 
   if (osvi.dwMajorVersion == 0) {
-#if defined(_MSC_VER)
-
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
-#endif
-    GetVersionExA(&osvi);
-#if defined(_MSC_VER)
-
-#endif
+    (void)UTS_MOCK_GetVersionExA(&osvi);
   }
 
-#ifndef UTS_NUM_FORMAT
 #if defined(_MSC_VER)
-#define UTS_NUM_FORMAT "%lu"
-#else
-#define UTS_NUM_FORMAT "%lu"
-#endif
-#endif
-
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-  sprintf_s(name->release, _UTSNAME_LENGTH, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
-            (unsigned long)osvi.dwMajorVersion,
-            (unsigned long)osvi.dwMinorVersion);
-  sprintf_s(name->version, _UTSNAME_LENGTH, UTS_NUM_FORMAT,
-            (unsigned long)osvi.dwBuildNumber);
-#else
-#if defined(_MSC_VER)
-  sprintf_s(
-      name->release, sizeof(name->release), UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
+  (void)sprintf_s(
+      name->release, _UTSNAME_LENGTH, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
       (unsigned long)osvi.dwMajorVersion, (unsigned long)osvi.dwMinorVersion);
+  (void)sprintf_s(name->version, _UTSNAME_LENGTH, UTS_NUM_FORMAT,
+                  (unsigned long)osvi.dwBuildNumber);
 #else
-  sprintf(name->release, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
-          (unsigned long)osvi.dwMajorVersion,
-          (unsigned long)osvi.dwMinorVersion);
-#endif
-#if defined(_MSC_VER)
-  sprintf_s(name->version, sizeof(name->version), UTS_NUM_FORMAT,
-            (unsigned long)osvi.dwBuildNumber);
-#else
-#if defined(_MSC_VER)
-  sprintf_s(name->version, sizeof(name->version), UTS_NUM_FORMAT,
-            (unsigned long)osvi.dwBuildNumber);
-#else
-  sprintf(name->version, UTS_NUM_FORMAT, (unsigned long)osvi.dwBuildNumber);
-#endif
-#endif
+  (void)sprintf(name->release, UTS_NUM_FORMAT "." UTS_NUM_FORMAT,
+                (unsigned long)osvi.dwMajorVersion,
+                (unsigned long)osvi.dwMinorVersion);
+  (void)sprintf(name->version, UTS_NUM_FORMAT,
+                (unsigned long)osvi.dwBuildNumber);
 #endif
 
-  GetSystemInfo(&si);
+  UTS_MOCK_GetSystemInfo(&si);
   switch (si.u.s.wProcessorArchitecture) {
   case UTS_PROCESSOR_ARCHITECTURE_INTEL:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "i686", _TRUNCATE);
-#else
-    strncpy(name->machine, "i686", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "i686");
     break;
   case UTS_PROCESSOR_ARCHITECTURE_AMD64:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "x86_64", _TRUNCATE);
-#else
-    strncpy(name->machine, "x86_64", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "x86_64");
     break;
   case UTS_PROCESSOR_ARCHITECTURE_ARM:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "arm", _TRUNCATE);
-#else
-    strncpy(name->machine, "arm", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "arm");
     break;
   case UTS_PROCESSOR_ARCHITECTURE_ARM64:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "aarch64", _TRUNCATE);
-#else
-    strncpy(name->machine, "aarch64", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "aarch64");
     break;
   case UTS_PROCESSOR_ARCHITECTURE_IA64:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "ia64", _TRUNCATE);
-#else
-    strncpy(name->machine, "ia64", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "ia64");
     break;
   default:
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-    strncpy_s(name->machine, _UTSNAME_LENGTH, "unknown", _TRUNCATE);
-#else
-    strncpy(name->machine, "unknown", _UTSNAME_LENGTH - 1);
-    name->machine[_UTSNAME_LENGTH - 1] = '\0';
-#endif
+    uts_copy_str(name->machine, "unknown");
     break;
   }
 
   return 0;
 }
+
+/**
+ * @brief Get system identification.
+ * @param[out] name Pointer to utsname structure to populate.
+ * @return 0 on success, or -1 on error with errno set.
+ */
+int uname(struct utsname *name) { return uname_win_impl(name); }
 
 #elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 
@@ -329,7 +268,6 @@ int uname(struct utsname *name) {
  * @brief Get system identification (stub for non-Windows).
  */
 int uname(struct utsname *name) {
-
   if (!name) {
     errno = EFAULT;
     return -1;
@@ -340,11 +278,11 @@ int uname(struct utsname *name) {
 
 #endif
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
 /**
  * @brief Retrieves information on posix-utsname availability.
+ * @param[out] out_available Pointer receiving 1 on success.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_available is NULL.
  */
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_utsname_get_info(int *out_available) {

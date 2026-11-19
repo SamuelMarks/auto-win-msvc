@@ -21,7 +21,7 @@
 #include <strings.h>
 #endif
 #else
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
 #pragma GCC system_header
 #include_next <strings.h>
 #endif

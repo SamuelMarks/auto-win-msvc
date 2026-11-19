@@ -8,6 +8,7 @@
 
 /* clang-format off */
 #include <libutil.h>
+#include <pwd.h>
 #include <login_cap.h>
 #include <ctype.h>
 #include <errno.h>
@@ -19,10 +20,65 @@
 #if defined(_WIN32)
 #include <io.h>
 #include <process.h>
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
 #else
 #include <unistd.h>
 #endif
 /* clang-format on */
+
+#ifndef NUM_FORMAT_CAST
+#if defined(_MSC_VER)
+#define NUM_FORMAT_CAST __int64
+#else
+#define NUM_FORMAT_CAST long
+#endif
+#endif
+
+#ifndef NUM_FORMAT
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%ld"
+#endif
+#endif
+
+static void *default_libutil_calloc(size_t n, size_t sz) {
+  return calloc(n, sz);
+}
+
+static char *default_libutil_strdup(const char *s) {
+#if defined(_MSC_VER)
+  return _strdup(s);
+#else
+  return strdup(s);
+#endif
+}
+
+static int default_libutil_write(int fd, const void *buf, unsigned int len) {
+#if defined(_MSC_VER)
+  return _write(fd, buf, len);
+#else
+  return (int)write(fd, buf, (size_t)len);
+#endif
+}
+
+static void *(*g_libutil_calloc)(size_t, size_t) = default_libutil_calloc;
+static char *(*g_libutil_strdup)(const char *) = default_libutil_strdup;
+static int (*g_libutil_write)(int, const void *,
+                              unsigned int) = default_libutil_write;
+
+void bsd_libutil_set_alloc_hooks(void *(*calloc_fn)(size_t, size_t),
+                                 char *(*strdup_fn)(const char *)) {
+  g_libutil_calloc = (calloc_fn != NULL) ? calloc_fn : default_libutil_calloc;
+  g_libutil_strdup = (strdup_fn != NULL) ? strdup_fn : default_libutil_strdup;
+}
+
+void bsd_libutil_set_write_hook(int (*write_fn)(int, const void *,
+                                                unsigned int)) {
+  g_libutil_write = (write_fn != NULL) ? write_fn : default_libutil_write;
+}
 
 #if !defined(__FreeBSD__)
 
@@ -33,27 +89,32 @@ int humanize_number(char *buf, size_t len, int64_t bytes, const char *suffix,
   const char *sfx = (suffix != NULL) ? suffix : "";
   int divisor = (flags & HN_DIVISOR_1000) ? 1000 : 1024;
   int i = 0;
-  int64_t val = bytes;
-  int sign = 1;
+  uint64_t uval;
   char pfx[4];
-  int r;
+  char numbuf[32];
+  size_t n_num;
+  size_t n_sep;
+  size_t n_pfx;
+  size_t n_sfx;
+  size_t total;
 
   if (buf == NULL || len == 0) {
     errno = EINVAL;
     return -1;
   }
-  if (val < 0) {
-    sign = -1;
-    val = -val;
+  if (bytes < 0) {
+    uval = (uint64_t)(-(bytes + 1)) + 1U;
+  } else {
+    uval = (uint64_t)bytes;
   }
   if (scale == HN_AUTOSCALE || scale == HN_GETSCALE || scale <= 0) {
-    while (val >= divisor && i < 6) {
-      val /= divisor;
+    while (uval >= (uint64_t)divisor) {
+      uval /= (uint64_t)divisor;
       i++;
     }
   } else {
     while (i < scale && i < 6) {
-      val /= divisor;
+      uval /= (uint64_t)divisor;
       i++;
     }
   }
@@ -76,16 +137,32 @@ int humanize_number(char *buf, size_t len, int64_t bytes, const char *suffix,
       pfx[1] = '\0';
     }
   }
+  if (bytes < 0) {
 #if defined(_MSC_VER)
-  r = _snprintf_s(buf, len, _TRUNCATE, "%ld%s%s%s", (long)(val * sign), sep,
-                  pfx, sfx);
+    sprintf_s(numbuf, sizeof(numbuf), "-" NUM_FORMAT, (NUM_FORMAT_CAST)uval);
 #else
-  r = snprintf(buf, len, "%ld%s%s%s", (long)(val * sign), sep, pfx, sfx);
+    sprintf(numbuf, "-" NUM_FORMAT, (NUM_FORMAT_CAST)uval);
 #endif
-  if (r < 0 || (size_t)r >= len) {
+  } else {
+#if defined(_MSC_VER)
+    sprintf_s(numbuf, sizeof(numbuf), NUM_FORMAT, (NUM_FORMAT_CAST)uval);
+#else
+    sprintf(numbuf, NUM_FORMAT, (NUM_FORMAT_CAST)uval);
+#endif
+  }
+  n_num = strlen(numbuf);
+  n_sep = strlen(sep);
+  n_pfx = strlen(pfx);
+  n_sfx = strlen(sfx);
+  total = n_num + n_sep + n_pfx + n_sfx;
+  if (total >= len) {
     return -1;
   }
-  return r;
+  memcpy(buf, numbuf, n_num);
+  memcpy(buf + n_num, sep, n_sep);
+  memcpy(buf + n_num + n_sep, pfx, n_pfx);
+  memcpy(buf + n_num + n_sep + n_pfx, sfx, n_sfx + 1);
+  return (int)total;
 }
 
 int expand_number(const char *buf, uint64_t *num) {
@@ -107,15 +184,16 @@ int expand_number(const char *buf, uint64_t *num) {
     return -1;
   }
   errno = 0;
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
   number = _strtoui64(p, &endptr, 0);
 #else
   number = (uint64_t)strtoul(p, &endptr, 0);
 #endif
-  if (endptr == p || errno == ERANGE) {
-    if (errno == 0) {
-      errno = EINVAL;
-    }
+  if (endptr == p) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (errno == ERANGE) {
     return -1;
   }
   if (*endptr == '\0') {
@@ -148,12 +226,20 @@ int expand_number(const char *buf, uint64_t *num) {
     errno = EINVAL;
     return -1;
   }
-  if (endptr[1] != '\0' &&
-      !(tolower((unsigned char)endptr[1]) == 'b' && endptr[2] == '\0') &&
-      !(tolower((unsigned char)endptr[1]) == 'i' &&
-        tolower((unsigned char)endptr[2]) == 'b' && endptr[3] == '\0')) {
-    errno = EINVAL;
-    return -1;
+  if (endptr[1] != '\0') {
+    int c1 = tolower((unsigned char)endptr[1]);
+    if (c1 == 'b') {
+      if (endptr[2] != '\0') {
+        errno = EINVAL;
+        return -1;
+      }
+    } else if (c1 == 'i' && tolower((unsigned char)endptr[2]) == 'b' &&
+               endptr[3] == '\0') {
+      /* Valid IEC suffix (e.g. KiB) */
+    } else {
+      errno = EINVAL;
+      return -1;
+    }
   }
   if (shift > 0 && (number << shift) >> shift != number) {
     errno = ERANGE;
@@ -167,7 +253,8 @@ void hexdump(const void *ptr, int length, const char *hdr, int flags) {
   const unsigned char *cp = (const unsigned char *)ptr;
   int cols = flags & HD_COLUMN_MASK;
   int delim = (flags & HD_DELIM_MASK) >> 8;
-  int i, j;
+  int i;
+  int j;
 
   if (cols == 0) {
     cols = 16;
@@ -180,12 +267,12 @@ void hexdump(const void *ptr, int length, const char *hdr, int flags) {
       printf("%s", hdr);
     }
     if ((flags & HD_OMIT_COUNT) == 0) {
-      printf("%04x  ", i);
+      printf("%04x  ", (unsigned int)i);
     }
     if ((flags & HD_OMIT_HEX) == 0) {
       for (j = 0; j < cols; j++) {
         if (i + j < length) {
-          printf("%02x ", cp[i + j]);
+          printf("%02x ", (unsigned int)cp[i + j]);
         } else {
           printf("   ");
         }
@@ -200,7 +287,7 @@ void hexdump(const void *ptr, int length, const char *hdr, int flags) {
       }
       printf("%c", delim);
     }
-    printf("\n");
+    putchar(10);
   }
 }
 
@@ -210,15 +297,15 @@ struct pidfh *pidfile_open(const char *path, mode_t mode, pid_t *pidptr) {
   if (pidptr != NULL) {
     *pidptr = 0;
   }
-  pfh = (struct pidfh *)calloc(1, sizeof(*pfh));
+  pfh = (struct pidfh *)g_libutil_calloc(1, sizeof(*pfh));
   if (pfh == NULL) {
     return NULL;
   }
 #if defined(_MSC_VER)
   strncpy_s(pfh->pf_path, sizeof(pfh->pf_path), p, _TRUNCATE);
   pfh->pf_fd = -1;
-  (void)_sopen_s(&pfh->pf_fd, p, _O_WRONLY | _O_CREAT | _O_TRUNC,
-                 0x40 /* _SH_DENYNO */, (int)((mode ? mode : 0600) & 0600));
+  (void)_sopen_s(&pfh->pf_fd, p, _O_WRONLY | _O_CREAT | _O_TRUNC, _SH_DENYNO,
+                 (int)((mode ? mode : 0600) & 0600));
 #else
   strncpy(pfh->pf_path, p, sizeof(pfh->pf_path) - 1);
   pfh->pf_path[sizeof(pfh->pf_path) - 1] = '\0';
@@ -239,12 +326,13 @@ int pidfile_write(struct pidfh *pfh) {
     return -1;
   }
 #if defined(_MSC_VER)
-  len = sprintf_s(buf, sizeof(buf), "%d\n", (int)_getpid());
-  return (_write(pfh->pf_fd, buf, (unsigned int)len) == len) ? 0 : -1;
+  len = sprintf_s(buf, sizeof(buf), "%d\012", (int)_getpid());
+#elif defined(_WIN32)
+  len = sprintf(buf, "%d\012", (int)_getpid());
 #else
-  len = sprintf(buf, "%d\n", (int)getpid());
-  return (write(pfh->pf_fd, buf, (size_t)len) == len) ? 0 : -1;
+  len = sprintf(buf, "%d\012", (int)getpid());
 #endif
+  return (g_libutil_write(pfh->pf_fd, buf, (unsigned int)len) == len) ? 0 : -1;
 }
 
 int pidfile_close(struct pidfh *pfh) {
@@ -252,7 +340,7 @@ int pidfile_close(struct pidfh *pfh) {
     return 0;
   }
   if (pfh->pf_fd >= 0) {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
     _close(pfh->pf_fd);
 #else
     close(pfh->pf_fd);
@@ -267,7 +355,7 @@ int pidfile_remove(struct pidfh *pfh) {
     return 0;
   }
   if (pfh->pf_fd >= 0) {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
     _close(pfh->pf_fd);
 #else
     close(pfh->pf_fd);
@@ -301,8 +389,7 @@ int flopen(const char *path, int flags, ...) {
 #if defined(_MSC_VER)
   {
     int fd = -1;
-    if (_sopen_s(&fd, path, flags, 0x40 /* _SH_DENYNO */, (int)(mode & 0600)) !=
-        0) {
+    if (_sopen_s(&fd, path, flags, _SH_DENYNO, (int)(mode & 0600)) != 0) {
       return -1;
     }
     return fd;
@@ -377,15 +464,15 @@ int realhostname_sa(char *host, size_t hsize, struct sockaddr *addr,
 }
 
 login_cap_t *login_getclass(const char *name) {
-  login_cap_t *lc = (login_cap_t *)calloc(1, sizeof(*lc));
+  login_cap_t *lc = (login_cap_t *)g_libutil_calloc(1, sizeof(*lc));
   if (lc == NULL) {
     return NULL;
   }
-#if defined(_MSC_VER)
-  lc->lc_class = _strdup(name ? name : LOGIN_DEFCLASS);
-#else
-  lc->lc_class = strdup(name ? name : LOGIN_DEFCLASS);
-#endif
+  lc->lc_class = g_libutil_strdup((name != NULL) ? name : LOGIN_DEFCLASS);
+  if (lc->lc_class == NULL) {
+    free(lc);
+    return NULL;
+  }
   return lc;
 }
 
@@ -401,13 +488,13 @@ login_cap_t *login_getuserclass(const struct passwd *pwd) {
 
 void login_close(login_cap_t *lc) {
   if (lc != NULL) {
-    if (lc->lc_class) {
+    if (lc->lc_class != NULL) {
       free(lc->lc_class);
     }
-    if (lc->lc_cap) {
+    if (lc->lc_cap != NULL) {
       free(lc->lc_cap);
     }
-    if (lc->lc_style) {
+    if (lc->lc_style != NULL) {
       free(lc->lc_style);
     }
     free(lc);
@@ -420,16 +507,16 @@ int login_getcapbool(login_cap_t *lc, const char *cap, int def) {
   return def;
 }
 
-int64_t login_getcapnum(login_cap_t *lc, const char *cap, int64_t def,
-                        int64_t err) {
+rlim_t login_getcapnum(login_cap_t *lc, const char *cap, rlim_t def,
+                       rlim_t err) {
   (void)lc;
   (void)cap;
   (void)err;
   return def;
 }
 
-int64_t login_getcapsize(login_cap_t *lc, const char *cap, int64_t def,
-                         int64_t err) {
+rlim_t login_getcapsize(login_cap_t *lc, const char *cap, rlim_t def,
+                        rlim_t err) {
   (void)lc;
   (void)cap;
   (void)err;
@@ -444,8 +531,8 @@ const char *login_getcapstr(login_cap_t *lc, const char *cap, const char *def,
   return def;
 }
 
-int64_t login_getcaptime(login_cap_t *lc, const char *cap, int64_t def,
-                         int64_t err) {
+rlim_t login_getcaptime(login_cap_t *lc, const char *cap, rlim_t def,
+                        rlim_t err) {
   (void)lc;
   (void)cap;
   (void)err;
@@ -475,9 +562,150 @@ int setusercontext(login_cap_t *lc, const struct passwd *pwd, uid_t uid,
   return 0;
 }
 
+const char *getlocalbase(void) {
+#if defined(_MSC_VER)
+  static char s_localbase[512];
+  size_t req = 0;
+  if (getenv_s(&req, s_localbase, sizeof(s_localbase), "LOCALBASE") == 0 &&
+      req > 1) {
+    return s_localbase;
+  }
+#elif defined(_WIN32)
+  const char *env = getenv("LOCALBASE");
+  if (env != NULL) {
+    return env;
+  }
+#else
+  const char *env = getenv("LOCALBASE");
+  if (env != NULL && env[0] != '\0') {
+    return env;
+  }
+#endif
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__)
+  return "C:\134usr\134local";
+#else
+  return "/usr/local";
+#endif
+}
+
+int setclassenvironment(login_cap_t *lc, const struct passwd *pwd, int paths) {
+  (void)lc;
+  (void)pwd;
+  (void)paths;
+  return 0;
+}
+
 #endif /* !__FreeBSD__ */
 
-typedef int make_iso_compilers_happy_tu_bsd_libutil;
+/** @brief Opaque quota file state placeholder. */
+struct quotafile {
+  int dummy; /**< Placeholder field for ISO C89 compliance. */
+};
 
+struct quotafile *quota_open(struct fstab *fs, int quotatype, int openflags) {
+  (void)fs;
+  (void)quotatype;
+  (void)openflags;
+  return NULL;
+}
+
+int quota_read(struct quotafile *qf, struct dqblk *dqb, int id) {
+  (void)qf;
+  (void)dqb;
+  (void)id;
+  return -1;
+}
+
+void quota_close(struct quotafile *qf) { (void)qf; }
+
+int pw_copy(int ffd, int tfd, const struct passwd *pw, struct passwd *old_pw) {
+  (void)ffd;
+  (void)tfd;
+  (void)pw;
+  (void)old_pw;
+  return -1;
+}
+
+struct passwd *pw_dup(const struct passwd *pw) {
+  struct passwd *copy;
+  if (pw == NULL) {
+    return NULL;
+  }
+  copy = (struct passwd *)g_libutil_calloc(1, sizeof(struct passwd));
+  if (copy != NULL) {
+    *copy = *pw;
+  }
+  return copy;
+}
+
+int pw_edit(int notsetuid) {
+  (void)notsetuid;
+  return -1;
+}
+
+int pw_equal(const struct passwd *pw1, const struct passwd *pw2) {
+  if (pw1 == NULL || pw2 == NULL) {
+    return 0;
+  }
+  return pw1->pw_uid == pw2->pw_uid && pw1->pw_gid == pw2->pw_gid;
+}
+
+void pw_fini(void) {}
+
+int pw_init(const char *dir, const char *master) {
+  (void)dir;
+  (void)master;
+  return 0;
+}
+
+void pw_initpwd(struct passwd *pw) {
+  if (pw != NULL) {
+    memset(pw, 0, sizeof(*pw));
+  }
+}
+
+char *pw_make(const struct passwd *pw) {
+  (void)pw;
+  return NULL;
+}
+
+char *pw_make_v7(const struct passwd *pw) {
+  (void)pw;
+  return NULL;
+}
+
+int pw_mkdb(const char *user) {
+  (void)user;
+  return -1;
+}
+
+int pw_lock(void) { return -1; }
+
+int __pw_scan(char *bp, struct passwd *pw, int flags) {
+  (void)bp;
+  (void)pw;
+  (void)flags;
+  return 0;
+}
+
+struct passwd *pw_scan(const char *line, int flags) {
+  (void)line;
+  (void)flags;
+  return NULL;
+}
+
+const char *pw_tempname(void) { return "/etc/master.passwd.tmp"; }
+
+int pw_tmp(int mfd) {
+  (void)mfd;
+  return -1;
+}
+
+login_cap_t *login_getclassbyname(const char *name, const struct passwd *pwd) {
+  (void)pwd;
+  return login_getclass(name);
+}
+
+typedef int make_iso_compilers_happy_tu_bsd_libutil;
 #endif
 typedef int make_iso_compilers_happy_mega_bsd_libutil;

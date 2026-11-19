@@ -23,12 +23,12 @@ extern "C" {
 
 #ifndef __cplusplus
 
-#if defined(_MSC_VER) && (_MSC_VER < 1800)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#define bool _Bool
+#elif defined(_MSC_VER) && (_MSC_VER < 1800)
 #define bool unsigned char
 #elif defined(_MSC_VER)
 #define bool _Bool
-#elif defined(__GNUC__) || defined(__clang__)
-#define bool unsigned char
 #else
 #define bool unsigned char
 #endif

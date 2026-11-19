@@ -15,28 +15,65 @@
 extern "C" {
 #endif
 
+#ifndef EMPTY
+/** @brief No valid user accounting information. */
 #define EMPTY 0
+#endif
+#ifndef BOOT_TIME
+/** @brief Time of system boot. */
 #define BOOT_TIME 1
+#endif
+#ifndef OLD_TIME
+/** @brief Time before system clock change. */
 #define OLD_TIME 2
+#endif
+#ifndef NEW_TIME
+/** @brief Time after system clock change. */
 #define NEW_TIME 3
+#endif
+#ifndef USER_PROCESS
+/** @brief Normal user process. */
 #define USER_PROCESS 4
+#endif
+#ifndef INIT_PROCESS
+/** @brief Process spawned by init. */
 #define INIT_PROCESS 5
+#endif
+#ifndef LOGIN_PROCESS
+/** @brief Session leader for user login. */
 #define LOGIN_PROCESS 6
+#endif
+#ifndef DEAD_PROCESS
+/** @brief Terminated session leader. */
 #define DEAD_PROCESS 7
+#endif
+#ifndef SHUTDOWN_TIME
+/** @brief Time of system shutdown. */
 #define SHUTDOWN_TIME 8
+#endif
 
+/** @brief Active login sessions database selector. */
 #define UTXDB_ACTIVE 0
+/** @brief Last login database selector. */
 #define UTXDB_LASTLOGIN 1
+/** @brief Login history log database selector. */
 #define UTXDB_LOG 2
 
-/** @brief User accounting record structure. */
+/** @brief User accounting record. */
 struct utmpx {
+  /** @brief Type of entry. */
   short ut_type;
+  /** @brief Timestamp of entry modification. */
   struct timeval ut_tv;
+  /** @brief Terminal identifier. */
   char ut_id[8];
+  /** @brief Process ID. */
   pid_t ut_pid;
+  /** @brief User login name. */
   char ut_user[32];
+  /** @brief Device name. */
   char ut_line[16];
+  /** @brief Remote hostname. */
   char ut_host[128];
 };
 

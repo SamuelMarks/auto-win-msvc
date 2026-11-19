@@ -20,6 +20,12 @@ extern "C" {
 #define MAXQUOTAS 2
 #define USRQUOTA 0
 #define GRPQUOTA 1
+#define INITQFNAMES {"user", "group", "undefined"}
+#undef dbtob
+#define dbtob(num) ((off_t)(num) << 9)
+#ifndef btodb
+#define btodb(bytes) ((uint64_t)(bytes) >> 9)
+#endif
 
 #define Q_QUOTAON 0x0100
 #define Q_QUOTAOFF 0x0200

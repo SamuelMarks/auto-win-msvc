@@ -1,11 +1,13 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
-    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__) ||          \
+    defined(__linux__) || defined(__CYGWIN__)
 /**
  * @file bsd-sys-sysctl.c
  * @brief Strict C89 implementation of BSD <sys/sysctl.h>.
  */
 
 /* clang-format off */
+/** @brief Internal export indicator for bsd-sys-sysctl DLL builds. */
 #define BSD_SYS_SYSCTL_EXPORTS
 #include "bsd-sys-sysctl.h"
 #include <errno.h>
@@ -13,6 +15,7 @@
 
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
+/** @brief Exclude rarely-used Windows headers. */
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
@@ -22,10 +25,14 @@
 /* clang-format on */
 
 #if defined(_MSC_VER)
-__declspec(dllexport) int g_mock_sysconf_fail = 0;
+/** @brief Test hook forcing processor-count fallback paths. */
+#define BSD_SYSCTL_EXPORT __declspec(dllexport)
 #else
-int g_mock_sysconf_fail = 0;
+/** @brief Symbol export helper macro. */
+#define BSD_SYSCTL_EXPORT
 #endif
+/** @brief Test hook forcing processor-count fallback paths. */
+BSD_SYSCTL_EXPORT int g_mock_sysconf_fail = 0;
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
     !defined(__NetBSD__)
@@ -63,6 +70,7 @@ static int sysctl_write_str(const char *str, void *oldp, size_t *oldlenp) {
   return 0;
 }
 
+/** @brief Queries or sets a sysctl parameter by integer MIB vector. */
 int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
            const void *newp, size_t newlen) {
   (void)newp;
@@ -119,6 +127,7 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
   return -1;
 }
 
+/** @brief Translates an ASCII sysctl parameter name to a MIB array. */
 int sysctlnametomib(const char *name, int *mibp, size_t *sizep) {
   if (name == NULL || mibp == NULL || sizep == NULL || *sizep < 2) {
     errno = EINVAL;
@@ -158,6 +167,7 @@ int sysctlnametomib(const char *name, int *mibp, size_t *sizep) {
   return -1;
 }
 
+/** @brief Queries or sets a sysctl parameter by ASCII name. */
 int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
                  const void *newp, size_t newlen) {
   int mib[CTL_MAXNAME];
@@ -171,16 +181,17 @@ int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 #if defined(_WIN32)
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
-    ncpu = (int)sysinfo.dwNumberOfProcessors;
+    ncpu = g_mock_sysconf_fail ? 0 : (int)sysinfo.dwNumberOfProcessors;
     if (ncpu < 1) {
       ncpu = 1;
     }
 #elif defined(_SC_NPROCESSORS_ONLN)
+    long count = -1;
     if (!g_mock_sysconf_fail) {
-      long count = sysconf(_SC_NPROCESSORS_ONLN);
-      if (count > 0) {
-        ncpu = (int)count;
-      }
+      count = sysconf(_SC_NPROCESSORS_ONLN);
+    }
+    if (count > 0) {
+      ncpu = (int)count;
     }
 #endif
     return sysctl_write_int(ncpu, oldp, oldlenp);
@@ -193,6 +204,7 @@ int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 }
 #endif /* !BSD && !__APPLE__ */
 
+/** @brief Initializes and validates the bsd-sys-sysctl module. */
 auto_win_msvc_error_t bsd_sys_sysctl_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -201,6 +213,7 @@ auto_win_msvc_error_t bsd_sys_sysctl_init(int *out_status) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+/** @brief Queries the number of online processors. */
 auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) ||             \
     defined(__MSDOS__)
@@ -214,7 +227,8 @@ auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
   }
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) ||             \
     defined(__MSDOS__)
-  if (sysctlbyname("hw.ncpu", &ncpu, &len, NULL, 0) == 0) {
+  if (sysctlbyname(g_mock_sysconf_fail ? "hw.invalid" : "hw.ncpu", &ncpu, &len,
+                   NULL, 0) == 0) {
     *out_ncpu = ncpu;
     return AUTO_WIN_MSVC_SUCCESS;
   }
@@ -231,7 +245,9 @@ auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_tu_bsd_sys_sysctl;
 
 #endif
+/** @brief Dummy typedef preventing empty mega translation unit warnings. */
 typedef int make_iso_compilers_happy_mega_batch2_12;

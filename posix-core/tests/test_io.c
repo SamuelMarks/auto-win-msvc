@@ -97,7 +97,7 @@ TEST test_pipe2(void) {
   pipe2(NULL, 0);
   pipe2(fds, -1);
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined(__clang__)
   if (__builtin_available(macOS 27.0, *)) {
     if (pipe2(fds, 0) == 0) {
       close(fds[0]);

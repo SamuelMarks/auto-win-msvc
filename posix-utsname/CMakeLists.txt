@@ -76,15 +76,22 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
+if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+    find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+    if(_AWM_HOST_NM)
+        set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+    endif()
+endif()
+
 add_library(posix-utsname src/posix-utsname.c)
 add_executable(uname src/uname_main.c)
 target_link_libraries(uname PRIVATE posix-utsname)
 add_custom_command(TARGET uname POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Release
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:uname> ${CMAKE_BINARY_DIR}/Release/uname.exe
 )
 
-
-set_target_properties(posix-utsname PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-utsname PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(posix-utsname PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

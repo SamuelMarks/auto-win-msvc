@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 project(posix-core VERSION 0.1.0 LANGUAGES C)
 
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+endif()
+
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -74,8 +79,15 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef )
 endif()
 
+if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+    find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+    if(_AWM_HOST_NM)
+        set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+    endif()
+endif()
+
 add_library(posix-core src/posix-core.c src/posix_read_write.c src/posix_asprintf.c src/posix_dprintf.c)
-set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(posix-core PRIVATE auto_win_msvc_export_lib_EXPORTS)
 endif()

@@ -67,7 +67,14 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 )
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+        if(_AWM_HOST_NM)
+            set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+        endif()
+    endif()
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    add_compile_options(/W4 /WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
     if(APPLE)
@@ -93,8 +100,11 @@ endif()
 
 
 add_library(posix-time src/posix-time.c)
-set_target_properties(posix-time PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-time PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(posix-time PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+if(MINGW)
+    target_link_libraries(posix-time PUBLIC pthread)
+endif()
 
 enable_testing()
 file(GLOB TEST_SOURCES "tests/*.c")

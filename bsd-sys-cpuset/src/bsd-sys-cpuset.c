@@ -1,5 +1,9 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/* bsd-sys-cpuset implementation */
+/**
+ * @file bsd-sys-cpuset.c
+ * @brief Implementation of BSD <sys/cpuset.h> affinity polyfills.
+ */
+
 /* clang-format off */
 #include "bsd-sys-cpuset.h"
 #include <errno.h>
@@ -15,94 +19,109 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
+#ifndef BSD_SYS_CPUSET_MOCK_GetCurrentProcess
+#define BSD_SYS_CPUSET_MOCK_GetCurrentProcess GetCurrentProcess
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_GetCurrentThread
+#define BSD_SYS_CPUSET_MOCK_GetCurrentThread GetCurrentThread
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_GetProcessAffinityMask
+#define BSD_SYS_CPUSET_MOCK_GetProcessAffinityMask GetProcessAffinityMask
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_SetProcessAffinityMask
+#define BSD_SYS_CPUSET_MOCK_SetProcessAffinityMask SetProcessAffinityMask
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_SetThreadAffinityMask
+#define BSD_SYS_CPUSET_MOCK_SetThreadAffinityMask SetThreadAffinityMask
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_OpenProcess
+#define BSD_SYS_CPUSET_MOCK_OpenProcess OpenProcess
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_OpenThread
+#define BSD_SYS_CPUSET_MOCK_OpenThread OpenThread
+#endif
+#ifndef BSD_SYS_CPUSET_MOCK_CloseHandle
+#define BSD_SYS_CPUSET_MOCK_CloseHandle CloseHandle
+#endif
+
 /**
- * @brief Helper to convert a Windows affinity mask to a cpuset_t
- * @param mask The Windows affinity mask
- * @param set Poerror_type_ter to the cpuset_t to populate
- * @return 0 on success
+ * @brief Helper to convert a Windows affinity mask to a cpuset_t.
+ * @param mask The Windows affinity mask.
+ * @param[out] set Pointer to the cpuset_t to populate.
  */
-static error_type_t convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
+static void convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
   CPU_ZERO(set);
   set->__bits[0] = (unsigned long)mask;
-  return ERR_NONE;
 }
 
 /**
- * @brief Helper to convert a cpuset_t to a Windows affinity mask
- * @param set Poerror_type_ter to the cpuset_t
- * @return The constructed Windows affinity mask
+ * @brief Helper to convert a cpuset_t to a Windows affinity mask.
+ * @param set Pointer to the cpuset_t.
+ * @return The constructed Windows affinity mask.
  */
 static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
   return (DWORD_PTR)set->__bits[0];
 }
 
-/** \brief cpuset_getaffinity function. */
+/**
+ * @brief Get CPU affinity mask on Windows.
+ * @param level CPU level selector.
+ * @param which CPU target kind.
+ * @param id Target identifier.
+ * @param setsize Size of mask in bytes.
+ * @param[out] mask Destination cpuset_t.
+ * @return ERR_NONE on success, or -1 on failure with errno set.
+ */
 error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, cpuset_t *mask) {
   HANDLE hProcess = NULL;
   HANDLE hThread = NULL;
   DWORD_PTR processAffinityMask = 0;
   DWORD_PTR systemAffinityMask = 0;
-  error_type_t rc;
 
   if (!mask || setsize < sizeof(cpuset_t)) {
     errno = EINVAL;
     return -1;
   }
 
-  /* CPU_LEVEL_ROOT ignores 'which' and 'id' in practice, returning system mask
-   */
   if (level == CPU_LEVEL_ROOT) {
-    if (GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask,
-                               &systemAffinityMask)) {
-      rc = convert_mask_to_cpuset(systemAffinityMask, mask);
-      if (rc != ERR_NONE) {
-        return rc;
-      }
+    if (BSD_SYS_CPUSET_MOCK_GetProcessAffinityMask(
+            BSD_SYS_CPUSET_MOCK_GetCurrentProcess(), &processAffinityMask,
+            &systemAffinityMask)) {
+      convert_mask_to_cpuset(systemAffinityMask, mask);
       return ERR_NONE;
     }
     errno = EINVAL;
     return -1;
   }
 
-  /* CPU_LEVEL_CPUSET represents the mask available to the process/jail.
-     We map this to the process affinity mask. */
   if (level == CPU_LEVEL_CPUSET || level == CPU_LEVEL_WHICH) {
     if (which == CPU_WHICH_PID || which == CPU_WHICH_CPUSET ||
         which == CPU_WHICH_JAIL || which == CPU_WHICH_DOMAIN) {
       if (id == -1 || id == 0) {
-        hProcess = GetCurrentProcess();
+        hProcess = BSD_SYS_CPUSET_MOCK_GetCurrentProcess();
       } else {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, (DWORD)id);
+        hProcess = BSD_SYS_CPUSET_MOCK_OpenProcess(PROCESS_QUERY_INFORMATION,
+                                                   FALSE, (DWORD)id);
         if (!hProcess) {
           errno = ESRCH;
           return -1;
         }
       }
 
-      if (GetProcessAffinityMask(hProcess, &processAffinityMask,
-                                 &systemAffinityMask)) {
-        rc = convert_mask_to_cpuset(processAffinityMask, mask);
-        if (rc != ERR_NONE) {
-          if (hProcess != GetCurrentProcess()) {
-            if (!CloseHandle(hProcess)) {
-              /* Ignore secondary failure during error path */
-            }
-          }
-          return rc;
-        }
-        if (hProcess != GetCurrentProcess()) {
-          if (!CloseHandle(hProcess)) {
+      if (BSD_SYS_CPUSET_MOCK_GetProcessAffinityMask(
+              hProcess, &processAffinityMask, &systemAffinityMask)) {
+        convert_mask_to_cpuset(processAffinityMask, mask);
+        if (hProcess != BSD_SYS_CPUSET_MOCK_GetCurrentProcess()) {
+          if (!BSD_SYS_CPUSET_MOCK_CloseHandle(hProcess)) {
             errno = EINVAL;
             return -1;
           }
         }
         return ERR_NONE;
       } else {
-        if (hProcess != GetCurrentProcess()) {
-          if (!CloseHandle(hProcess)) {
-            /* Ignore */
-          }
+        if (hProcess != BSD_SYS_CPUSET_MOCK_GetCurrentProcess()) {
+          (void)BSD_SYS_CPUSET_MOCK_CloseHandle(hProcess);
         }
         errno = EINVAL;
         return -1;
@@ -110,43 +129,33 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
     } else if (which == CPU_WHICH_TID || which == CPU_WHICH_ITHREAD ||
                which == CPU_WHICH_IRQ || which == CPU_WHICH_INTRHANDLER) {
       if (id == -1 || id == 0) {
-        hThread = GetCurrentThread();
+        hThread = BSD_SYS_CPUSET_MOCK_GetCurrentThread();
       } else {
-        hThread = OpenThread(THREAD_QUERY_INFORMATION | THREAD_SET_INFORMATION,
-                             FALSE, (DWORD)id);
+        hThread = BSD_SYS_CPUSET_MOCK_OpenThread(THREAD_QUERY_INFORMATION |
+                                                     THREAD_SET_INFORMATION,
+                                                 FALSE, (DWORD)id);
         if (!hThread) {
           errno = ESRCH;
           return -1;
         }
       }
 
-      /* Windows has no GetThreadAffinityMask until Win11, use Set to query */
-      processAffinityMask = SetThreadAffinityMask(hThread, 1);
+      processAffinityMask =
+          BSD_SYS_CPUSET_MOCK_SetThreadAffinityMask(hThread, 1);
       if (processAffinityMask == 0) {
-        if (hThread != GetCurrentThread()) {
-          if (!CloseHandle(hThread)) {
-            /* Ignore */
-          }
+        if (hThread != BSD_SYS_CPUSET_MOCK_GetCurrentThread()) {
+          (void)BSD_SYS_CPUSET_MOCK_CloseHandle(hThread);
         }
         errno = EINVAL;
         return -1;
       }
-      if (SetThreadAffinityMask(hThread, processAffinityMask) == 0) {
-        /* Failed to restore */
-      }
+      (void)BSD_SYS_CPUSET_MOCK_SetThreadAffinityMask(hThread,
+                                                      processAffinityMask);
 
-      rc = convert_mask_to_cpuset(processAffinityMask, mask);
-      if (rc != ERR_NONE) {
-        if (hThread != GetCurrentThread()) {
-          if (!CloseHandle(hThread)) {
-            /* Ignore */
-          }
-        }
-        return rc;
-      }
+      convert_mask_to_cpuset(processAffinityMask, mask);
 
-      if (hThread != GetCurrentThread()) {
-        if (!CloseHandle(hThread)) {
+      if (hThread != BSD_SYS_CPUSET_MOCK_GetCurrentThread()) {
+        if (!BSD_SYS_CPUSET_MOCK_CloseHandle(hThread)) {
           errno = EINVAL;
           return -1;
         }
@@ -159,7 +168,15 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   return -1;
 }
 
-/** \brief cpuset_setaffinity function. */
+/**
+ * @brief Set CPU affinity mask on Windows.
+ * @param level CPU level selector.
+ * @param which CPU target kind.
+ * @param id Target identifier.
+ * @param setsize Size of mask in bytes.
+ * @param mask Source cpuset_t.
+ * @return ERR_NONE on success, or -1 on failure with errno set.
+ */
 error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, const cpuset_t *mask) {
   HANDLE hProcess = NULL;
@@ -178,7 +195,6 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   }
 
   if (level == CPU_LEVEL_ROOT) {
-    /* Cannot modify the root system affinity mask in user-mode */
     errno = EPERM;
     return -1;
   }
@@ -187,28 +203,27 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
     if (which == CPU_WHICH_PID || which == CPU_WHICH_CPUSET ||
         which == CPU_WHICH_JAIL || which == CPU_WHICH_DOMAIN) {
       if (id == -1 || id == 0) {
-        hProcess = GetCurrentProcess();
+        hProcess = BSD_SYS_CPUSET_MOCK_GetCurrentProcess();
       } else {
-        hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, (DWORD)id);
+        hProcess = BSD_SYS_CPUSET_MOCK_OpenProcess(PROCESS_SET_INFORMATION,
+                                                   FALSE, (DWORD)id);
         if (!hProcess) {
           errno = ESRCH;
           return -1;
         }
       }
 
-      if (SetProcessAffinityMask(hProcess, newAffinity)) {
-        if (hProcess != GetCurrentProcess()) {
-          if (!CloseHandle(hProcess)) {
+      if (BSD_SYS_CPUSET_MOCK_SetProcessAffinityMask(hProcess, newAffinity)) {
+        if (hProcess != BSD_SYS_CPUSET_MOCK_GetCurrentProcess()) {
+          if (!BSD_SYS_CPUSET_MOCK_CloseHandle(hProcess)) {
             errno = EINVAL;
             return -1;
           }
         }
         return ERR_NONE;
       } else {
-        if (hProcess != GetCurrentProcess()) {
-          if (!CloseHandle(hProcess)) {
-            /* Ignore */
-          }
+        if (hProcess != BSD_SYS_CPUSET_MOCK_GetCurrentProcess()) {
+          (void)BSD_SYS_CPUSET_MOCK_CloseHandle(hProcess);
         }
         errno = EINVAL;
         return -1;
@@ -216,29 +231,29 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
     } else if (which == CPU_WHICH_TID || which == CPU_WHICH_ITHREAD ||
                which == CPU_WHICH_IRQ || which == CPU_WHICH_INTRHANDLER) {
       if (id == -1 || id == 0) {
-        hThread = GetCurrentThread();
+        hThread = BSD_SYS_CPUSET_MOCK_GetCurrentThread();
       } else {
-        hThread = OpenThread(THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION,
-                             FALSE, (DWORD)id);
+        hThread = BSD_SYS_CPUSET_MOCK_OpenThread(THREAD_SET_INFORMATION |
+                                                     THREAD_QUERY_INFORMATION,
+                                                 FALSE, (DWORD)id);
         if (!hThread) {
           errno = ESRCH;
           return -1;
         }
       }
 
-      if (SetThreadAffinityMask(hThread, newAffinity) != 0) {
-        if (hThread != GetCurrentThread()) {
-          if (!CloseHandle(hThread)) {
+      if (BSD_SYS_CPUSET_MOCK_SetThreadAffinityMask(hThread, newAffinity) !=
+          0) {
+        if (hThread != BSD_SYS_CPUSET_MOCK_GetCurrentThread()) {
+          if (!BSD_SYS_CPUSET_MOCK_CloseHandle(hThread)) {
             errno = EINVAL;
             return -1;
           }
         }
         return ERR_NONE;
       } else {
-        if (hThread != GetCurrentThread()) {
-          if (!CloseHandle(hThread)) {
-            /* Ignore */
-          }
+        if (hThread != BSD_SYS_CPUSET_MOCK_GetCurrentThread()) {
+          (void)BSD_SYS_CPUSET_MOCK_CloseHandle(hThread);
         }
         errno = EINVAL;
         return -1;
@@ -253,15 +268,23 @@ error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 #else
 
 /**
- * @brief Helper to convert a cpuset_t to a mask
- * @param set Pointer to cpuset_t
- * @return The affinity mask
+ * @brief Helper to convert a cpuset_t to a mask.
+ * @param set Pointer to cpuset_t.
+ * @return The affinity mask.
  */
 static unsigned long convert_cpuset_to_mask(const cpuset_t *set) {
   return set->__bits[0];
 }
 
-/** \brief cpuset_getaffinity fallback function. */
+/**
+ * @brief Fallback cpuset_getaffinity for non-Windows platforms.
+ * @param level CPU level selector.
+ * @param which CPU target kind.
+ * @param id Target identifier.
+ * @param setsize Size of mask in bytes.
+ * @param[out] mask Destination cpuset_t.
+ * @return ERR_NONE on success, or -1 on failure with errno set.
+ */
 error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, cpuset_t *mask) {
   if (which < 0 || id == (id_t)-2) {
@@ -282,7 +305,15 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
   return -1;
 }
 
-/** \brief cpuset_setaffinity fallback function. */
+/**
+ * @brief Fallback cpuset_setaffinity for non-Windows platforms.
+ * @param level CPU level selector.
+ * @param which CPU target kind.
+ * @param id Target identifier.
+ * @param setsize Size of mask in bytes.
+ * @param mask Source cpuset_t.
+ * @return ERR_NONE on success, or -1 on failure with errno set.
+ */
 error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
                                 size_t setsize, const cpuset_t *mask) {
   if (which < 0 || id == (id_t)-2) {

@@ -1,19 +1,11 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/* posix-spawn.c - Strict C89 Implementation */
+/**
+ * @file posix-spawn.c
+ * @brief Strict C89 POSIX spawn implementation for Windows and POSIX.
+ */
 
 /* clang-format off */
 #include "posix-spawn.h"
-#if defined(POSIX_SPAWN_MOCK_MALLOC)
-#include <stdlib.h>
-#if defined(_WIN32)
-__declspec(dllexport) void *(*posix_spawn_mock_malloc_ptr)(size_t) = NULL;
-#else
-void *(*posix_spawn_mock_malloc_ptr)(size_t) = NULL;
-#endif
-static void *my_malloc(size_t size) { return posix_spawn_mock_malloc_ptr ? posix_spawn_mock_malloc_ptr(size) : malloc(size); }
-#define malloc my_malloc
-#endif
-
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -33,8 +25,20 @@ static void *my_malloc(size_t size) { return posix_spawn_mock_malloc_ptr ? posix
 #endif
 /* clang-format on */
 
+/** @brief Optional test allocator override for OOM simulation. */
+#if defined(_WIN32) && defined(auto_win_msvc_export_lib_EXPORTS)
+__declspec(dllexport)
+#endif
+void *(*posix_spawn_mock_malloc_ptr)(size_t) = NULL;
+
+static void *spawn_malloc(size_t size) {
+  return posix_spawn_mock_malloc_ptr ? posix_spawn_mock_malloc_ptr(size)
+                                     : malloc(size);
+}
+
 /**
  * @brief Initializes and validates the posix-spawn module.
+ * @return AUTO_WIN_MSVC_SUCCESS or AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT.
  */
 auto_win_msvc_error_t posix_spawn_init(int *out_status) {
   if (out_status == NULL) {
@@ -51,9 +55,11 @@ static void spawn_null_invalid_param_handler(const wchar_t *expression,
                                              const wchar_t *file,
                                              unsigned int line,
                                              uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-    /* parameters checked */
-  }
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
 
@@ -84,19 +90,19 @@ __declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
 __declspec(selectany) int g_posix_child_count = 0;
 
 #ifndef O_ACCMODE
-/** \brief O_ACCMODE macro. */
+/** @brief File access mode bitmask. */
 #define O_ACCMODE (_O_RDONLY | _O_WRONLY | _O_RDWR)
 #endif
 
-/* Forward declarations to replace <windows.h> */
+/* Forward declarations to avoid <windows.h> */
 #define WINAPI __stdcall
 #define TRUE 1
 #define FALSE 0
 #define INVALID_HANDLE_VALUE ((void *)(size_t)-1)
 #define STD_INPUT_HANDLE ((unsigned int)-10)
-/** \brief STD_OUTPUT_HANDLE macro. */
+/** @brief Standard output handle constant. */
 #define STD_OUTPUT_HANDLE ((unsigned int)-11)
-/** \brief STD_ERROR_HANDLE macro. */
+/** @brief Standard error handle constant. */
 #define STD_ERROR_HANDLE ((unsigned int)-12)
 
 typedef unsigned long DWORD;
@@ -144,8 +150,8 @@ typedef struct _PROCESS_INFORMATION {
 #define STARTF_USESTDHANDLES 0x00000100
 #define FILE_SHARE_READ 0x00000001
 #define FILE_SHARE_WRITE 0x00000002
-#define GENERIC_READ 0x80000000L
-#define GENERIC_WRITE 0x40000000L
+#define GENERIC_READ 0x80000000UL
+#define GENERIC_WRITE 0x40000000UL
 #define CREATE_NEW 1
 #define CREATE_ALWAYS 2
 #define OPEN_EXISTING 3
@@ -169,6 +175,57 @@ __declspec(dllimport) BOOL WINAPI CreateProcessA(
     DWORD dwCreationFlags, LPVOID lpEnvironment, const char *lpCurrentDirectory,
     LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 
+static unsigned long default_spawn_mod_fname(char *buf, unsigned long sz) {
+  return (unsigned long)GetModuleFileNameA(NULL, buf, (DWORD)sz);
+}
+static int default_spawn_create_proc(const char *app, char *cmdline,
+                                     unsigned long flags, void *env, void *si,
+                                     void *pi) {
+  return (int)CreateProcessA(app, cmdline, NULL, NULL, TRUE, (DWORD)flags, env,
+                             NULL, (LPSTARTUPINFOA)si,
+                             (LPPROCESS_INFORMATION)pi);
+}
+static int default_spawn_close_handle(void *h) {
+  return (int)CloseHandle((HANDLE)h);
+}
+
+static ptrdiff_t (*g_spawn_get_osfh)(int) = safe_get_osfhandle;
+static unsigned long (*g_spawn_mod_fname)(char *, unsigned long) =
+    default_spawn_mod_fname;
+static int (*g_spawn_create_proc)(const char *, char *, unsigned long, void *,
+                                  void *, void *) = default_spawn_create_proc;
+static int (*g_spawn_close_handle)(void *) = default_spawn_close_handle;
+
+/**
+ * @brief Overrides Win32 OS hooks used by posix-spawn for deterministic branch
+ * testing.
+ */
+void posix_spawn_set_win32_hooks(ptrdiff_t (*get_osfh_fn)(int),
+                                 unsigned long (*mod_fname_fn)(char *,
+                                                               unsigned long),
+                                 int (*create_proc_fn)(const char *, char *,
+                                                       unsigned long, void *,
+                                                       void *, void *),
+                                 int (*close_handle_fn)(void *)) {
+  g_spawn_get_osfh = (get_osfh_fn != NULL) ? get_osfh_fn : safe_get_osfhandle;
+  g_spawn_mod_fname =
+      (mod_fname_fn != NULL) ? mod_fname_fn : default_spawn_mod_fname;
+  g_spawn_create_proc =
+      (create_proc_fn != NULL) ? create_proc_fn : default_spawn_create_proc;
+  g_spawn_close_handle =
+      (close_handle_fn != NULL) ? close_handle_fn : default_spawn_close_handle;
+}
+
+/**
+ * @brief Sets the tracked child process count and returns the previous count.
+ * @return Previous child process table count.
+ */
+int posix_spawn_set_child_count(int new_count) {
+  int prev = g_posix_child_count;
+  g_posix_child_count = new_count;
+  return prev;
+}
+
 #endif
 
 /* File Action Types */
@@ -188,19 +245,27 @@ typedef struct posix_spawn_action {
   struct posix_spawn_action *next;
 } posix_spawn_action_t;
 
-/** \brief posix_spawn_file_actions_init function. */
+/**
+ * @brief Initialize a file actions object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawn_file_actions_init(posix_spawn_file_actions_t *file_actions) {
-  if (!file_actions)
+  if (!file_actions) {
     return EINVAL;
+  }
   file_actions->actions = NULL;
   return 0;
 }
 
-/** \brief posix_spawn_file_actions_destroy function. */
+/**
+ * @brief Destroy a file actions object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
   posix_spawn_action_t *action;
-  if (!file_actions)
+  if (!file_actions) {
     return EINVAL;
+  }
   action = (posix_spawn_action_t *)file_actions->actions;
   while (action) {
     posix_spawn_action_t *next = action->next;
@@ -214,14 +279,15 @@ int posix_spawn_file_actions_destroy(posix_spawn_file_actions_t *file_actions) {
   return 0;
 }
 
-/** \brief add_action function. */
 static auto_win_msvc_error_t
 add_action(posix_spawn_file_actions_t *file_actions,
            posix_spawn_action_t **out_action) {
   posix_spawn_action_t *new_action;
-  new_action = (posix_spawn_action_t *)malloc(sizeof(posix_spawn_action_t));
-  if (!new_action)
+  new_action =
+      (posix_spawn_action_t *)spawn_malloc(sizeof(posix_spawn_action_t));
+  if (!new_action) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
+  }
   new_action->next = NULL;
   new_action->path = NULL;
 
@@ -238,204 +304,274 @@ add_action(posix_spawn_file_actions_t *file_actions,
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-/** \brief posix_spawn_file_actions_addclose function. */
+/**
+ * @brief Add a close action to the file actions object.
+ * @return 0 on success, error code on failure.
+ */
 int posix_spawn_file_actions_addclose(posix_spawn_file_actions_t *file_actions,
                                       int fildes) {
   posix_spawn_action_t *action = NULL;
   auto_win_msvc_error_t rc;
-  if (fildes < 0)
+  if (fildes < 0) {
     return EBADF;
-  if (!file_actions)
+  }
+  if (!file_actions) {
     return EINVAL;
+  }
   rc = add_action(file_actions, &action);
-  if (rc != AUTO_WIN_MSVC_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return ENOMEM;
+  }
   action->type = POSIX_SPAWN_ACTION_CLOSE;
   action->fd = fildes;
   return 0;
 }
 
-/** \brief posix_spawn_file_actions_adddup2 function. */
+/**
+ * @brief Add a dup2 action to the file actions object.
+ * @return 0 on success, error code on failure.
+ */
 int posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions,
                                      int fildes, int newfildes) {
   posix_spawn_action_t *action = NULL;
   auto_win_msvc_error_t rc;
-  if (fildes < 0 || newfildes < 0)
+  if (fildes < 0 || newfildes < 0) {
     return EBADF;
-  if (!file_actions)
+  }
+  if (!file_actions) {
     return EINVAL;
+  }
   rc = add_action(file_actions, &action);
-  if (rc != AUTO_WIN_MSVC_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return ENOMEM;
+  }
   action->type = POSIX_SPAWN_ACTION_DUP2;
   action->fd = fildes;
   action->new_fd = newfildes;
   return 0;
 }
 
-/** \brief posix_spawn_file_actions_addopen function. */
+/**
+ * @brief Add an open action to the file actions object.
+ * @return 0 on success, error code on failure.
+ */
 int posix_spawn_file_actions_addopen(posix_spawn_file_actions_t *file_actions,
                                      int fildes, const char *path, int oflag,
                                      mode_t mode) {
   posix_spawn_action_t *action = NULL;
   auto_win_msvc_error_t rc;
-  if (fildes < 0)
+  size_t plen;
+  if (fildes < 0) {
     return EBADF;
-  if (!path || !file_actions)
+  }
+  if (!path || !file_actions) {
     return EINVAL;
+  }
+  plen = strlen(path) + 1;
+  action = NULL;
   rc = add_action(file_actions, &action);
-  if (rc != AUTO_WIN_MSVC_SUCCESS)
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     return ENOMEM;
+  }
   action->type = POSIX_SPAWN_ACTION_OPEN;
   action->fd = fildes;
-  action->path = (char *)malloc(strlen(path) + 1);
+  action->path = (char *)spawn_malloc(plen);
   if (!action->path) {
     return ENOMEM;
   }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-  if (strcpy_s(action->path, strlen(path) + 1, path) != 0)
-    return ENOMEM;
+  strcpy_s(action->path, plen, path);
 #else
-  strcpy(action->path, path);
+  memcpy(action->path, path, plen);
 #endif
   action->oflag = oflag;
   action->mode = mode;
   return 0;
 }
 
-/** \brief posix_spawnattr_init function. */
+/**
+ * @brief Initialize a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_init(posix_spawnattr_t *attr) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   memset(attr, 0, sizeof(posix_spawnattr_t));
   return 0;
 }
 
-/** \brief posix_spawnattr_destroy function. */
+/**
+ * @brief Destroy a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_destroy(posix_spawnattr_t *attr) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   return 0;
 }
 
-/** \brief posix_spawnattr_getflags function. */
+/**
+ * @brief Get the spawn flags from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getflags(const posix_spawnattr_t *attr, short *flags) {
-  if (!attr || !flags)
+  if (!attr || !flags) {
     return EINVAL;
+  }
   *flags = attr->flags;
   return 0;
 }
 
-/** \brief posix_spawnattr_setflags function. */
+/**
+ * @brief Set the spawn flags in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setflags(posix_spawnattr_t *attr, short flags) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   attr->flags = flags;
   return 0;
 }
 
-/** \brief posix_spawnattr_getpgroup function. */
+/**
+ * @brief Get the process group ID from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getpgroup(const posix_spawnattr_t *attr, pid_t *pgroup) {
-  if (!attr || !pgroup)
+  if (!attr || !pgroup) {
     return EINVAL;
+  }
   *pgroup = attr->pgroup;
   return 0;
 }
 
-/** \brief posix_spawnattr_setpgroup function. */
+/**
+ * @brief Set the process group ID in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setpgroup(posix_spawnattr_t *attr, pid_t pgroup) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   attr->pgroup = pgroup;
   return 0;
 }
 
-/** \brief posix_spawnattr_getschedparam function. */
+/**
+ * @brief Get the scheduling parameters from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getschedparam(const posix_spawnattr_t *attr,
                                   struct sched_param *schedparam) {
-  if (!attr || !schedparam)
+  if (!attr || !schedparam) {
     return EINVAL;
+  }
   *schedparam = attr->schedparam;
   return 0;
 }
 
-/** \brief posix_spawnattr_setschedparam function. */
+/**
+ * @brief Set the scheduling parameters in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setschedparam(posix_spawnattr_t *attr,
                                   const struct sched_param *schedparam) {
-  if (!attr || !schedparam)
+  if (!attr || !schedparam) {
     return EINVAL;
+  }
   attr->schedparam = *schedparam;
   return 0;
 }
 
-/** \brief posix_spawnattr_getschedpolicy function. */
+/**
+ * @brief Get the scheduling policy from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getschedpolicy(const posix_spawnattr_t *attr,
                                    int *schedpolicy) {
-  if (!attr || !schedpolicy)
+  if (!attr || !schedpolicy) {
     return EINVAL;
+  }
   *schedpolicy = attr->schedpolicy;
   return 0;
 }
 
-/** \brief posix_spawnattr_setschedpolicy function. */
+/**
+ * @brief Set the scheduling policy in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setschedpolicy(posix_spawnattr_t *attr, int schedpolicy) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   attr->schedpolicy = schedpolicy;
   return 0;
 }
 
-/** \brief posix_spawnattr_getsigdefault function. */
+/**
+ * @brief Get the default signal mask from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getsigdefault(const posix_spawnattr_t *attr,
                                   sigset_t *sigdefault) {
-  if (!attr || !sigdefault)
+  if (!attr || !sigdefault) {
     return EINVAL;
+  }
   *sigdefault = attr->sigdefault;
   return 0;
 }
 
-/** \brief posix_spawnattr_setsigdefault function. */
+/**
+ * @brief Set the default signal mask in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setsigdefault(posix_spawnattr_t *attr,
                                   const sigset_t *sigdefault) {
-  if (!attr || !sigdefault)
+  if (!attr || !sigdefault) {
     return EINVAL;
+  }
   attr->sigdefault = *sigdefault;
   return 0;
 }
 
-/** \brief posix_spawnattr_getsigmask function. */
+/**
+ * @brief Get the signal mask from a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr,
                                sigset_t *sigmask) {
-  if (!attr || !sigmask)
+  if (!attr || !sigmask) {
     return EINVAL;
+  }
   *sigmask = attr->sigmask;
   return 0;
 }
 
-/** \brief posix_spawnattr_setsigmask function. */
+/**
+ * @brief Set the signal mask in a spawn attributes object.
+ * @return 0 on success, EINVAL on NULL.
+ */
 int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
                                const sigset_t *sigmask) {
-  if (!attr || !sigmask)
+  if (!attr || !sigmask) {
     return EINVAL;
+  }
   attr->sigmask = *sigmask;
   return 0;
 }
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 
-/** \brief get_quoted_arg_len function. */
-static auto_win_msvc_error_t get_quoted_arg_len(const char *arg,
-                                                size_t *out_len) {
+static size_t get_quoted_arg_len(const char *arg) {
   size_t len = 0;
   int needs_quotes = 0;
   const char *p;
 
-  if (!arg || !out_len)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
-
   if (!*arg) {
-    *out_len = 2; /* "" */
-    return AUTO_WIN_MSVC_SUCCESS;
+    return 2;
   }
 
   for (p = arg; *p; ++p) {
@@ -445,8 +581,7 @@ static auto_win_msvc_error_t get_quoted_arg_len(const char *arg,
   }
 
   if (!needs_quotes) {
-    *out_len = strlen(arg);
-    return AUTO_WIN_MSVC_SUCCESS;
+    return strlen(arg);
   }
 
   len += 2;
@@ -469,26 +604,19 @@ static auto_win_msvc_error_t get_quoted_arg_len(const char *arg,
       len++;
     }
   }
-  *out_len = len;
-  return AUTO_WIN_MSVC_SUCCESS;
+  return len;
 }
 
-/** \brief quote_arg function. */
-static auto_win_msvc_error_t quote_arg(char **dest, const char *arg) {
+static void quote_arg(char **dest, const char *arg) {
   int needs_quotes = 0;
   const char *p;
-  char *d;
-
-  if (!dest || !*dest || !arg)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
-
-  d = *dest;
+  char *d = *dest;
 
   if (!*arg) {
     *d++ = '\"';
     *d++ = '\"';
     *dest = d;
-    return AUTO_WIN_MSVC_SUCCESS;
+    return;
   }
 
   for (p = arg; *p; ++p) {
@@ -502,7 +630,7 @@ static auto_win_msvc_error_t quote_arg(char **dest, const char *arg) {
       *d++ = *arg++;
     }
     *dest = d;
-    return AUTO_WIN_MSVC_SUCCESS;
+    return;
   }
 
   *d++ = '\"';
@@ -515,18 +643,21 @@ static auto_win_msvc_error_t quote_arg(char **dest, const char *arg) {
       }
       if (!*p) {
         size_t i;
-        for (i = 0; i < backslashes * 2; ++i)
+        for (i = 0; i < backslashes * 2; ++i) {
           *d++ = '\\';
+        }
         break;
       } else if (*p == '\"') {
         size_t i;
-        for (i = 0; i < backslashes * 2 + 1; ++i)
+        for (i = 0; i < backslashes * 2 + 1; ++i) {
           *d++ = '\\';
+        }
         *d++ = '\"';
       } else {
         size_t i;
-        for (i = 0; i < backslashes; ++i)
+        for (i = 0; i < backslashes; ++i) {
           *d++ = '\\';
+        }
         *d++ = *p;
       }
     } else {
@@ -535,67 +666,48 @@ static auto_win_msvc_error_t quote_arg(char **dest, const char *arg) {
   }
   *d++ = '\"';
   *dest = d;
-  return AUTO_WIN_MSVC_SUCCESS;
 }
 
-/** \brief create_cmdline function. */
-static auto_win_msvc_error_t create_cmdline(char *const argv[],
-                                            char **out_cmdline) {
+static char *create_cmdline(char *const argv[]) {
   size_t total_len = 0;
   int i;
   char *cmdline, *p;
-  auto_win_msvc_error_t rc;
-
-  if (!argv || !argv[0] || !out_cmdline)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   for (i = 0; argv[i]; ++i) {
-    size_t len = 0;
-    rc = get_quoted_arg_len(argv[i], &len);
-    if (rc != AUTO_WIN_MSVC_SUCCESS)
-      return rc;
-    total_len += len + 1;
+    total_len += get_quoted_arg_len(argv[i]) + 1;
   }
 
-  cmdline = (char *)malloc(total_len + 1);
-  if (!cmdline)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
+  cmdline = (char *)spawn_malloc(total_len + 1);
+  if (!cmdline) {
+    return NULL;
+  }
 
   p = cmdline;
   for (i = 0; argv[i]; ++i) {
-    rc = quote_arg(&p, argv[i]);
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
-      free(cmdline);
-      return rc;
-    }
+    quote_arg(&p, argv[i]);
     if (argv[i + 1]) {
       *p++ = ' ';
     }
   }
   *p = '\0';
 
-  *out_cmdline = cmdline;
-  return AUTO_WIN_MSVC_SUCCESS;
+  return cmdline;
 }
 
-/** \brief create_envblock function. */
-static auto_win_msvc_error_t create_envblock(char *const envp[],
-                                             char **out_envblock) {
+static char *create_envblock(char *const envp[]) {
   size_t total_len = 0;
   int i;
   char *envblock, *p;
-
-  if (!envp || !out_envblock)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
 
   for (i = 0; envp[i]; ++i) {
     total_len += strlen(envp[i]) + 1;
   }
   total_len += 1;
 
-  envblock = (char *)malloc(total_len);
-  if (!envblock)
-    return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
+  envblock = (char *)spawn_malloc(total_len);
+  if (!envblock) {
+    return NULL;
+  }
 
   p = envblock;
   for (i = 0; envp[i]; ++i) {
@@ -610,11 +722,9 @@ static auto_win_msvc_error_t create_envblock(char *const envp[],
   }
   *p = '\0';
 
-  *out_envblock = envblock;
-  return AUTO_WIN_MSVC_SUCCESS;
+  return envblock;
 }
 
-/** \brief internal_posix_spawn function. */
 static int internal_posix_spawn(pid_t *pid, const char *path,
                                 const posix_spawn_file_actions_t *file_actions,
                                 const posix_spawnattr_t *attrp,
@@ -629,35 +739,38 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
   HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
   HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
+  HANDLE opened_in = INVALID_HANDLE_VALUE;
+  HANDLE opened_out = INVALID_HANDLE_VALUE;
+  HANDLE opened_err = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
-  auto_win_msvc_error_t rc;
 
   sa.nLength = sizeof(SECURITY_ATTRIBUTES);
   sa.bInheritHandle = TRUE;
   sa.lpSecurityDescriptor = NULL;
 
-  if (!path && !search_path)
+  if (!path && !search_path) {
     return EINVAL;
-  if (!argv || !argv[0])
+  }
+  if (!argv || !argv[0]) {
     return EINVAL;
+  }
 
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   memset(&pi, 0, sizeof(pi));
 
-  if (attrp) {
-    if (attrp->flags & POSIX_SPAWN_SETPGROUP) {
-      creation_flags |= CREATE_NEW_PROCESS_GROUP;
-    }
+  if (attrp && (attrp->flags & POSIX_SPAWN_SETPGROUP)) {
+    creation_flags |= CREATE_NEW_PROCESS_GROUP;
   }
 
-  rc = create_cmdline(argv, &cmdline);
-  if (rc != AUTO_WIN_MSVC_SUCCESS)
+  cmdline = create_cmdline(argv);
+  if (!cmdline) {
     return ENOMEM;
+  }
 
   if (envp) {
-    rc = create_envblock(envp, &envblock);
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
+    envblock = create_envblock(envp);
+    if (!envblock) {
       free(cmdline);
       return ENOMEM;
     }
@@ -665,9 +778,9 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
 
   fflush(NULL);
   {
-    ptrdiff_t h0 = safe_get_osfhandle(0);
-    ptrdiff_t h1 = safe_get_osfhandle(1);
-    ptrdiff_t h2 = safe_get_osfhandle(2);
+    ptrdiff_t h0 = g_spawn_get_osfh(0);
+    ptrdiff_t h1 = g_spawn_get_osfh(1);
+    ptrdiff_t h2 = g_spawn_get_osfh(2);
     si.dwFlags |= STARTF_USESTDHANDLES;
     si.hStdInput = (h0 != -1 && h0 != -2) ? (HANDLE)h0 : hStdIn;
     si.hStdOutput = (h1 != -1 && h1 != -2) ? (HANDLE)h1 : hStdOut;
@@ -684,20 +797,22 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
         DWORD dwCreationDisposition = OPEN_EXISTING;
         HANDLE h;
 
-        if ((action->oflag & O_ACCMODE) == O_RDONLY)
+        if ((action->oflag & O_ACCMODE) == O_RDONLY) {
           dwDesiredAccess = GENERIC_READ;
-        else if ((action->oflag & O_ACCMODE) == O_WRONLY)
+        } else if ((action->oflag & O_ACCMODE) == O_WRONLY) {
           dwDesiredAccess = GENERIC_WRITE;
-        else if ((action->oflag & O_ACCMODE) == O_RDWR)
+        } else if ((action->oflag & O_ACCMODE) == O_RDWR) {
           dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
+        }
 
         if (action->oflag & O_CREAT) {
-          if (action->oflag & O_EXCL)
+          if (action->oflag & O_EXCL) {
             dwCreationDisposition = CREATE_NEW;
-          else if (action->oflag & O_TRUNC)
+          } else if (action->oflag & O_TRUNC) {
             dwCreationDisposition = CREATE_ALWAYS;
-          else
+          } else {
             dwCreationDisposition = OPEN_ALWAYS;
+          }
         } else if (action->oflag & O_TRUNC) {
           dwCreationDisposition = TRUNCATE_EXISTING;
         }
@@ -705,62 +820,77 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
         h = CreateFileA(action->path, dwDesiredAccess, dwShareMode, &sa,
                         dwCreationDisposition, FILE_ATTRIBUTE_NORMAL, NULL);
         if (h != INVALID_HANDLE_VALUE) {
-          if (action->fd == 0)
+          if (action->fd == 0) {
+            if (opened_in != INVALID_HANDLE_VALUE) {
+              g_spawn_close_handle(opened_in);
+            }
+            opened_in = h;
             si.hStdInput = h;
-          else if (action->fd == 1)
+          } else if (action->fd == 1) {
+            if (opened_out != INVALID_HANDLE_VALUE) {
+              g_spawn_close_handle(opened_out);
+            }
+            opened_out = h;
             si.hStdOutput = h;
-          else if (action->fd == 2)
+          } else if (action->fd == 2) {
+            if (opened_err != INVALID_HANDLE_VALUE) {
+              g_spawn_close_handle(opened_err);
+            }
+            opened_err = h;
             si.hStdError = h;
-          else
-            CloseHandle(h);
+          } else {
+            g_spawn_close_handle(h);
+          }
         }
       } else if (action->type == POSIX_SPAWN_ACTION_CLOSE) {
-        if (action->fd == 0)
+        if (action->fd == 0) {
           si.hStdInput = INVALID_HANDLE_VALUE;
-        else if (action->fd == 1)
+        } else if (action->fd == 1) {
           si.hStdOutput = INVALID_HANDLE_VALUE;
-        else if (action->fd == 2)
+        } else if (action->fd == 2) {
           si.hStdError = INVALID_HANDLE_VALUE;
-      } else if (action->type == POSIX_SPAWN_ACTION_DUP2) {
+        }
+      } else {
         HANDLE src = INVALID_HANDLE_VALUE;
-        if (action->fd == 0)
+        if (action->fd == 0) {
           src = si.hStdInput;
-        else if (action->fd == 1)
+        } else if (action->fd == 1) {
           src = si.hStdOutput;
-        else if (action->fd == 2)
+        } else if (action->fd == 2) {
           src = si.hStdError;
-        else
-          src = (HANDLE)(size_t)safe_get_osfhandle(action->fd);
+        } else {
+          src = (HANDLE)(size_t)g_spawn_get_osfh(action->fd);
+        }
 
-        if (action->new_fd == 0)
+        if (action->new_fd == 0) {
           si.hStdInput = src;
-        else if (action->new_fd == 1)
+        } else if (action->new_fd == 1) {
           si.hStdOutput = src;
-        else if (action->new_fd == 2)
+        } else if (action->new_fd == 2) {
           si.hStdError = src;
+        }
       }
       action = action->next;
     }
   }
 
-  success = CreateProcessA(search_path ? NULL : path, cmdline, NULL, NULL, TRUE,
-                           creation_flags, envblock, NULL, &si, &pi);
+  success =
+      g_spawn_create_proc(search_path ? NULL : path, cmdline,
+                          (unsigned long)creation_flags, envblock, &si, &pi);
 
   free(cmdline);
-  if (envblock)
+  if (envblock) {
     free(envblock);
+  }
 
-  /* Close newly created file handles for file actions to avoid leaks in parent
-   */
-  if (file_actions && file_actions->actions) {
-    if (si.dwFlags & STARTF_USESTDHANDLES) {
-      if (si.hStdInput != hStdIn && si.hStdInput != INVALID_HANDLE_VALUE)
-        CloseHandle(si.hStdInput);
-      if (si.hStdOutput != hStdOut && si.hStdOutput != INVALID_HANDLE_VALUE)
-        CloseHandle(si.hStdOutput);
-      if (si.hStdError != hStdErr && si.hStdError != INVALID_HANDLE_VALUE)
-        CloseHandle(si.hStdError);
-    }
+  if (opened_in != INVALID_HANDLE_VALUE) {
+    g_spawn_close_handle(opened_in);
+  }
+  if (opened_out != INVALID_HANDLE_VALUE) {
+    g_spawn_close_handle(opened_out);
+  }
+  if (opened_err != INVALID_HANDLE_VALUE) {
+    g_spawn_close_handle(opened_err);
   }
 
   if (!success) {
@@ -771,21 +901,22 @@ static int internal_posix_spawn(pid_t *pid, const char *path,
     *pid = (pid_t)pi.dwProcessId;
   }
 
-  CloseHandle(pi.hThread);
-  {
-    if (g_posix_child_count < 1024) {
-      g_posix_child_handles[g_posix_child_count] = pi.hProcess;
-      g_posix_child_pids[g_posix_child_count] = pi.dwProcessId;
-      g_posix_child_count++;
-    } else {
-      CloseHandle(pi.hProcess);
-    }
+  g_spawn_close_handle(pi.hThread);
+  if (g_posix_child_count < 1024) {
+    g_posix_child_handles[g_posix_child_count] = pi.hProcess;
+    g_posix_child_pids[g_posix_child_count] = pi.dwProcessId;
+    g_posix_child_count++;
+  } else {
+    g_spawn_close_handle(pi.hProcess);
   }
 
   return 0;
 }
 
-/** \brief posix_spawn function. */
+/**
+ * @brief Spawn a new process by executable path.
+ * @return 0 on success, error code on failure.
+ */
 int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp, char *const argv[],
@@ -793,7 +924,10 @@ int posix_spawn(pid_t *pid, const char *path,
   return internal_posix_spawn(pid, path, file_actions, attrp, argv, envp, 0);
 }
 
-/** \brief posix_spawnp function. */
+/**
+ * @brief Spawn a new process searching PATH.
+ * @return 0 on success, error code on failure.
+ */
 int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp, char *const argv[],
@@ -804,9 +938,10 @@ int posix_spawnp(pid_t *pid, const char *file,
       strncmp(file, "no_such", 7) != 0 && strncmp(file, "missing", 7) != 0 &&
       strchr(file, '/') == NULL && strchr(file, '\\') == NULL) {
     char self_exe[512];
-    if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0 &&
-        (strstr(self_exe, "busybox") != NULL ||
-         strstr(self_exe, "BUSYBOX") != NULL)) {
+    unsigned long mod_len =
+        g_spawn_mod_fname(self_exe, (unsigned long)sizeof(self_exe));
+    if (mod_len > 0 && (strstr(self_exe, "busybox") != NULL ||
+                        strstr(self_exe, "BUSYBOX") != NULL)) {
       char *bb_argv[64];
       int k = 0;
       bb_argv[0] = self_exe;
@@ -828,7 +963,6 @@ int posix_spawnp(pid_t *pid, const char *file,
 #define ENOSYS 38
 #endif
 
-/** \brief posix_spawn function. */
 int posix_spawn(pid_t *pid, const char *path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *attrp, char *const argv[],
@@ -843,7 +977,6 @@ int posix_spawn(pid_t *pid, const char *path,
   return ENOSYS;
 }
 
-/** \brief posix_spawnp function. */
 int posix_spawnp(pid_t *pid, const char *file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *attrp, char *const argv[],

@@ -74,6 +74,12 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+        if(_AWM_HOST_NM)
+            set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+        endif()
+    endif()
     if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
         string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     else()

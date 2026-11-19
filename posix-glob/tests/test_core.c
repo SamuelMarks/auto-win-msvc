@@ -17,7 +17,7 @@
 #define MKDIR(d) mkdir(d, 0777)
 #define RMDIR(d) rmdir(d)
 #endif
-
+/* clang-format on */
 
 #define POSIX_GLOB_MOCK_MALLOC 1
 static int g_malloc_fail_at = -1;
@@ -26,34 +26,31 @@ static int g_realloc_fail_at = -1;
 static int g_realloc_count = 0;
 
 void *posix_glob_mock_malloc(size_t size) {
-    if (g_malloc_count++ == g_malloc_fail_at) return NULL;
-    return malloc(size);
+  if (g_malloc_count++ == g_malloc_fail_at)
+    return NULL;
+  return malloc(size);
 }
 void *posix_glob_mock_realloc(void *ptr, size_t size) {
-    if (g_realloc_count++ == g_realloc_fail_at) return NULL;
-    return realloc(ptr, size);
+  if (g_realloc_count++ == g_realloc_fail_at)
+    return NULL;
+  return realloc(ptr, size);
 }
-
 
 #if defined(_WIN32) && defined(POSIX_GLOB_SHARED)
 __declspec(dllimport) extern void *(*posix_glob_mock_malloc_ptr)(size_t);
-__declspec(dllimport) extern void *(*posix_glob_mock_realloc_ptr)(void *, size_t);
+__declspec(dllimport) extern void *(*posix_glob_mock_realloc_ptr)(void *,
+                                                                  size_t);
 #else
 extern void *(*posix_glob_mock_malloc_ptr)(size_t);
 extern void *(*posix_glob_mock_realloc_ptr)(void *, size_t);
 #endif
 
-/* clang-format on */
-extern int dummy_posix_glob(void);
-extern int posix_glob_compare_test_internal(const void *a, const void *b);
 extern int dummy_posix_glob(void);
 extern int posix_glob_compare_test_internal(const void *a, const void *b);
 
 static int errfunc_dummy(const char *epath, int eerrno) {
-  if (epath && eerrno) {
-    (void)epath;
-    (void)eerrno;
-  }
+  (void)epath;
+  (void)eerrno;
   return 0;
 }
 
@@ -160,6 +157,18 @@ TEST test_glob_basic(void) {
   ASSERT(g.gl_pathv != NULL);
   globfree(&g);
 
+  rc = glob("glob_test_dir/*", 0, NULL, &g);
+  ASSERT_EQ(0, rc);
+  ASSERT(g.gl_pathc >= 2);
+  globfree(&g);
+
+#if defined(_WIN32) || defined(_MSC_VER)
+  rc = glob("glob_test_dir\\*.txt", 0, NULL, &g);
+  ASSERT_EQ(0, rc);
+  ASSERT_EQ(2, g.gl_pathc);
+  globfree(&g);
+#endif
+
 #if defined(_MSC_VER)
   fopen_s(&f, "file_no_prefix.txt", "w");
 #else
@@ -261,7 +270,10 @@ TEST test_glob_errfunc(void) {
   rc = glob("non_existent_dir_glob/*", 0, errfunc_dummy, &g);
   ASSERT_EQ(GLOB_NOMATCH, rc);
 
-  rc = glob("non_existent_dir_glob/*", GLOB_ERR, errfunc_abort, &g);
+  rc = glob("non_existent_dir_glob/*", 0, errfunc_abort, &g);
+  ASSERT_EQ(GLOB_ABORTED, rc);
+
+  rc = glob("non_existent_dir_glob/*", GLOB_ERR, errfunc_dummy, &g);
   ASSERT_EQ(GLOB_ABORTED, rc);
 
   rc = glob("non_existent_dir_glob/*", GLOB_ERR, NULL, &g);
@@ -322,6 +334,11 @@ TEST test_wordexp_wordfree(void) {
   ASSERT_STR_EQ("offset", w.we_wordv[2]);
   ASSERT_STR_EQ("mode", w.we_wordv[3]);
 
+  wordfree(&w);
+
+  rc = wordexp("   \t\n  ", &w, 0);
+  ASSERT_EQ(0, rc);
+  ASSERT_EQ(0, w.we_wordc);
   wordfree(&w);
   PASS();
 }

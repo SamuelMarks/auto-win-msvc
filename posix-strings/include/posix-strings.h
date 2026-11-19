@@ -15,20 +15,25 @@
 #define _DEFAULT_SOURCE 1
 #endif
 #endif
+#include <stddef.h>
+#include <string.h>
 #include "auto-win-msvc-error.h"
 #if !defined(_MSC_VER) || defined(__clang__)
 #include <strings.h>
 #endif
-#include <string.h>
-#include <stddef.h>
 /* clang-format on */
 
 #if defined(__GNUC__) || defined(__clang__)
+/** @brief Compiler extension prefix suppressing C89 long long pedantic
+ * warnings. */
 #define POSIX_STRINGS_EXTENSION __extension__
 #else
+/** @brief Compiler extension prefix suppressing C89 long long pedantic
+ * warnings. */
 #define POSIX_STRINGS_EXTENSION
 #endif
 
+/** @brief 64-bit signed integer type used by ffsll. */
 POSIX_STRINGS_EXTENSION typedef long long posix_strings_llong;
 
 #ifdef __cplusplus
@@ -62,6 +67,7 @@ auto_win_msvc_error_t posix_strings_get_info(int *out_available);
 
 #endif /* _MSC_VER */
 
+#if !defined(__WATCOMC__)
 #ifndef bzero
 /** @brief Sets first len bytes of the area starting at b to zero. */
 #define bzero(b, len) (memset((b), '\0', (len)), (void)0)
@@ -75,6 +81,7 @@ auto_win_msvc_error_t posix_strings_get_info(int *out_available);
 #ifndef bcmp
 /** @brief Compares byte string b1 against byte string b2. */
 #define bcmp(b1, b2, len) memcmp((b1), (b2), (len))
+#endif
 #endif
 
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -170,23 +177,29 @@ void *posix_memrchr(const void *s, int c, size_t n);
 char *posix_strsignal(int sig);
 
 #ifndef stpcpy
+/** @brief POSIX stpcpy macro alias. */
 #define stpcpy posix_stpcpy
 #endif
 #ifndef stpncpy
+/** @brief POSIX stpncpy macro alias. */
 #define stpncpy posix_stpncpy
 #endif
 #if !defined(__APPLE__) || !defined(AUTO_WIN_MSVC_HAS_AUTOCONF_H)
 #ifndef strchrnul
+/** @brief GNU strchrnul macro alias. */
 #define strchrnul posix_strchrnul
 #endif
 #endif
 #ifndef mempcpy
+/** @brief GNU mempcpy macro alias. */
 #define mempcpy posix_mempcpy
 #endif
 #ifndef memrchr
+/** @brief GNU memrchr macro alias. */
 #define memrchr posix_memrchr
 #endif
 #ifndef strsignal
+/** @brief POSIX strsignal macro alias. */
 #define strsignal posix_strsignal
 #endif
 

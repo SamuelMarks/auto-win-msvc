@@ -1,8 +1,13 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+/**
+ * @file bsd-malloc-np.c
+ * @brief Implementation of BSD/jemalloc malloc_np.h polyfills.
+ */
+
 /* clang-format off */
 #include "bsd-malloc-np.h"
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
 /* clang-format on */
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -67,6 +72,22 @@ GetProcAddress(WIN_HMODULE hModule, WIN_LPCSTR lpProcName);
 }
 #endif
 
+#ifndef BSD_MALLOC_NP_MOCK_GetCurrentProcess
+#define BSD_MALLOC_NP_MOCK_GetCurrentProcess GetCurrentProcess
+#endif
+#ifndef BSD_MALLOC_NP_MOCK_GlobalMemoryStatusEx
+#define BSD_MALLOC_NP_MOCK_GlobalMemoryStatusEx GlobalMemoryStatusEx
+#endif
+#ifndef BSD_MALLOC_NP_MOCK_GetModuleHandleA
+#define BSD_MALLOC_NP_MOCK_GetModuleHandleA GetModuleHandleA
+#endif
+#ifndef BSD_MALLOC_NP_MOCK_LoadLibraryA
+#define BSD_MALLOC_NP_MOCK_LoadLibraryA LoadLibraryA
+#endif
+#ifndef BSD_MALLOC_NP_MOCK_GetProcAddress
+#define BSD_MALLOC_NP_MOCK_GetProcAddress GetProcAddress
+#endif
+
 typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
                                                PROCESS_MEMORY_COUNTERS *,
                                                WIN_DWORD);
@@ -80,7 +101,13 @@ typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
 #define U64_CAST(x) ((double)(x))
 #endif
 
-/** @brief jemalloc stats print polyfill function. */
+/**
+ * @brief jemalloc stats print polyfill function.
+ * @param write_cb Callback function to write output strings.
+ * @param cbopaque Opaque context pointer passed to callback.
+ * @param opts Formatting options string (unused).
+ * @return ERR_NONE on success.
+ */
 error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
                                    void *cbopaque, const char *opts) {
   char buf[1024];
@@ -89,68 +116,66 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
   WIN_HMODULE hPsapi;
   WIN_HMODULE hKernel32;
   GetProcessMemoryInfo_t pGetProcessMemoryInfo = NULL;
-  int printf_rc;
 
-  if (opts != NULL) {
-    /* unused */
-  }
+  (void)opts;
 
-  if (!write_cb)
+  if (!write_cb) {
     return ERR_NONE;
+  }
 
   write_cb(cbopaque, "___ Begin Windows Native Memory Stats ___\n");
 
   /* Try Kernel32 first (Windows 7+ K32GetProcessMemoryInfo), then fallback to
    * psapi.dll */
-  hKernel32 = GetModuleHandleA("kernel32.dll");
+  hKernel32 = BSD_MALLOC_NP_MOCK_GetModuleHandleA("kernel32.dll");
   if (hKernel32) {
-    pGetProcessMemoryInfo = (GetProcessMemoryInfo_t)(size_t)GetProcAddress(
-        hKernel32, "K32GetProcessMemoryInfo");
+    pGetProcessMemoryInfo =
+        (GetProcessMemoryInfo_t)(size_t)BSD_MALLOC_NP_MOCK_GetProcAddress(
+            hKernel32, "K32GetProcessMemoryInfo");
   }
   if (!pGetProcessMemoryInfo) {
-    hPsapi = GetModuleHandleA("psapi.dll");
+    hPsapi = BSD_MALLOC_NP_MOCK_GetModuleHandleA("psapi.dll");
     if (!hPsapi) {
-      hPsapi = LoadLibraryA("psapi.dll");
+      hPsapi = BSD_MALLOC_NP_MOCK_LoadLibraryA("psapi.dll");
     }
     if (hPsapi) {
-      pGetProcessMemoryInfo = (GetProcessMemoryInfo_t)(size_t)GetProcAddress(
-          hPsapi, "GetProcessMemoryInfo");
+      pGetProcessMemoryInfo =
+          (GetProcessMemoryInfo_t)(size_t)BSD_MALLOC_NP_MOCK_GetProcAddress(
+              hPsapi, "GetProcessMemoryInfo");
     }
   }
 
   if (pGetProcessMemoryInfo) {
     pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
-    if (pGetProcessMemoryInfo(GetCurrentProcess(), &pmc, pmc.cb)) {
+    if (pGetProcessMemoryInfo(BSD_MALLOC_NP_MOCK_GetCurrentProcess(), &pmc,
+                              pmc.cb)) {
 #if defined(_MSC_VER)
-      printf_rc = sprintf_s(buf, sizeof(buf),
+      (void)sprintf_s(buf, sizeof(buf),
 #else
-      printf_rc = sprintf(buf,
+      (void)sprintf(buf,
 #endif
-                            "Process Memory:\n"
-                            "  WorkingSetSize: %lu\n"
-                            "  PeakWorkingSetSize: %lu\n"
-                            "  PagefileUsage: %lu\n"
-                            "  PeakPagefileUsage: %lu\n"
-                            "  PageFaultCount: %lu\n",
-                            (unsigned long)pmc.WorkingSetSize,
-                            (unsigned long)pmc.PeakWorkingSetSize,
-                            (unsigned long)pmc.PagefileUsage,
-                            (unsigned long)pmc.PeakPagefileUsage,
-                            (unsigned long)pmc.PageFaultCount);
-      if (printf_rc < 0) {
-        return printf_rc;
-      }
+                      "Process Memory:\n"
+                      "  WorkingSetSize: %lu\n"
+                      "  PeakWorkingSetSize: %lu\n"
+                      "  PagefileUsage: %lu\n"
+                      "  PeakPagefileUsage: %lu\n"
+                      "  PageFaultCount: %lu\n",
+                      (unsigned long)pmc.WorkingSetSize,
+                      (unsigned long)pmc.PeakWorkingSetSize,
+                      (unsigned long)pmc.PagefileUsage,
+                      (unsigned long)pmc.PeakPagefileUsage,
+                      (unsigned long)pmc.PageFaultCount);
       write_cb(cbopaque, buf);
     }
   }
 
   memex.dwLength = sizeof(memex);
-  if (GlobalMemoryStatusEx(&memex)) {
+  if (BSD_MALLOC_NP_MOCK_GlobalMemoryStatusEx(&memex)) {
 #if defined(_MSC_VER)
-    printf_rc = sprintf_s(
+    (void)sprintf_s(
         buf, sizeof(buf),
 #else
-    printf_rc = sprintf(
+    (void)sprintf(
         buf,
 #endif
         "System Memory:\n"
@@ -165,9 +190,6 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
         U64_CAST(memex.ullAvailPhys), U64_CAST(memex.ullTotalPageFile),
         U64_CAST(memex.ullAvailPageFile), U64_CAST(memex.ullTotalVirtual),
         U64_CAST(memex.ullAvailVirtual));
-    if (printf_rc < 0) {
-      return printf_rc;
-    }
     write_cb(cbopaque, buf);
   }
 
@@ -175,12 +197,16 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
   return ERR_NONE;
 }
 #else
-/** @brief jemalloc stats print fallback function for non-Windows platforms. */
+/**
+ * @brief jemalloc stats print fallback function for non-Windows platforms.
+ * @param write_cb Callback function to write output strings.
+ * @param cbopaque Opaque context pointer passed to callback.
+ * @param opts Formatting options string (unused).
+ * @return ERR_NONE on success.
+ */
 error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
                                    void *cbopaque, const char *opts) {
-  if (opts != NULL) {
-    /* unused */
-  }
+  (void)opts;
 
   if (!write_cb) {
     return ERR_NONE;
@@ -193,7 +219,11 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
 }
 #endif
 
-/** @brief Validates or initializes the bsd-malloc-np module. */
+/**
+ * @brief Validates or initializes the bsd-malloc-np module.
+ * @param[out] out_status Pointer to an integer receiving status.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
+ */
 auto_win_msvc_error_t bsd_malloc_np_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;

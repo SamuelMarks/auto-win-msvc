@@ -12,28 +12,49 @@
 #include <string.h>
 /* clang-format on */
 
+#ifndef BSD_STRINGLIST_CALLOC
+#define BSD_STRINGLIST_CALLOC(nmemb, size) calloc((nmemb), (size))
+#endif
+#ifndef BSD_STRINGLIST_REALLOC
+#define BSD_STRINGLIST_REALLOC(ptr, size) realloc((ptr), (size))
+#endif
+#ifndef BSD_STRINGLIST_FREE
+#define BSD_STRINGLIST_FREE(ptr) free((ptr))
+#endif
+
+/**
+ * @brief Allocate and initialize a new StringList.
+ * @return Pointer to initialized StringList, or NULL on allocation failure.
+ */
 StringList *sl_init(void) {
-  StringList *sl = (StringList *)calloc(1, sizeof(*sl));
+  StringList *sl = (StringList *)BSD_STRINGLIST_CALLOC(1, sizeof(*sl));
   if (sl == NULL) {
     return NULL;
   }
   sl->sl_max = 20;
   sl->sl_cur = 0;
-  sl->sl_str = (char **)calloc(sl->sl_max, sizeof(char *));
+  sl->sl_str = (char **)BSD_STRINGLIST_CALLOC(sl->sl_max, sizeof(char *));
   if (sl->sl_str == NULL) {
-    free(sl);
+    BSD_STRINGLIST_FREE(sl);
     return NULL;
   }
   return sl;
 }
 
+/**
+ * @brief Append a string pointer to a StringList.
+ * @param sl Target StringList.
+ * @param name String pointer to append.
+ * @return 0 on success, or -1 on failure.
+ */
 int sl_add(StringList *sl, char *name) {
   if (sl == NULL) {
     return -1;
   }
   if (sl->sl_cur + 1 >= sl->sl_max) {
     size_t nmax = sl->sl_max * 2;
-    char **nstr = (char **)realloc(sl->sl_str, nmax * sizeof(char *));
+    char **nstr =
+        (char **)BSD_STRINGLIST_REALLOC(sl->sl_str, nmax * sizeof(char *));
     if (nstr == NULL) {
       return -1;
     }
@@ -45,6 +66,11 @@ int sl_add(StringList *sl, char *name) {
   return 0;
 }
 
+/**
+ * @brief Free a StringList and optionally its elements.
+ * @param sl Target StringList (may be NULL).
+ * @param all Non-zero to free each element pointer.
+ */
 void sl_free(StringList *sl, int all) {
   size_t i;
   if (sl == NULL) {
@@ -53,14 +79,20 @@ void sl_free(StringList *sl, int all) {
   if (sl->sl_str != NULL) {
     if (all) {
       for (i = 0; i < sl->sl_cur; i++) {
-        free(sl->sl_str[i]);
+        BSD_STRINGLIST_FREE(sl->sl_str[i]);
       }
     }
-    free(sl->sl_str);
+    BSD_STRINGLIST_FREE(sl->sl_str);
   }
-  free(sl);
+  BSD_STRINGLIST_FREE(sl);
 }
 
+/**
+ * @brief Find a string in a StringList by strcmp.
+ * @param sl Target StringList.
+ * @param name NUL-terminated string to search for.
+ * @return Matching element pointer, or NULL if not found.
+ */
 char *sl_find(StringList *sl, const char *name) {
   size_t i;
   if (sl == NULL || name == NULL) {
@@ -74,15 +106,23 @@ char *sl_find(StringList *sl, const char *name) {
   return NULL;
 }
 
+/**
+ * @brief Delete a string from a StringList and optionally free it.
+ * @param sl Target StringList.
+ * @param name NUL-terminated string to remove.
+ * @param all Non-zero to free the removed element pointer.
+ * @return 0 if found and removed, or -1 if not found or invalid arguments.
+ */
 int sl_delete(StringList *sl, const char *name, int all) {
-  size_t i, j;
+  size_t i;
+  size_t j;
   if (sl == NULL || name == NULL) {
     return -1;
   }
   for (i = 0; i < sl->sl_cur; i++) {
     if (sl->sl_str[i] != NULL && strcmp(sl->sl_str[i], name) == 0) {
       if (all) {
-        free(sl->sl_str[i]);
+        BSD_STRINGLIST_FREE(sl->sl_str[i]);
       }
       for (j = i + 1; j < sl->sl_cur; j++) {
         sl->sl_str[j - 1] = sl->sl_str[j];

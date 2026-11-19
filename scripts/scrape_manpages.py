@@ -69,10 +69,9 @@ def scrape_function(func_name, header_name):
         raw_desc = unescape(desc_match.group(1))
         # First paragraph: split by double newline
         paragraphs = raw_desc.split("\n\n")
-        if paragraphs:
-            description = strip_html(paragraphs[0])
-            # replace newlines with space
-            description = description.replace("\n", " ")
+        description = strip_html(paragraphs[0])
+        # replace newlines with space
+        description = description.replace("\n", " ")
 
     if synopsis and description:
         return {"prototype": synopsis, "description": description}

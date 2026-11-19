@@ -19,6 +19,29 @@
 #endif
 /* clang-format on */
 
+static void *default_libproc_malloc(size_t sz) { return malloc(sz); }
+static void *(*g_libproc_malloc)(size_t) = default_libproc_malloc;
+
+#if !defined(_WIN32) && !defined(_WIN64)
+static void *default_libproc_calloc(size_t n, size_t sz) {
+  return calloc(n, sz);
+}
+static void *(*g_libproc_calloc)(size_t, size_t) = default_libproc_calloc;
+#endif
+
+/**
+ * @brief Sets custom allocator hooks for OOM testing in posix-libproc.
+ */
+void posix_libproc_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                                   void *(*calloc_fn)(size_t, size_t)) {
+  g_libproc_malloc = malloc_fn;
+#if !defined(_WIN32) && !defined(_WIN64)
+  g_libproc_calloc = calloc_fn;
+#else
+  (void)calloc_fn;
+#endif
+}
+
 #if defined(_WIN32) || defined(_WIN64)
 
 typedef void *LIBPROC_WIN_HANDLE;
@@ -46,9 +69,6 @@ typedef struct tagLIBPROC_PROCESSENTRY32 {
   char szExeFile[260];
 } LIBPROC_PROCESSENTRY32;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 __declspec(dllimport) LIBPROC_WIN_HANDLE __stdcall
 CreateToolhelp32Snapshot(LIBPROC_WIN_DWORD dwFlags,
                          LIBPROC_WIN_DWORD th32ProcessID);
@@ -61,9 +81,65 @@ CloseHandle(LIBPROC_WIN_HANDLE hObject);
 __declspec(dllimport) LIBPROC_WIN_DWORD __stdcall GetCurrentProcessId(void);
 __declspec(dllimport) LIBPROC_WIN_DWORD __stdcall
 GetModuleFileNameA(void *hModule, char *lpFilename, LIBPROC_WIN_DWORD nSize);
-#ifdef __cplusplus
+
+static LIBPROC_WIN_HANDLE default_libproc_snapshot(LIBPROC_WIN_DWORD flags,
+                                                   LIBPROC_WIN_DWORD pid) {
+  return CreateToolhelp32Snapshot(flags, pid);
 }
-#endif
+static LIBPROC_WIN_BOOL default_libproc_first(LIBPROC_WIN_HANDLE snap,
+                                              LIBPROC_PROCESSENTRY32 *pe) {
+  return Process32First(snap, pe);
+}
+static LIBPROC_WIN_BOOL default_libproc_next(LIBPROC_WIN_HANDLE snap,
+                                             LIBPROC_PROCESSENTRY32 *pe) {
+  return Process32Next(snap, pe);
+}
+static LIBPROC_WIN_BOOL default_libproc_close(LIBPROC_WIN_HANDLE h) {
+  return CloseHandle(h);
+}
+static LIBPROC_WIN_DWORD default_libproc_modname(void *hMod, char *buf,
+                                                 LIBPROC_WIN_DWORD sz) {
+  return GetModuleFileNameA(hMod, buf, sz);
+}
+
+static LIBPROC_WIN_HANDLE (*g_libproc_snapshot)(
+    LIBPROC_WIN_DWORD, LIBPROC_WIN_DWORD) = default_libproc_snapshot;
+static LIBPROC_WIN_BOOL (*g_libproc_first)(
+    LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *) = default_libproc_first;
+static LIBPROC_WIN_BOOL (*g_libproc_next)(
+    LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *) = default_libproc_next;
+static LIBPROC_WIN_BOOL (*g_libproc_close)(LIBPROC_WIN_HANDLE) =
+    default_libproc_close;
+static LIBPROC_WIN_DWORD (*g_libproc_modname)(
+    void *, char *, LIBPROC_WIN_DWORD) = default_libproc_modname;
+
+/**
+ * @brief Sets custom Win32 hooks for testing posix-libproc on Windows.
+ */
+void posix_libproc_set_win32_hooks(
+    LIBPROC_WIN_HANDLE (*snap_fn)(LIBPROC_WIN_DWORD, LIBPROC_WIN_DWORD),
+    LIBPROC_WIN_BOOL (*first_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
+    LIBPROC_WIN_BOOL (*next_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
+    LIBPROC_WIN_BOOL (*close_fn)(LIBPROC_WIN_HANDLE),
+    LIBPROC_WIN_DWORD (*modname_fn)(void *, char *, LIBPROC_WIN_DWORD)) {
+  g_libproc_snapshot = snap_fn;
+  g_libproc_first = first_fn;
+  g_libproc_next = next_fn;
+  g_libproc_close = close_fn;
+  g_libproc_modname = modname_fn;
+}
+
+/**
+ * @brief Resets allocator and Win32 hooks to defaults.
+ */
+void posix_libproc_reset_hooks(void) {
+  g_libproc_malloc = default_libproc_malloc;
+  g_libproc_snapshot = default_libproc_snapshot;
+  g_libproc_first = default_libproc_first;
+  g_libproc_next = default_libproc_next;
+  g_libproc_close = default_libproc_close;
+  g_libproc_modname = default_libproc_modname;
+}
 
 struct win_proc_cursor {
   LIBPROC_WIN_HANDLE snap;
@@ -72,11 +148,7 @@ struct win_proc_cursor {
 };
 
 static void strip_exe_suffix(char *name) {
-  size_t len;
-  if (name == NULL) {
-    return;
-  }
-  len = strlen(name);
+  size_t len = strlen(name);
   if (len > 4) {
     const char *ext = name + len - 4;
     if ((ext[0] == '.') && (ext[1] == 'e' || ext[1] == 'E') &&
@@ -87,20 +159,20 @@ static void strip_exe_suffix(char *name) {
 }
 
 void *posix_proc_open(void) {
-  struct win_proc_cursor *c =
-      (struct win_proc_cursor *)malloc(sizeof(struct win_proc_cursor));
+  struct win_proc_cursor *c = (struct win_proc_cursor *)g_libproc_malloc(
+      sizeof(struct win_proc_cursor));
   if (c == NULL) {
     return NULL;
   }
   memset(c, 0, sizeof(*c));
-  c->snap = CreateToolhelp32Snapshot(LIBPROC_TH32CS_SNAPPROCESS, 0);
+  c->snap = g_libproc_snapshot(LIBPROC_TH32CS_SNAPPROCESS, 0);
   if (c->snap == LIBPROC_INVALID_HANDLE_VALUE) {
     free(c);
     return NULL;
   }
   c->pe.dwSize = sizeof(LIBPROC_PROCESSENTRY32);
-  if (!Process32First(c->snap, &c->pe)) {
-    CloseHandle(c->snap);
+  if (!g_libproc_first(c->snap, &c->pe)) {
+    g_libproc_close(c->snap);
     free(c);
     return NULL;
   }
@@ -118,7 +190,7 @@ int posix_proc_next(void *cursor, struct posix_proc_entry *out_entry) {
     if (c->first) {
       c->first = 0;
     } else {
-      if (!Process32Next(c->snap, &c->pe)) {
+      if (!g_libproc_next(c->snap, &c->pe)) {
         return 0;
       }
     }
@@ -141,7 +213,7 @@ int posix_proc_next(void *cursor, struct posix_proc_entry *out_entry) {
 
   base = c->pe.szExeFile;
   {
-    const char *s1 = strrchr(base, '\\');
+    const char *s1 = strrchr(base, 92);
     const char *s2 = strrchr(base, '/');
     if (s1 && s2) {
       base = (s1 > s2) ? (s1 + 1) : (s2 + 1);
@@ -166,17 +238,9 @@ int posix_proc_next(void *cursor, struct posix_proc_entry *out_entry) {
   strip_exe_suffix(out_entry->comm);
 
 #if defined(_MSC_VER)
-  strncpy_s(out_entry->cmdline, sizeof(out_entry->cmdline), out_entry->comm,
-            _TRUNCATE);
+  strcpy_s(out_entry->cmdline, sizeof(out_entry->cmdline), out_entry->comm);
 #else
-  {
-    size_t clen = strlen(out_entry->comm);
-    if (clen >= sizeof(out_entry->cmdline)) {
-      clen = sizeof(out_entry->cmdline) - 1;
-    }
-    memcpy(out_entry->cmdline, out_entry->comm, clen);
-    out_entry->cmdline[clen] = '\0';
-  }
+  memcpy(out_entry->cmdline, out_entry->comm, strlen(out_entry->comm) + 1);
 #endif
   return 1;
 }
@@ -186,9 +250,7 @@ void posix_proc_close(void *cursor) {
   if (c == NULL) {
     return;
   }
-  if (c->snap != LIBPROC_INVALID_HANDLE_VALUE) {
-    CloseHandle(c->snap);
-  }
+  g_libproc_close(c->snap);
   free(c);
 }
 
@@ -205,7 +267,7 @@ int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
     return 0;
   }
 
-  len = GetModuleFileNameA(NULL, (char *)buffer, (LIBPROC_WIN_DWORD)buffersize);
+  len = g_libproc_modname(NULL, (char *)buffer, (LIBPROC_WIN_DWORD)buffersize);
   if (len == 0 || len >= (LIBPROC_WIN_DWORD)buffersize) {
     return 0;
   }
@@ -215,6 +277,34 @@ int proc_pidpath(int pid, void *buffer, unsigned int buffersize) {
 
 #else
 
+#if defined(__APPLE__) && defined(_DARWIN_C_SOURCE)
+static int default_libproc_sysctl(int *name, unsigned int namelen, void *oldp,
+                                  size_t *oldlenp, void *newp, size_t newlen) {
+  return sysctl(name, namelen, oldp, oldlenp, newp, newlen);
+}
+static int (*g_libproc_sysctl)(int *, unsigned int, void *, size_t *, void *,
+                               size_t) = default_libproc_sysctl;
+
+/**
+ * @brief Sets custom sysctl hook for testing posix-libproc on macOS.
+ */
+void posix_libproc_set_sysctl_hook(int (*sysctl_fn)(int *, unsigned int, void *,
+                                                    size_t *, void *, size_t)) {
+  g_libproc_sysctl = sysctl_fn;
+}
+#endif
+
+/**
+ * @brief Resets allocator and OS hooks to defaults.
+ */
+void posix_libproc_reset_hooks(void) {
+  g_libproc_malloc = default_libproc_malloc;
+  g_libproc_calloc = default_libproc_calloc;
+#if defined(__APPLE__) && defined(_DARWIN_C_SOURCE)
+  g_libproc_sysctl = default_libproc_sysctl;
+#endif
+}
+
 struct generic_proc_cursor {
   struct posix_proc_entry *entries;
   size_t count;
@@ -223,7 +313,8 @@ struct generic_proc_cursor {
 
 void *posix_proc_open(void) {
   struct generic_proc_cursor *c =
-      (struct generic_proc_cursor *)malloc(sizeof(struct generic_proc_cursor));
+      (struct generic_proc_cursor *)g_libproc_malloc(
+          sizeof(struct generic_proc_cursor));
   if (c == NULL) {
     return NULL;
   }
@@ -234,14 +325,15 @@ void *posix_proc_open(void) {
   {
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
     size_t len = 0;
-    if (sysctl(mib, 4, NULL, &len, NULL, 0) == 0 && len > 0) {
-      struct kinfo_proc *kp = (struct kinfo_proc *)malloc(len);
+    if (g_libproc_sysctl(mib, 4, NULL, &len, NULL, 0) == 0 &&
+        len >= sizeof(struct kinfo_proc)) {
+      struct kinfo_proc *kp = (struct kinfo_proc *)g_libproc_malloc(len);
       if (kp != NULL) {
-        if (sysctl(mib, 4, kp, &len, NULL, 0) == 0) {
+        if (g_libproc_sysctl(mib, 4, kp, &len, NULL, 0) == 0) {
           size_t n = len / sizeof(struct kinfo_proc);
           size_t i;
-          c->entries = (struct posix_proc_entry *)calloc(
-              n > 0 ? n : 1, sizeof(struct posix_proc_entry));
+          c->entries = (struct posix_proc_entry *)g_libproc_calloc(
+              n, sizeof(struct posix_proc_entry));
           if (c->entries != NULL) {
             for (i = 0; i < n; ++i) {
               struct posix_proc_entry *pe;
@@ -260,10 +352,11 @@ void *posix_proc_open(void) {
               pe->state[1] = ' ';
               pe->state[2] = ' ';
               pe->state[3] = '\0';
-              strncpy(pe->comm, kp[i].kp_proc.p_comm, sizeof(pe->comm) - 1);
-              pe->comm[sizeof(pe->comm) - 1] = '\0';
-              strncpy(pe->cmdline, pe->comm, sizeof(pe->cmdline) - 1);
-              pe->cmdline[sizeof(pe->cmdline) - 1] = '\0';
+              {
+                size_t clen = strlen(kp[i].kp_proc.p_comm);
+                (memcpy)(pe->comm, kp[i].kp_proc.p_comm, clen + 1);
+                (memcpy)(pe->cmdline, pe->comm, clen + 1);
+              }
             }
           }
         }
@@ -271,29 +364,30 @@ void *posix_proc_open(void) {
       }
     }
   }
-#endif
-  if (c->entries == NULL || c->count == 0) {
-    free(c->entries);
-    c->entries =
-        (struct posix_proc_entry *)calloc(1, sizeof(struct posix_proc_entry));
-    if (c->entries == NULL) {
-      free(c);
-      return NULL;
-    }
-    c->count = 1;
-    c->entries[0].pid = (unsigned int)getpid();
-#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
-    c->entries[0].ppid = 0;
-#else
-    c->entries[0].ppid = (unsigned int)getppid();
-#endif
-    c->entries[0].pgid = c->entries[0].pid;
-    c->entries[0].state[0] = 'S';
-    c->entries[0].state[1] = ' ';
-    c->entries[0].state[2] = ' ';
-    strcpy(c->entries[0].comm, "busybox");
-    strcpy(c->entries[0].cmdline, "busybox");
+  if (c->count > 0) {
+    return c;
   }
+  free(c->entries);
+#endif
+  c->entries = (struct posix_proc_entry *)g_libproc_calloc(
+      1, sizeof(struct posix_proc_entry));
+  if (c->entries == NULL) {
+    free(c);
+    return NULL;
+  }
+  c->count = 1;
+  c->entries[0].pid = (unsigned int)getpid();
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  c->entries[0].ppid = 0;
+#else
+  c->entries[0].ppid = (unsigned int)getppid();
+#endif
+  c->entries[0].pgid = c->entries[0].pid;
+  c->entries[0].state[0] = 'S';
+  c->entries[0].state[1] = ' ';
+  c->entries[0].state[2] = ' ';
+  memcpy(c->entries[0].comm, "busybox", 8);
+  memcpy(c->entries[0].cmdline, "busybox", 8);
   return c;
 }
 

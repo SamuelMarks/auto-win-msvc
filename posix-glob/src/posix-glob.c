@@ -1,9 +1,14 @@
-/* posix-glob.c - Strict C89 Implementation */
+/**
+ * @file posix-glob.c
+ * @brief Strict C89 implementation of fnmatch, glob, and wordexp.
+ */
 #if !defined(_MSC_VER)
 #ifndef _POSIX_C_SOURCE
+/** @brief Request POSIX.1-2008 interfaces. */
 #define _POSIX_C_SOURCE 200809L
 #endif
 #ifndef _XOPEN_SOURCE
+/** @brief Request X/Open 7 interfaces. */
 #define _XOPEN_SOURCE 700
 #endif
 #endif
@@ -12,24 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "posix-glob.h"
-#if defined(POSIX_GLOB_MOCK_MALLOC)
-#include <stdlib.h>
-#if defined(_WIN32)
-__declspec(dllexport) void *(*posix_glob_mock_malloc_ptr)(size_t) = NULL;
-__declspec(dllexport) void *(*posix_glob_mock_realloc_ptr)(void *, size_t) = NULL;
-#else
-void *(*posix_glob_mock_malloc_ptr)(size_t) = NULL;
-void *(*posix_glob_mock_realloc_ptr)(void *, size_t) = NULL;
-#endif
-static void *my_malloc(size_t size) { return posix_glob_mock_malloc_ptr ? posix_glob_mock_malloc_ptr(size) : malloc(size); }
-static void *my_realloc(void *ptr, size_t size) { return posix_glob_mock_realloc_ptr ? posix_glob_mock_realloc_ptr(ptr, size) : realloc(ptr, size); }
-#define malloc my_malloc
-#define realloc my_realloc
-#endif
-
-
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(_MSC_VER)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>
@@ -43,7 +31,34 @@ static void *my_realloc(void *ptr, size_t size) { return posix_glob_mock_realloc
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
+#endif
 /* clang-format on */
+
+#if defined(POSIX_GLOB_MOCK_MALLOC)
+#if defined(_WIN32)
+/** @brief Export modifier for glob OOM mock pointers on Windows. */
+#define POSIX_GLOB_HOOK_EXPORT __declspec(dllexport)
+#else
+/** @brief Export modifier for glob OOM mock pointers. */
+#define POSIX_GLOB_HOOK_EXPORT
+#endif
+/** @brief Optional test hook overriding malloc in posix-glob. */
+POSIX_GLOB_HOOK_EXPORT void *(*posix_glob_mock_malloc_ptr)(size_t) = NULL;
+/** @brief Optional test hook overriding realloc in posix-glob. */
+POSIX_GLOB_HOOK_EXPORT void *(*posix_glob_mock_realloc_ptr)(void *,
+                                                            size_t) = NULL;
+static void *my_malloc(size_t size) {
+  return posix_glob_mock_malloc_ptr ? posix_glob_mock_malloc_ptr(size)
+                                    : malloc(size);
+}
+static void *my_realloc(void *ptr, size_t size) {
+  return posix_glob_mock_realloc_ptr ? posix_glob_mock_realloc_ptr(ptr, size)
+                                     : realloc(ptr, size);
+}
+/** @brief Redirect malloc to OOM-mockable wrapper. */
+#define malloc my_malloc
+/** @brief Redirect realloc to OOM-mockable wrapper. */
+#define realloc my_realloc
 #endif
 
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
@@ -169,10 +184,6 @@ int glob(const char *pattern, int flags,
   int ret = 0;
   int match_found = 0;
 
-  if (errfunc) {
-    /* parameters checked */
-  }
-
   if (!pattern || !pglob)
     return GLOB_ABORTED;
 
@@ -234,12 +245,7 @@ int glob(const char *pattern, int flags,
         sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
                   fileinfo.name);
 #else
-#if defined(_MSC_VER)
-        sprintf_s(full_path, sizeof(full_path), "%s%s", dir_prefix,
-                  fileinfo.name);
-#else
         sprintf(full_path, "%s%s", dir_prefix, fileinfo.name);
-#endif
 #endif
       } else {
 #if defined(_MSC_VER)
@@ -290,10 +296,6 @@ int glob(const char *pattern, int flags,
   int match_found = 0;
   char search_dir[1024];
   const char *file_pattern;
-
-  if (errfunc) {
-    /* parameters checked */
-  }
 
   if (!pattern || !pglob)
     return GLOB_ABORTED;
@@ -530,17 +532,19 @@ auto_win_msvc_error_t posix_glob_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-/* Prevent empty translation unit */
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_tu;
 
-/* Dummy function to prevent empty translation unit */
+/** @brief Dummy anchor symbol ensuring non-empty posix-glob archive. */
 int dummy_posix_glob(void) { return 0; }
 
-/* Export for testing */
+/** @brief Internal qsort comparator exposed for unit testing. */
 int posix_glob_compare_test_internal(const void *a, const void *b);
+/** @brief Internal qsort comparator exposed for unit testing. */
 int posix_glob_compare_test_internal(const void *a, const void *b) {
   return glob_compare(a, b);
 }
 
 #endif
+/** @brief Dummy typedef preventing empty mega translation unit warnings. */
 typedef int make_iso_compilers_happy_tu_posix_glob;

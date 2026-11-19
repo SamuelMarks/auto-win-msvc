@@ -168,15 +168,8 @@ extern "C" {
 #endif
 
 #if !defined(_INTTYPES_H_INCLUDED)
-#ifndef imaxabs
-#if defined(_MSC_VER)
-#define imaxabs _abs64
-#else
-static __inline intmax_t imaxabs(intmax_t j) { return j < 0 ? -j : j; }
-#endif
-#endif
-
 #ifndef _IMAXDIV_T_DEFINED
+/** @brief Guard macro indicating imaxdiv_t has been defined. */
 #define _IMAXDIV_T_DEFINED
 /** @brief Structure returned by imaxdiv(). */
 typedef struct {
@@ -184,29 +177,39 @@ typedef struct {
   intmax_t rem;  /**< Remainder. */
 } imaxdiv_t;
 #endif
+#endif /* !_INTTYPES_H_INCLUDED */
 
-#ifndef imaxdiv
+#endif /* defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||     \
+          defined(__MSDOS__) */
+
+/** @brief Computes absolute value of an intmax_t value. */
+static __inline intmax_t posix_imaxabs(intmax_t j) { return j < 0 ? -j : j; }
+
 /**
  * @brief Computes quotient and remainder of two intmax_t values.
  * @param numer Numerator.
  * @param denom Denominator.
  * @return imaxdiv_t structure with quot and rem.
  */
-static __inline imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom) {
+static __inline imaxdiv_t posix_imaxdiv(intmax_t numer, intmax_t denom) {
   imaxdiv_t result;
   result.quot = numer / denom;
   result.rem = numer % denom;
-  if (numer < 0 && result.rem > 0) {
-    result.quot++;
-    result.rem -= denom;
-  }
   return result;
 }
-#endif
-#endif /* !_INTTYPES_H_INCLUDED */
 
-#endif /* defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||     \
-          defined(__MSDOS__) */
+#if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) ||          \
+     defined(__MSDOS__)) &&                                                    \
+    !defined(_INTTYPES_H_INCLUDED)
+#ifndef imaxabs
+/** @brief Macro mapping imaxabs to posix_imaxabs. */
+#define imaxabs posix_imaxabs
+#endif
+#ifndef imaxdiv
+/** @brief Macro mapping imaxdiv to posix_imaxdiv. */
+#define imaxdiv posix_imaxdiv
+#endif
+#endif
 
 /**
  * @brief Retrieves information on inttypes polyfill availability.

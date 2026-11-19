@@ -22,6 +22,11 @@ extern "C" {
 #define PD_ALLOWED_AT_FORK (PD_DAEMON | PD_CLOEXEC)
 
 struct rusage;
+struct __wrusage;
+struct __siginfo;
+#ifndef WEXITED
+#define WEXITED 4
+#endif
 
 /**
  * @brief Fork a child process and return a process descriptor.
@@ -56,6 +61,18 @@ int pdkill(int fd, int signum);
  * @return Process ID, or -1 on error.
  */
 int pdwait4(int fd, int *status, int options, struct rusage *rusage);
+
+/**
+ * @brief Wait for process represented by a process descriptor (FreeBSD 15).
+ * @param[in] fd Process descriptor.
+ * @param[out] status Exit status pointer.
+ * @param[in] options Wait options.
+ * @param[out] wrusage Optional resource usage pointer.
+ * @param[out] infop Optional siginfo pointer.
+ * @return 0 on success, -1 on error.
+ */
+int pdwait(int fd, int *status, int options, struct __wrusage *wrusage,
+           struct __siginfo *infop);
 
 #ifdef __cplusplus
 }

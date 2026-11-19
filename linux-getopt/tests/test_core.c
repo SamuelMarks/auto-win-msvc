@@ -277,6 +277,15 @@ TEST test_linux_getopt_extra_branches(void) {
   linux_opterr = 0;
   opt = linux_getopt(2, argv_colon, ":");
 
+  /* optional short argument (cp[2] == ':') without attached arg */
+  {
+    char *argv_opt_short[] = {"prog", "-o", NULL};
+    (void)linux_getopt_init(&status);
+    opt = linux_getopt(2, argv_opt_short, "o::");
+    ASSERT_EQ('o', opt);
+    ASSERT(linux_optarg == NULL);
+  }
+
   PASS();
 }
 
@@ -294,12 +303,52 @@ TEST test_linux_getopt_long_extra_branches(void) {
   char *argv_null_in_mid[] = {"prog", NULL};
   char *argv_empty[] = {"prog", NULL};
   char *argv_dashdash[] = {"prog", "--", "extra", NULL};
+  char *argv_short_cluster[] = {"prog", "-no", "val", "--none", NULL};
   int status = 0;
   int opt = 0;
   (void)status;
   (void)opt;
 
   longopts[3].flag = &flag_var;
+
+  /* linux_optind == 0 reset branch in linux_getopt_long */
+  linux_optind = 0;
+  opt = linux_getopt_long(2, argv_opt_noarg, "r:o::n", longopts, NULL);
+  ASSERT_EQ('o', opt);
+
+  /* nextchar != NULL && *nextchar != '\0', then nextchar != NULL && *nextchar
+   * == '\0' */
+  (void)linux_getopt_init(&status);
+  opt = linux_getopt_long(4, argv_short_cluster, "no:", longopts, NULL);
+  ASSERT_EQ('n', opt);
+  /* Now nextchar points to 'o' (*nextchar != '\0') */
+  opt = linux_getopt_long(4, argv_short_cluster, "no:", longopts, NULL);
+  ASSERT_EQ('o', opt);
+  /* Also test single short opt followed by long opt so nextchar != NULL &&
+   * *nextchar == '\0' */
+  {
+    char *argv_short_then_long[] = {"prog", "-n", "--none", NULL};
+    (void)linux_getopt_init(&status);
+    ASSERT_EQ('n',
+              linux_getopt_long(3, argv_short_then_long, "n", longopts, NULL));
+    ASSERT_EQ('n',
+              linux_getopt_long(3, argv_short_then_long, "n", longopts, NULL));
+  }
+
+#if defined(_WIN32) || defined(_MSC_VER)
+  /* optind != linux_optind synchronization in getopt and getopt_long */
+  {
+    char *argv_sync[] = {"prog", "-n", "--none", NULL};
+    (void)linux_getopt_init(&status);
+    (void)getopt(3, argv_sync, "n");
+    optind = 1;
+    ASSERT_EQ('n', getopt(3, argv_sync, "n"));
+    optind = 2;
+    ASSERT_EQ('n', getopt_long(3, argv_sync, "n", longopts, NULL));
+    optind = 1;
+    ASSERT_EQ('n', getopt_long(3, argv_sync, "n", longopts, NULL));
+  }
+#endif
 
   /* opterr = 0 for missing arg */
   (void)linux_getopt_init(&status);

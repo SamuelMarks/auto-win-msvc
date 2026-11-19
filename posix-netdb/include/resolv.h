@@ -18,60 +18,14 @@
 #else
 #include <resolv.h>
 #endif
-#elif defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <winsock2.h>
-#include <ws2tcpip.h>
 #else
-#include <sys/types.h>
-#include <netinet/in.h>
-#endif /* _WIN32 */
+#include "posix-resolv.h"
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
-    defined(__DOS__)
-
-/** @brief Maximum number of nameservers tracked in _res. */
-#define MAXNS 3
-
-/**
- * @brief Minimal BSD/POSIX resolver state structure for Windows.
- */
-struct __res_state {
-  int retrans;                           /**< Retransmission time interval */
-  int retry;                             /**< Number of times to retransmit */
-  unsigned long options;                 /**< Option flags */
-  int nscount;                           /**< Number of name servers */
-  struct sockaddr_in nsaddr_list[MAXNS]; /**< Address of name server */
-};
-
-/**
- * @brief Initializes the resolver state.
- * @return Always returns 0 on Windows.
- */
-static __inline int res_init(void) { return 0; }
-
-/**
- * @brief Returns a pointer to the thread-local resolver state on Windows.
- * @return Pointer to static __res_state instance.
- */
-static __inline struct __res_state *posix_res_state_ptr(void) {
-  static struct __res_state s_res;
-  return &s_res;
-}
-
-#ifndef _res
-/** @brief Global resolver state macro. */
-#define _res (*posix_res_state_ptr())
-#endif
-
-#endif /* _WIN32 */
 
 #ifdef __cplusplus
 }

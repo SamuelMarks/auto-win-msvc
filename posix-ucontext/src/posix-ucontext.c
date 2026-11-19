@@ -20,36 +20,34 @@
 
 #if defined(_M_AMD64) || defined(__x86_64__)
 #if defined(_MSC_VER)
-#define WIN_GET_CURRENT_FIBER() ((void *)__readgsqword(0x20))
+static void *win_get_current_fiber_raw(void) {
+  return (void *)__readgsqword(0x20);
+}
 #elif defined(__GNUC__) || defined(__clang__)
-static void *win_get_current_fiber(void) {
+static void *win_get_current_fiber_raw(void) {
   void *res;
   __asm__("movq %%gs:0x20, %0" : "=r"(res));
   return res;
 }
-#define WIN_GET_CURRENT_FIBER() win_get_current_fiber()
 #else
-#define WIN_GET_CURRENT_FIBER() NULL
+static void *win_get_current_fiber_raw(void) { return NULL; }
 #endif
 #elif defined(_M_IX86) || defined(__i386__)
 #if defined(_MSC_VER)
-#define WIN_GET_CURRENT_FIBER() ((void *)(size_t)__readfsdword(0x10))
+static void *win_get_current_fiber_raw(void) {
+  return (void *)(size_t)__readfsdword(0x10);
+}
 #elif defined(__GNUC__) || defined(__clang__)
-static void *win_get_current_fiber(void) {
+static void *win_get_current_fiber_raw(void) {
   void *res;
   __asm__("movl %%fs:0x10, %0" : "=r"(res));
   return res;
 }
-#define WIN_GET_CURRENT_FIBER() win_get_current_fiber()
 #else
-#define WIN_GET_CURRENT_FIBER() NULL
+static void *win_get_current_fiber_raw(void) { return NULL; }
 #endif
 #else
-#define WIN_GET_CURRENT_FIBER() NULL
-#endif
-
-#ifdef __cplusplus
-extern "C" {
+static void *win_get_current_fiber_raw(void) { return NULL; }
 #endif
 
 typedef void *WIN_LPVOID;
@@ -61,11 +59,36 @@ __declspec(dllimport) void __stdcall DeleteFiber(void *lpFiber);
 __declspec(dllimport) void *__stdcall
 CreateFiber(size_t dwStackSize, WIN_PFIBER_START_ROUTINE lpStartAddress,
             void *lpParameter);
+#if defined(_MSC_VER)
+__declspec(dllimport)
+__declspec(noreturn) void __stdcall ExitThread(unsigned long dwExitCode);
+#elif defined(__GNUC__) || defined(__clang__)
+__declspec(dllimport) void
+    __attribute__((noreturn)) __stdcall ExitThread(unsigned long dwExitCode);
+#else
 __declspec(dllimport) void __stdcall ExitThread(unsigned long dwExitCode);
-
-#ifdef __cplusplus
-}
 #endif
+
+static void *default_ucontext_malloc(size_t sz) { return malloc(sz); }
+static void *(*g_ucontext_malloc)(size_t) = default_ucontext_malloc;
+static void *(*g_ucontext_get_fiber)(void) = win_get_current_fiber_raw;
+
+/**
+ * @brief Sets custom allocator and fiber-probe hooks for unit testing.
+ */
+void posix_ucontext_set_hooks(void *(*malloc_fn)(size_t),
+                              void *(*get_fiber_fn)(void)) {
+  g_ucontext_malloc = malloc_fn;
+  g_ucontext_get_fiber = get_fiber_fn;
+}
+
+/**
+ * @brief Resets allocator and fiber-probe hooks to defaults.
+ */
+void posix_ucontext_reset_hooks(void) {
+  g_ucontext_malloc = default_ucontext_malloc;
+  g_ucontext_get_fiber = win_get_current_fiber_raw;
+}
 
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 #define THREAD_LOCAL __declspec(thread)
@@ -82,9 +105,7 @@ static THREAD_LOCAL int num_dead_fibers = 0;
 static void cleanup_dead_fibers(void) {
   int i;
   for (i = 0; i < num_dead_fibers; ++i) {
-    if (dead_fibers[i] != WIN_GET_CURRENT_FIBER()) {
-      DeleteFiber(dead_fibers[i]);
-    }
+    DeleteFiber(dead_fibers[i]);
   }
   num_dead_fibers = 0;
 }
@@ -112,7 +133,7 @@ static void __stdcall posix_fiber_start(void *lpParameter) {
   uc_link = margs->uc_link;
   my_fiber = margs->my_fiber;
 
-  for (i = 0; i < 8 && i < argc; ++i) {
+  for (i = 0; i < argc; ++i) {
     args[i] = margs->args[i];
   }
 
@@ -146,7 +167,6 @@ static void __stdcall posix_fiber_start(void *lpParameter) {
     ((void (*)(int, int, int, int, int, int, int))func)(
         args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
     break;
-  case 8:
   default:
     ((void (*)(int, int, int, int, int, int, int, int))func)(
         args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
@@ -175,7 +195,7 @@ int getcontext(ucontext_t *ucp) {
     return -1;
   }
 
-  fiber = WIN_GET_CURRENT_FIBER();
+  fiber = g_ucontext_get_fiber();
   if (fiber == (void *)(size_t)0x1e00 || fiber == NULL) {
     fiber = ConvertThreadToFiber(NULL);
   }
@@ -223,7 +243,7 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
     return;
   }
 
-  margs = (struct posix_makecontext_args *)malloc(
+  margs = (struct posix_makecontext_args *)g_ucontext_malloc(
       sizeof(struct posix_makecontext_args));
   if (margs == NULL) {
     return;
@@ -234,7 +254,7 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
   margs->uc_link = ucp->uc_link;
 
   va_start(ap, argc);
-  for (i = 0; i < argc && i < 8; ++i) {
+  for (i = 0; i < argc; ++i) {
     margs->args[i] = va_arg(ap, int);
   }
   va_end(ap);
@@ -270,9 +290,7 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
     return -1;
   }
 
-  if (getcontext(oucp) != 0) {
-    return -1;
-  }
+  (void)getcontext(oucp);
 
   SwitchToFiber(fiber);
   return 0;

@@ -101,11 +101,18 @@ endif()
 endif()
 
 
+if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+    find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+    if(_AWM_HOST_NM)
+        set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+    endif()
+endif()
+
 add_library(linux-getopt src/linux-getopt.c)
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(linux-getopt PUBLIC LINUX_GETOPT_SHARED=1)
 endif()
-set_target_properties(linux-getopt PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(linux-getopt PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(linux-getopt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

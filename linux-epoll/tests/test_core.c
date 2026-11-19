@@ -1,5 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
 #include "linux-epoll.h"
@@ -9,23 +7,16 @@
 #include "auto-win-msvc-error.h"
 
 extern auto_win_msvc_error_t linux_epoll_init(int *out_status);
+extern int sys_epoll_dummy_for_coverage(void);
 /* clang-format on */
 
 TEST test_linux_epoll_init(void) {
-  auto_win_msvc_error_t rc;
-  int status;
-  (void)rc;
-  (void)status;
+  int status = 0;
 
-  status = 0;
-  rc = linux_epoll_init(NULL);
-  /* no branch */
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, linux_epoll_init(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, linux_epoll_init(&status));
+  ASSERT_EQ(1, status);
 
-  rc = linux_epoll_init(&status);
-  /* no branch */
-
-  (void)(1);
-  (void)(status);
   PASS();
 }
 
@@ -35,16 +26,19 @@ TEST test_epoll_lifecycle(void) {
   struct epoll_event ev;
 
   epfd = epoll_create(1);
-
-  (void)(epfd >= 0);
+  (void)epfd;
 
   ret = epoll_ctl(epfd, 1, -1, NULL);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
 
   ret = epoll_ctl(-1, 1, 0, NULL);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_ctl(2000, 1, 0, NULL);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_ctl(500, 1, 0, NULL);
+  ASSERT_EQ(-1, ret);
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLONESHOT | EPOLLET);
   ev.data.fd = 0;
@@ -55,22 +49,30 @@ TEST test_epoll_lifecycle(void) {
   ret = epoll_ctl(epfd, EPOLL_CTL_MOD, 0, &ev);
   (void)ret;
 
-  ret = epoll_ctl(epfd, EPOLL_CTL_DEL, 0, NULL);
+  ret = epoll_ctl(epfd, EPOLL_CTL_DEL, 2048, NULL);
   (void)ret;
 
   ret = epoll_wait(epfd, &ev, 1, 0);
-  (void)(ret >= 0 || ret == -1);
+  (void)ret;
 
   ret = epoll_wait(-1, &ev, 1, 0);
-  (void)(-1);
-  (void)(ret);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_wait(2000, &ev, 1, 0);
+  (void)ret;
 
   ret = epoll_close(epfd);
-  (void)(ret == 0 || ret == -1);
+  (void)ret;
+
+  /* Closing again hits epoll_handles[epfd] == NULL */
+  ret = epoll_close(epfd);
+  (void)ret;
 
   ret = epoll_close(-1);
-  (void)(-1);
-  (void)(ret);
+  (void)ret;
+
+  ret = epoll_close(2000);
+  (void)ret;
 
   PASS();
 }
@@ -80,11 +82,8 @@ TEST test_epoll_create1(void) {
   int ret;
 
   epfd = epoll_create1(0);
-
-  (void)(epfd >= 0);
-
   ret = epoll_close(epfd);
-  (void)(ret == 0 || ret == -1);
+  (void)ret;
 
   PASS();
 }
@@ -95,104 +94,39 @@ TEST test_epoll_fallback_branches(void) {
      !defined(__MINGW64__)) ||                                                 \
     (defined(_MSC_VER) && _MSC_VER < 1600)
   struct epoll_event ev;
-  /* create */
-  (void)(-1);
-  (void)(epoll_create(0));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_create(-1));
-  (void)(EINVAL);
-  (void)(errno);
+  ev.events = EPOLLIN;
+  ev.data.fd = 0;
 
-  /* create1 */
-  (void)(-1);
-  (void)(epoll_create1(-1));
-  (void)(EINVAL);
-  (void)(errno);
+  ASSERT_EQ(-1, epoll_create(0));
+  ASSERT_EQ(-1, epoll_create(-1));
+  ASSERT_EQ(-1, epoll_create1(-1));
 
-  /* ctl */
-  (void)(-1);
-  (void)(epoll_ctl(-1, EPOLL_CTL_ADD, 0, &ev));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, EPOLL_CTL_ADD, -1, &ev));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, EPOLL_CTL_ADD, 0, NULL));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, 999, 0, &ev));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, EPOLL_CTL_ADD, 0, &ev));
-  (void)(ENOSYS);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, EPOLL_CTL_MOD, 0, &ev));
-  (void)(ENOSYS);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_ctl(0, EPOLL_CTL_DEL, 0, &ev));
-  (void)(ENOSYS);
-  (void)(errno);
+  ASSERT_EQ(-1, epoll_ctl(-1, EPOLL_CTL_ADD, 0, &ev));
+  ASSERT_EQ(-1, epoll_ctl(0, EPOLL_CTL_ADD, -1, &ev));
+  ASSERT_EQ(-1, epoll_ctl(0, EPOLL_CTL_ADD, 0, NULL));
+  ASSERT_EQ(-1, epoll_ctl(0, 999, 0, &ev));
+  ASSERT_EQ(-1, epoll_ctl(0, EPOLL_CTL_ADD, 0, &ev));
+  ASSERT_EQ(-1, epoll_ctl(0, EPOLL_CTL_MOD, 0, &ev));
+  ASSERT_EQ(-1, epoll_ctl(0, EPOLL_CTL_DEL, 0, &ev));
 
-  /* wait */
-  (void)(-1);
-  (void)(epoll_wait(-1, &ev, 1, 0));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, NULL, 1, 0));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, &ev, 0, 0));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, &ev, -1, 0));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, &ev, 1, -2));
-  (void)(EINVAL);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, &ev, 1, 0));
-  (void)(ENOSYS);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_wait(0, &ev, 1, -1));
-  (void)(ENOSYS);
-  (void)(errno);
+  ASSERT_EQ(-1, epoll_wait(-1, &ev, 1, 0));
+  ASSERT_EQ(-1, epoll_wait(0, NULL, 1, 0));
+  ASSERT_EQ(-1, epoll_wait(0, &ev, 0, 0));
+  ASSERT_EQ(-1, epoll_wait(0, &ev, -1, 0));
+  ASSERT_EQ(-1, epoll_wait(0, &ev, 1, -2));
+  ASSERT_EQ(-1, epoll_wait(0, &ev, 1, 0));
+  ASSERT_EQ(-1, epoll_wait(0, &ev, 1, -1));
 
-  /* close */
-  (void)(-1);
-  (void)(epoll_close(-1));
-  (void)(EBADF);
-  (void)(errno);
-  (void)(-1);
-  (void)(epoll_close(0));
-  (void)(ENOSYS);
-  (void)(errno);
+  ASSERT_EQ(-1, epoll_close(-1));
+  ASSERT_EQ(-1, epoll_close(0));
+  PASS();
 #else
   SKIP();
 #endif
-#ifndef _WIN32
-  PASS();
-#endif
 }
 
-extern int sys_epoll_dummy_for_coverage(void);
-
 TEST test_sys_epoll_dummy(void) {
-  (void)(0);
-  (void)(sys_epoll_dummy_for_coverage());
+  ASSERT_EQ(0, sys_epoll_dummy_for_coverage());
   PASS();
 }
 
@@ -235,6 +169,129 @@ TEST test_epoll_constants_and_pwait(void) {
   PASS();
 }
 
+#if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
+    defined(__MINGW64__)
+static void *g_mock_wepoll_handle = (void *)1;
+static intptr_t g_mock_osfhandle_ret = -1;
+static int g_mock_wepoll_ctl_ret = 0;
+
+static intptr_t mock_epoll_get_osfhandle(int fd) {
+  (void)fd;
+  return g_mock_osfhandle_ret;
+}
+
+static void *mock_wepoll_create(int size) {
+  (void)size;
+  return g_mock_wepoll_handle;
+}
+
+static void *mock_wepoll_create1(int flags) {
+  (void)flags;
+  return g_mock_wepoll_handle;
+}
+
+static int mock_wepoll_ctl(void *h, int op, uintptr_t s, void *ev) {
+  (void)h;
+  (void)op;
+  (void)s;
+  (void)ev;
+  return g_mock_wepoll_ctl_ret;
+}
+
+static int mock_wepoll_wait(void *h, void *evs, int maxev, int timeout) {
+  (void)h;
+  (void)evs;
+  (void)maxev;
+  (void)timeout;
+  return 0;
+}
+
+static int mock_wepoll_close(void *h) {
+  (void)h;
+  return 0;
+}
+
+#define LINUX_EPOLL_MOCK_get_osfhandle mock_epoll_get_osfhandle
+#define LINUX_EPOLL_MOCK_wepoll_create mock_wepoll_create
+#define LINUX_EPOLL_MOCK_wepoll_create1 mock_wepoll_create1
+#define LINUX_EPOLL_MOCK_wepoll_ctl mock_wepoll_ctl
+#define LINUX_EPOLL_MOCK_wepoll_wait mock_wepoll_wait
+#define LINUX_EPOLL_MOCK_wepoll_close mock_wepoll_close
+
+#define posix_epoll_create mocked_posix_epoll_create
+#define posix_epoll_create1 mocked_posix_epoll_create1
+#define posix_epoll_ctl mocked_posix_epoll_ctl
+#define posix_epoll_wait mocked_posix_epoll_wait
+#define posix_epoll_close mocked_posix_epoll_close
+#define linux_epoll_init mocked_linux_epoll_init
+#include "../src/linux-epoll.c"
+#undef posix_epoll_create
+#undef posix_epoll_create1
+#undef posix_epoll_ctl
+#undef posix_epoll_wait
+#undef posix_epoll_close
+#undef linux_epoll_init
+#endif
+
+TEST test_epoll_wepoll_mocks(void) {
+#if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__) ||         \
+    defined(__MINGW64__)
+  struct epoll_event ev;
+  int status = 0;
+  int mep;
+
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, mocked_linux_epoll_init(0));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, mocked_linux_epoll_init(&status));
+  ASSERT_EQ(1, status);
+
+  g_mock_wepoll_handle = NULL;
+  ASSERT_EQ(-1, mocked_posix_epoll_create(1));
+  ASSERT_EQ(-1, mocked_posix_epoll_create1(0));
+
+  g_mock_wepoll_handle = (void *)1;
+  mep = mocked_posix_epoll_create(1);
+  ASSERT(mep >= 100);
+  ASSERT_EQ(0, mocked_posix_epoll_close(mep));
+
+  mep = mocked_posix_epoll_create1(0);
+  ASSERT(mep >= 100);
+
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(99, 1, 0, NULL));
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(1024, 1, 0, NULL));
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(999, 1, 0, NULL));
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(mep, 1, -1, NULL));
+
+  ASSERT_EQ(-1, mocked_posix_epoll_wait(99, &ev, 1, 0));
+  ASSERT_EQ(-1, mocked_posix_epoll_wait(1024, &ev, 1, 0));
+  ASSERT_EQ(0, mocked_posix_epoll_wait(mep, &ev, 1, 0));
+
+  ev.events = (uint32_t)(1U << 30);
+  ev.data.fd = 5;
+  g_mock_osfhandle_ret = -2;
+  g_mock_wepoll_ctl_ret = 0;
+  ASSERT_EQ(0, mocked_posix_epoll_ctl(mep, 2, 5, &ev));
+
+  ev.events = 1U;
+  g_mock_osfhandle_ret = 777;
+  g_mock_wepoll_ctl_ret = 0;
+  ASSERT_EQ(0, mocked_posix_epoll_ctl(mep, 3, 5, &ev));
+
+  g_mock_osfhandle_ret = 777;
+  g_mock_wepoll_ctl_ret = -1;
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(mep, 1, 5, NULL));
+
+  ASSERT_EQ(-1, mocked_posix_epoll_ctl(mep, 1, 2048, NULL));
+
+  ASSERT_EQ(-2, mocked_posix_epoll_close(99));
+  ASSERT_EQ(-2, mocked_posix_epoll_close(1024));
+  ASSERT_EQ(-2, mocked_posix_epoll_close(999));
+  ASSERT_EQ(0, mocked_posix_epoll_close(mep));
+  PASS();
+#else
+  SKIP();
+#endif
+}
+
 SUITE(suite_linux_epoll_core) {
   RUN_TEST(test_linux_epoll_init);
   RUN_TEST(test_epoll_lifecycle);
@@ -242,4 +299,5 @@ SUITE(suite_linux_epoll_core) {
   RUN_TEST(test_epoll_fallback_branches);
   RUN_TEST(test_sys_epoll_dummy);
   RUN_TEST(test_epoll_constants_and_pwait);
+  RUN_TEST(test_epoll_wepoll_mocks);
 }

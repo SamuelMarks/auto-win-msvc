@@ -114,6 +114,11 @@ POSIX_REGEX_EXPORT void regfree(regex_t *preg);
 
 #endif /* _MSC_VER */
 
+#ifndef REG_INVARG
+/** @brief Invalid argument error code fallback. */
+#define REG_INVARG 16
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

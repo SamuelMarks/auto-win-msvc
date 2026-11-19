@@ -30,7 +30,12 @@
 #if defined(_WIN32)
 #include <process.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
 #include <tlhelp32.h>
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <dos.h>
+#include <unistd.h>
 #ifdef PROCESSENTRY32
 #undef PROCESSENTRY32
 #endif
@@ -45,28 +50,167 @@
 #endif
 /* clang-format on */
 
+/** @brief Internal KVM descriptor state. */
 struct __kvm {
-  char errbuf[256];
-  struct kinfo_proc *procs;
-  int nprocs;
-  char *argv_buf[2];
+  char errbuf[256];             /**< Last error message buffer. */
+  struct kinfo_proc *procs;     /**< Cached process array. */
+  int nprocs;                   /**< Count of cached processes. */
+  char *argv_buf[2];            /**< Cached argv/envv pointer pair. */
+  char comm_buf[MAXCOMLEN + 1]; /**< Cached command name string. */
 };
 
+/** @brief Internal libprocstat handle state. */
 struct procstat {
-  int type;
-  kvm_t *kd;
+  int type;  /**< Backend type identifier. */
+  kvm_t *kd; /**< Underlying KVM handle. */
 };
 
+/** @brief Internal libmemstat allocator record. */
 struct memory_type {
-  char name[MEMSTAT_MAXNAME];
-  uint64_t bytes;
-  uint64_t count;
+  char name[MEMSTAT_MAXNAME]; /**< Allocator or zone name. */
+  uint64_t bytes;             /**< Active or available bytes. */
+  uint64_t count;             /**< Active item count. */
 };
 
+/** @brief Internal libmemstat list container. */
 struct memory_type_list {
-  struct memory_type item;
-  int error;
+  struct memory_type item; /**< Single summary entry. */
+  int error;               /**< Last recorded error code. */
 };
+
+static void *default_kvm_malloc(size_t sz) { return malloc(sz); }
+
+static void *default_kvm_calloc(size_t n, size_t sz) { return calloc(n, sz); }
+
+#if defined(_WIN32)
+static void *default_kvm_realloc(void *p, size_t sz) { return realloc(p, sz); }
+#endif
+
+static char *default_kvm_strdup(const char *s) {
+#if defined(_MSC_VER)
+  return _strdup(s);
+#else
+  return strdup(s);
+#endif
+}
+
+static void *(*g_kvm_malloc)(size_t) = default_kvm_malloc;
+static void *(*g_kvm_calloc)(size_t, size_t) = default_kvm_calloc;
+#if defined(_WIN32)
+static void *(*g_kvm_realloc)(void *, size_t) = default_kvm_realloc;
+#endif
+static char *(*g_kvm_strdup)(const char *) = default_kvm_strdup;
+
+void bsd_kvm_procstat_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                                      void *(*calloc_fn)(size_t, size_t),
+                                      void *(*realloc_fn)(void *, size_t),
+                                      char *(*strdup_fn)(const char *)) {
+  g_kvm_malloc = (malloc_fn != NULL) ? malloc_fn : default_kvm_malloc;
+  g_kvm_calloc = (calloc_fn != NULL) ? calloc_fn : default_kvm_calloc;
+#if defined(_WIN32)
+  g_kvm_realloc = (realloc_fn != NULL) ? realloc_fn : default_kvm_realloc;
+#else
+  (void)realloc_fn;
+#endif
+  g_kvm_strdup = (strdup_fn != NULL) ? strdup_fn : default_kvm_strdup;
+}
+
+#if defined(_WIN32)
+static void *default_kvm_snap(void) {
+  return (void *)CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+}
+
+static int default_kvm_proc_step(void *snap, int first, unsigned long *pid,
+                                 unsigned long *ppid, unsigned long *threads,
+                                 char *comm, size_t comm_sz) {
+  PROCESSENTRY32 pe;
+  BOOL ok;
+  memset(&pe, 0, sizeof(pe));
+  pe.dwSize = sizeof(pe);
+  ok = first ? Process32First((HANDLE)snap, &pe)
+             : Process32Next((HANDLE)snap, &pe);
+  if (!ok) {
+    return 0;
+  }
+#if defined(UNICODE) || defined(_UNICODE)
+  comm[0] = '\0';
+  (void)WideCharToMultiByte(CP_UTF8, 0, pe.szExeFile, -1, comm, (int)comm_sz,
+                            NULL, NULL);
+#elif defined(_MSC_VER)
+  strncpy_s(comm, comm_sz, pe.szExeFile, _TRUNCATE);
+#else
+  strncpy(comm, pe.szExeFile, comm_sz - 1);
+  comm[comm_sz - 1] = '\0';
+#endif
+  *pid = (unsigned long)pe.th32ProcessID;
+  *ppid = (unsigned long)pe.th32ParentProcessID;
+  *threads = (unsigned long)pe.cntThreads;
+  return 1;
+}
+
+static int default_kvm_close_handle(void *h) {
+  return (int)CloseHandle((HANDLE)h);
+}
+
+static unsigned long default_kvm_tcp_tbl(void *buf, unsigned long *sz) {
+  return (unsigned long)GetExtendedTcpTable((PMIB_TCPTABLE)buf, sz, FALSE,
+                                            AF_INET, TCP_TABLE_BASIC_ALL, 0);
+}
+
+static unsigned long default_kvm_udp_tbl(void *buf, unsigned long *sz) {
+  return (unsigned long)GetExtendedUdpTable((PMIB_UDPTABLE)buf, sz, FALSE,
+                                            AF_INET, UDP_TABLE_BASIC, 0);
+}
+
+static unsigned long default_kvm_if_tbl(void *buf, unsigned long *sz) {
+  return (unsigned long)GetIfTable((PMIB_IFTABLE)buf, sz, FALSE);
+}
+
+static int default_kvm_mem_status(void *ms) {
+  FILETIME idle_t;
+  FILETIME kern_t;
+  FILETIME user_t;
+  (void)GetSystemTimes(&idle_t, &kern_t, &user_t);
+  return (int)GlobalMemoryStatusEx((LPMEMORYSTATUSEX)ms);
+}
+
+static void *(*g_kvm_snap)(void) = default_kvm_snap;
+static int (*g_kvm_proc_step)(void *, int, unsigned long *, unsigned long *,
+                              unsigned long *, char *,
+                              size_t) = default_kvm_proc_step;
+static int (*g_kvm_close_handle)(void *) = default_kvm_close_handle;
+static unsigned long (*g_kvm_tcp_tbl)(void *,
+                                      unsigned long *) = default_kvm_tcp_tbl;
+static unsigned long (*g_kvm_udp_tbl)(void *,
+                                      unsigned long *) = default_kvm_udp_tbl;
+static unsigned long (*g_kvm_if_tbl)(void *,
+                                     unsigned long *) = default_kvm_if_tbl;
+static int (*g_kvm_mem_status)(void *) = default_kvm_mem_status;
+
+void bsd_kvm_procstat_set_win32_hooks(
+    void *(*snap_fn)(void),
+    int (*proc_step_fn)(void *snap, int first, unsigned long *pid,
+                        unsigned long *ppid, unsigned long *threads, char *comm,
+                        size_t comm_sz),
+    int (*close_handle_fn)(void *h),
+    unsigned long (*tcp_tbl_fn)(void *buf, unsigned long *sz),
+    unsigned long (*udp_tbl_fn)(void *buf, unsigned long *sz),
+    unsigned long (*if_tbl_fn)(void *buf, unsigned long *sz),
+    int (*mem_status_fn)(void *ms)) {
+  g_kvm_snap = (snap_fn != NULL) ? snap_fn : default_kvm_snap;
+  g_kvm_proc_step =
+      (proc_step_fn != NULL) ? proc_step_fn : default_kvm_proc_step;
+  g_kvm_close_handle =
+      (close_handle_fn != NULL) ? close_handle_fn : default_kvm_close_handle;
+  g_kvm_tcp_tbl = (tcp_tbl_fn != NULL) ? tcp_tbl_fn : default_kvm_tcp_tbl;
+  g_kvm_udp_tbl = (udp_tbl_fn != NULL) ? udp_tbl_fn : default_kvm_udp_tbl;
+  g_kvm_if_tbl = (if_tbl_fn != NULL) ? if_tbl_fn : default_kvm_if_tbl;
+  g_kvm_mem_status =
+      (mem_status_fn != NULL) ? mem_status_fn : default_kvm_mem_status;
+}
+#endif
+
+static uint64_t awm_query_phys_avail_bytes(void);
 
 static void fill_single_kinfo_proc(struct kinfo_proc *kp, pid_t pid,
                                    const char *comm) {
@@ -81,17 +225,19 @@ static void fill_single_kinfo_proc(struct kinfo_proc *kp, pid_t pid,
   kp->ki_size = 4096 * 1024;
   kp->ki_rssize = 1024;
 #if defined(_MSC_VER)
-  strncpy_s(kp->ki_comm, sizeof(kp->ki_comm), comm ? comm : "proc", _TRUNCATE);
+  strncpy_s(kp->ki_comm, sizeof(kp->ki_comm), comm, _TRUNCATE);
   strncpy_s(kp->ki_login, sizeof(kp->ki_login), "root", _TRUNCATE);
 #else
-  strncpy(kp->ki_comm, comm ? comm : "proc", sizeof(kp->ki_comm) - 1);
+  strncpy(kp->ki_comm, comm, sizeof(kp->ki_comm) - 1);
+  kp->ki_comm[sizeof(kp->ki_comm) - 1] = '\0';
   strncpy(kp->ki_login, "root", sizeof(kp->ki_login) - 1);
+  kp->ki_login[sizeof(kp->ki_login) - 1] = '\0';
 #endif
 }
 
 kvm_t *kvm_openfiles(const char *uf, const char *mf, const char *sf, int flag,
                      char *errbuf) {
-  kvm_t *kd = (kvm_t *)calloc(1, sizeof(*kd));
+  kvm_t *kd = (kvm_t *)g_kvm_calloc(1, sizeof(*kd));
   (void)uf;
   (void)mf;
   (void)sf;
@@ -144,17 +290,22 @@ struct kinfo_proc *kvm_getprocs(kvm_t *kd, int op, int arg, int *cnt) {
   }
 #if defined(_WIN32)
   {
-    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snap != INVALID_HANDLE_VALUE) {
-      PROCESSENTRY32 pe;
-      int cap = 64, n = 0;
-      kd->procs = (struct kinfo_proc *)calloc((size_t)cap, sizeof(*kd->procs));
-      pe.dwSize = sizeof(pe);
-      if (kd->procs != NULL && Process32First(snap, &pe)) {
+    void *snap = g_kvm_snap();
+    if (snap != (void *)INVALID_HANDLE_VALUE) {
+      int cap = 4;
+      int n = 0;
+      unsigned long pid = 0;
+      unsigned long ppid = 0;
+      unsigned long threads = 0;
+      char exe_utf8[260];
+      kd->procs =
+          (struct kinfo_proc *)g_kvm_calloc((size_t)cap, sizeof(*kd->procs));
+      if (kd->procs != NULL && g_kvm_proc_step(snap, 1, &pid, &ppid, &threads,
+                                               exe_utf8, sizeof(exe_utf8))) {
         do {
           if (n >= cap) {
             int ncap = cap * 2;
-            struct kinfo_proc *np = (struct kinfo_proc *)realloc(
+            struct kinfo_proc *np = (struct kinfo_proc *)g_kvm_realloc(
                 kd->procs, (size_t)ncap * sizeof(*np));
             if (np == NULL) {
               break;
@@ -162,23 +313,27 @@ struct kinfo_proc *kvm_getprocs(kvm_t *kd, int op, int arg, int *cnt) {
             kd->procs = np;
             cap = ncap;
           }
-          fill_single_kinfo_proc(&kd->procs[n], (pid_t)pe.th32ProcessID,
-                                 pe.szExeFile);
-          kd->procs[n].ki_ppid = (pid_t)pe.th32ParentProcessID;
-          kd->procs[n].ki_numthreads = (int)pe.cntThreads;
+          fill_single_kinfo_proc(&kd->procs[n], (pid_t)pid, exe_utf8);
+          kd->procs[n].ki_ppid = (pid_t)ppid;
+          kd->procs[n].ki_numthreads = (int)threads;
           n++;
-        } while (Process32Next(snap, &pe));
+        } while (g_kvm_proc_step(snap, 0, &pid, &ppid, &threads, exe_utf8,
+                                 sizeof(exe_utf8)));
       }
-      CloseHandle(snap);
+      (void)g_kvm_close_handle(snap);
       if (n > 0) {
         kd->nprocs = n;
         *cnt = n;
         return kd->procs;
       }
+      if (kd->procs != NULL) {
+        free(kd->procs);
+        kd->procs = NULL;
+      }
     }
   }
 #endif
-  kd->procs = (struct kinfo_proc *)calloc(1, sizeof(*kd->procs));
+  kd->procs = (struct kinfo_proc *)g_kvm_calloc(1, sizeof(*kd->procs));
   if (kd->procs == NULL) {
     *cnt = 0;
     return NULL;
@@ -198,7 +353,13 @@ char **kvm_getargv(kvm_t *kd, const struct kinfo_proc *p, int nchr) {
   if (kd == NULL || p == NULL) {
     return NULL;
   }
-  kd->argv_buf[0] = (char *)p->ki_comm;
+#if defined(_MSC_VER)
+  strncpy_s(kd->comm_buf, sizeof(kd->comm_buf), p->ki_comm, _TRUNCATE);
+#else
+  strncpy(kd->comm_buf, p->ki_comm, sizeof(kd->comm_buf) - 1);
+  kd->comm_buf[sizeof(kd->comm_buf) - 1] = '\0';
+#endif
+  kd->argv_buf[0] = kd->comm_buf;
   kd->argv_buf[1] = NULL;
   return kd->argv_buf;
 }
@@ -291,7 +452,8 @@ int kvm_getcptime(kvm_t *kd, long *cp_time) {
 
 struct kinfo_proc *kinfo_getallproc(int *cntp) {
   kvm_t *kd;
-  struct kinfo_proc *procs, *copy = NULL;
+  struct kinfo_proc *procs;
+  struct kinfo_proc *copy = NULL;
   int n = 0;
   if (cntp == NULL) {
     return NULL;
@@ -302,8 +464,8 @@ struct kinfo_proc *kinfo_getallproc(int *cntp) {
     return NULL;
   }
   procs = kvm_getprocs(kd, 0, 0, &n);
-  if (procs != NULL && n > 0) {
-    copy = (struct kinfo_proc *)malloc((size_t)n * sizeof(*copy));
+  if (procs != NULL) {
+    copy = (struct kinfo_proc *)g_kvm_malloc((size_t)n * sizeof(*copy));
     if (copy != NULL) {
       memcpy(copy, procs, (size_t)n * sizeof(*copy));
       *cntp = n;
@@ -314,7 +476,7 @@ struct kinfo_proc *kinfo_getallproc(int *cntp) {
 }
 
 struct kinfo_proc *kinfo_getproc(pid_t pid) {
-  struct kinfo_proc *kp = (struct kinfo_proc *)calloc(1, sizeof(*kp));
+  struct kinfo_proc *kp = (struct kinfo_proc *)g_kvm_calloc(1, sizeof(*kp));
   if (kp != NULL) {
     fill_single_kinfo_proc(kp, pid, "proc");
   }
@@ -338,7 +500,7 @@ struct kinfo_vmentry *kinfo_getvmmap(pid_t pid, int *cntp) {
 }
 
 struct procstat *procstat_open_sysctl(void) {
-  struct procstat *ps = (struct procstat *)calloc(1, sizeof(*ps));
+  struct procstat *ps = (struct procstat *)g_kvm_calloc(1, sizeof(*ps));
   if (ps != NULL) {
     ps->kd = kvm_openfiles(NULL, NULL, NULL, 0, NULL);
   }
@@ -388,7 +550,7 @@ struct filestat_list *procstat_getfiles(struct procstat *prstat,
   (void)prstat;
   (void)kp;
   (void)mmapped;
-  head = (struct filestat_list *)calloc(1, sizeof(*head));
+  head = (struct filestat_list *)g_kvm_calloc(1, sizeof(*head));
   if (head != NULL) {
     STAILQ_INIT(head);
   }
@@ -635,10 +797,10 @@ int devstat_selectdevs(struct device_selection **dev_select, int *num_selected,
   (void)select_mode;
   (void)maxshowdevs;
   (void)perf_select;
-  if (num_selected) {
+  if (num_selected != NULL) {
     *num_selected = 0;
   }
-  if (num_selections) {
+  if (num_selections != NULL) {
     *num_selections = 0;
   }
   return 0;
@@ -660,12 +822,12 @@ long double devstat_compute_etime(void *cur_time, void *prev_time) {
 }
 
 struct memory_type_list *memstat_mtl_alloc(void) {
-  return (struct memory_type_list *)calloc(1, sizeof(struct memory_type_list));
+  return (struct memory_type_list *)g_kvm_calloc(
+      1, sizeof(struct memory_type_list));
 }
 
 struct memory_type *memstat_mtl_first(struct memory_type_list *list) {
-  (void)list;
-  return NULL;
+  return (list != NULL) ? &list->item : NULL;
 }
 
 struct memory_type *memstat_mtl_next(struct memory_type *mtp) {
@@ -692,8 +854,11 @@ int memstat_mtl_geterror(struct memory_type_list *list) {
 }
 
 int memstat_sysctl_all(struct memory_type_list *list, int flags) {
-  (void)list;
   (void)flags;
+  if (list != NULL) {
+    list->item.bytes = awm_query_phys_avail_bytes();
+    list->item.count = 1;
+  }
   return 0;
 }
 
@@ -740,49 +905,61 @@ uint64_t memstat_get_countlimit(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_byteslimit(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_sizemask(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_size(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_memalloced(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_memfreed(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_numallocs(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_numfrees(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_bytes(const struct memory_type *mtp) {
   return (mtp != NULL) ? mtp->bytes : 0;
 }
+
 uint64_t memstat_get_count(const struct memory_type *mtp) {
   return (mtp != NULL) ? mtp->count : 0;
 }
+
 uint64_t memstat_get_free(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
+
 uint64_t memstat_get_failures(const struct memory_type *mtp) {
   (void)mtp;
   return 0;
 }
 
+#if !defined(__APPLE__)
 static struct statfs g_mnt_statfs;
 
 int getmntinfo(struct statfs **mntbufp, int flags) {
@@ -807,6 +984,7 @@ int getfsstat(struct statfs *buf, long bufsize, int mode) {
   return 0;
 }
 
+#endif /* !__APPLE__ */
 int fhstatfs(const fhandle_t *fhp, struct statfs *buf) {
   (void)fhp;
   return statfs(".", buf);
@@ -825,7 +1003,10 @@ struct fstab *getfsfile(const char *file) {
 }
 int setfsent(void) { return 1; }
 void endfsent(void) {}
+#endif
 
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
 int quotactl(const char *path, int cmd, int id, void *addr) {
   (void)path;
   (void)cmd;
@@ -938,7 +1119,7 @@ acl_t acl_get_fd_np(int fd, acl_type_t type) {
 int acl_get_entry(acl_t acl, int entry_id, acl_entry_t *entry_p) {
   (void)acl;
   (void)entry_id;
-  if (entry_p) {
+  if (entry_p != NULL) {
     *entry_p = NULL;
   }
   return 0;
@@ -946,14 +1127,14 @@ int acl_get_entry(acl_t acl, int entry_id, acl_entry_t *entry_p) {
 
 int acl_get_tag_type(acl_entry_t entry_d, acl_tag_t *tag_type_p) {
   (void)entry_d;
-  if (tag_type_p) {
+  if (tag_type_p != NULL) {
     *tag_type_p = 0;
   }
   return -1;
 }
 
 int acl_free(void *obj_p) {
-  if (obj_p) {
+  if (obj_p != NULL) {
     free(obj_p);
   }
   return 0;
@@ -961,7 +1142,7 @@ int acl_free(void *obj_p) {
 
 int acl_is_trivial_np(const acl_t acl, int *trivialp) {
   (void)acl;
-  if (trivialp) {
+  if (trivialp != NULL) {
     *trivialp = 1;
   }
   return 0;
@@ -1049,13 +1230,11 @@ int extattr_namespace_to_string(int attrnamespace, char **string) {
   if (string == NULL) {
     return -1;
   }
-#if defined(_MSC_VER)
-  *string =
-      _strdup((attrnamespace == EXTATTR_NAMESPACE_SYSTEM) ? "system" : "user");
-#else
-  *string =
-      strdup((attrnamespace == EXTATTR_NAMESPACE_SYSTEM) ? "system" : "user");
-#endif
+  *string = g_kvm_strdup((attrnamespace == EXTATTR_NAMESPACE_SYSTEM) ? "system"
+                                                                     : "user");
+  if (*string == NULL) {
+    return -1;
+  }
   return 0;
 }
 
@@ -1068,7 +1247,148 @@ int extattr_string_to_namespace(const char *string, int *attrnamespace) {
   return 0;
 }
 
+static uint64_t awm_query_phys_avail_bytes(void) {
+#if defined(_WIN32)
+  MEMORYSTATUSEX ms;
+  PMIB_TCPTABLE tcp_tbl = NULL;
+  PMIB_UDPTABLE udp_tbl = NULL;
+  PMIB_IFTABLE if_tbl = NULL;
+  ULONG sz = 0;
+  memset(&ms, 0, sizeof(ms));
+  ms.dwLength = sizeof(ms);
+  if (g_kvm_tcp_tbl(NULL, &sz) == ERROR_INSUFFICIENT_BUFFER) {
+    tcp_tbl = (PMIB_TCPTABLE)g_kvm_malloc(sz);
+    if (tcp_tbl != NULL) {
+      (void)g_kvm_tcp_tbl(tcp_tbl, &sz);
+      free(tcp_tbl);
+    }
+  }
+  sz = 0;
+  if (g_kvm_udp_tbl(NULL, &sz) == ERROR_INSUFFICIENT_BUFFER) {
+    udp_tbl = (PMIB_UDPTABLE)g_kvm_malloc(sz);
+    if (udp_tbl != NULL) {
+      (void)g_kvm_udp_tbl(udp_tbl, &sz);
+      free(udp_tbl);
+    }
+  }
+  sz = 0;
+  if (g_kvm_if_tbl(NULL, &sz) == ERROR_INSUFFICIENT_BUFFER) {
+    if_tbl = (PMIB_IFTABLE)g_kvm_malloc(sz);
+    if (if_tbl != NULL) {
+      (void)g_kvm_if_tbl(if_tbl, &sz);
+      free(if_tbl);
+    }
+  }
+  if (g_kvm_mem_status(&ms)) {
+    return (uint64_t)ms.ullAvailPhys;
+  }
+  return 64U * 1024U * 1024U;
+#elif (defined(__DOS__) || defined(__MSDOS__)) && defined(__WATCOMC__) &&      \
+    defined(__386__)
+  /* Query 32-bit DPMI free memory information via Int 31h AX=0500h */
+  union REGS regs;
+  struct SREGS sregs;
+  unsigned long dpmi_info[12];
+  memset(&regs, 0, sizeof(regs));
+  memset(&sregs, 0, sizeof(sregs));
+  memset(dpmi_info, 0, sizeof(dpmi_info));
+  regs.w.ax = 0x0500;
+  sregs.es = FP_SEG(dpmi_info);
+  regs.x.edi = FP_OFF(dpmi_info);
+  int386x(0x31, &regs, &regs, &sregs);
+  if (!regs.x.cflag && dpmi_info[0] > 0UL) {
+    return (uint64_t)dpmi_info[0];
+  }
+  return 16U * 1024U * 1024U;
+#else
+  return 64U * 1024U * 1024U;
+#endif
+}
+
+struct ptrace_lwpinfo *procstat_getptlwpinfo(struct procstat *prstat,
+                                             unsigned int *cntp) {
+  (void)prstat;
+  if (cntp != NULL) {
+    *cntp = 0;
+  }
+  return NULL;
+}
+
+void procstat_freeptlwpinfo(struct procstat *prstat,
+                            struct ptrace_lwpinfo *pl) {
+  (void)prstat;
+  free(pl);
+}
+
+rlim_t *procstat_getrlimitusage(struct procstat *prstat, struct kinfo_proc *kp,
+                                unsigned int *cntp) {
+  (void)prstat;
+  (void)kp;
+  if (cntp != NULL) {
+    *cntp = 0;
+  }
+  return NULL;
+}
+
+void procstat_freerlimitusage(struct procstat *prstat, rlim_t *resuse) {
+  (void)prstat;
+  free(resuse);
+}
+
+struct kinfo_knote *procstat_get_kqueue_info(struct procstat *prstat,
+                                             struct kinfo_proc *kp, int kqfd,
+                                             unsigned int *cntp, char *errbuf) {
+  (void)prstat;
+  (void)kp;
+  (void)kqfd;
+  if (cntp != NULL) {
+    *cntp = 0;
+  }
+  if (errbuf != NULL) {
+    errbuf[0] = '\0';
+  }
+  return NULL;
+}
+
+void procstat_freekqinfo(struct procstat *prstat, struct kinfo_knote *kni) {
+  (void)prstat;
+  free(kni);
+}
+
+Elf_Auxinfo *procstat_getauxv(struct procstat *prstat, struct kinfo_proc *kp,
+                              unsigned int *cntp) {
+  (void)prstat;
+  (void)kp;
+  if (cntp != NULL) {
+    *cntp = 0;
+  }
+  return NULL;
+}
+
+void procstat_freeauxv(struct procstat *prstat, Elf_Auxinfo *auxv) {
+  (void)prstat;
+  free(auxv);
+}
+
+struct advlock_list *procstat_getadvlock(struct procstat *procstat) {
+  (void)procstat;
+  return NULL;
+}
+
+void procstat_freeadvlock(struct procstat *procstat, struct advlock_list *lst) {
+  (void)procstat;
+  (void)lst;
+}
+
 typedef int make_iso_compilers_happy_tu_bsd_kvm_procstat;
 
+#if !defined(__FreeBSD__) && !defined(__APPLE__)
+int getvfsbyname(const char *filesystemname, struct xvfsconf *vfcp) {
+  (void)filesystemname;
+  (void)vfcp;
+  errno = ENOENT;
+  return -1;
+}
+#endif
 #endif
 typedef int make_iso_compilers_happy_mega_bsd_kvm_procstat;

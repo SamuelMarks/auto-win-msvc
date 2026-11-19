@@ -1,4 +1,8 @@
-/* posix-stat.c - Strict C89 Implementation */
+/**
+ * @file posix-stat.c
+ * @brief Strict C89 implementation of POSIX sys/stat.h polyfills and /proc
+ * emulation.
+ */
 
 /* clang-format off */
 #include "posix-stat.h"
@@ -31,9 +35,11 @@ static void null_invalid_param_handler(const wchar_t *expression,
                                        const wchar_t *function,
                                        const wchar_t *file, unsigned int line,
                                        uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-    /* parameters checked */
-  }
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
 
@@ -52,7 +58,7 @@ typedef char *LPSTR;
 #define FILE_ATTRIBUTE_NORMAL 128
 #define FILE_ATTRIBUTE_REPARSE_POINT 1024
 #define FILE_FLAG_BACKUP_SEMANTICS 0x02000000
-#define GENERIC_WRITE 0x40000000
+#define GENERIC_WRITE 0x40000000UL
 #define FILE_WRITE_ATTRIBUTES 0x0100
 #define CREATE_NEW 1
 #define OPEN_EXISTING 3
@@ -137,6 +143,82 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
 }
 #endif
 
+static void *default_stat_get_mod(const char *name) {
+  return (void *)GetModuleHandleA(name);
+}
+static void *default_stat_get_proc(void *hMod, const char *name) {
+  return GetProcAddress((HMODULE)hMod, name);
+}
+static unsigned long default_stat_get_attrs(const char *path) {
+  return (unsigned long)GetFileAttributesA(path);
+}
+static int default_stat_set_attrs(const char *path, unsigned long attrs) {
+  return (int)SetFileAttributesA(path, (DWORD)attrs);
+}
+static int default_stat_get_attrs_ex(const char *path, void *info) {
+  return (int)GetFileAttributesExA(path, GetFileExInfoStandard, info);
+}
+static int default_stat_get_info(void *hFile, void *info) {
+  return (int)GetFileInformationByHandle((HANDLE)hFile,
+                                         (BY_HANDLE_FILE_INFORMATION *)info);
+}
+static int default_stat_set_time(void *hFile, const void *ct, const void *at,
+                                 const void *mt) {
+  return (int)SetFileTime((HANDLE)hFile, (const FILETIME *)ct,
+                          (const FILETIME *)at, (const FILETIME *)mt);
+}
+static void *default_stat_create_file(const char *path, unsigned long access,
+                                      unsigned long share, unsigned long disp,
+                                      unsigned long flags) {
+  return (void *)CreateFileA(path, (DWORD)access, (DWORD)share, NULL,
+                             (DWORD)disp, (DWORD)flags, NULL);
+}
+
+static void *(*g_stat_get_mod)(const char *) = default_stat_get_mod;
+static void *(*g_stat_get_proc)(void *, const char *) = default_stat_get_proc;
+static unsigned long (*g_stat_get_attrs)(const char *) = default_stat_get_attrs;
+static int (*g_stat_set_attrs)(const char *,
+                               unsigned long) = default_stat_set_attrs;
+static int (*g_stat_get_attrs_ex)(const char *,
+                                  void *) = default_stat_get_attrs_ex;
+static int (*g_stat_get_info)(void *, void *) = default_stat_get_info;
+static int (*g_stat_set_time)(void *, const void *, const void *,
+                              const void *) = default_stat_set_time;
+static void *(*g_stat_create_file)(const char *, unsigned long, unsigned long,
+                                   unsigned long,
+                                   unsigned long) = default_stat_create_file;
+
+/**
+ * @brief Overrides Win32 API hooks used by posix-stat for deterministic branch
+ * testing.
+ */
+void posix_stat_set_win32_hooks(
+    void *(*get_mod_fn)(const char *),
+    void *(*get_proc_fn)(void *, const char *),
+    unsigned long (*get_attrs_fn)(const char *),
+    int (*set_attrs_fn)(const char *, unsigned long),
+    int (*get_attrs_ex_fn)(const char *, void *),
+    int (*get_info_fn)(void *, void *),
+    int (*set_time_fn)(void *, const void *, const void *, const void *),
+    void *(*create_file_fn)(const char *, unsigned long, unsigned long,
+                            unsigned long, unsigned long)) {
+  g_stat_get_mod = (get_mod_fn != NULL) ? get_mod_fn : default_stat_get_mod;
+  g_stat_get_proc =
+      (get_proc_fn != NULL) ? get_proc_fn : default_stat_get_proc;
+  g_stat_get_attrs =
+      (get_attrs_fn != NULL) ? get_attrs_fn : default_stat_get_attrs;
+  g_stat_set_attrs =
+      (set_attrs_fn != NULL) ? set_attrs_fn : default_stat_set_attrs;
+  g_stat_get_attrs_ex = (get_attrs_ex_fn != NULL) ? get_attrs_ex_fn
+                                                  : default_stat_get_attrs_ex;
+  g_stat_get_info =
+      (get_info_fn != NULL) ? get_info_fn : default_stat_get_info;
+  g_stat_set_time =
+      (set_time_fn != NULL) ? set_time_fn : default_stat_set_time;
+  g_stat_create_file =
+      (create_file_fn != NULL) ? create_file_fn : default_stat_create_file;
+}
+
 #define IS_ABSOLUTE_PATH(p)                                                    \
   ((p)[0] == '\\' || (p)[0] == '/' ||                                          \
    (((p)[0] != '\0') && (p)[1] == ':' && ((p)[2] == '\\' || (p)[2] == '/')))
@@ -146,8 +228,6 @@ __declspec(dllimport) DWORD WINAPI GetLastError(void);
 
 /**
  * @brief Retrieves information on posix-stat module availability and status.
- * @param[out] out_available Pointer to integer receiving availability status
- * (1).
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
@@ -165,11 +245,8 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available) {
 
 /**
  * @brief Safely retrieves the OS file handle for a given CRT file descriptor.
- * @param[in] fd File descriptor.
- * @param[out] out_handle Pointer to ptrdiff_t receiving the handle or -1.
- * @return AUTO_WIN_MSVC_SUCCESS on success,
- * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT or AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT
- * on failure.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on failure.
  */
 auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
                                                     ptrdiff_t *out_handle) {
@@ -202,10 +279,6 @@ auto_win_msvc_error_t posix_stat_safe_get_osfhandle(int fd,
 /**
  * @brief Resolves a pathname relative to a directory file descriptor on
  * Windows.
- * @param[in] dirfd Directory file descriptor or AT_FDCWD.
- * @param[in] pathname Relative or absolute path.
- * @param[out] out_path Output buffer receiving resolved path.
- * @param[in] out_size Size of output buffer in bytes.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
 auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
@@ -213,7 +286,7 @@ auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
                                                  char *out_path,
                                                  size_t out_size) {
   HANDLE hFile;
-  HMODULE hKernel32;
+  void *hKernel32;
   typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
                                                       DWORD);
   GetFinalPathNameByHandleA_t pGetFinalPathName;
@@ -242,20 +315,19 @@ auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
   }
 
   osf_rc = posix_stat_safe_get_osfhandle(dirfd, &osfh);
-  if (osf_rc != AUTO_WIN_MSVC_SUCCESS ||
-      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
+  if (osf_rc != AUTO_WIN_MSVC_SUCCESS) {
     errno = EBADF;
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
   }
   hFile = (HANDLE)(size_t)osfh;
 
-  hKernel32 = GetModuleHandleA("kernel32.dll");
+  hKernel32 = g_stat_get_mod("kernel32.dll");
   if (!hKernel32) {
     errno = EINVAL;
     return AUTO_WIN_MSVC_ERROR_NOT_FOUND;
   }
 
-  pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
+  pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)g_stat_get_proc(
       hKernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathName) {
     errno = ENOSYS;
@@ -293,11 +365,6 @@ auto_win_msvc_error_t posix_stat_resolve_at_path(int dirfd,
 
 /**
  * @brief Converts timespec structure to Win32 FILETIME.
- * @param[in] ts Pointer to timespec structure or NULL for current time.
- * @param[out] out_filetime Pointer to FILETIME buffer (as void *) receiving
- * converted timestamp.
- * @param[out] out_omit Pointer to integer receiving 1 if time should be
- * omitted, 0 otherwise.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on failure.
  */
 auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
@@ -322,6 +389,9 @@ auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
     *out_omit = 0;
   } else {
     stat_u64 t;
+    if (ts->tv_nsec < 0 || ts->tv_nsec >= 1000000000L) {
+      return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
+    }
     t = ((stat_u64)ts->tv_sec * ((stat_u64)10000000UL)) +
         (((stat_u64)116444736UL) * 1000000000UL);
     ft->dwLowDateTime = (DWORD)(t & 0xFFFFFFFF);
@@ -333,13 +403,11 @@ auto_win_msvc_error_t posix_stat_fill_filetime(const struct timespec *ts,
 
 /**
  * @brief Changes permissions of a file descriptor.
- * @param[in] fd File descriptor.
- * @param[in] mode Target file mode.
  * @return 0 on success, -1 on failure with errno set.
  */
 int fchmod(int fd, mode_t mode) {
   HANDLE hFile;
-  HMODULE hKernel32;
+  void *hKernel32;
   DWORD attrs;
   char path[MAX_PATH];
   typedef DWORD(WINAPI * GetFinalPathNameByHandleA_t)(HANDLE, LPSTR, DWORD,
@@ -349,20 +417,19 @@ int fchmod(int fd, mode_t mode) {
   auto_win_msvc_error_t osf_rc;
 
   osf_rc = posix_stat_safe_get_osfhandle(fd, &osfh);
-  if (osf_rc != AUTO_WIN_MSVC_SUCCESS ||
-      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
+  if (osf_rc != AUTO_WIN_MSVC_SUCCESS) {
     errno = EBADF;
     return -1;
   }
   hFile = (HANDLE)(size_t)osfh;
 
-  hKernel32 = GetModuleHandleA("kernel32.dll");
+  hKernel32 = g_stat_get_mod("kernel32.dll");
   if (!hKernel32) {
     errno = EINVAL;
     return -1;
   }
 
-  pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)GetProcAddress(
+  pGetFinalPathName = (GetFinalPathNameByHandleA_t)(size_t)g_stat_get_proc(
       hKernel32, "GetFinalPathNameByHandleA");
   if (!pGetFinalPathName) {
     errno = EINVAL;
@@ -374,7 +441,7 @@ int fchmod(int fd, mode_t mode) {
     return -1;
   }
 
-  attrs = GetFileAttributesA(path);
+  attrs = (DWORD)g_stat_get_attrs(path);
   if (attrs == INVALID_FILE_ATTRIBUTES) {
     errno = ENOENT;
     return -1;
@@ -386,7 +453,7 @@ int fchmod(int fd, mode_t mode) {
     attrs &= ~FILE_ATTRIBUTE_READONLY;
   }
 
-  if (!SetFileAttributesA(path, attrs)) {
+  if (!g_stat_set_attrs(path, (unsigned long)attrs)) {
     errno = EACCES;
     return -1;
   }
@@ -396,33 +463,21 @@ int fchmod(int fd, mode_t mode) {
 
 /**
  * @brief Changes permissions of a file relative to a directory file descriptor.
- * @param[in] dirfd Directory file descriptor or AT_FDCWD.
- * @param[in] pathname Path to file.
- * @param[in] mode Target file mode.
- * @param[in] flags Bitwise flags controlling behavior.
  * @return 0 on success, -1 on failure with errno set.
  */
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
   char fullpath[MAX_PATH];
   auto_win_msvc_error_t rc;
+  (void)flags;
 
   rc = posix_stat_resolve_at_path(dirfd, pathname, fullpath, sizeof(fullpath));
   if (rc != AUTO_WIN_MSVC_SUCCESS) {
     errno = auto_win_msvc_error_to_errno(rc);
     return -1;
   }
-  if (flags & AT_SYMLINK_NOFOLLOW) {
-    /* _chmod does not follow symlinks natively on older Windows */
-  }
   return _chmod(fullpath, mode);
 }
 
-/**
- * @brief Populates extended POSIX.1-2008 fields on struct posix_stat from
- * standard fields and optional handle information.
- * @param[in,out] st Pointer to struct posix_stat.
- * @param[in] hFile Optional open Win32 file handle, or INVALID_HANDLE_VALUE.
- */
 static void populate_posix_stat_extras(struct posix_stat *st, HANDLE hFile) {
   BY_HANDLE_FILE_INFORMATION bhfi;
   st->st_blksize = 4096;
@@ -433,8 +488,7 @@ static void populate_posix_stat_extras(struct posix_stat *st, HANDLE hFile) {
   st->st_mtim.tv_nsec = 0;
   st->st_ctim.tv_sec = (time_t)st->st_ctime;
   st->st_ctim.tv_nsec = 0;
-  if (hFile != INVALID_HANDLE_VALUE &&
-      GetFileInformationByHandle(hFile, &bhfi)) {
+  if (hFile != INVALID_HANDLE_VALUE && g_stat_get_info(hFile, &bhfi)) {
     unsigned int idx = (unsigned int)(bhfi.nFileIndexLow ^ bhfi.nFileIndexHigh);
     if (bhfi.dwVolumeSerialNumber != 0) {
       st->st_dev = (_dev_t)(bhfi.dwVolumeSerialNumber & 0x7FFFU);
@@ -451,18 +505,8 @@ static void populate_posix_stat_extras(struct posix_stat *st, HANDLE hFile) {
   }
 }
 
-/**
- * @brief Checks if pathname refers to a virtual /proc entry and populates
- * statbuf.
- * @param[in] pathname Path to check.
- * @param[out] statbuf Structure receiving synthetic status.
- * @return 1 if handled as a virtual /proc path, 0 otherwise.
- */
 static int is_virtual_proc_stat(const char *pathname,
                                 struct posix_stat *statbuf) {
-  if (!pathname || !statbuf) {
-    return 0;
-  }
   if (strcmp(pathname, "/dev/null") == 0 ||
       strcmp(pathname, "\\dev\\null") == 0) {
     memset(statbuf, 0, sizeof(*statbuf));
@@ -517,8 +561,6 @@ static int is_virtual_proc_stat(const char *pathname,
 /**
  * @brief Obtains file status, supporting virtual /proc paths and Windows drive
  * paths.
- * @param[in] pathname Path to file or directory.
- * @param[out] statbuf Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
 int posix_stat(const char *pathname, void *statbuf) {
@@ -543,9 +585,9 @@ int posix_stat(const char *pathname, void *statbuf) {
   }
   memset(st, 0, sizeof(*st));
   memcpy(st, &raw_st, sizeof(raw_st));
-  hFile = CreateFileA(pathname, 0,
-                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  hFile = (HANDLE)g_stat_create_file(
+      pathname, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS);
   populate_posix_stat_extras(st, hFile);
   if (hFile != INVALID_HANDLE_VALUE) {
     CloseHandle(hFile);
@@ -555,8 +597,6 @@ int posix_stat(const char *pathname, void *statbuf) {
 
 /**
  * @brief Obtains file status by file descriptor.
- * @param[in] fd File descriptor.
- * @param[out] statbuf Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
 int posix_fstat(int fd, void *statbuf) {
@@ -570,26 +610,30 @@ int posix_fstat(int fd, void *statbuf) {
     return -1;
   }
   memset(&raw_st, 0, sizeof(raw_st));
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(null_invalid_param_handler);
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
+    rc = _fstat64(fd, &raw_st);
+    _set_invalid_parameter_handler(old);
+  }
+#else
   rc = _fstat64(fd, &raw_st);
+#endif
   if (rc != 0) {
     return rc;
   }
   memset(st, 0, sizeof(*st));
   memcpy(st, &raw_st, sizeof(raw_st));
-  if (posix_stat_safe_get_osfhandle(fd, &osfh) == AUTO_WIN_MSVC_SUCCESS &&
-      osfh != -1) {
-    hFile = (HANDLE)(size_t)osfh;
-  }
+  (void)posix_stat_safe_get_osfhandle(fd, &osfh);
+  hFile = (HANDLE)(size_t)osfh;
   populate_posix_stat_extras(st, hFile);
   return 0;
 }
 
 /**
  * @brief Obtains file status relative to a directory file descriptor.
- * @param[in] dirfd Directory file descriptor or AT_FDCWD.
- * @param[in] pathname Path to file.
- * @param[out] statbuf Structure receiving file status.
- * @param[in] flags Flags (e.g. AT_SYMLINK_NOFOLLOW).
  * @return 0 on success, -1 on failure with errno set.
  */
 int fstatat(int dirfd, const char *pathname, void *statbuf, int flags) {
@@ -609,8 +653,6 @@ int fstatat(int dirfd, const char *pathname, void *statbuf, int flags) {
 
 /**
  * @brief Sets file access and modification times by file descriptor.
- * @param[in] fd File descriptor.
- * @param[in] times Array of two timespec structures.
  * @return 0 on success, -1 on failure with errno set.
  */
 int futimens(int fd, const struct timespec times[2]) {
@@ -629,8 +671,7 @@ int futimens(int fd, const struct timespec times[2]) {
   omit_m = 0;
 
   rc = posix_stat_safe_get_osfhandle(fd, &osfh);
-  if (rc != AUTO_WIN_MSVC_SUCCESS ||
-      (HANDLE)(size_t)osfh == INVALID_HANDLE_VALUE) {
+  if (rc != AUTO_WIN_MSVC_SUCCESS) {
     errno = EBADF;
     return -1;
   }
@@ -661,7 +702,7 @@ int futimens(int fd, const struct timespec times[2]) {
     pMtime = &atime;
   }
 
-  if (!SetFileTime(hFile, NULL, pAtime, pMtime)) {
+  if (!g_stat_set_time(hFile, NULL, pAtime, pMtime)) {
     errno = EACCES;
     return -1;
   }
@@ -670,8 +711,6 @@ int futimens(int fd, const struct timespec times[2]) {
 
 /**
  * @brief Obtains file status without following symbolic links.
- * @param[in] pathname Path to file.
- * @param[out] statbuf_ptr Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
 int posix_lstat(const char *pathname, void *statbuf_ptr) {
@@ -691,7 +730,7 @@ int posix_lstat(const char *pathname, void *statbuf_ptr) {
     return 0;
   }
 
-  if (!GetFileAttributesExA(pathname, GetFileExInfoStandard, &info)) {
+  if (!g_stat_get_attrs_ex(pathname, &info)) {
     errno = ENOENT;
     return -1;
   }
@@ -732,16 +771,11 @@ int posix_lstat(const char *pathname, void *statbuf_ptr) {
 
 /**
  * @brief Creates a filesystem node.
- * @param[in] pathname Path to create.
- * @param[in] mode Mode specifying type and permissions.
- * @param[in] dev Device identifier.
  * @return 0 on success, -1 on failure with errno set.
  */
 int mknod(const char *pathname, mode_t mode, unsigned int dev) {
   HANDLE hFile;
-  if (dev) {
-    /* parameters checked */
-  }
+  (void)dev;
 
   if (pathname == NULL) {
     errno = EINVAL;
@@ -754,8 +788,8 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
     errno = EINVAL;
     return -1;
   }
-  hFile = CreateFileA(pathname, GENERIC_WRITE, 0, NULL, CREATE_NEW,
-                      FILE_ATTRIBUTE_NORMAL, NULL);
+  hFile = (HANDLE)g_stat_create_file(pathname, GENERIC_WRITE, 0, CREATE_NEW,
+                                     FILE_ATTRIBUTE_NORMAL);
   if (hFile == INVALID_HANDLE_VALUE) {
     if (GetLastError() == ERROR_FILE_EXISTS) {
       errno = EEXIST;
@@ -769,14 +803,9 @@ int mknod(const char *pathname, mode_t mode, unsigned int dev) {
 }
 
 /**
- * @brief Creates a filesystem node relative to a directory file descriptor.
- * @param[in] dirfd Directory file descriptor or AT_FDCWD.
- * @param[in] pathname Path to create.
- * @param[in] mode Mode specifying type and permissions.
- * @param[in] dev Device identifier.
+ * @brief Creates a directory relative to a directory file descriptor.
  * @return 0 on success, -1 on failure with errno set.
  */
-/** \brief mkdirat function. */
 int mkdirat(int dirfd, const char *pathname, mode_t mode) {
   char path_buf[4096];
   auto_win_msvc_error_t rc;
@@ -789,7 +818,18 @@ int mkdirat(int dirfd, const char *pathname, mode_t mode) {
   return _mkdir(path_buf);
 }
 
-/** \brief mkfifoat function. */
+/**
+ * @brief Creates a FIFO special file.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int mkfifo(const char *pathname, mode_t mode) {
+  return mkfifoat(AT_FDCWD, pathname, mode);
+}
+
+/**
+ * @brief Creates a FIFO special file relative to a directory file descriptor.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
   (void)dirfd;
   (void)pathname;
@@ -798,6 +838,10 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
   return -1;
 }
 
+/**
+ * @brief Creates a filesystem node relative to a directory file descriptor.
+ * @return 0 on success, -1 on failure with errno set.
+ */
 int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
   char fullpath[MAX_PATH];
   auto_win_msvc_error_t rc;
@@ -812,10 +856,6 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev) {
 
 /**
  * @brief Sets file timestamps relative to a directory file descriptor.
- * @param[in] dirfd Directory file descriptor or AT_FDCWD.
- * @param[in] pathname Path to file.
- * @param[in] times Array of two timespec structures.
- * @param[in] flags Flags (e.g. AT_SYMLINK_NOFOLLOW).
  * @return 0 on success, -1 on failure with errno set.
  */
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
@@ -846,9 +886,10 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
     attrs |= 0x00200000; /* FILE_FLAG_OPEN_REPARSE_POINT */
   }
 
-  hFile = CreateFileA(fullpath, FILE_WRITE_ATTRIBUTES,
-                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING, attrs, NULL);
+  hFile = (HANDLE)g_stat_create_file(fullpath, FILE_WRITE_ATTRIBUTES,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                         FILE_SHARE_DELETE,
+                                     OPEN_EXISTING, attrs);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = ENOENT;
     return -1;
@@ -881,7 +922,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
     pMtime = &atime;
   }
 
-  if (!SetFileTime(hFile, NULL, pAtime, pMtime)) {
+  if (!g_stat_set_time(hFile, NULL, pAtime, pMtime)) {
     CloseHandle(hFile);
     errno = EACCES;
     return -1;
@@ -896,20 +937,10 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 #undef stat
 #undef lstat
 
-/**
- * @brief Checks if pathname refers to a virtual /proc entry on non-Linux POSIX
- * systems and populates statbuf.
- * @param[in] pathname Path to check.
- * @param[out] statbuf Structure receiving synthetic status.
- * @return 1 if handled as a virtual /proc path, 0 otherwise.
- */
+#if !defined(__linux__)
 static int is_virtual_proc_stat_posix(const char *pathname,
                                       struct stat *statbuf) {
-#if defined(__linux__)
-  (void)pathname;
-  (void)statbuf;
-  return 0;
-#elif defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
   if (strncmp(pathname, "/proc/", 6) == 0) {
     const char *sub = pathname + 6;
     const char *slash = strchr(sub, '/');
@@ -932,9 +963,6 @@ static int is_virtual_proc_stat_posix(const char *pathname,
   }
   return 0;
 #else
-  if (!pathname || !statbuf) {
-    return 0;
-  }
   if (strcmp(pathname, "/proc") == 0 || strcmp(pathname, "/proc/") == 0 ||
       strncmp(pathname, "/proc/", 6) == 0) {
     const char *sub = pathname;
@@ -973,12 +1001,11 @@ static int is_virtual_proc_stat_posix(const char *pathname,
   return 0;
 #endif
 }
+#endif /* !__linux__ */
 
 /**
  * @brief Obtains file status, supporting virtual /proc paths on non-Linux
  * POSIX systems.
- * @param[in] pathname Path to file or directory.
- * @param[out] statbuf Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
 int posix_stat(const char *pathname, void *statbuf) {
@@ -992,17 +1019,17 @@ int posix_stat(const char *pathname, void *statbuf) {
     pathname++;
   }
 #endif
+#if !defined(__linux__)
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;
   }
+#endif
   return stat(pathname, st);
 }
 
 /**
  * @brief Obtains file status without following symbolic links, supporting
  * virtual /proc paths on non-Linux POSIX systems.
- * @param[in] pathname Path to file or directory.
- * @param[out] statbuf Structure receiving file status.
  * @return 0 on success, -1 on failure with errno set.
  */
 int posix_lstat(const char *pathname, void *statbuf) {
@@ -1015,9 +1042,11 @@ int posix_lstat(const char *pathname, void *statbuf) {
   while (pathname[0] == '/' && pathname[1] == '/') {
     pathname++;
   }
+#if !defined(__linux__)
   if (is_virtual_proc_stat_posix(pathname, st)) {
     return 0;
   }
+#endif
 #endif
 #if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
   return stat(pathname, st);
@@ -1128,6 +1157,10 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
     !defined(__NetBSD__)
+/**
+ * @brief Set file flags by path.
+ * @return 0 on success, -1 on NULL path.
+ */
 int chflags(const char *path, unsigned long flags) {
   (void)flags;
   if (path == NULL) {
@@ -1137,10 +1170,18 @@ int chflags(const char *path, unsigned long flags) {
   return 0;
 }
 
+/**
+ * @brief Set file flags on symbolic link or file by path.
+ * @return 0 on success, -1 on NULL path.
+ */
 int lchflags(const char *path, unsigned long flags) {
   return chflags(path, flags);
 }
 
+/**
+ * @brief Set file flags by file descriptor.
+ * @return 0 on success, -1 on invalid fd.
+ */
 int fchflags(int fd, unsigned long flags) {
   (void)flags;
   if (fd < 0) {

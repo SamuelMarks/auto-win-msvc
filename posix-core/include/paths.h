@@ -58,6 +58,73 @@ extern "C" {
 #define _PATH_TMP "C:\\Windows\\Temp\\"
 #endif
 
+/** @brief Path to persistent temporary directory. */
+#ifndef _PATH_VARTMP
+#define _PATH_VARTMP "C:\\Windows\\Temp\\"
+#endif
+
+/** @brief Path to C shell executable. */
+#ifndef _PATH_CSHELL
+#define _PATH_CSHELL "cmd.exe"
+#endif
+
+/** @brief Path to device directory. */
+#ifndef _PATH_DEV
+#define _PATH_DEV "\\\\.\\"
+#endif
+
+/** @brief Path to default vi editor. */
+#ifndef _PATH_VI
+#define _PATH_VI "vi.exe"
+#endif
+
+/** @brief Path to system mail spool directory. */
+#ifndef _PATH_MAILDIR
+#define _PATH_MAILDIR "C:\\Windows\\Temp"
+#endif
+
+/** @brief Path to default pager executable. */
+#ifndef _PATH_PAGER
+#define _PATH_PAGER "more.exe"
+#endif
+
+/** @brief Path to locale database directory. */
+#ifndef _PATH_LOCALE
+#define _PATH_LOCALE "C:\\usr\\share\\locale"
+#endif
+
+/** @brief Path to dictionary words file. */
+#ifndef _PATH_WORDS
+#define _PATH_WORDS "C:\\usr\\share\\dict\\words"
+#endif
+
+#else /* POSIX fallback defaults when omitted by host <paths.h> */
+
+#ifndef _PATH_VARTMP
+#define _PATH_VARTMP "/var/tmp/"
+#endif
+#ifndef _PATH_CSHELL
+#define _PATH_CSHELL "/bin/csh"
+#endif
+#ifndef _PATH_DEV
+#define _PATH_DEV "/dev/"
+#endif
+#ifndef _PATH_VI
+#define _PATH_VI "/usr/bin/vi"
+#endif
+#ifndef _PATH_MAILDIR
+#define _PATH_MAILDIR "/var/mail"
+#endif
+#ifndef _PATH_PAGER
+#define _PATH_PAGER "/usr/bin/more"
+#endif
+#ifndef _PATH_LOCALE
+#define _PATH_LOCALE "/usr/share/locale"
+#endif
+#ifndef _PATH_WORDS
+#define _PATH_WORDS "/usr/share/dict/words"
+#endif
+
 #endif /* defined(_WIN32) || defined(_MSC_VER) */
 
 #ifdef __cplusplus

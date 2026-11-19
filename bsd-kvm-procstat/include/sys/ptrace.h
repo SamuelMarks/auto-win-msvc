@@ -61,7 +61,11 @@ struct ptrace_lwpinfo {
   pid_t pl_child_pid;
   unsigned int pl_syscall_code;
   unsigned int pl_syscall_narg;
+  siginfo_t pl_siginfo;
 };
+#define PL_EVENT_NONE 0
+#define PL_EVENT_SIGNAL 1
+#define PL_FLAG_SI 0x20
 
 /** @brief Process trace control request. */
 int ptrace(int request, pid_t pid, caddr_t addr, int data);

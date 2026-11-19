@@ -1,4 +1,9 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+/**
+ * @file linux-execinfo.c
+ * @brief Polyfill implementation for GNU <execinfo.h> backtrace utilities.
+ */
+
 /* clang-format off */
 #include "linux-execinfo.h"
 #include <stddef.h>
@@ -8,46 +13,64 @@
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
-/* We try to avoid <windows.h> by forward declaring the necessary parts from
- * WinBase/DbgHelp */
-typedef unsigned long ULONG;
-typedef unsigned short USHORT;
+
+/* Minimal Windows types and forward declarations to avoid <windows.h> */
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+typedef unsigned __int64 execinfo_u64;
+#elif defined(__GNUC__) || defined(__clang__)
+__extension__ typedef unsigned long long execinfo_u64;
+#else
+typedef unsigned long long execinfo_u64;
+#endif
+typedef execinfo_u64 DWORD64;
 typedef void *PVOID;
-typedef unsigned long *PULONG;
 typedef void *HANDLE;
 typedef int BOOL;
-typedef unsigned __int64 DWORD64;
-typedef unsigned long DWORD;
+typedef char CHAR;
+typedef const CHAR *PCSTR;
+typedef unsigned long ULONG;
 
-#define MAX_SYM_NAME 2000
-#define FALSE 0
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef MAX_SYM_NAME
+#define MAX_SYM_NAME 2000
+#endif
 
-#ifndef STD_ERR_HANDLE
-/** \brief STD_ERR_HANDLE macro. */
-#define STD_ERR_HANDLE ((DWORD) - 12)
+#if defined(_MSC_VER) || defined(_WIN32)
+#define WINBASEAPI __declspec(dllimport)
+#define WINAPI __stdcall
+#else
+#define WINBASEAPI
+#define WINAPI
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-__declspec(dllimport) USHORT __stdcall
-RtlCaptureStackBackTrace(ULONG FramesToSkip, ULONG FramesToCapture,
-                         PVOID *BackTrace, PULONG BackTraceHash);
-__declspec(dllimport) HANDLE __stdcall GetCurrentProcess(void);
-__declspec(dllimport) BOOL __stdcall
-SymInitialize(HANDLE hProcess, const char *UserSearchPath, BOOL fInvadeProcess);
-__declspec(dllimport) BOOL __stdcall SymSetOptions(DWORD SymOptions);
-__declspec(dllimport) DWORD __stdcall SymGetOptions(void);
-__declspec(dllimport) PVOID __stdcall GetStdHandle(DWORD nStdHandle);
+WINBASEAPI WORD WINAPI RtlCaptureStackBackTrace(DWORD FramesToSkip,
+                                                DWORD FramesToCapture,
+                                                PVOID *BackTrace,
+                                                DWORD *BackTraceHash);
 
-/* WriteFile */
-__declspec(dllimport) BOOL __stdcall
-WriteFile(HANDLE hFile, const void *lpBuffer, DWORD nNumberOfBytesToWrite,
-          DWORD *lpNumberOfBytesWritten, void *lpOverlapped);
+WINBASEAPI HANDLE WINAPI GetCurrentProcess(void);
+WINBASEAPI HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
+WINBASEAPI BOOL WINAPI WriteFile(HANDLE hFile, const void *lpBuffer,
+                                 DWORD nNumberOfBytesToWrite,
+                                 DWORD *lpNumberOfBytesWritten,
+                                 void *lpOverlapped);
 
-/* DbgHelp structs */
+#define STD_OUTPUT_HANDLE ((DWORD) - 11)
+#define STD_ERROR_HANDLE ((DWORD) - 12)
+#define INVALID_HANDLE_VALUE ((HANDLE)(ptrdiff_t)-1)
+
+/* DbgHelp types and declarations */
 #pragma pack(push, 8)
 typedef struct _SYMBOL_INFO {
   ULONG SizeOfStruct;
@@ -64,113 +87,128 @@ typedef struct _SYMBOL_INFO {
   ULONG Tag;
   ULONG NameLen;
   ULONG MaxNameLen;
-  char Name[1];
+  CHAR Name[1];
 } SYMBOL_INFO, *PSYMBOL_INFO;
 #pragma pack(pop)
 
-#define SYMOPT_DEFERRED_LOADS 0x00000004
 #define SYMOPT_UNDNAME 0x00000002
+#define SYMOPT_DEFERRED_LOADS 0x00000004
 
-__declspec(dllimport) BOOL __stdcall SymFromAddr(HANDLE hProcess,
-                                                 DWORD64 Address,
-                                                 DWORD64 *Displacement,
-                                                 PSYMBOL_INFO Symbol);
-
-__declspec(dllimport) DWORD __stdcall GetLastError(void);
-
-#ifndef INVALID_HANDLE_VALUE
-#define INVALID_HANDLE_VALUE ((HANDLE)(ptrdiff_t)-1)
+#ifndef PDWORD64
+typedef DWORD64 *PDWORD64;
 #endif
+
+DWORD WINAPI SymSetOptions(DWORD SymOptions);
+DWORD WINAPI SymGetOptions(void);
+BOOL WINAPI SymInitialize(HANDLE hProcess, PCSTR UserSearchPath,
+                          BOOL fInvadeProcess);
+BOOL WINAPI SymFromAddr(HANDLE hProcess, DWORD64 Address, PDWORD64 Displacement,
+                        PSYMBOL_INFO Symbol);
 
 #ifdef __cplusplus
 }
 #endif
 
-/** \brief backtrace function. */
-error_type_t backtrace(void **buffer, int size, int *captured) {
-  if (size <= 0 || !buffer)
+#ifndef EXECINFO_MOCK_RtlCaptureStackBackTrace
+#define EXECINFO_MOCK_RtlCaptureStackBackTrace RtlCaptureStackBackTrace
+#endif
+#ifndef EXECINFO_MOCK_GetCurrentProcess
+#define EXECINFO_MOCK_GetCurrentProcess GetCurrentProcess
+#endif
+#ifndef EXECINFO_MOCK_GetStdHandle
+#define EXECINFO_MOCK_GetStdHandle GetStdHandle
+#endif
+#ifndef EXECINFO_MOCK_WriteFile
+#define EXECINFO_MOCK_WriteFile WriteFile
+#endif
+#ifndef EXECINFO_MOCK_SymSetOptions
+#define EXECINFO_MOCK_SymSetOptions SymSetOptions
+#endif
+#ifndef EXECINFO_MOCK_SymGetOptions
+#define EXECINFO_MOCK_SymGetOptions SymGetOptions
+#endif
+#ifndef EXECINFO_MOCK_SymInitialize
+#define EXECINFO_MOCK_SymInitialize SymInitialize
+#endif
+#ifndef EXECINFO_MOCK_SymFromAddr
+#define EXECINFO_MOCK_SymFromAddr SymFromAddr
+#endif
+#ifndef EXECINFO_MOCK_malloc
+static void *default_execinfo_malloc(size_t sz) { return malloc(sz); }
+#define EXECINFO_MOCK_malloc default_execinfo_malloc
+#endif
+#ifndef EXECINFO_MOCK_free
+#define EXECINFO_MOCK_free free
+#endif
+
+static error_type_t backtrace_win_impl(void **buffer, int size, int *captured) {
+  WORD frames;
+  if (size <= 0 || buffer == NULL || captured == NULL) {
     return -1;
-  if (captured) {
-    *captured = (int)RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
-  } else {
-    RtlCaptureStackBackTrace(1, (ULONG)size, buffer, NULL);
   }
+  frames = EXECINFO_MOCK_RtlCaptureStackBackTrace(1, (DWORD)size, buffer, NULL);
+  *captured = (int)frames;
   return ERR_NONE;
 }
 
-static int init_sym_done = 0;
-
-char **backtrace_symbols(void *const *buffer, int size) {
-  int i;
-  char **strings;
+static char **backtrace_symbols_win_impl(void *const *buffer, int size) {
   HANDLE process;
+  char **strings;
   char *p;
-  size_t total_size = (size_t)size * sizeof(char *);
-  size_t line_size = 256; /* generous estimate per line */
-  int printf_rc;
+  size_t ptrs_size;
+  size_t strs_size;
+  size_t total_size;
+  int i;
+  const size_t line_size = 256;
+  static int init_sym_done = 0;
+  char buffer_sym[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(char)];
+  SYMBOL_INFO *symbol;
 
-  if (size <= 0 || !buffer)
+  if (size <= 0 || buffer == NULL) {
     return NULL;
+  }
 
-  process = GetCurrentProcess();
+  process = EXECINFO_MOCK_GetCurrentProcess();
 
   if (!init_sym_done) {
-    DWORD old_options = SymGetOptions();
-    if (old_options == 0 && GetLastError() != 0) {
-      /* Handle error, or ignore and try setting anyway */
-    }
-    SymSetOptions(old_options | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-    if (!SymInitialize(process, NULL, TRUE)) {
-      /* Initialization failed */
-    }
+    DWORD old_options = EXECINFO_MOCK_SymGetOptions();
+    (void)EXECINFO_MOCK_SymSetOptions(old_options | SYMOPT_UNDNAME |
+                                      SYMOPT_DEFERRED_LOADS);
+    (void)EXECINFO_MOCK_SymInitialize(process, NULL, TRUE);
     init_sym_done = 1;
   }
 
-  total_size += (size_t)size * line_size;
-  strings = (char **)malloc(total_size);
-  if (!strings)
+  ptrs_size = (size_t)size * sizeof(char *);
+  strs_size = (size_t)size * line_size;
+  total_size = ptrs_size + strs_size;
+
+  strings = (char **)EXECINFO_MOCK_malloc(total_size);
+  if (strings == NULL) {
     return NULL;
+  }
 
   p = (char *)(strings + size);
+  memset(buffer_sym, 0, sizeof(buffer_sym));
+  symbol = (SYMBOL_INFO *)buffer_sym;
+  symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+  symbol->MaxNameLen = MAX_SYM_NAME;
 
-  for (i = 0; i < size; i++) {
+  for (i = 0; i < size; ++i) {
     DWORD64 displacement = 0;
-    char buffer_sym[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(char)] = {0};
-    PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer_sym;
-
-    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-    symbol->MaxNameLen = MAX_SYM_NAME;
-
     strings[i] = p;
-    if (SymFromAddr(process, (DWORD64)(size_t)buffer[i], &displacement,
-                    symbol)) {
+    if (EXECINFO_MOCK_SymFromAddr(process, (DWORD64)(size_t)buffer[i],
+                                  &displacement, symbol)) {
 #if defined(_MSC_VER)
-      printf_rc = sprintf_s(p, line_size, "%s [%p]", symbol->Name, buffer[i]);
+      (void)sprintf_s(p, line_size, "%.200s [%p]", symbol->Name, buffer[i]);
 #else
-#if defined(_MSC_VER)
-      printf_rc = sprintf_s(p, sizeof(p), "%s [%p]", symbol->Name, buffer[i]);
-#else
-      printf_rc = sprintf(p, "%s [%p]", symbol->Name, buffer[i]);
+      (void)sprintf(p, "%.200s [%p]", symbol->Name, buffer[i]);
 #endif
-#endif
-      if (printf_rc < 0) {
-        free(strings);
-        return NULL;
-      }
     } else {
 #if defined(_MSC_VER)
-      printf_rc = sprintf_s(p, line_size, "??? [%p]", buffer[i]);
+      (void)sprintf_s(p, line_size, "[%p]", buffer[i]);
 #else
-#if defined(_MSC_VER)
-      printf_rc = sprintf_s(p, sizeof(p), "??? [%p]", buffer[i]);
-#else
-      printf_rc = sprintf(p, "??? [%p]", buffer[i]);
+      (void)sprintf(p, "[%p]", buffer[i]);
 #endif
-#endif
-      if (printf_rc < 0) {
-        free(strings);
-        return NULL;
-      }
     }
     p += strlen(p) + 1;
   }
@@ -178,72 +216,133 @@ char **backtrace_symbols(void *const *buffer, int size) {
   return strings;
 }
 
-/** \brief backtrace_symbols_fd function. */
-error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
-  int i;
+static error_type_t backtrace_symbols_fd_win_impl(void *const *buffer, int size,
+                                                  int fd) {
   char **strings;
-  DWORD written;
-  HANDLE hOut;
+  int i;
+  HANDLE hFile;
 
-  if (fd) {
-    /* Windows doesn't easily map typical POSIX fd to HANDLE directly here,
-     * default to stderr */
-  }
-
-  strings = backtrace_symbols(buffer, size);
-  if (!strings)
-    return -1;
-
-  hOut = GetStdHandle(STD_ERR_HANDLE);
-  if (hOut == INVALID_HANDLE_VALUE) {
-    free(strings);
+  if (fd < 0 || size <= 0 || buffer == NULL) {
     return -1;
   }
 
-  for (i = 0; i < size; i++) {
-    size_t len = strlen(strings[i]);
-    if (!WriteFile(hOut, strings[i], (DWORD)len, &written, NULL)) {
-      free(strings);
+  if (fd == 2) {
+    hFile = EXECINFO_MOCK_GetStdHandle(STD_ERROR_HANDLE);
+  } else {
+    hFile = EXECINFO_MOCK_GetStdHandle(STD_OUTPUT_HANDLE);
+  }
+
+  if (hFile == INVALID_HANDLE_VALUE) {
+    return -1;
+  }
+
+  strings = backtrace_symbols_win_impl(buffer, size);
+  if (strings == NULL) {
+    return -1;
+  }
+
+  for (i = 0; i < size; ++i) {
+    DWORD written = 0;
+    DWORD len = (DWORD)strlen(strings[i]);
+    if (!EXECINFO_MOCK_WriteFile(hFile, strings[i], len, &written, NULL)) {
+      EXECINFO_MOCK_free(strings);
       return -1;
     }
-    if (!WriteFile(hOut, "\n", 1, &written, NULL)) {
-      free(strings);
+    if (!EXECINFO_MOCK_WriteFile(hFile, "\n", 1, &written, NULL)) {
+      EXECINFO_MOCK_free(strings);
       return -1;
     }
   }
 
-  free(strings);
+  EXECINFO_MOCK_free(strings);
   return ERR_NONE;
+}
+
+/**
+ * @brief Captures a backtrace for the calling program.
+ * @param[out] buffer Array of void pointers to populate with return addresses.
+ * @param[in] size Maximum number of addresses to store.
+ * @param[out] captured Number of addresses actually captured.
+ * @return ERR_NONE on success, or -1 on error.
+ */
+error_type_t backtrace(void **buffer, int size, int *captured) {
+  return backtrace_win_impl(buffer, size, captured);
+}
+
+/**
+ * @brief Translates return addresses into an allocated array of symbol strings.
+ * @param[in] buffer Array of addresses captured by backtrace().
+ * @param[in] size Number of addresses in buffer.
+ * @return Newly allocated array of strings (caller frees single block), or NULL
+ * on failure.
+ */
+char **backtrace_symbols(void *const *buffer, int size) {
+  return backtrace_symbols_win_impl(buffer, size);
+}
+
+/**
+ * @brief Writes translated backtrace symbols directly to a file descriptor.
+ * @param[in] buffer Array of addresses captured by backtrace().
+ * @param[in] size Number of addresses in buffer.
+ * @param[in] fd Target file descriptor (1 for stdout, 2 for stderr).
+ * @return ERR_NONE on success, or -1 on error.
+ */
+error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
+  return backtrace_symbols_fd_win_impl(buffer, size, fd);
 }
 
 #else
 
+/**
+ * @brief Captures a backtrace (non-Windows stub).
+ * @param[out] buffer Array of void pointers.
+ * @param[in] size Maximum number of addresses.
+ * @param[out] captured Number of addresses captured.
+ * @return ERR_NONE on success, or -1 on invalid arguments.
+ */
 error_type_t backtrace(void **buffer, int size, int *captured) {
-  if (size <= 0 || !buffer)
+  if (size <= 0 || buffer == NULL || captured == NULL) {
     return -1;
-  if (captured)
-    *captured = 0;
+  }
+  *captured = 0;
   return ERR_NONE;
 }
 
+/**
+ * @brief Translates return addresses to symbol strings (non-Windows stub).
+ * @param[in] buffer Array of addresses.
+ * @param[in] size Number of addresses.
+ * @return Always NULL on non-Windows stub.
+ */
 char **backtrace_symbols(void *const *buffer, int size) {
-  if (size <= 0 || !buffer)
+  if (size <= 0 || buffer == NULL) {
     return NULL;
+  }
   return NULL;
 }
 
+/**
+ * @brief Writes translated backtrace symbols to fd (non-Windows stub).
+ * @param[in] buffer Array of addresses.
+ * @param[in] size Number of addresses.
+ * @param[in] fd File descriptor.
+ * @return ERR_NONE on success, or -1 on invalid arguments.
+ */
 error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
-  if (fd < 0) {
+  if (fd < 0 || size <= 0 || buffer == NULL) {
     return -1;
   }
-  if (size <= 0 || !buffer)
-    return -1;
   return ERR_NONE;
 }
 
-#endif /* _MSC_VER || _WIN32 */
+#endif
 
-/** @brief Initializes and validates the linux-execinfo module. */
+/**
+ * @brief Initializes and validates the linux-execinfo module.
+ * @param[out] out_status Pointer to an integer receiving 1 on success.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_status is NULL.
+ */
 auto_win_msvc_error_t linux_execinfo_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;

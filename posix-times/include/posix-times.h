@@ -9,7 +9,7 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
-#include "sys/times.h"
+#include <sys/times.h>
 #include <stddef.h>
 /* clang-format on */
 

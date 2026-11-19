@@ -1,4 +1,9 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+/**
+ * @file bsd-pthread-np.c
+ * @brief Implementation of BSD non-portable pthread extensions.
+ */
+
 /* clang-format off */
 #include "bsd-pthread-np.h"
 #include <errno.h>
@@ -13,7 +18,12 @@
 #endif
 /* clang-format on */
 
-/** @brief Initializes and validates the bsd-pthread-np module. */
+/**
+ * @brief Initializes and validates the bsd-pthread-np module.
+ * @param[out] out_status Pointer to an integer receiving the initialized
+ * status.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
+ */
 auto_win_msvc_error_t bsd_pthread_np_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -25,7 +35,13 @@ auto_win_msvc_error_t bsd_pthread_np_init(int *out_status) {
 #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) &&    \
     !defined(__OpenBSD__)
 #if defined(_MSC_VER) || defined(_WIN32)
-/** @brief Sets CPU affinity mask for a thread on Windows. */
+/**
+ * @brief Sets CPU affinity mask for a thread on Windows.
+ * @param thread Thread handle cast as pthread_t.
+ * @param cpusetsize Size of cpuset in bytes.
+ * @param cpuset Pointer to CPU affinity mask bytes.
+ * @return 0 on success, or -1 on failure with errno set.
+ */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
                            const void *cpuset) {
   DWORD_PTR mask = 0;
@@ -52,13 +68,7 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
     return -1;
   }
 
-  if (!thread) {
-    errno = ESRCH;
-    return -1;
-  } else {
-    hThread = (HANDLE)thread;
-  }
-
+  hThread = (HANDLE)thread;
   if (SetThreadAffinityMask(hThread, mask) == 0) {
     errno = EINVAL;
     return -1;
@@ -67,7 +77,13 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
   return 0;
 }
 #else
-/** @brief Sets CPU affinity mask fallback for non-Windows platforms. */
+/**
+ * @brief Sets CPU affinity mask fallback for non-Windows platforms.
+ * @param thread Thread handle.
+ * @param cpusetsize Size of cpuset in bytes.
+ * @param cpuset Pointer to CPU affinity mask bytes.
+ * @return 0 on success, or -1 on failure with errno set.
+ */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
                            const void *cpuset) {
   size_t i;

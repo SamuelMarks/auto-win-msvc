@@ -31,6 +31,16 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 project(auto-win-msvc VERSION 0.1.0 LANGUAGES C)
 
+if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+    find_program(_AWM_HOST_NM
+        NAMES llvm-nm x86_64-w64-mingw32-nm nm
+        PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
+    )
+    if(_AWM_HOST_NM)
+        set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm for WINDOWS_EXPORT_ALL_SYMBOLS" FORCE)
+    endif()
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
@@ -55,6 +65,9 @@ if(MSVC)
             string(REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
             file(WRITE "${CMAKE_BINARY_DIR}/wine_retry.sh"
 "#!/bin/sh
+case \"\$PWD\" in
+  *CMakeTmp*) exec \"\$@\" ;;
+esac
 out=\"\"
 for arg in \"\$@\"; do
   case \"\$arg\" in
@@ -71,6 +84,8 @@ while [ \$attempt -lt 5 ]; do
     fi
     rm -f \"\$out\"
     rc=1
+  elif [ \$rc -eq 2 ] || [ \$rc -eq 96 ]; then
+    exit \$rc
   fi
   attempt=\$((attempt + 1))
   sleep 1
@@ -240,6 +255,22 @@ if(WIN32 OR MSVC OR MINGW)
             set(PCRE2_BUILD_TESTS OFF CACHE BOOL "" FORCE)
             set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
             set(PCRE2_SUPPORT_JIT OFF CACHE BOOL "" FORCE)
+            if(MSVC AND CMAKE_CROSSCOMPILING)
+                set(HAVE_DIRENT_H "" CACHE INTERNAL "")
+                set(HAVE_SYS_STAT_H 1 CACHE INTERNAL "")
+                set(HAVE_SYS_TYPES_H 1 CACHE INTERNAL "")
+                set(HAVE_UNISTD_H "" CACHE INTERNAL "")
+                set(HAVE_WINDOWS_H 1 CACHE INTERNAL "")
+                set(HAVE_BCOPY "" CACHE INTERNAL "")
+                set(HAVE_MEMFD_CREATE "" CACHE INTERNAL "")
+                set(HAVE_MEMMOVE 1 CACHE INTERNAL "")
+                set(HAVE_SECURE_GETENV "" CACHE INTERNAL "")
+                set(HAVE_STRERROR 1 CACHE INTERNAL "")
+                set(HAVE_REALPATH "" CACHE INTERNAL "")
+                set(HAVE_BUILTIN_MUL_OVERFLOW "" CACHE INTERNAL "")
+                set(HAVE_ATTRIBUTE_UNINITIALIZED "" CACHE INTERNAL "")
+                set(HAVE_VISIBILITY "" CACHE INTERNAL "")
+            endif()
             FetchContent_Declare(
                 pcre2
                 URL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.gz
@@ -1009,6 +1040,8 @@ endif()
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-mman/include)
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-mman/include")
 endif()
+file(GLOB posix_sys_select_src "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/src/*.c")
+list(APPEND MEGA_SOURCES ${posix_sys_select_src})
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/include)
 list(APPEND MEGA_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/posix-sys-select/include")
 endif()
@@ -1125,7 +1158,7 @@ target_include_directories(auto-win-msvc PUBLIC "$<BUILD_INTERFACE:${COMBINED_PO
 
 
 if(WIN32 OR CYGWIN OR MSYS OR MINGW)
-    target_link_libraries(auto-win-msvc PUBLIC ws2_32 dbghelp advapi32 netapi32 userenv ole32 psapi)
+    target_link_libraries(auto-win-msvc PUBLIC ws2_32 iphlpapi dbghelp advapi32 netapi32 userenv ole32 psapi)
 endif()
 
 if(WIN32 AND NOT TARGET resolv)
@@ -1204,5 +1237,14 @@ foreach(_new_mod
         add_subdirectory("${_new_mod}")
     endif()
 endforeach()
+add_executable(test_namespace_win_shim tests/test_namespace_win_shim.c)
+target_include_directories(test_namespace_win_shim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${greatest_SOURCE_DIR})
+target_link_libraries(test_namespace_win_shim PRIVATE auto-win-msvc)
+add_test(NAME test_namespace_win_shim COMMAND test_namespace_win_shim)
+
+add_executable(test_auto_win_msvc_configure tests/test_auto_win_msvc_configure.c)
+target_include_directories(test_auto_win_msvc_configure BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}" "${greatest_SOURCE_DIR}")
+target_link_libraries(test_auto_win_msvc_configure PRIVATE auto-win-msvc)
+add_test(NAME test_auto_win_msvc_configure COMMAND test_auto_win_msvc_configure)
 endif()
 message(STATUS "MEGA_INCLUDES = ${MEGA_INCLUDES}")

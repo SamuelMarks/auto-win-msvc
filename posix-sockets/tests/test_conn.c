@@ -16,7 +16,15 @@
 #include "posix-sockets.h"
 #include <sys/un.h>
 #include <string.h>
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+extern void posix_register_crt_socket(intptr_t fd, intptr_t s);
+extern int clear_as_socket(intptr_t fd);
+#else
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -75,6 +83,8 @@ TEST test_posix_connect_retry(void) {
   /* Test default max_retries <= 0 and delay_ms <= 0 branches */
   rc = posix_connect_retry(1, NULL, 0, 0, 0);
   ASSERT_EQ(-1, rc);
+  rc = posix_connect_retry(1, NULL, 0, 3, 10);
+  ASSERT_EQ(-1, rc);
 
   /* Test successful connection branch via listening socket on Windows */
   {
@@ -121,30 +131,57 @@ TEST test_posix_connect_retry(void) {
 TEST test_posix_socketpair(void) {
   intptr_t fds[2];
   int rc;
+  char sbuf[4];
 
-  /* Valid call */
+  /* Valid AF_UNIX call + posix_send / posix_recv */
   rc = posix_socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
-  if (rc == 0) {
+  ASSERT_EQ(0, rc);
+  ASSERT_EQ(2, (int)posix_send(fds[0], "hi", 2, 0));
+  memset(sbuf, 0, sizeof(sbuf));
+  ASSERT_EQ(2, (int)posix_recv(fds[1], sbuf, 2, 0));
+  ASSERT_EQ('h', sbuf[0]);
+  ASSERT_EQ('i', sbuf[1]);
 #if defined(_WIN32)
-    closesocket((SOCKET)fds[0]);
-    closesocket((SOCKET)fds[1]);
+  posix_register_crt_socket(fds[0], 0);
+  posix_register_crt_socket(fds[1], 0);
+  (void)clear_as_socket(fds[0]);
+  (void)clear_as_socket(fds[1]);
+  _close((int)fds[0]);
+  _close((int)fds[1]);
 #else
-    close((int)fds[0]);
-    close((int)fds[1]);
+  close((int)fds[0]);
+  close((int)fds[1]);
 #endif
-  }
 
-  /* Domain AF_INET conversion fallback test */
+  /* Domain AF_INET conversion test */
   rc = posix_socketpair(AF_INET, SOCK_STREAM, 0, fds);
-  if (rc == 0) {
+  ASSERT_EQ(0, rc);
 #if defined(_WIN32)
-    closesocket((SOCKET)fds[0]);
-    closesocket((SOCKET)fds[1]);
+  posix_register_crt_socket(fds[0], 0);
+  posix_register_crt_socket(fds[1], 0);
+  (void)clear_as_socket(fds[0]);
+  (void)clear_as_socket(fds[1]);
+  _close((int)fds[0]);
+  _close((int)fds[1]);
 #else
-    close((int)fds[0]);
-    close((int)fds[1]);
+  close((int)fds[0]);
+  close((int)fds[1]);
 #endif
-  }
+
+  /* Domain AF_UNSPEC conversion test */
+  rc = posix_socketpair(AF_UNSPEC, SOCK_STREAM, 0, fds);
+  ASSERT_EQ(0, rc);
+#if defined(_WIN32)
+  posix_register_crt_socket(fds[0], 0);
+  posix_register_crt_socket(fds[1], 0);
+  (void)clear_as_socket(fds[0]);
+  (void)clear_as_socket(fds[1]);
+  _close((int)fds[0]);
+  _close((int)fds[1]);
+#else
+  close((int)fds[0]);
+  close((int)fds[1]);
+#endif
 
   PASS();
 }

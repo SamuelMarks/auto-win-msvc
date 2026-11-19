@@ -11,7 +11,11 @@
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <time.h>
 #include <wchar.h>
+#if defined(__GLIBC__) && !defined(_STDLIB_H)
+#include <stdlib.h>
+#endif
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #else
@@ -62,8 +66,23 @@ typedef unsigned short mode_t;
 #define FPARSELN_UNESCALL 0x0f
 #endif
 
-#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
-    !defined(__NetBSD__)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+
+/**
+ * @brief Close all open file descriptors greater than or equal to lowfd.
+ * @param[in] lowfd Minimum file descriptor number to close.
+ */
+#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 34)))
+void closefrom(int lowfd);
+#endif
+
+/**
+ * @brief Compute new file mode from bsd_setmode state and existing mode.
+ * @param[in] bbox Opaque mode state returned by bsd_setmode.
+ * @param[in] omode Original file mode bitmask.
+ * @return Updated file mode bitmask.
+ */
+mode_t bsd_getmode(const void *bbox, mode_t omode);
 
 /**
  * @brief Reallocate memory safely with overflow checking.
@@ -72,7 +91,9 @@ typedef unsigned short mode_t;
  * @param[in] size Size of each element.
  * @return Reallocated pointer, or NULL on overflow/error.
  */
+#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26)))
 void *reallocarray(void *ptr, size_t nmemb, size_t size);
+#endif
 
 /**
  * @brief Reallocate and zero-extend array safely.
@@ -90,6 +111,11 @@ void *recallocarray(void *ptr, size_t oldnmemb, size_t newnmemb, size_t size);
  * @param[in] size Number of bytes to zero before freeing.
  */
 void freezero(void *ptr, size_t size);
+
+#endif /* !__FreeBSD__ && !__OpenBSD__ && !__NetBSD__ */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
+    !defined(__NetBSD__)
 
 /**
  * @brief Retrieve the current program name.
@@ -172,6 +198,7 @@ int getbsize(int *headerlenp, long *blocksizep);
  * @brief Generate a 32-bit cryptographically strong pseudo-random number.
  * @return Random 32-bit unsigned integer.
  */
+#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 36)))
 uint32_t arc4random(void);
 
 /**
@@ -187,6 +214,7 @@ void arc4random_buf(void *buf, size_t nbytes);
  * @return Random integer in [0, upper_bound).
  */
 uint32_t arc4random_uniform(uint32_t upper_bound);
+#endif
 
 /**
  * @brief Sort an array using merge sort.
@@ -237,7 +265,19 @@ int sradixsort(const unsigned char **base, int nmemb,
  * @param[in] response User response string.
  * @return 1 if affirmative, 0 if negative, -1 if unrecognized.
  */
+#if !defined(__GLIBC__)
 int rpmatch(const char *response);
+#endif
+
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__APPLE__)
+/**
+ * @brief Verify that two printf-style format strings accept compatible arguments.
+ * @param[in] f1 Candidate user-supplied format string.
+ * @param[in] f2 Trusted default format string.
+ * @return f1 if its format specifiers match f2, otherwise f2.
+ */
+const char *fmtcheck(const char *f1, const char *f2);
+#endif
 
 /**
  * @brief Set process title for ps/top display (no-op on Windows/DOS).
@@ -257,7 +297,9 @@ void setproctitle_fast(const char *fmt, ...);
  * @param[in] noclose Non-zero to keep standard file descriptors open.
  * @return 0 on success, -1 on failure.
  */
+#if !defined(__GLIBC__)
 int daemon(int nochdir, int noclose);
+#endif
 
 /**
  * @brief Get device name from device number and file type.
@@ -360,6 +402,33 @@ void *bsd_setmode(const char *p);
  * @return Always 0.
  */
 int bsd_stdlib_dummy_for_coverage(void);
+
+/**
+ * @brief Overrides allocator hooks used by bsd-stdlib for OOM testing.
+ * @param[in] malloc_fn Custom malloc function, or NULL to restore default.
+ * @param[in] calloc_fn Custom calloc function, or NULL to restore default.
+ * @param[in] realloc_fn Custom realloc function, or NULL to restore default.
+ */
+void bsd_stdlib_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                                void *(*calloc_fn)(size_t, size_t),
+                                void *(*realloc_fn)(void *, size_t));
+
+/**
+ * @brief Overrides OS hooks used by bsd-stdlib for deterministic branch testing.
+ * @param[in] close_fn Custom file descriptor close hook, or NULL for default.
+ * @param[in] sysconf_fn Custom sysconf hook, or NULL for default.
+ * @param[in] time_fn Custom time hook, or NULL for default.
+ * @param[in] mod_fname_fn Custom Win32 module filename hook, or NULL for default.
+ */
+void bsd_stdlib_set_sys_hooks(
+    int (*close_fn)(int), long (*sysconf_fn)(int),
+    time_t (*time_fn)(time_t *),
+    unsigned long (*mod_fname_fn)(char *, unsigned long));
+
+/**
+ * @brief Resets cached fgetln, fgetwln, progname, and arc4random internal state.
+ */
+void bsd_stdlib_reset_state(void);
 
 #ifdef __cplusplus
 }

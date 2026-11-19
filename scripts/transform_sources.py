@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""
-Automated Source Transformation Engine for MSVC (auto-win-msvc).
+"""Automated Source Transformation Engine for MSVC (auto-win-msvc).
+
 Transforms unsupported C99/GNU constructs (such as Variable Length Arrays,
 Elvis operators, self-initialization idioms, GCC statement expressions,
 PACKED structs, and macro/enum collisions) into strict C89 / MSVC-compatible
 constructs at build time.
 """
+
+from __future__ import annotations
 
 import argparse
 import os
@@ -51,28 +53,13 @@ def _transform_packed_structs(content: str) -> str:
                 block.append(lines[j])
                 j += 1
             block_text = "".join(block)
-            if seen_brace and "PACKED" in block_text:
-                result.append(
-                    NL.join(
-                        [
-                            "#if defined(_MSC_VER) || defined(__WATCOMC__)",
-                            "#pragma pack(push, 1)",
-                            "#endif",
-                            "",
-                        ]
-                    )
-                )
+            if seen_brace and re.search(
+                r"\b(?:PACKED|__packed)\b|__attribute__\s*\(\(\s*(?:__)?packed(?:__)?\s*\)\)",
+                block_text,
+            ):
+                result.append("#pragma pack(push, 1)" + NL)
                 result.extend(block)
-                result.append(
-                    NL.join(
-                        [
-                            "#if defined(_MSC_VER) || defined(__WATCOMC__)",
-                            "#pragma pack(pop)",
-                            "#endif",
-                            "",
-                        ]
-                    )
-                )
+                result.append("#pragma pack(pop)" + NL)
                 i = j
                 continue
         result.append(line)
@@ -91,17 +78,36 @@ def transform_source_content(content: str) -> str:
         Transformed C source or header string compatible with MSVC and C89.
     """
     has_alloca = False
+    defined_macros = set(
+        re.findall(
+            r"^\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*)\b", content, re.MULTILINE
+        )
+    )
 
     def vla_alloca_repl(match: re.Match[str]) -> str:
         """Replace dynamic VLA declarations with alloca() calls."""
         nonlocal has_alloca
         indent = match.group(1)
-        type_str = match.group(2)
+        type_str = match.group(2).strip()
         var_name = match.group(3)
         expr = match.group(4).strip()
         expr_no_comments = re.sub(r"/\*.*?\*/", "", expr).strip()
+        if type_str.startswith(("static ", "extern ")):
+            return match.group(0)
+        prefix_slice = content[max(0, match.start() - 2048) : match.start()]
+        if re.search(
+            r"\b(?:struct|union)(?:\s+[A-Za-z0-9_]+)?\s*\{[^{}]*$", prefix_slice
+        ):
+            return match.group(0)
+        expr_idents = [
+            tok for tok in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", expr_no_comments)
+        ]
+        all_const_idents = bool(expr_idents) and all(
+            tok.isupper() or tok in defined_macros for tok in expr_idents
+        )
         if (
-            re.match(
+            all_const_idents
+            or re.match(
                 r"^(?:0x[0-9a-fA-F]+|[0-9A-Z_+\-*/ ()\t?:=<>!&|~])+$",
                 expr_no_comments,
             )
@@ -116,8 +122,44 @@ def transform_source_content(content: str) -> str:
             f"({type_str} *)alloca(({expr}) * sizeof({type_str}));"
         )
 
+    # Inline scalar const integer definitions into subsequent array bounds, static initializers, and case labels
+    const_ints: dict[str, str] = {}
+    for cm in re.finditer(
+        r"^[ \t]*(?:static[ \t]+)?const[ \t]+(?:size_t|ssize_t|u?int(?:8|16|32|64)?_t|unsigned(?:[ \t]+(?:int|long(?:[ \t]+long)?))?|int|long(?:[ \t]+long)?)[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*=[ \t]*((?:0x[0-9a-fA-F]+|[0-9]+)[uUlL]*|\([0-9a-fA-FxXuUlL \t+<>&|~\-*]+\))[ \t]*;",
+        content,
+        re.MULTILINE,
+    ):
+        cname, cval = cm.group(1), cm.group(2).strip()
+        if cname not in ("errno", "optind"):
+            const_ints[cname] = f"({cval})"
+    if const_ints:
+        cpat = re.compile(r"\b(" + "|".join(re.escape(k) for k in const_ints) + r")\b")
+        content = re.sub(
+            r"\[\s*(" + "|".join(re.escape(k) for k in const_ints) + r")\s*\]",
+            lambda m: f"[{const_ints[m.group(1)]}]",
+            content,
+        )
+        content = re.sub(
+            r"(^[ \t]*static[ \t]+const[ \t]+[^;=\n]+=[ \t]*)([^;\n]+)(;)",
+            lambda m: (
+                m.group(1)
+                + cpat.sub(lambda km: const_ints[km.group(1)], m.group(2))
+                + m.group(3)
+            ),
+            content,
+            flags=re.MULTILINE,
+        )
+        content = re.sub(
+            r"(^[ \t]*case[ \t]+)("
+            + "|".join(re.escape(k) for k in const_ints)
+            + r")([ \t]*:)",
+            lambda m: f"{m.group(1)}{const_ints[m.group(2)]}{m.group(3)}",
+            content,
+            flags=re.MULTILINE,
+        )
+
     generic_vla_pattern = re.compile(
-        r"^(\s+)((?:unsigned\s+)?(?:char|int|uint8_t|uint16_t|uint32_t|int32_t|const\s+char\s*\*|struct\s+[a-zA-Z0-9_]+\s*\*)(?:\s*\*+)?)\s*([a-zA-Z0-9_]+)\[([^\x0a\]]+)\];",
+        r"^([ \t]+)((?:(?:static|extern)\s+)?(?:(?:unsigned\s+)?(?:char|int|long|short|uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|int64_t|[a-zA-Z_][a-zA-Z0-9_]*_t)\b(?:\s*\*+|\s+)|(?:const\s+char\s*\*+|struct\s+[a-zA-Z0-9_]+(?:\s*\*+|\s+))))\s*([a-zA-Z0-9_]+)\[([^\x0a\]]+)\];",
         re.MULTILINE,
     )
     content = generic_vla_pattern.sub(vla_alloca_repl, content)
@@ -140,18 +182,18 @@ def transform_source_content(content: str) -> str:
         )
 
     content = content.replace(
-        "    if (strcmp(\"UTF-8\", nl_langinfo(CODESET)))"
+        '    if (strcmp("UTF-8", nl_langinfo(CODESET)))'
         + NL
-        + "      uselocale(newlocale(LC_CTYPE_MASK, \"C.UTF-8\", 0) ? :"
+        + '      uselocale(newlocale(LC_CTYPE_MASK, "C.UTF-8", 0) ? :'
         + NL
-        + "        newlocale(LC_CTYPE_MASK, \"en_US.UTF-8\", 0));",
+        + '        newlocale(LC_CTYPE_MASK, "en_US.UTF-8", 0));',
         "#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__DOS__)"
         + NL
-        + "    if (strcmp(\"UTF-8\", nl_langinfo(CODESET))) {"
+        + '    if (strcmp("UTF-8", nl_langinfo(CODESET))) {'
         + NL
-        + "      locale_t _loc = newlocale(LC_CTYPE_MASK, \"C.UTF-8\", 0);"
+        + '      locale_t _loc = newlocale(LC_CTYPE_MASK, "C.UTF-8", 0);'
         + NL
-        + "      uselocale(_loc ? _loc : newlocale(LC_CTYPE_MASK, \"en_US.UTF-8\", 0));"
+        + '      uselocale(_loc ? _loc : newlocale(LC_CTYPE_MASK, "en_US.UTF-8", 0));'
         + NL
         + "    }"
         + NL
@@ -160,7 +202,7 @@ def transform_source_content(content: str) -> str:
     content = content.replace(
         "static const int NEED_OPTIONS ="
         + NL
-        + "#include \"generated/newtoys.h\""
+        + '#include "generated/newtoys.h"'
         + NL
         + "0;  // Ends the opts || opts || opts...",
         "static const int NEED_OPTIONS = 1;",
@@ -177,7 +219,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + "    size_t _nlen = strlen(name);"
         + NL
-        + "    if (_nlen > 4 && _nlen < sizeof(_nbuf) && !strcasecmp(name + _nlen - 4, \".exe\")) {"
+        + '    if (_nlen > 4 && _nlen < sizeof(_nbuf) && !strcasecmp(name + _nlen - 4, ".exe")) {'
         + NL
         + "      memcpy(_nbuf, name, _nlen - 4);"
         + NL
@@ -187,7 +229,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + "    }"
         + NL
-        + "    if (!strncasecmp(name, \"toybox\", 6)) return toy_list;"
+        + '    if (!strncasecmp(name, "toybox", 6)) return toy_list;'
         + NL
         + "  }",
     )
@@ -200,10 +242,9 @@ def transform_source_content(content: str) -> str:
         "return i ? i : (((struct v_vector *)a)->serial - ((struct v_vector *)b)->serial);",
     )
     content = content.replace(
-        "return TT.I ? : FLAG(z)?\"gzip\" : FLAG(j)?\"bzip2\" : FLAG(Z)?\"zstd\" : \"xz\";",
-        "return TT.I ? TT.I : (FLAG(z)?\"gzip\" : FLAG(j)?\"bzip2\" : FLAG(Z)?\"zstd\" : \"xz\");",
+        'return TT.I ? : FLAG(z)?"gzip" : FLAG(j)?"bzip2" : FLAG(Z)?"zstd" : "xz";',
+        'return TT.I ? TT.I : (FLAG(z)?"gzip" : FLAG(j)?"bzip2" : FLAG(Z)?"zstd" : "xz");',
     )
-
 
     elvis_pattern = re.compile(
         r'("(?:\\.|[^"\\\x0a])*"|/\*[\s\S]*?\*/|//[^\x0a]*)|(\*?[a-zA-Z0-9_]+(?:\[[^\]]+\])?(?:\([^;\x0a?()]*\)|(?:\s*(?:->|\.)\s*[a-zA-Z0-9_]+))*|\([a-zA-Z0-9_ %+\-*/&|^~<>!=<>]+\))\s*\?\s*:\s*("(?:\\.|[^"\\\x0a])*"|[a-zA-Z0-9_]+\([^;\x0a()]*\)|[^,\);\x0a]+)'
@@ -238,7 +279,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "#if UINT_MAX == 0xffffffff" + NL + '# define PRIu32 "u"',
-        '#ifndef PRIu32'
+        "#ifndef PRIu32"
         + NL
         + '# define PRIu32 "u"'
         + NL
@@ -250,7 +291,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + '# define PRIo32 "o"'
         + NL
-        + '#endif'
+        + "#endif"
         + NL
         + "#if UINT_MAX == 0xffffffff"
         + NL
@@ -384,7 +425,11 @@ def transform_source_content(content: str) -> str:
         + "static __inline pid_t bb_libbb_xvfork(void) {",
     )
     content = content.replace(
-        "#ifndef BB_GLOBAL_CONST" + NL + "# define BB_GLOBAL_CONST const" + NL + "#endif",
+        "#ifndef BB_GLOBAL_CONST"
+        + NL
+        + "# define BB_GLOBAL_CONST const"
+        + NL
+        + "#endif",
         NL.join(
             [
                 "#ifndef BB_GLOBAL_CONST",
@@ -470,11 +515,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "typedef struct HFILE {",
-        "#undef HFILE"
-        + NL
-        + "#define HFILE bb_HFILE"
-        + NL
-        + "typedef struct HFILE {",
+        "#undef HFILE" + NL + "#define HFILE bb_HFILE" + NL + "typedef struct HFILE {",
     )
     content = content.replace(
         "# define fork()          BUG_fork_is_unavailable_on_nommu()",
@@ -684,13 +725,13 @@ def transform_source_content(content: str) -> str:
         + "transformer_state_t *xs = NULL;"
         + NL
         + TAB
-        + "sprintf(tmp_name, \".bb_xfm_%u_%u.tmp\", (unsigned int)getpid(), ++s_seq);"
+        + 'sprintf(tmp_name, ".bb_xfm_%u_%u.tmp", (unsigned int)getpid(), ++s_seq);'
         + NL
         + TAB
         + "tmp_fd = open(tmp_name, O_RDWR | O_CREAT | O_TRUNC, 0600);"
         + NL
         + TAB
-        + "if (tmp_fd < 0) bb_simple_perror_msg_and_die(\"open tmp\");"
+        + 'if (tmp_fd < 0) bb_simple_perror_msg_and_die("open tmp");'
         + NL
         + "#if SEAMLESS_COMPRESSION"
         + NL
@@ -723,7 +764,7 @@ def transform_source_content(content: str) -> str:
         + "xmove_fd(tmp_fd, fd);"
         + NL
         + TAB
-        + "} else if (transform_prog && strcmp(transform_prog, \"unlzma\") == 0) {"
+        + '} else if (transform_prog && strcmp(transform_prog, "unlzma") == 0) {'
         + NL
         + TAB
         + TAB
@@ -784,11 +825,45 @@ def transform_source_content(content: str) -> str:
         + "#else",
     )
     content = content.replace(
-        TAB + "/* parent process */" + NL + TAB + "close(fd_pipe.wr); /* don't want to write to the child */" + NL + TAB + "xmove_fd(fd_pipe.rd, fd);" + NL + "}",
-        TAB + "/* parent process */" + NL + TAB + "close(fd_pipe.wr); /* don't want to write to the child */" + NL + TAB + "xmove_fd(fd_pipe.rd, fd);" + NL + "#endif" + NL + "}",
+        TAB
+        + "/* parent process */"
+        + NL
+        + TAB
+        + "close(fd_pipe.wr); /* don't want to write to the child */"
+        + NL
+        + TAB
+        + "xmove_fd(fd_pipe.rd, fd);"
+        + NL
+        + "}",
+        TAB
+        + "/* parent process */"
+        + NL
+        + TAB
+        + "close(fd_pipe.wr); /* don't want to write to the child */"
+        + NL
+        + TAB
+        + "xmove_fd(fd_pipe.rd, fd);"
+        + NL
+        + "#endif"
+        + NL
+        + "}",
     )
     content = content.replace(
-        "static void log_and_exit(void)" + NL + "{" + NL + TAB + "if (VERBOSE_3)" + NL + TAB + TAB + 'bb_simple_error_msg("closed");' + NL + TAB + "_exit_SUCCESS();" + NL + "}",
+        "static void log_and_exit(void)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "if (VERBOSE_3)"
+        + NL
+        + TAB
+        + TAB
+        + 'bb_simple_error_msg("closed");'
+        + NL
+        + TAB
+        + "_exit_SUCCESS();"
+        + NL
+        + "}",
         "#if defined(_WIN32)"
         + NL
         + "static int httpd_served_cnt;"
@@ -939,7 +1014,9 @@ def transform_source_content(content: str) -> str:
         + "#endif",
     )
     content = content.replace(
-        "static void mini_httpd_nommu(int server_socket, int argc, char **argv)" + NL + "{",
+        "static void mini_httpd_nommu(int server_socket, int argc, char **argv)"
+        + NL
+        + "{",
         "#if defined(_WIN32)"
         + NL
         + "static jmp_buf httpd_jmp;"
@@ -953,117 +1030,489 @@ def transform_source_content(content: str) -> str:
         + "{",
     )
     content = content.replace(
-        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)" + NL + "{" + NL + TAB + "(void)transform_prog;" + NL + TAB + "setup_unzip_on_fd(fd, 0);" + NL + "}",
-        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)" + NL + "{" + NL
-        + TAB + 'if (transform_prog && strcmp(transform_prog, "bunzip2") == 0) fork_transformer_mmu(fd, 0, unpack_bz2_stream);' + NL
-        + TAB + 'else if (transform_prog && strcmp(transform_prog, "unxz") == 0) fork_transformer_mmu(fd, 0, unpack_xz_stream);' + NL
-        + TAB + "else fork_transformer_mmu(fd, 0, unpack_gz_stream);" + NL + "}",
+        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "(void)transform_prog;"
+        + NL
+        + TAB
+        + "setup_unzip_on_fd(fd, 0);"
+        + NL
+        + "}",
+        "void FAST_FUNC fork_transformer(int fd, const char *transform_prog)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + 'if (transform_prog && strcmp(transform_prog, "bunzip2") == 0) fork_transformer_mmu(fd, 0, unpack_bz2_stream);'
+        + NL
+        + TAB
+        + 'else if (transform_prog && strcmp(transform_prog, "unxz") == 0) fork_transformer_mmu(fd, 0, unpack_xz_stream);'
+        + NL
+        + TAB
+        + "else fork_transformer_mmu(fd, 0, unpack_gz_stream);"
+        + NL
+        + "}",
     )
     content = content.replace(
-        "int sv[2];" + NL + NL + TAB + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);" + NL + TAB + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", sv[1]);' + NL + TAB + "return sv[0];",
-        "intptr_t sv[2];" + NL + NL + TAB + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);" + NL + TAB + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", (int)sv[1]);' + NL + TAB + "return (int)sv[0];",
+        "int sv[2];"
+        + NL
+        + NL
+        + TAB
+        + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);"
+        + NL
+        + TAB
+        + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", sv[1]);'
+        + NL
+        + TAB
+        + "return sv[0];",
+        "intptr_t sv[2];"
+        + NL
+        + NL
+        + TAB
+        + "socketpair(AF_UNIX, SOCK_STREAM, 0, sv);"
+        + NL
+        + TAB
+        + 'snprintf(line, GETPTY_BUFSIZE, "/dev/fd/%d", (int)sv[1]);'
+        + NL
+        + TAB
+        + "return (int)sv[0];",
     )
     content = content.replace(
-        "ptyfd = xgetpty(tty_name);" + NL + TAB + "slave_fd = xopen(tty_name, O_RDWR);" + NL + TAB + "close(atoi(tty_name + 8));",
-        "ptyfd = xgetpty(tty_name);" + NL + "#if defined(_WIN32)" + NL + TAB + "slave_fd = atoi(tty_name + 8);" + NL + "#else" + NL + TAB + "slave_fd = xopen(tty_name, O_RDWR);" + NL + TAB + "close(atoi(tty_name + 8));" + NL + "#endif",
+        "ptyfd = xgetpty(tty_name);"
+        + NL
+        + TAB
+        + "slave_fd = xopen(tty_name, O_RDWR);"
+        + NL
+        + TAB
+        + "close(atoi(tty_name + 8));",
+        "ptyfd = xgetpty(tty_name);"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "slave_fd = atoi(tty_name + 8);"
+        + NL
+        + "#else"
+        + NL
+        + TAB
+        + "slave_fd = xopen(tty_name, O_RDWR);"
+        + NL
+        + TAB
+        + "close(atoi(tty_name + 8));"
+        + NL
+        + "#endif",
     )
     content = content.replace(
         "fflush_all();" + NL + TAB + "pid = vfork(); /* NOMMU-friendly */",
-        "fflush_all();" + NL
-        + "#if defined(_WIN32)" + NL
-        + TAB + "{" + NL
-        + TAB + TAB + "pty_to_net_t *to_net;" + NL
-        + TAB + TAB + "net_to_pty_t *to_pty;" + NL
-        + TAB + TAB + "(void)login_argv; (void)termbuf; (void)pid;" + NL
-        + TAB + TAB + "if (G.issuefile) {" + NL
-        + TAB + TAB + TAB + "int issue_fd = open(G.issuefile, O_RDONLY);" + NL
-        + TAB + TAB + TAB + "if (issue_fd >= 0) {" + NL
-        + TAB + TAB + TAB + TAB + "char ibuf[256];" + NL
-        + TAB + TAB + TAB + TAB + "ssize_t nr = safe_read(issue_fd, ibuf, sizeof(ibuf));" + NL
-        + TAB + TAB + TAB + TAB + "if (nr > 0) safe_write(slave_fd, ibuf, (size_t)nr);" + NL
-        + TAB + TAB + TAB + TAB + "close(issue_fd);" + NL
-        + TAB + TAB + TAB + "}" + NL
-        + TAB + TAB + "}" + NL
-        + TAB + TAB + 'if (strstr(G.loginpath, "true") != NULL) close(slave_fd);' + NL
-        + TAB + TAB + "to_net = new_pty_to_net(ptyfd, sockwr);" + NL
-        + TAB + TAB + "to_pty = new_net_to_pty(sockrd, ptyfd);" + NL
-        + TAB + TAB + "to_pty->sibling = to_net;" + NL
-        + TAB + TAB + "to_net->sibling = to_pty;" + NL
-        + TAB + TAB + "to_net->shell_pid = 1;" + NL
-        + TAB + TAB + "to_pty->shell_pid = 1;" + NL
-        + TAB + TAB + "ioloop_insert_conn(io, (connection_t *)to_net);" + NL
-        + TAB + TAB + "ioloop_insert_conn(io, (connection_t *)to_pty);" + NL
-        + TAB + TAB + "return;" + NL
-        + TAB + "}" + NL
-        + "#endif" + NL
-        + TAB + "pid = vfork(); /* NOMMU-friendly */",
+        "fflush_all();"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "{"
+        + NL
+        + TAB
+        + TAB
+        + "pty_to_net_t *to_net;"
+        + NL
+        + TAB
+        + TAB
+        + "net_to_pty_t *to_pty;"
+        + NL
+        + TAB
+        + TAB
+        + "(void)login_argv; (void)termbuf; (void)pid;"
+        + NL
+        + TAB
+        + TAB
+        + "if (G.issuefile) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "int issue_fd = open(G.issuefile, O_RDONLY);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "if (issue_fd >= 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "char ibuf[256];"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "ssize_t nr = safe_read(issue_fd, ibuf, sizeof(ibuf));"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "if (nr > 0) safe_write(slave_fd, ibuf, (size_t)nr);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "close(issue_fd);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + 'if (strstr(G.loginpath, "true") != NULL) close(slave_fd);'
+        + NL
+        + TAB
+        + TAB
+        + "to_net = new_pty_to_net(ptyfd, sockwr);"
+        + NL
+        + TAB
+        + TAB
+        + "to_pty = new_net_to_pty(sockrd, ptyfd);"
+        + NL
+        + TAB
+        + TAB
+        + "to_pty->sibling = to_net;"
+        + NL
+        + TAB
+        + TAB
+        + "to_net->sibling = to_pty;"
+        + NL
+        + TAB
+        + TAB
+        + "to_net->shell_pid = 1;"
+        + NL
+        + TAB
+        + TAB
+        + "to_pty->shell_pid = 1;"
+        + NL
+        + TAB
+        + TAB
+        + "ioloop_insert_conn(io, (connection_t *)to_net);"
+        + NL
+        + TAB
+        + TAB
+        + "ioloop_insert_conn(io, (connection_t *)to_pty);"
+        + NL
+        + TAB
+        + TAB
+        + "return;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + "pid = vfork(); /* NOMMU-friendly */",
     )
     content = content.replace(
-        "errno = 0;" + NL + TAB + TAB + TAB + TAB + "safe_read(fd, buffer + n, 1);" + NL + TAB + TAB + TAB + TAB + "n++;",
-        "errno = 0;" + NL + TAB + TAB + TAB + TAB + "if (safe_read(fd, buffer + n, 1) <= 0) goto got_all;" + NL + TAB + TAB + TAB + TAB + "n++;",
+        "errno = 0;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "safe_read(fd, buffer + n, 1);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "n++;",
+        "errno = 0;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "if (safe_read(fd, buffer + n, 1) <= 0) goto got_all;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "n++;",
     )
     content = content.replace(
-        "while (safe_poll(pfd, 1, 50) != 0) {" + NL + TAB + TAB + "errno = 0;" + NL + TAB + TAB + "safe_read(fd, buffer + n, 1);" + NL + TAB + TAB + "n++;",
-        "while (safe_poll(pfd, 1, 50) != 0) {" + NL + TAB + TAB + "errno = 0;" + NL + TAB + TAB + "if (safe_read(fd, buffer + n, 1) <= 0) break;" + NL + TAB + TAB + "n++;",
+        "while (safe_poll(pfd, 1, 50) != 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "errno = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "safe_read(fd, buffer + n, 1);"
+        + NL
+        + TAB
+        + TAB
+        + "n++;",
+        "while (safe_poll(pfd, 1, 50) != 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "errno = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "if (safe_read(fd, buffer + n, 1) <= 0) break;"
+        + NL
+        + TAB
+        + TAB
+        + "n++;",
     )
     content = content.replace(
         " raise:" + NL + TAB + TAB + TAB + "longjmp(exception_handler->loc, 1);",
-        " raise:" + NL + TAB + TAB + TAB + "if (vforked == 1 && exception_handler == &main_handler) exitshell();" + NL + TAB + TAB + TAB + "longjmp(exception_handler->loc, 1);",
+        " raise:"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "if (vforked == 1 && exception_handler == &main_handler) exitshell();"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "longjmp(exception_handler->loc, 1);",
     )
     content = content.replace(
-        "exception_handler = savehandler;" + NL + TAB + "if (ex)" + NL + TAB + TAB + "longjmp(exception_handler->loc, ex);",
-        "exception_handler = savehandler;" + NL + TAB + "if (ex) { if (vforked == 1 && exception_handler == &main_handler) exitshell(); longjmp(exception_handler->loc, ex); }",
+        "exception_handler = savehandler;"
+        + NL
+        + TAB
+        + "if (ex)"
+        + NL
+        + TAB
+        + TAB
+        + "longjmp(exception_handler->loc, ex);",
+        "exception_handler = savehandler;"
+        + NL
+        + TAB
+        + "if (ex) { if (vforked == 1 && exception_handler == &main_handler) exitshell(); longjmp(exception_handler->loc, ex); }",
     )
     content = content.replace(
-        "INTOFF;" + NL + TAB + "exception_type = e;" + NL + TAB + "longjmp(exception_handler->loc, 1);",
-        "INTOFF;" + NL + TAB + "exception_type = e;" + NL
-        + "#if defined(_WIN32)" + NL
-        + TAB + "if (vforked > 1) _exit(exitstatus);" + NL
-        + TAB + "if (vforked == 1 && exception_handler == &main_handler) exitshell();" + NL
-        + "#endif" + NL
-        + TAB + "longjmp(exception_handler->loc, 1);",
+        "INTOFF;"
+        + NL
+        + TAB
+        + "exception_type = e;"
+        + NL
+        + TAB
+        + "longjmp(exception_handler->loc, 1);",
+        "INTOFF;"
+        + NL
+        + TAB
+        + "exception_type = e;"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + "if (vforked > 1) _exit(exitstatus);"
+        + NL
+        + TAB
+        + "if (vforked == 1 && exception_handler == &main_handler) exitshell();"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + "longjmp(exception_handler->loc, 1);",
     )
     content = content.replace(
         "sigblockall(NULL);" + NL + TAB + "vforked = 1;",
         "sigblockall(NULL);" + NL + TAB + "vforked = 2;",
     )
     content = content.replace(
-        "if (ctl != CTLBACKQ) {" + NL + TAB + TAB + "sprintf(buf, DEV_FD_PREFIX\"%d\", in.fd);" + NL + TAB + TAB + "strtodest(buf, BASESYNTAX);" + NL + TAB + TAB + "goto done;" + NL + TAB + "}",
-        "if (ctl != CTLBACKQ) {" + NL
-        + "#if defined(_WIN32)" + NL
-        + TAB + TAB + "if (in.fd >= 0) {" + NL
-        + TAB + TAB + TAB + "char ps_tmp[] = \"/tmp/ashpsXXXXXX\";" + NL
-        + TAB + TAB + TAB + "int ps_fd = mkstemp(ps_tmp);" + NL
-        + TAB + TAB + TAB + "if (ps_fd >= 0) {" + NL
-        + TAB + TAB + TAB + TAB + "if (ctl == CTLFROMPROC) {" + NL
-        + TAB + TAB + TAB + TAB + TAB + "char ps_buf[512]; ssize_t ps_n;" + NL
-        + TAB + TAB + TAB + TAB + TAB + "while ((ps_n = nonblock_immune_read(in.fd, ps_buf, sizeof(ps_buf))) > 0) full_write(ps_fd, ps_buf, (size_t)ps_n);" + NL
-        + TAB + TAB + TAB + TAB + "}" + NL
-        + TAB + TAB + TAB + TAB + "close(ps_fd);" + NL
-        + TAB + TAB + TAB + "}" + NL
-        + TAB + TAB + TAB + "close(in.fd);" + NL
-        + TAB + TAB + TAB + "if (in.jp) waitforjob(in.jp);" + NL
-        + TAB + TAB + TAB + "strtodest(ps_tmp, BASESYNTAX);" + NL
-        + TAB + TAB + TAB + "goto done;" + NL
-        + TAB + TAB + "}" + NL
-        + "#endif" + NL
-        + TAB + TAB + "sprintf(buf, DEV_FD_PREFIX\"%d\", in.fd);" + NL + TAB + TAB + "strtodest(buf, BASESYNTAX);" + NL + TAB + TAB + "goto done;" + NL + TAB + "}",
+        "if (ctl != CTLBACKQ) {"
+        + NL
+        + TAB
+        + TAB
+        + 'sprintf(buf, DEV_FD_PREFIX"%d", in.fd);'
+        + NL
+        + TAB
+        + TAB
+        + "strtodest(buf, BASESYNTAX);"
+        + NL
+        + TAB
+        + TAB
+        + "goto done;"
+        + NL
+        + TAB
+        + "}",
+        "if (ctl != CTLBACKQ) {"
+        + NL
+        + "#if defined(_WIN32)"
+        + NL
+        + TAB
+        + TAB
+        + "if (in.fd >= 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + 'char ps_tmp[] = "/tmp/ashpsXXXXXX";'
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "int ps_fd = mkstemp(ps_tmp);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "if (ps_fd >= 0) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "if (ctl == CTLFROMPROC) {"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "char ps_buf[512]; ssize_t ps_n;"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "while ((ps_n = nonblock_immune_read(in.fd, ps_buf, sizeof(ps_buf))) > 0) full_write(ps_fd, ps_buf, (size_t)ps_n);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "close(ps_fd);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "close(in.fd);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "if (in.jp) waitforjob(in.jp);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "strtodest(ps_tmp, BASESYNTAX);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "goto done;"
+        + NL
+        + TAB
+        + TAB
+        + "}"
+        + NL
+        + "#endif"
+        + NL
+        + TAB
+        + TAB
+        + 'sprintf(buf, DEV_FD_PREFIX"%d", in.fd);'
+        + NL
+        + TAB
+        + TAB
+        + "strtodest(buf, BASESYNTAX);"
+        + NL
+        + TAB
+        + TAB
+        + "goto done;"
+        + NL
+        + TAB
+        + "}",
     )
     content = content.replace(
-        "if (jp1 == jp)" + NL + TAB + TAB + TAB + "break;" + NL + TAB + TAB + "jpp = &jp1->prev_job;" + NL + TAB + "}" + NL + TAB + "*jpp = jp1->prev_job;",
-        "if (!jp1 || jp1 == jp)" + NL + TAB + TAB + TAB + "break;" + NL + TAB + TAB + "jpp = &jp1->prev_job;" + NL + TAB + "}" + NL + TAB + "if (jp1) *jpp = jp1->prev_job;",
+        "if (jp1 == jp)"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "break;"
+        + NL
+        + TAB
+        + TAB
+        + "jpp = &jp1->prev_job;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "*jpp = jp1->prev_job;",
+        "if (!jp1 || jp1 == jp)"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + "break;"
+        + NL
+        + TAB
+        + TAB
+        + "jpp = &jp1->prev_job;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "if (jp1) *jpp = jp1->prev_job;",
     )
     content = content.replace(
-        "popallfiles();" + NL + NL + TAB + "/* from var.c: */" + NL + TAB + "unwindlocalvars(NULL);",
+        "popallfiles();"
+        + NL
+        + NL
+        + TAB
+        + "/* from var.c: */"
+        + NL
+        + TAB
+        + "unwindlocalvars(NULL);",
         "if (g_ash_vfork_sp > 0) { while ((void *)g_parsefile != g_ash_vfork_saved[g_ash_vfork_sp - 1].s_parsefile && g_parsefile != &basepf) popfile(); unwindlocalvars((struct localvar_list *)g_ash_vfork_saved[g_ash_vfork_sp - 1].s_localvars); } else { popallfiles(); unwindlocalvars(NULL); }",
     )
     content = content.replace(
         "static struct localvar_list *localvar_stack;",
-        "static struct localvar_list *localvar_stack;" + NL + "static void awm_save_localvars(void **slot) { *slot = (void *)localvar_stack; }",
+        "static struct localvar_list *localvar_stack;"
+        + NL
+        + "static void awm_save_localvars(void **slot) { *slot = (void *)localvar_stack; }",
     )
     content = content.replace(
-        "savestatus = exitstatus;" + NL + TAB + "TRACE((\"pid %d, exitshell(%d)",
-        "if (savestatus >= 0 && (exception_type == EXEXIT || evalskip == SKIPFUNCDEF)) { exitstatus = savestatus; savestatus = -1; }" + NL + TAB + "savestatus = exitstatus;" + NL + TAB + "TRACE((\"pid %d, exitshell(%d)",
+        "savestatus = exitstatus;" + NL + TAB + 'TRACE(("pid %d, exitshell(%d)',
+        "if (savestatus >= 0 && (exception_type == EXEXIT || evalskip == SKIPFUNCDEF)) { exitstatus = savestatus; savestatus = -1; }"
+        + NL
+        + TAB
+        + "savestatus = exitstatus;"
+        + NL
+        + TAB
+        + 'TRACE(("pid %d, exitshell(%d)',
     )
     content = content.replace(
         "if (!(flags & CD_PHYSICAL)) {",
@@ -1071,7 +1520,11 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "if (*dest == '/')" + NL + TAB + TAB + "goto step6;",
-        "if (*dest == '/' || (dest[0] && dest[1] == ':'))" + NL + TAB + TAB + "goto step6;",
+        "if (*dest == '/' || (dest[0] && dest[1] == ':'))"
+        + NL
+        + TAB
+        + TAB
+        + "goto step6;",
     )
     content = content.replace(
         "if (strcmp(cur->varstr, hush_version_str) == 0)",
@@ -1087,83 +1540,246 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "ndelay_on(pair.wr);" + NL + TAB + "while (1) {",
-        "if (len == 0) { close(pair.wr); free(expanded); return; }" + NL
-        + TAB + "if (len > 32768) {" + NL
-        + TAB + TAB + "char _hdt[] = \"/tmp/hshXXXXXX\";" + NL
-        + TAB + TAB + "int _tfd = mkstemp(_hdt);" + NL
-        + TAB + TAB + "if (_tfd >= 0) { unlink(_hdt); full_write(_tfd, heredoc, len); xlseek(_tfd, 0, SEEK_SET); close(pair.wr); xmove_fd(_tfd, redir->rd_fd); free(expanded); return; }" + NL
-        + TAB + "}" + NL
-        + TAB + "ndelay_on(pair.wr);" + NL + TAB + "while (1) {",
+        "if (len == 0) { close(pair.wr); free(expanded); return; }"
+        + NL
+        + TAB
+        + "if (len > 32768) {"
+        + NL
+        + TAB
+        + TAB
+        + 'char _hdt[] = "/tmp/hshXXXXXX";'
+        + NL
+        + TAB
+        + TAB
+        + "int _tfd = mkstemp(_hdt);"
+        + NL
+        + TAB
+        + TAB
+        + "if (_tfd >= 0) { unlink(_hdt); full_write(_tfd, heredoc, len); xlseek(_tfd, 0, SEEK_SET); close(pair.wr); xmove_fd(_tfd, redir->rd_fd); free(expanded); return; }"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "ndelay_on(pair.wr);"
+        + NL
+        + TAB
+        + "while (1) {",
     )
     content = content.replace(
-        "static int" + NL + "forkshell(struct job *jp, union node *n, int mode)" + NL + "{" + NL
-        + TAB + "int pid;" + NL + NL
-        + TAB + 'TRACE(("forkshell(%%%d, %p, %d) called' + BS + 'n", jobno(jp), n, mode));' + NL
-        + TAB + "pid = fork();" + NL
-        + TAB + "if (pid == 0) {" + NL
-        + TAB + TAB + "CLEAR_RANDOM_T(&random_gen); /* or else $RANDOM repeats in child */" + NL
-        + TAB + TAB + "forkchild(jp, n, mode);" + NL
-        + TAB + "} else" + NL
-        + TAB + TAB + "forkparent(jp, n, mode, pid);" + NL + NL
-        + TAB + "return pid;" + NL + "}",
-        "struct ash_vfork_saved {" + NL
-        + TAB + "struct globals_misc misc;" + NL
-        + TAB + "struct redirtab *s_redirlist; struct job *s_curjob; struct job *s_jobtab; unsigned s_njobs; void *s_localvars; void *s_parsefile;" + NL
-        + TAB + "int s_preverrout_fd;" + NL
-        + TAB + "int s_exitstatus;" + NL
-        + TAB + "int s_back_exitstatus;" + NL
-        + "};" + NL
-        + "static void awm_save_localvars(void **slot);" + NL + "static struct ash_vfork_saved g_ash_vfork_saved[16];" + NL
-        + "static int g_ash_vfork_sp = 0;" + NL
-        + "static int forkshell_child(struct job *jp, union node *n, int mode) {" + NL
-        + TAB + "if (g_ash_vfork_sp < 16) {" + NL
-        + TAB + TAB + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[g_ash_vfork_sp++];" + NL
-        + TAB + TAB + "sv->misc = G_misc;" + NL
-        + TAB + TAB + "sv->s_redirlist = G_var.redirlist; G_var.redirlist = NULL; sv->s_curjob = curjob; curjob = NULL; sv->s_jobtab = jobtab; sv->s_njobs = njobs; jobtab = NULL; njobs = 0;" + NL
-        + TAB + TAB + "sv->s_preverrout_fd = preverrout_fd;" + NL
-        + TAB + TAB + "sv->s_exitstatus = exitstatus;" + NL
-        + TAB + TAB + "sv->s_back_exitstatus = back_exitstatus; awm_save_localvars(&sv->s_localvars); sv->s_parsefile = (void *)g_parsefile;" + NL
-        + TAB + "}" + NL
-        + TAB + "vforked = 1;" + NL
-        + TAB + "CLEAR_RANDOM_T(&random_gen);" + NL
-        + TAB + "forkchild(jp, n, mode);" + NL
-        + TAB + "memset(trap, 0, sizeof(trap));" + NL
-        + TAB + "return 0;" + NL
-        + "}" + NL
-        + "static int forkshell_parent(struct job *jp, union node *n, int mode, int pid) {" + NL
-        + TAB + "if (g_ash_vfork_sp > 0) {" + NL
-        + TAB + TAB + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[--g_ash_vfork_sp];" + NL
-        + TAB + TAB + "G_misc = sv->misc;" + NL
-        + TAB + TAB + "if (jobtab && jobtab != sv->s_jobtab) free(jobtab); jobtab = sv->s_jobtab; njobs = sv->s_njobs; G_var.redirlist = sv->s_redirlist; curjob = sv->s_curjob;" + NL
-        + TAB + TAB + "preverrout_fd = sv->s_preverrout_fd;" + NL
-        + TAB + TAB + "exitstatus = sv->s_exitstatus;" + NL
-        + TAB + TAB + "back_exitstatus = sv->s_back_exitstatus;" + NL
-        + TAB + "}" + NL
-        + TAB + "vforked = (g_ash_vfork_sp > 0) ? 1 : 0;" + NL
-        + TAB + "forkparent(jp, n, mode, pid);" + NL
-        + TAB + "return pid;" + NL
-        + "}" + NL
+        "static int"
+        + NL
+        + "forkshell(struct job *jp, union node *n, int mode)"
+        + NL
+        + "{"
+        + NL
+        + TAB
+        + "int pid;"
+        + NL
+        + NL
+        + TAB
+        + 'TRACE(("forkshell(%%%d, %p, %d) called'
+        + BS
+        + 'n", jobno(jp), n, mode));'
+        + NL
+        + TAB
+        + "pid = fork();"
+        + NL
+        + TAB
+        + "if (pid == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "CLEAR_RANDOM_T(&random_gen); /* or else $RANDOM repeats in child */"
+        + NL
+        + TAB
+        + TAB
+        + "forkchild(jp, n, mode);"
+        + NL
+        + TAB
+        + "} else"
+        + NL
+        + TAB
+        + TAB
+        + "forkparent(jp, n, mode, pid);"
+        + NL
+        + NL
+        + TAB
+        + "return pid;"
+        + NL
+        + "}",
+        "struct ash_vfork_saved {"
+        + NL
+        + TAB
+        + "struct globals_misc misc;"
+        + NL
+        + TAB
+        + "struct redirtab *s_redirlist; struct job *s_curjob; struct job *s_jobtab; unsigned s_njobs; void *s_localvars; void *s_parsefile;"
+        + NL
+        + TAB
+        + "int s_preverrout_fd;"
+        + NL
+        + TAB
+        + "int s_exitstatus;"
+        + NL
+        + TAB
+        + "int s_back_exitstatus;"
+        + NL
+        + "};"
+        + NL
+        + "static void awm_save_localvars(void **slot);"
+        + NL
+        + "static struct ash_vfork_saved g_ash_vfork_saved[16];"
+        + NL
+        + "static int g_ash_vfork_sp = 0;"
+        + NL
+        + "static int forkshell_child(struct job *jp, union node *n, int mode) {"
+        + NL
+        + TAB
+        + "if (g_ash_vfork_sp < 16) {"
+        + NL
+        + TAB
+        + TAB
+        + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[g_ash_vfork_sp++];"
+        + NL
+        + TAB
+        + TAB
+        + "sv->misc = G_misc;"
+        + NL
+        + TAB
+        + TAB
+        + "sv->s_redirlist = G_var.redirlist; G_var.redirlist = NULL; sv->s_curjob = curjob; curjob = NULL; sv->s_jobtab = jobtab; sv->s_njobs = njobs; jobtab = NULL; njobs = 0;"
+        + NL
+        + TAB
+        + TAB
+        + "sv->s_preverrout_fd = preverrout_fd;"
+        + NL
+        + TAB
+        + TAB
+        + "sv->s_exitstatus = exitstatus;"
+        + NL
+        + TAB
+        + TAB
+        + "sv->s_back_exitstatus = back_exitstatus; awm_save_localvars(&sv->s_localvars); sv->s_parsefile = (void *)g_parsefile;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "vforked = 1;"
+        + NL
+        + TAB
+        + "CLEAR_RANDOM_T(&random_gen);"
+        + NL
+        + TAB
+        + "forkchild(jp, n, mode);"
+        + NL
+        + TAB
+        + "memset(trap, 0, sizeof(trap));"
+        + NL
+        + TAB
+        + "return 0;"
+        + NL
+        + "}"
+        + NL
+        + "static int forkshell_parent(struct job *jp, union node *n, int mode, int pid) {"
+        + NL
+        + TAB
+        + "if (g_ash_vfork_sp > 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "struct ash_vfork_saved *sv = &g_ash_vfork_saved[--g_ash_vfork_sp];"
+        + NL
+        + TAB
+        + TAB
+        + "G_misc = sv->misc;"
+        + NL
+        + TAB
+        + TAB
+        + "if (jobtab && jobtab != sv->s_jobtab) free(jobtab); jobtab = sv->s_jobtab; njobs = sv->s_njobs; G_var.redirlist = sv->s_redirlist; curjob = sv->s_curjob;"
+        + NL
+        + TAB
+        + TAB
+        + "preverrout_fd = sv->s_preverrout_fd;"
+        + NL
+        + TAB
+        + TAB
+        + "exitstatus = sv->s_exitstatus;"
+        + NL
+        + TAB
+        + TAB
+        + "back_exitstatus = sv->s_back_exitstatus;"
+        + NL
+        + TAB
+        + "}"
+        + NL
+        + TAB
+        + "vforked = (g_ash_vfork_sp > 0) ? 1 : 0;"
+        + NL
+        + TAB
+        + "forkparent(jp, n, mode, pid);"
+        + NL
+        + TAB
+        + "return pid;"
+        + NL
+        + "}"
+        + NL
         + "#define forkshell(jp, n, mode) (awm_vfork_push((void **)&ptr_to_globals) ? -1 : (setjmp(*(jmp_buf *)awm_vfork_jb()) == 0 ? forkshell_child((jp), (n), (mode)) : forkshell_parent((jp), (n), (mode), awm_vfork_parent_pid())))",
     )
     content = content.replace(
-        "if (forkshell(jp, n, FORK_NOJOB) == 0) {" + NL + TAB + TAB + "/* child */" + NL + TAB + TAB + "reset_exception_handler();",
-        "char *sv_expdest = expdest; struct nodelist *sv_argbackq = argbackq; struct ifsregion sv_ifsfirst = ifsfirst; struct ifsregion *sv_ifslastp = ifslastp; struct arglist sv_exparg = exparg;" + NL + TAB + "if (forkshell(jp, n, FORK_NOJOB) == 0) {" + NL + TAB + TAB + "/* child */" + NL + TAB + TAB + "reset_exception_handler();",
+        "if (forkshell(jp, n, FORK_NOJOB) == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "/* child */"
+        + NL
+        + TAB
+        + TAB
+        + "reset_exception_handler();",
+        "char *sv_expdest = expdest; struct nodelist *sv_argbackq = argbackq; struct ifsregion sv_ifsfirst = ifsfirst; struct ifsregion *sv_ifslastp = ifslastp; struct arglist sv_exparg = exparg;"
+        + NL
+        + TAB
+        + "if (forkshell(jp, n, FORK_NOJOB) == 0) {"
+        + NL
+        + TAB
+        + TAB
+        + "/* child */"
+        + NL
+        + TAB
+        + TAB
+        + "reset_exception_handler();",
     )
     content = content.replace(
         "close(pip[ic]);" + NL + TAB + "result->fd = pip[ip];",
-        "expdest = sv_expdest; argbackq = sv_argbackq; ifsfirst = sv_ifsfirst; ifslastp = sv_ifslastp; exparg = sv_exparg;" + NL + TAB + "close(pip[ic]);" + NL + TAB + "result->fd = pip[ip];",
+        "expdest = sv_expdest; argbackq = sv_argbackq; ifsfirst = sv_ifsfirst; ifslastp = sv_ifslastp; exparg = sv_exparg;"
+        + NL
+        + TAB
+        + "close(pip[ic]);"
+        + NL
+        + TAB
+        + "result->fd = pip[ip];",
     )
     content = content.replace(
         "if (bb_got_signal)" + NL + TAB + TAB + TAB + "key = CTRL('X');",
         "if (bb_got_signal || key == -1)" + NL + TAB + TAB + TAB + "key = CTRL('X');",
     )
     content = content.replace(
-        "ftruncate(G.fd, ++G.size);" + NL + TAB + TAB + TAB + TAB + "remap(G.current_byte - G.baseaddr);",
+        "ftruncate(G.fd, ++G.size);"
+        + NL
+        + TAB
+        + TAB
+        + TAB
+        + TAB
+        + "remap(G.current_byte - G.baseaddr);",
         "{ unsigned _pos = (unsigned)(G.current_byte - G.baseaddr); if (G.baseaddr) { munmap(G.baseaddr, G_mapsize); G.baseaddr = NULL; } ftruncate(G.fd, ++G.size); remap(_pos); }",
     )
     content = content.replace(
         "handle->file_header->size = st.st_size;",
-        "if ((unsigned long long)st.st_size > 0xfffffffeULL) bb_error_msg_and_die(\"x27%s' is bigger than ar can handle\", fn);" + NL + TAB + "handle->file_header->size = st.st_size;",
+        'if ((unsigned long long)st.st_size > 0xfffffffeULL) bb_error_msg_and_die("x27%s\' is bigger than ar can handle", fn);'
+        + NL
+        + TAB
+        + "handle->file_header->size = st.st_size;",
     )
     content = content.replace(
         "#if ULONG_MAX == 0xffffffffUL"
@@ -1401,7 +2017,8 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "#if BUILD_AS_NOMMU" + NL,
-        "#if BUILD_AS_NOMMU || defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)" + NL,
+        "#if BUILD_AS_NOMMU || defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL,
     )
     content = content.replace(
         "#define ISSPACE(a) ({ unsigned char xargs__isspace = (a) - 9; xargs__isspace == (' ' - 9) || xargs__isspace <= (13 - 9); })",
@@ -1450,11 +2067,7 @@ def transform_source_content(content: str) -> str:
     )
     content = content.replace(
         "#else" + NL + "void sed_free_and_close_stuff(void);" + NL + "#endif",
-        "#else"
-        + NL
-        + "static void sed_free_and_close_stuff(void) {}"
-        + NL
-        + "#endif",
+        "#else" + NL + "static void sed_free_and_close_stuff(void) {}" + NL + "#endif",
     )
     content = content.replace(
         "#if ENABLE_FEATURE_CLEAN_UP"
@@ -1578,6 +2191,9 @@ def transform_source_content(content: str) -> str:
         TAB + "fflush_all();" + NL + TAB + "pid = xfork();",
         TAB + "fflush_all();" + NL + TAB + "pid = BB_MMU ? xfork() : xvfork();",
     )
+    had_builtin_bswap = (
+        "__builtin_bswap16(" in content or "__builtin_bswap32(" in content
+    )
     content = content.replace(
         "__builtin_bswap16(",
         "bswap_16(",
@@ -1587,9 +2203,7 @@ def transform_source_content(content: str) -> str:
         "bswap_32(",
     )
     content = content.replace(
-        "# define bswap_16(x) bswap_16(x)"
-        + NL
-        + "# define bswap_32(x) bswap_32(x)",
+        "# define bswap_16(x) bswap_16(x)" + NL + "# define bswap_32(x) bswap_32(x)",
         "# define bswap_16(x) __builtin_bswap16(x)"
         + NL
         + "# define bswap_32(x) __builtin_bswap32(x)",
@@ -1610,6 +2224,37 @@ def transform_source_content(content: str) -> str:
         + NL
         + "#   define htonl(x) __builtin_bswap32(x)",
     )
+    if (
+        had_builtin_bswap
+        and ("bswap_16(" in content or "bswap_32(" in content)
+        and "# define bswap_16" not in content
+        and "#define bswap_16" not in content
+        and "<byteswap.h>" not in content
+    ):
+        bswap_shim = NL.join(
+            [
+                "/* clang-format off */",
+                "#ifndef AWM_BSWAP_SHIM_DEFINED",
+                "#define AWM_BSWAP_SHIM_DEFINED 1",
+                "static __inline unsigned short awm_bswap_16_fn(unsigned short x) {",
+                "    return (unsigned short)((x >> 8) | (x << 8));",
+                "}",
+                "static __inline unsigned int awm_bswap_32_fn(unsigned int x) {",
+                "    return ((x >> 24) & 0x000000ffU) | ((x >> 8) & 0x0000ff00U) |",
+                "           ((x << 8) & 0x00ff0000U) | ((x << 24) & 0xff000000U);",
+                "}",
+                "#ifndef bswap_16",
+                "#define bswap_16(x) awm_bswap_16_fn((unsigned short)(x))",
+                "#endif",
+                "#ifndef bswap_32",
+                "#define bswap_32(x) awm_bswap_32_fn((unsigned int)(x))",
+                "#endif",
+                "#endif",
+                "/* clang-format on */",
+                "",
+            ]
+        )
+        content = bswap_shim + content
     content = content.replace(
         "#if ULONG_MAX == ULLONG_MAX"
         + NL
@@ -1980,7 +2625,7 @@ def transform_source_content(content: str) -> str:
             NL.join(
                 [
                     "/* clang-format off */",
-                    "#if defined(_MSC_VER) || defined(__WATCOMC__)",
+                    "#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__WATCOMC__)",
                     "#ifndef __attribute__",
                     "#define __attribute__(x)",
                     "#endif",
@@ -2116,9 +2761,7 @@ def transform_source_content(content: str) -> str:
         "inline struct dtoa_context *tsd_dtoa_context_get(void)",
         "struct dtoa_context *tsd_dtoa_context_get(void)",
     )
-    content = content.replace(
-        "((void *)tm + offsets[i])", "((char *)tm + offsets[i])"
-    )
+    content = content.replace("((void *)tm + offsets[i])", "((char *)tm + offsets[i])")
 
     content = content.replace(
         "ts.tv_nsec = statbuf.st_mtim.tv_nsec;",
@@ -2169,8 +2812,8 @@ def transform_source_content(content: str) -> str:
         "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
         + "static const char *human_time_dos(time_t t) { struct timespec ts; ts.tv_sec = t; ts.tv_nsec = 0; "
-        + "char fmt[sizeof(\"%Y-%m-%d %H:%M:%S.123456789 %z\") + 8]; setup_common_bufsiz(); "
-        + "sprintf(stpcpy(fmt, \"%Y-%m-%d %H:%M:%S\"), \".%09u %%z\", 0U); "
+        + 'char fmt[sizeof("%Y-%m-%d %H:%M:%S.123456789 %z") + 8]; setup_common_bufsiz(); '
+        + 'sprintf(stpcpy(fmt, "%Y-%m-%d %H:%M:%S"), ".%09u %%z", 0U); '
         + "strftime(bb_common_bufsiz1, COMMON_BUFSIZE, fmt, localtime(&ts.tv_sec)); return bb_common_bufsiz1; }"
         + NL
         + "#define human_time(x) human_time_dos(*(x))"
@@ -2201,7 +2844,7 @@ def transform_source_content(content: str) -> str:
     content = content.replace(
         "#define IS_BUILTIN_SPECIAL(b) ((b)->name[-1] & 1)"
         + NL
-        + "/* \"regular\" builtins always take precedence over commands,"
+        + '/* "regular" builtins always take precedence over commands,'
         + NL
         + " * regardless of PATH=....%builtin... position */"
         + NL
@@ -2287,8 +2930,13 @@ def transform_source_content(content: str) -> str:
         r"\1",
         content,
     )
-    content = content.replace("struct synstack synbase = { };", "struct synstack synbase = { 0 };")
-    content = content.replace("char msg[2] = { ch, '\\0' };", "char msg[2]; msg[0] = (char)ch; msg[1] = '\\0';")
+    content = content.replace(
+        "struct synstack synbase = { };", "struct synstack synbase = { 0 };"
+    )
+    content = content.replace(
+        "char msg[2] = { ch, '\\0' };",
+        "char msg[2]; msg[0] = (char)ch; msg[1] = '\\0';",
+    )
     content = content.replace(
         'if (is_prefixed_with(name, "busybox"))',
         'if (is_prefixed_with(name, "busybox") || strncasecmp(name, "busyb", 5) == 0)',
@@ -2373,8 +3021,12 @@ def transform_source_content(content: str) -> str:
         "#if defined(__linux__)",
     )
     content = content.replace(
-        "#if defined(__APPLE__) || defined(__linux__)" + NL + "// Linux and macOS has both have getxattr",
-        "#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)" + NL + "// Linux and macOS has both have getxattr",
+        "#if defined(__APPLE__) || defined(__linux__)"
+        + NL
+        + "// Linux and macOS has both have getxattr",
+        "#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32) || defined(_MSC_VER) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "// Linux and macOS has both have getxattr",
     )
     content = content.replace(
         "#elif defined(__GLIBC__)" + NL + "// Work around a glibc bug",
@@ -2633,8 +3285,32 @@ def transform_source_content(content: str) -> str:
         + "// Work around a glibc bug",
     )
     content = content.replace(
-        "enum {" + NL + "  empty = 1 << 9," + NL + "  eol = 1 << 10," + NL + "  eof = 1 << 11," + NL + "  space = 1 << 12" + NL + "};",
-        "#undef eof" + NL + "#define eof awm_toybox_eof" + NL + "enum {" + NL + "  empty = 1 << 9," + NL + "  eol = 1 << 10," + NL + "  eof = 1 << 11," + NL + "  space = 1 << 12" + NL + "};",
+        "enum {"
+        + NL
+        + "  empty = 1 << 9,"
+        + NL
+        + "  eol = 1 << 10,"
+        + NL
+        + "  eof = 1 << 11,"
+        + NL
+        + "  space = 1 << 12"
+        + NL
+        + "};",
+        "#undef eof"
+        + NL
+        + "#define eof awm_toybox_eof"
+        + NL
+        + "enum {"
+        + NL
+        + "  empty = 1 << 9,"
+        + NL
+        + "  eol = 1 << 10,"
+        + NL
+        + "  eof = 1 << 11,"
+        + NL
+        + "  space = 1 << 12"
+        + NL
+        + "};",
     )
 
     content = content.replace(
@@ -2654,7 +3330,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + "struct xnotify *xnotify_init(int max) { struct xnotify *not = xzalloc(sizeof(struct xnotify)); not->max = max; not->paths = xmalloc(max * sizeof(char *)); not->fds = xmalloc(max * 2 * sizeof(int)); return not; }"
         + NL
-        + "int xnotify_add(struct xnotify *not, int fd, char *path) { int i = 2*not->count; if (not->max == not->count) error_exit(\"xnotify_add overflow\"); not->fds[i] = -1; not->fds[i+1] = fd; not->paths[not->count++] = path; return 0; }"
+        + 'int xnotify_add(struct xnotify *not, int fd, char *path) { int i = 2*not->count; if (not->max == not->count) error_exit("xnotify_add overflow"); not->fds[i] = -1; not->fds[i+1] = fd; not->paths[not->count++] = path; return 0; }'
         + NL
         + "int xnotify_wait(struct xnotify *not, char **path) { (void)not; (void)path; return -1; }"
         + NL
@@ -2698,8 +3374,24 @@ def transform_source_content(content: str) -> str:
         "#else" + NL + "  return (major<<8)|minor;",
     )
     content = content.replace(
-        "  if (!s) sprintf(s = libbuf, \"0x%x\", (unsigned)statfs->f_type);" + NL + "  return s;" + NL + "#else" + NL + "#error" + NL + "#endif",
-        "  if (!s) sprintf(s = libbuf, \"0x%x\", (unsigned)statfs->f_type);" + NL + "  return s;" + NL + "#else" + NL + "  (void)statfs; return \"unknown\";" + NL + "#endif",
+        '  if (!s) sprintf(s = libbuf, "0x%x", (unsigned)statfs->f_type);'
+        + NL
+        + "  return s;"
+        + NL
+        + "#else"
+        + NL
+        + "#error"
+        + NL
+        + "#endif",
+        '  if (!s) sprintf(s = libbuf, "0x%x", (unsigned)statfs->f_type);'
+        + NL
+        + "  return s;"
+        + NL
+        + "#else"
+        + NL
+        + '  (void)statfs; return "unknown";'
+        + NL
+        + "#endif",
     )
     content = content.replace(
         "#elif defined(__GLIBC__)" + NL + "int timer_create_wrap(",
@@ -2712,6 +3404,191 @@ def transform_source_content(content: str) -> str:
         + "#elif defined(__GLIBC__)"
         + NL
         + "int timer_create_wrap(",
+    )
+
+    content = content.replace(
+        "char *xabspath(char *path, int flags)"
+        + NL
+        + "{"
+        + NL
+        + "  struct string_list *todo, *done = 0, *new, **tail;",
+        "char *xabspath(char *path, int flags)"
+        + NL
+        + "{"
+        + NL
+        + "#if defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "  char _abuf[4096], *_p;"
+        + NL
+        + "  struct stat _st;"
+        + NL
+        + "  if (!path) return 0;"
+        + NL
+        + "  if (!_fullpath(_abuf, path, sizeof(_abuf))) return 0;"
+        + NL
+        + "  for (_p = _abuf; *_p; _p++) if (*_p == 92) *_p = 47;"
+        + NL
+        + "  while (_p > _abuf + 1 && _p[-1] == 47 && _p[-2] != 58) *--_p = 0;"
+        + NL
+        + "  if ((flags & ABS_FILE) && stat(_abuf, &_st)) return 0;"
+        + NL
+        + "  if (flags & ABS_PATH) {"
+        + NL
+        + "    char *_sl = strrchr(_abuf, 47);"
+        + NL
+        + "    if (_sl && _sl > _abuf) {"
+        + NL
+        + "      char _sv = *_sl;"
+        + NL
+        + "      if (_sl[-1] == 58) _sl++;"
+        + NL
+        + "      _sv = *_sl; *_sl = 0;"
+        + NL
+        + "      if (*_abuf && stat(_abuf, &_st)) { *_sl = _sv; return 0; }"
+        + NL
+        + "      *_sl = _sv;"
+        + NL
+        + "    }"
+        + NL
+        + "  }"
+        + NL
+        + "  return xstrdup(_abuf);"
+        + NL
+        + "#else"
+        + NL
+        + "  struct string_list *todo, *done = 0, *new, **tail;",
+    )
+    content = content.replace(
+        "error:"
+        + NL
+        + "  xclose(dirfd);"
+        + NL
+        + "  llist_traverse(todo, free);"
+        + NL
+        + "  llist_traverse(done, free);"
+        + NL
+        + NL
+        + "  return 0;"
+        + NL
+        + "}",
+        "error:"
+        + NL
+        + "  xclose(dirfd);"
+        + NL
+        + "  llist_traverse(todo, free);"
+        + NL
+        + "  llist_traverse(done, free);"
+        + NL
+        + NL
+        + "  return 0;"
+        + NL
+        + "#endif"
+        + NL
+        + "}",
+    )
+
+    content = (
+        re.sub(
+            r"^(\s*)long\s+(?!long\b)(?=[^;]+;\s*$)",
+            r"\1intptr_t ",
+            content,
+            flags=re.MULTILINE,
+        )
+        if "extern union global_union {" in content
+        else content
+    )
+    content = content.replace(
+        '  long *arg;         // Pointer into union "this" to store arguments at.',
+        '  intptr_t *arg;     // Pointer into union "this" to store arguments at.',
+    )
+    content = content.replace(
+        "  union {" + NL + "    long l;" + NL + "    FLOAT f;" + NL + "  } val[3];",
+        "  union {" + NL + "    intptr_t l;" + NL + "    FLOAT f;" + NL + "  } val[3];",
+    )
+    content = content.replace(
+        "  if (type == ':') *(opt->arg) = (long)arg;",
+        "  if (type == ':') *(opt->arg) = (intptr_t)arg;",
+    )
+    content = content.replace(
+        "  long *nextarg = (long *)&this;",
+        "  intptr_t *nextarg = (intptr_t *)&this;",
+    )
+
+    content = content.replace(
+        "  if (callback && (flags & DIRTREE_COMEAGAIN)) {"
+        + NL
+        + "    node->again |= DIRTREE_COMEAGAIN;"
+        + NL
+        + "    flags = callback(node);"
+        + NL
+        + "  }"
+        + NL
+        + NL
+        + "done:"
+        + NL
+        + "  if (dir) closedir(dir);"
+        + NL
+        + "  node->dirfd = -1;",
+        "done:"
+        + NL
+        + "  if (dir) closedir(dir);"
+        + NL
+        + "  node->dirfd = -1;"
+        + NL
+        + "  if (new != DIRTREE_ABORTVAL && callback && (flags & DIRTREE_COMEAGAIN)) {"
+        + NL
+        + "    node->again |= DIRTREE_COMEAGAIN;"
+        + NL
+        + "    flags = callback(node);"
+        + NL
+        + "  }",
+    )
+    content = content.replace(
+        "    flags = dirtree_recurse(new, callback, fd, flags);"
+        + NL
+        + "    close(fd);",
+        "#if defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
+        + NL
+        + "    if (flags & DIRTREE_COMEAGAIN) {"
+        + NL
+        + "      flags = dirtree_recurse(new, callback, fd, flags & ~DIRTREE_COMEAGAIN);"
+        + NL
+        + "      close(fd);"
+        + NL
+        + "      if (flags != DIRTREE_ABORT) {"
+        + NL
+        + "        new->again |= DIRTREE_COMEAGAIN;"
+        + NL
+        + "        flags = callback(new);"
+        + NL
+        + "      }"
+        + NL
+        + "    } else {"
+        + NL
+        + "      flags = dirtree_recurse(new, callback, fd, flags);"
+        + NL
+        + "      close(fd);"
+        + NL
+        + "    }"
+        + NL
+        + "#else"
+        + NL
+        + "    flags = dirtree_recurse(new, callback, fd, flags);"
+        + NL
+        + "    close(fd);"
+        + NL
+        + "#endif",
+    )
+
+    content = content.replace(
+        "extern char **environ, toybuf[4096], libbuf[4096];",
+        "#if !defined(_MSC_VER)"
+        + NL
+        + "extern char **environ;"
+        + NL
+        + "#endif"
+        + NL
+        + "extern char toybuf[4096], libbuf[4096];",
     )
 
     content = content.replace(
@@ -2793,8 +3670,8 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "else s = memcpy(s, (wc==127) ? \"DEL\" : low+wc*3, 3)+3;",
-        "else s = (char *)memcpy(s, (wc==127) ? \"DEL\" : low+wc*3, 3)+3;",
+        'else s = memcpy(s, (wc==127) ? "DEL" : low+wc*3, 3)+3;',
+        'else s = (char *)memcpy(s, (wc==127) ? "DEL" : low+wc*3, 3)+3;',
     )
 
     content = content.replace(
@@ -2804,19 +3681,32 @@ def transform_source_content(content: str) -> str:
 
     content = content.replace(
         "#define FOR_fsync",
-        "#ifndef O_NOATIME" + NL + "#define O_NOATIME 0" + NL + "#endif" + NL
-        + "#if defined(__APPLE__)" + NL
-        + "#ifndef fdatasync" + NL + "#define fdatasync fsync" + NL + "#endif" + NL + "#endif" + NL
+        "#ifndef O_NOATIME"
+        + NL
+        + "#define O_NOATIME 0"
+        + NL
+        + "#endif"
+        + NL
+        + "#if defined(__APPLE__)"
+        + NL
+        + "#ifndef fdatasync"
+        + NL
+        + "#define fdatasync fsync"
+        + NL
+        + "#endif"
+        + NL
+        + "#endif"
+        + NL
         + "#define FOR_fsync",
     )
 
     content = content.replace(
-        "    printf(\", %s float\","
+        '    printf(", %s float",'
         + NL
-        + "      (char *[]){\"soft\", \"single\", \"double\", \"quad\"}[(flags&0x6)/2]);",
-        "    { static char *const _fp[] = {\"soft\", \"single\", \"double\", \"quad\"};"
+        + '      (char *[]){"soft", "single", "double", "quad"}[(flags&0x6)/2]);',
+        '    { static char *const _fp[] = {"soft", "single", "double", "quad"};'
         + NL
-        + "      printf(\", %s float\", _fp[(flags&0x6)/2]); }",
+        + '      printf(", %s float", _fp[(flags&0x6)/2]); }',
     )
 
     content = content.replace(
@@ -2912,36 +3802,36 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "  if (FLAG(s) && xrun((char *[]){\"strip\", \"-p\", TT.destname, 0}))"
+        '  if (FLAG(s) && xrun((char *[]){"strip", "-p", TT.destname, 0}))'
         + NL
         + "    toys.exitval = 1;",
-        "  if (FLAG(s)) { char *_sa[4]; _sa[0] = \"strip\"; _sa[1] = \"-p\"; _sa[2] = TT.destname; _sa[3] = 0; if (xrun(_sa)) toys.exitval = 1; }",
+        '  if (FLAG(s)) { char *_sa[4]; _sa[0] = "strip"; _sa[1] = "-p"; _sa[2] = TT.destname; _sa[3] = 0; if (xrun(_sa)) toys.exitval = 1; }',
     )
 
     content = content.replace(
-        "  if (FLAG(i)) memcpy(dsuapm+1, (char *[]){\"Inodes\", \"IUsed\", \"IFree\", \"IUse%\"},"
+        '  if (FLAG(i)) memcpy(dsuapm+1, (char *[]){"Inodes", "IUsed", "IFree", "IUse%"},'
         + NL
         + "                      sizeof(char *)*4);",
-        "  if (FLAG(i)) { static char *const _in[] = {\"Inodes\", \"IUsed\", \"IFree\", \"IUse%\"}; memcpy(dsuapm+1, _in, sizeof(char *)*4); }",
+        '  if (FLAG(i)) { static char *const _in[] = {"Inodes", "IUsed", "IFree", "IUse%"}; memcpy(dsuapm+1, _in, sizeof(char *)*4); }',
     )
 
     content = content.replace(
-        "for (ss = *ss ? ss : (char *[]){\".\", 0}; *ss; ss++) {",
-        "{ static char *_dot[] = {\".\", 0}; for (ss = *ss ? ss : _dot; *ss; ss++) {",
+        'for (ss = *ss ? ss : (char *[]){".", 0}; *ss; ss++) {',
+        '{ static char *_dot[] = {".", 0}; for (ss = *ss ? ss : _dot; *ss; ss++) {',
     ).replace(
         "    }" + NL + "  } else loopfiles_rw(",
         "    } }" + NL + "  } else loopfiles_rw(",
     )
 
     content = content.replace(
-        "  char **ss = (char *[]){\".\"};",
-        "  static char *_dot[] = {\".\"}; char **ss = _dot;",
+        '  char **ss = (char *[]){"."};',
+        '  static char *_dot[] = {"."}; char **ss = _dot;',
     )
     content = content.replace(
         "          time_t thyme = (int []){new->st.st_atime, new->st.st_ctime,"
         + NL
-        + "                                  new->st.st_mtime}[stridx(\"acm\", *s)];",
-        "          int _th[3]; time_t thyme; _th[0] = new->st.st_atime; _th[1] = new->st.st_ctime; _th[2] = new->st.st_mtime; thyme = _th[stridx(\"acm\", *s)];",
+        + '                                  new->st.st_mtime}[stridx("acm", *s)];',
+        '          int _th[3]; time_t thyme; _th[0] = new->st.st_atime; _th[1] = new->st.st_ctime; _th[2] = new->st.st_mtime; thyme = _th[stridx("acm", *s)];',
     )
     content = content.replace(
         "            units = (int []){86400, 3600, 60, 1}[uu];",
@@ -2953,14 +3843,14 @@ def transform_source_content(content: str) -> str:
         "else { static const char _tm[] = {8,8,10,2,6,4,1,8}; TT.hdr.mode |= _tm[tar.type-'0']<<12; }",
     )
     content = content.replace(
-        "          pid = xpopen((char *[]){\"sh\", \"-c\", TT.to_command, NULL}, &fd, 0);",
-        "          { char *_sh[4]; _sh[0] = \"sh\"; _sh[1] = \"-c\"; _sh[2] = TT.to_command; _sh[3] = NULL; pid = xpopen(_sh, &fd, 0); }",
+        '          pid = xpopen((char *[]){"sh", "-c", TT.to_command, NULL}, &fd, 0);',
+        '          { char *_sh[4]; _sh[0] = "sh"; _sh[1] = "-c"; _sh[2] = TT.to_command; _sh[3] = NULL; pid = xpopen(_sh, &fd, 0); }',
     )
     content = content.replace(
         "      TT.pid = xpopen_both(zcat ? (char *[]){zcat->str, 0} :"
         + NL
-        + "        (char *[]){get_archiver(), \"-d\", 0}, pipefd);",
-        "      { char *_za[3]; if (zcat) { _za[0] = zcat->str; _za[1] = 0; } else { _za[0] = get_archiver(); _za[1] = \"-d\"; _za[2] = 0; } TT.pid = xpopen_both(_za, pipefd); }",
+        + '        (char *[]){get_archiver(), "-d", 0}, pipefd);',
+        '      { char *_za[3]; if (zcat) { _za[0] = zcat->str; _za[1] = 0; } else { _za[0] = get_archiver(); _za[1] = "-d"; _za[2] = 0; } TT.pid = xpopen_both(_za, pipefd); }',
     )
     content = content.replace(
         "      TT.pid = xpopen_both((char *[]){get_archiver(), 0}, pipefd);",
@@ -2980,10 +3870,10 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "    error_exit_raw((char *[]){\"Unsupported options in the .xz headers\","
+        '    error_exit_raw((char *[]){"Unsupported options in the .xz headers",'
         + NL
-        + "      \"File is corrupt\"}[ret-2]);",
-        "    { static char *const _em[] = {\"Unsupported options in the .xz headers\", \"File is corrupt\"}; error_exit_raw(_em[ret-2]); }",
+        + '      "File is corrupt"}[ret-2]);',
+        '    { static char *const _em[] = {"Unsupported options in the .xz headers", "File is corrupt"}; error_exit_raw(_em[ret-2]); }',
     )
 
     content = content.replace(
@@ -3007,9 +3897,7 @@ def transform_source_content(content: str) -> str:
         "FILE *fp = file_or_pipe ? fopen(fn, mode) : popen(fn, mode);",
     )
 
-    _esc_e_re = re.compile(
-        r'("(?:\\.|[^"\\\x0a])*"|\x27(?:\\.|[^\x27\\\x0a])*\x27)'
-    )
+    _esc_e_re = re.compile(r'("(?:\\.|[^"\\\x0a])*"|\x27(?:\\.|[^\x27\\\x0a])*\x27)')
     content = _esc_e_re.sub(
         lambda m: re.sub(r"(?<!\\)\\e", lambda _: BS + "033", m.group(0)),
         content,
@@ -3022,45 +3910,59 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "char *pp[] = {\"0%3o%n\"+!echo,\"x%2x%n\",\"u%4x%n\",\"U%8x%n\"};",
-        "char *pp[4]; pp[0] = \"0%3o%n\"+!echo; pp[1] = \"x%2x%n\"; pp[2] = \"u%4x%n\"; pp[3] = \"U%8x%n\";",
+        'char *pp[] = {"0%3o%n"+!echo,"x%2x%n","u%4x%n","U%8x%n"};',
+        'char *pp[4]; pp[0] = "0%3o%n"+!echo; pp[1] = "x%2x%n"; pp[2] = "u%4x%n"; pp[3] = "U%8x%n";',
     )
     content = content.replace(
-        "    if (sscanf(*c, (char *[]){\"0%3o%n\"+!echo, \"x%2x%n\", \"u%4x%n\", \"U%6x%n\"}[i],"
+        '    if (sscanf(*c, (char *[]){"0%3o%n"+!echo, "x%2x%n", "u%4x%n", "U%6x%n"}[i],'
         + NL
         + "        &idx, &off) > 0)",
-        "    { char *pp[4]; pp[0] = \"0%3o%n\"+!echo; pp[1] = \"x%2x%n\"; pp[2] = \"u%4x%n\"; pp[3] = \"U%6x%n\";"
+        '    { char *pp[4]; pp[0] = "0%3o%n"+!echo; pp[1] = "x%2x%n"; pp[2] = "u%4x%n"; pp[3] = "U%6x%n";'
         + NL
         + "    if (sscanf(*c, pp[i], &idx, &off) > 0)",
     )
     content = content.replace(
-        "      return idx;" + NL + "    }" + NL + "  }" + NL + NL + "  if (-1 == (idx = stridx(",
-        "      return idx;" + NL + "    } }" + NL + "  }" + NL + NL + "  if (-1 == (idx = stridx(",
+        "      return idx;"
+        + NL
+        + "    }"
+        + NL
+        + "  }"
+        + NL
+        + NL
+        + "  if (-1 == (idx = stridx(",
+        "      return idx;"
+        + NL
+        + "    } }"
+        + NL
+        + "  }"
+        + NL
+        + NL
+        + "  if (-1 == (idx = stridx(",
     )
 
     content = content.replace(
-        "  char *s = str, *p, *oldtz = 0, *formats[] = {\"%Y-%m-%d %T\", \"%Y-%m-%dT%T\","
+        '  char *s = str, *p, *oldtz = 0, *formats[] = {"%Y-%m-%d %T", "%Y-%m-%dT%T",'
         + NL
-        + "    \"%a %b %e %H:%M:%S %Z %Y\", // date(1) output format in POSIX/C locale."
+        + '    "%a %b %e %H:%M:%S %Z %Y", // date(1) output format in POSIX/C locale.'
         + NL
-        + "    \"%H:%M:%S\", \"%Y-%m-%d %H:%M\", \"%Y-%m-%d\", \"%H:%M\", \"%m%d%H%M\","
+        + '    "%H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%H:%M", "%m%d%H%M",'
         + NL
-        + "    endian ? \"%m%d%H%M%y\" : \"%y%m%d%H%M\","
+        + '    endian ? "%m%d%H%M%y" : "%y%m%d%H%M",'
         + NL
-        + "    endian ? \"%m%d%H%M%C%y\" : \"%C%y%m%d%H%M\"};",
+        + '    endian ? "%m%d%H%M%C%y" : "%C%y%m%d%H%M"};',
         "  char *s = str, *p, *oldtz = 0, *formats[10];"
         + NL
-        + "  formats[0] = \"%Y-%m-%d %T\"; formats[1] = \"%Y-%m-%dT%T\";"
+        + '  formats[0] = "%Y-%m-%d %T"; formats[1] = "%Y-%m-%dT%T";'
         + NL
-        + "  formats[2] = \"%a %b %e %H:%M:%S %Z %Y\"; formats[3] = \"%H:%M:%S\";"
+        + '  formats[2] = "%a %b %e %H:%M:%S %Z %Y"; formats[3] = "%H:%M:%S";'
         + NL
-        + "  formats[4] = \"%Y-%m-%d %H:%M\"; formats[5] = \"%Y-%m-%d\";"
+        + '  formats[4] = "%Y-%m-%d %H:%M"; formats[5] = "%Y-%m-%d";'
         + NL
-        + "  formats[6] = \"%H:%M\"; formats[7] = \"%m%d%H%M\";"
+        + '  formats[6] = "%H:%M"; formats[7] = "%m%d%H%M";'
         + NL
-        + "  formats[8] = endian ? \"%m%d%H%M%y\" : \"%y%m%d%H%M\";"
+        + '  formats[8] = endian ? "%m%d%H%M%y" : "%y%m%d%H%M";'
         + NL
-        + "  formats[9] = endian ? \"%m%d%H%M%C%y\" : \"%C%y%m%d%H%M\";",
+        + '  formats[9] = endian ? "%m%d%H%M%C%y" : "%C%y%m%d%H%M";',
     )
 
     content = content.replace(
@@ -3082,25 +3984,35 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "  char *labels[] = {\"\\nreal\"+FLAG(p), \"user\", \"sys\"}, **label = labels,"
+        '  char *labels[] = {"\\nreal"+FLAG(p), "user", "sys"}, **label = labels,'
         + NL
-        + "       *vlabels[] ={\"Real\", \"User\", \"System\"}, tab = toys.optflags ? ' ' : '\\t';",
-        "  char *labels[3], **label = labels, *vlabels[] = {\"Real\", \"User\", \"System\"}, tab = toys.optflags ? ' ' : '\\t';"
+        + '       *vlabels[] ={"Real", "User", "System"}, tab = toys.optflags ? \' \' : \'\\t\';',
+        '  char *labels[3], **label = labels, *vlabels[] = {"Real", "User", "System"}, tab = toys.optflags ? \' \' : \'\\t\';'
         + NL
-        + "  labels[0] = \"\\nreal\"+FLAG(p); labels[1] = \"user\"; labels[2] = \"sys\";",
+        + '  labels[0] = "\\nreal"+FLAG(p); labels[1] = "user"; labels[2] = "sys";',
     )
 
     content = content.replace(
-        "if (FLAG(V)) return (void)puts(\"mcookie from toybox\");",
-        "if (FLAG(V)) { puts(\"mcookie from toybox\"); return; }",
+        'if (FLAG(V)) return (void)puts("mcookie from toybox");',
+        'if (FLAG(V)) { puts("mcookie from toybox"); return; }',
     )
 
     content = re.sub(r"=\s*\{\s*\}", "= {0}", content)
     content = content.replace(",{}}", ",{0}}")
 
     content = content.replace(
-        "enum toktypes {" + NL + "    // EOF (use -1 from stdio.h)" + NL + "    ERROR = 2,",
-        "#undef ERROR" + NL + "enum toktypes {" + NL + "    // EOF (use -1 from stdio.h)" + NL + "    ERROR = 2,",
+        "enum toktypes {"
+        + NL
+        + "    // EOF (use -1 from stdio.h)"
+        + NL
+        + "    ERROR = 2,",
+        "#undef ERROR"
+        + NL
+        + "enum toktypes {"
+        + NL
+        + "    // EOF (use -1 from stdio.h)"
+        + NL
+        + "    ERROR = 2,",
     )
     content = content.replace(
         "#define ZVINIT(flags, num, ptr) {(flags), (double)(num), {(ptr)}}",
@@ -3120,7 +4032,7 @@ def transform_source_content(content: str) -> str:
         + NL
         + "// This will be reassigned in init_globals() with an empty string."
         + NL
-        + "// It's a special value used for \"uninitialized\" field vars"
+        + '// It\'s a special value used for "uninitialized" field vars'
         + NL
         + "// referenced past $NF. See push_field()."
         + NL
@@ -3207,16 +4119,16 @@ def transform_source_content(content: str) -> str:
     )
 
     content = content.replace(
-        "  printf(\"%s %s\\t%s\\n\", prefix, quoted_file,"
+        '  printf("%s %s\\t%s\\n", prefix, quoted_file,'
         + NL
         + "    format_iso_time(date, sizeof(date), &sb->st_mtim));",
         "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
-        + "  { struct timespec _ts = awm_stat_ts(sb->st_mtime); printf(\"%s %s\\t%s\\n\", prefix, quoted_file, format_iso_time(date, sizeof(date), &_ts)); }"
+        + '  { struct timespec _ts = awm_stat_ts(sb->st_mtime); printf("%s %s\\t%s\\n", prefix, quoted_file, format_iso_time(date, sizeof(date), &_ts)); }'
         + NL
         + "#else"
         + NL
-        + "  printf(\"%s %s\\t%s\\n\", prefix, quoted_file,"
+        + '  printf("%s %s\\t%s\\n", prefix, quoted_file,'
         + NL
         + "    format_iso_time(date, sizeof(date), &sb->st_mtim));"
         + NL
@@ -3240,16 +4152,16 @@ def transform_source_content(content: str) -> str:
         + "#endif",
     )
     content = content.replace(
-        "                sprintf(buf, \"%lld.%ld\", (long long)new->st.st_mtim.tv_sec,"
+        '                sprintf(buf, "%lld.%ld", (long long)new->st.st_mtim.tv_sec,'
         + NL
         + "                             new->st.st_mtim.tv_nsec);",
         "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
-        + "                sprintf(buf, \"%lld.0\", (long long)new->st.st_mtime);"
+        + '                sprintf(buf, "%lld.0", (long long)new->st.st_mtime);'
         + NL
         + "#else"
         + NL
-        + "                sprintf(buf, \"%lld.%ld\", (long long)new->st.st_mtim.tv_sec,"
+        + '                sprintf(buf, "%lld.%ld", (long long)new->st.st_mtim.tv_sec,'
         + NL
         + "                             new->st.st_mtim.tv_nsec);"
         + NL
@@ -3283,14 +4195,14 @@ def transform_source_content(content: str) -> str:
         + "#endif",
     )
     content = content.replace(
-        "s += sprintf(s, \":%02d.%09d \", tm->tm_sec, (int)st->st_mtim.tv_nsec);",
+        's += sprintf(s, ":%02d.%09d ", tm->tm_sec, (int)st->st_mtim.tv_nsec);',
         "#if defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)"
         + NL
-        + "        s += sprintf(s, \":%02d.000000000 \", tm->tm_sec);"
+        + '        s += sprintf(s, ":%02d.000000000 ", tm->tm_sec);'
         + NL
         + "#else"
         + NL
-        + "        s += sprintf(s, \":%02d.%09d \", tm->tm_sec, (int)st->st_mtim.tv_nsec);"
+        + '        s += sprintf(s, ":%02d.%09d ", tm->tm_sec, (int)st->st_mtim.tv_nsec);'
         + NL
         + "#endif",
     )
@@ -3361,9 +4273,7 @@ def transform_source_content(content: str) -> str:
     return content
 
 
-def _transform_freebsd_c99_c11(
-    content: str, rename_main: str = ""
-) -> str:
+def _transform_freebsd_c99_c11(content: str, rename_main: str = "") -> str:
     """
     Apply FreeBSD-specific C99/C11/GNU C to C89/MSVC/OpenWatcom rewrites:
     - 1-argument setmode(expr) -> bsd_setmode(expr)
@@ -3388,6 +4298,7 @@ def _transform_freebsd_c99_c11(
 
     # 6.1 Rewrite 1-argument setmode(arg) to bsd_setmode(arg) without touching 2-arg setmode(fd, mode)
     def replace_setmode_1arg(match: re.Match[str]) -> str:
+        """Execute replace_setmode_1arg transformation helper."""
         prefix = match.group(1)
         args_str = match.group(2)
         depth = 0
@@ -3409,14 +4320,399 @@ def _transform_freebsd_c99_c11(
         replace_setmode_1arg,
         content,
     )
-
-    # 6.3 Handle C99 array size qualifiers in function parameters:
-    # e.g. char buf[static 16], char buf[__min_size(16)], char buf[restrict 16], char buf[__restrict]
     content = re.sub(
-        r"(\b[a-zA-Z_][a-zA-Z0-9_]*)\s*\[\s*(?:static\b|__min_size\s*\([^)]*\)|restrict\b|__restrict\b)[^\]]*\]",
-        r"*\1",
+        r"(?<![a-zA-Z0-9_])getmode\s*\(",
+        "bsd_getmode(",
         content,
     )
+
+    # 6.3 Handle C99 array size qualifiers in both named and abstract function parameters:
+    # e.g. char buf[static 16], unsigned char [static SHA256_DIGEST_LENGTH],
+    # char buf[__min_size(16)], char buf[restrict 16], char buf[__restrict]
+    def _strip_c99_param_brackets(match: re.Match[str]) -> str:
+        """Strip C99 parameter array qualifiers inside brackets."""
+        inner = match.group(1)
+        inner = re.sub(r"\b__min_size\s*\(([^()]*)\)", r"\1", inner)
+        inner = re.sub(
+            r"\b(?:static|restrict|__restrict|__restrict__|const|volatile)\b",
+            "",
+            inner,
+        )
+        inner = " ".join(inner.split())
+        return f"[{inner}]"
+
+    content = re.sub(
+        r"\[(\s*(?:(?:static|restrict|__restrict|__restrict__)\b|__min_size\s*\()[^\]]*)\]",
+        _strip_c99_param_brackets,
+        content,
+    )
+
+    # 6.3b Collapse redundant double semicolons on struct/declaration lines (e.g. libxo.c)
+    content = re.sub(
+        r"^([ \t]*[a-zA-Z_][^;\n()]*?);[ \t]*;",
+        r"\1;",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3c Convert GNU C named variadic macros (#define foo(args...) / #define foo(a, args...))
+    def _rewrite_gnu_variadic_macro(match: re.Match[str]) -> str:
+        """Convert GNU named variadic macro definitions to C99 __VA_ARGS__."""
+        prefix = match.group(1)
+        leading_params = match.group(2) or ""
+        var_name = match.group(3)
+        body = match.group(4)
+        body = re.sub(r"##\s*" + re.escape(var_name) + r"\b", "__VA_ARGS__", body)
+        body = re.sub(r"\b" + re.escape(var_name) + r"\b", "__VA_ARGS__", body)
+        return f"{prefix}({leading_params}...){body}"
+
+    content = re.sub(
+        r"^([ \t]*#[ \t]*define[ \t]+[a-zA-Z_][a-zA-Z0-9_]*)\(([^()\n]*?,\s*)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\.\.\s*\)((?:\\\n|[^\n])*)",
+        _rewrite_gnu_variadic_macro,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3d Guard bare mode_t typedefs (e.g. zstd util.h, xz file_io.c) against posix-types.h
+    content = re.sub(
+        r"^([ \t]*typedef[ \t]+(?:unsigned[ \t]+short|int|unsigned[ \t]+int)[ \t]+mode_t[ \t]*;[ \t]*)$",
+        r"#if !defined(_MODE_T_DEFINED) && !defined(__mode_t_defined) && !defined(mode_t)\n\1\n#define _MODE_T_DEFINED 1\n#endif",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3e Strip Clang/LLVM #pragma unroll (OpenWatcom requires #pragma unroll(N))
+    content = re.sub(
+        r"^[ \t]*#[ \t]*pragma[ \t]+unroll\b[^\n]*",
+        "/* pragma unroll */",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3f Rewrite GNU C binary Elvis operator on plain identifiers (ident ?: fallback)
+    def _rewrite_elvis_line(line: str) -> str:
+        """Expand GNU binary Elvis expressions outside string literals."""
+        if "?" not in line or '"' in line and line.find('"') < line.find("?"):
+            # Still rewrite when ?: is outside string literals
+            parts = re.split(r"(\"(?:\\.|[^\"\\])*\")", line)
+            return "".join(
+                p
+                if idx % 2 == 1
+                else re.sub(
+                    r"\b([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*\?[ \t]*:", r"\1 ? \1 :", p
+                )
+                for idx, p in enumerate(parts)
+            )
+        return re.sub(r"\b([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*\?[ \t]*:", r"\1 ? \1 :", line)
+
+    if "?" in content:
+        content = "\n".join(_rewrite_elvis_line(ln) for ln in content.split("\n"))
+
+    # 6.3g Normalize C99 VLA main signature: char *argv[argc] -> char *argv[]
+    content = re.sub(
+        r"\b(char\s*\*\s*argv)\s*\[\s*argc\s*\]",
+        r"\1[]",
+        content,
+    )
+
+    # 6.3h Convert multi-line C99 compound-literal initializer macros:
+    # #define FOO_INIT \n (foo_t){ ... } -> static __inline foo_t _awm_clit_FOO_INIT(void)
+    def _rewrite_clit_macro(match: re.Match[str]) -> str:
+        """Lower multi-line compound-literal macros into static inline helpers."""
+        mname = match.group(1)
+        tname = match.group(2)
+        body = match.group(3)
+        clean_body = re.sub(r"\\\s*\n", "\n", body).strip()
+        return (
+            f"static __inline {tname} _awm_clit_{mname}(void) {{\n"
+            f"    {tname} _awm_v = {{ {clean_body} }};\n"
+            f"    return _awm_v;\n"
+            f"}}\n"
+            f"#define {mname} (_awm_clit_{mname}())"
+        )
+
+    content = re.sub(
+        r"^[ \t]*#[ \t]*define[ \t]+([A-Za-z_][A-Za-z0-9_]*)[ \t]*\\\n[ \t]*\(([A-Za-z_][A-Za-z0-9_]*)\)[ \t]*\{((?:\\\n|[^}\n])*)\}",
+        _rewrite_clit_macro,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3i Lower function-local flat designated struct initializers (OpenWatcom anonymous-union bug):
+    # e.g. lzma_block block = { .version = 0, .check = check, .filters = filters };
+    string_macros = set(
+        re.findall(
+            r'^\s*#\s*define\s+([A-Za-z_][A-Za-z0-9_]*)\s+"',
+            content,
+            re.MULTILINE,
+        )
+    )
+    const_field_types: set[str] = set()
+    for sm in re.finditer(
+        r"\b(?:typedef\s+)?struct(?:\s+([A-Za-z_][A-Za-z0-9_]*))?\s*\{([^{}]*)\}\s*([A-Za-z_][A-Za-z0-9_]*)?\s*;",
+        content,
+        re.DOTALL,
+    ):
+        sbody = sm.group(2)
+        if re.search(
+            r"^[ \t]*const\s+[A-Za-z_][A-Za-z0-9_\s]*[^*\s]\s+[A-Za-z_][A-Za-z0-9_]*\s*;",
+            sbody,
+            re.MULTILINE,
+        ):
+            if sm.group(1):
+                const_field_types.add(f"struct {sm.group(1)}")
+            if sm.group(3):
+                const_field_types.add(sm.group(3))
+
+    def _lower_local_desig_init(match: re.Match[str]) -> str:
+        """Lower local flat designated struct initializers into field assignments."""
+        indent = match.group(1)
+        decl_type = match.group(2).strip()
+        if decl_type.startswith("const "):
+            decl_type = decl_type[6:].strip()
+        if decl_type in const_field_types or decl_type.endswith("_ctx_t"):
+            return match.group(0)
+        var_name = match.group(3)
+        body = re.sub(r"//[^\n]*", "", match.group(4))
+        body = re.sub(r"/\*.*?\*/", "", body, flags=re.DOTALL).strip()
+        if not body or "{" in body or "}" in body:
+            return match.group(0)
+        # Split top-level comma-separated items (respecting parentheses)
+        items: list[str] = []
+        depth = 0
+        cur: list[str] = []
+        for ch in body:
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            if ch == "," and depth == 0:
+                piece = "".join(cur).strip()
+                if piece:
+                    items.append(piece)
+                cur = []
+            else:
+                cur.append(ch)
+        tail = "".join(cur).strip()
+        if tail:
+            items.append(tail)
+        if not items:
+            return match.group(0)
+        assigns: list[str] = []
+        for item in items:
+            im = re.match(r"^(\.[A-Za-z_][A-Za-z0-9_.]*)\s*=\s*(.+)$", item, re.DOTALL)
+            if not im:
+                return match.group(0)
+            val_s = " ".join(im.group(2).split())
+            if (
+                val_s in string_macros
+                or val_s.startswith('"')
+                or val_s.endswith("_MAGIC")
+            ):
+                return match.group(0)
+            assigns.append(f"{indent}{var_name}{im.group(1)} = {val_s};")
+        return (
+            f"{indent}{decl_type} {var_name};\n"
+            f"{indent}memset(&{var_name}, 0, sizeof({var_name}));\n"
+            + "\n".join(assigns)
+        )
+
+    content = re.sub(
+        r"^([ \t]+)(?!static\b)((?:const[ \t]+)?(?:struct[ \t]+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*))[ \t]+([A-Za-z_][A-Za-z0-9_]*)[ \t]*=[ \t]*\{([^{};]*\.([A-Za-z_][A-Za-z0-9_]*)[ \t]*=[^{};]*)\}[ \t]*;",
+        _lower_local_desig_init,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3j Convert GNU zero-length trailing struct array members ([0]; -> [];)
+    content = re.sub(
+        r"^([ \t]+(?:unsigned[ \t]+|signed[ \t]+|const[ \t]+)?(?:char|short|int|long|uint8_t|uint16_t|uint32_t|uint64_t|struct[ \t]+[A-Za-z_][A-Za-z0-9_]*)[ \t*]+[A-Za-z_][A-Za-z0-9_]*)\[\s*0\s*\](\s*;)",
+        r"\1[]\2",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3k Normalize _Pragma("pack 1") / _Pragma("pack 0") for OpenWatcom (archive_blake2.h)
+    content = content.replace('_Pragma("pack 1")', '_Pragma("pack(push, 1)")')
+    content = content.replace('_Pragma("pack 0")', '_Pragma("pack(pop)")')
+
+    # 6.3l Lower C99 compound-literal struct assignments (including nested .sub = { ... }):
+    def _split_top_commas(s: str) -> list[str]:
+        """Split comma-separated initializer items at top-level brace/paren depth."""
+        parts: list[str] = []
+        p_depth = 0
+        b_depth = 0
+        cur: list[str] = []
+        for ch in s:
+            if ch == "(":
+                p_depth += 1
+            elif ch == ")":
+                p_depth -= 1
+            elif ch == "{":
+                b_depth += 1
+            elif ch == "}":
+                b_depth -= 1
+            if ch == "," and p_depth == 0 and b_depth == 0:
+                piece = "".join(cur).strip()
+                if piece:
+                    parts.append(piece)
+                cur = []
+            else:
+                cur.append(ch)
+        tail = "".join(cur).strip()
+        if tail:
+            parts.append(tail)
+        return parts
+
+    def _collect_desig_assigns(
+        prefix: str, body: str, indent: str, out: list[str]
+    ) -> bool:
+        """Recursively collect nested designated struct field assignments."""
+        items = _split_top_commas(body)
+        if not items:
+            return False
+        for item in items:
+            im = re.match(r"^(\.[A-Za-z_][A-Za-z0-9_.]*)\s*=\s*(.+)$", item, re.DOTALL)
+            if not im:
+                return False
+            fpath = prefix + im.group(1)
+            rhs = im.group(2).strip()
+            if rhs.startswith("{") and rhs.endswith("}"):
+                if not _collect_desig_assigns(fpath, rhs[1:-1].strip(), indent, out):
+                    return False
+            elif "{" in rhs or "}" in rhs:
+                return False
+            else:
+                val_s = " ".join(rhs.split())
+                out.append(f"{indent}    {fpath} = {val_s};")
+        return True
+
+    def _lower_clit_assign(match: re.Match[str]) -> str:
+        """Lower compound-literal struct assignment statements."""
+        indent = match.group(1)
+        lhs = match.group(2).strip()
+        decl_type = match.group(3).strip()
+        body = re.sub(r"//[^\n]*", "", match.group(4))
+        body = re.sub(r"/\*.*?\*/", "", body, flags=re.DOTALL).strip()
+        assigns: list[str] = []
+        if not _collect_desig_assigns("_awm_cl", body, indent, assigns):
+            return match.group(0)
+        return (
+            f"{indent}{{\n"
+            f"{indent}    {decl_type} _awm_cl;\n"
+            f"{indent}    memset(&_awm_cl, 0, sizeof(_awm_cl));\n"
+            + "\n".join(assigns)
+            + f"\n{indent}    {lhs} = _awm_cl;\n"
+            f"{indent}}}"
+        )
+
+    content = re.sub(
+        r"^([ \t]+)([^;=\n]+?)[ \t]*=[ \t]*\(((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*)\)[ \t\r\n]*\{((?:[^{}]|\{[^{}]*\})*\.[A-Za-z_][A-Za-z0-9_]*[ \t]*=(?:[^{}]|\{[^{}]*\})*)\}[ \t]*;",
+        _lower_clit_assign,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3m Strip residual __attribute__((...)) annotations for MSVC / OpenWatcom
+    content = re.sub(
+        r"\b__attribute__\s*\(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)\)",
+        "",
+        content,
+    )
+
+    # 6.3n Rewrite struct timespec = sb.st_atim / sb.st_mtim assignments for DOS struct stat
+    content = re.sub(
+        r"^([ \t]+)([A-Za-z_][A-Za-z0-9_\[\]]*)[ \t]*=[ \t]*([A-Za-z_][A-Za-z0-9_.]*)\.st_([amc])tim[ \t]*;",
+        r"\1{ (\2).tv_sec = (\3).st_\4time; (\2).tv_nsec = 0; }",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3o Lower empty/zero/NULL compound-literal struct assignments: *res = (struct foo){ NULL, 0 };
+    content = re.sub(
+        r"^([ \t]+)([^;=\n]+?)[ \t]*=[ \t]*\((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*\)[ \t\r\n]*\{\s*(?:(?:0|NULL)\s*(?:,\s*(?:0|NULL)\s*)*)?\}[ \t]*;",
+        r"\1memset(&(\2), 0, sizeof(\2));",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3o2 Normalize trailing comma in { 0, } scalar/struct zero initializers (e.g. Watcom scalar mbstate_t)
+    content = re.sub(r"=\s*\{\s*0\s*,\s*\}\s*;", "= { 0 };", content)
+
+    # 6.3o3 Lower gnulib _gl_make_timespec C99 compound-literal macro to C89 static __inline helper
+    content = re.sub(
+        r"^[ \t]*#[ \t]*define[ \t]+_gl_make_timespec\s*\(\s*sec\s*,\s*nsec\s*\)[ \t]*\\\n[ \t]*\(struct[ \t]+timespec\)[ \t]*\{[^\n]*\}",
+        "static __inline struct timespec _gl_make_timespec(time_t sec, long nsec) { struct timespec _ts; _ts.tv_sec = sec; _ts.tv_nsec = nsec; return _ts; }",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3o4 Relax const pointer struct member (const T *const field;) so lowered C89 post-memset assignment compiles
+    content = re.sub(
+        r"^([ \t]+const[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*\*)[ \t]*const([ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*;)",
+        r"\1\2",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3p Strip non-static column-0 C99 inline keyword on external definitions (e.g. gh-bc vector.c)
+    content = re.sub(
+        r"^inline([ \t]+)",
+        "",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    # 6.3q Lower inline C99 scalar-array compound literals: (char []) {i, 0}
+    _clit_arr_pat = re.compile(
+        r"\(\s*((?:unsigned\s+|signed\s+)?(?:char|short|int|long))\s*\[\s*\]\s*\)\s*\{([^{}\n]+)\}"
+    )
+
+    def _lower_scalar_array_clit_stmt(match: re.Match[str]) -> str:
+        """Lower inline scalar-array compound literals into C89 local arrays.
+
+        Args:
+            match: Regex match capturing leading indentation and statement text.
+
+        Returns:
+            Rewritten C89 compound block with explicit element assignments.
+        """
+        indent = match.group(1)
+        stmt = match.group(2)
+        decls: list[str] = []
+        inits: list[str] = []
+        counter = 0
+
+        def _repl_one(m: re.Match[str]) -> str:
+            """Replace a single array compound literal with a local array identifier.
+
+            Args:
+                m: Regex match capturing element type and initializer list.
+
+            Returns:
+                Generated local C89 array variable name.
+            """
+            nonlocal counter
+            etype = " ".join(m.group(1).split())
+            elems = [e.strip() for e in m.group(2).split(",") if e.strip()]
+            vname = f"_awm_arr_{counter}"
+            counter += 1
+            decls.append(f"{indent}  {etype} {vname}[{len(elems)}];")
+            for idx, expr in enumerate(elems):
+                inits.append(f"{indent}  {vname}[{idx}] = ({etype})({expr});")
+            return vname
+
+        rewritten = _clit_arr_pat.sub(_repl_one, stmt)
+        body_lines = "\n".join(decls + inits)
+        return f"{indent}{{\n{body_lines}\n{indent}  {rewritten}\n{indent}}}"
+
+    if "[]" in content:
+        content = re.sub(
+            r"^([ \t]+)((?:if\s*\([^\n]*\[\s*\]\s*\)\s*\{[^{}\n]+\}[^\n]*\n[ \t]+[^\n;]+;|[^#\n;]*\(\s*(?:unsigned\s+|signed\s+)?(?:char|short|int|long)\s*\[\s*\]\s*\)\s*\{[^{}\n]+\}[^\n;]*;))",
+            _lower_scalar_array_clit_stmt,
+            content,
+            flags=re.MULTILINE,
+        )
 
     # 6.4 Handle C11 _Noreturn, _Thread_local
     content = re.sub(r"\b_Noreturn\b", "__dead2", content)
@@ -3425,6 +4721,56 @@ def _transform_freebsd_c99_c11(
         "/* _Thread_local */",
         content,
     )
+
+    # 6.4b Expand GNU C case <lo> ... <hi>: and [<lo> ... <hi>] = <val> ranges
+    def _parse_c_int(tok: str) -> int | None:
+        """Execute _parse_c_int transformation helper."""
+        tok = tok.strip()
+        if len(tok) == 3 and tok.startswith("'") and tok.endswith("'"):
+            return ord(tok[1])
+        try:
+            return int(tok, 0)
+        except ValueError:
+            return None
+
+    def expand_gnu_case_range(match: re.Match[str]) -> str:
+        """Execute expand_gnu_case_range transformation helper."""
+        indent = match.group(1)
+        lo = _parse_c_int(match.group(2))
+        hi = _parse_c_int(match.group(3))
+        if lo is None or hi is None or hi < lo or (hi - lo) > 256:
+            return match.group(0)
+        return NL.join(f"{indent}case {v}:" for v in range(lo, hi + 1))
+
+    content = re.sub(
+        r"^([ \t]*)case\s+(0x[0-9a-fA-F]+|\d+|'[^'\\]')\s*\.\.\.\s*(0x[0-9a-fA-F]+|\d+|'[^'\\]')\s*:",
+        expand_gnu_case_range,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    def expand_gnu_array_range(match: re.Match[str]) -> str:
+        """Execute expand_gnu_array_range transformation helper."""
+        indent = match.group(1)
+        lo = _parse_c_int(match.group(2))
+        hi = _parse_c_int(match.group(3))
+        rhs = match.group(4)
+        comma = match.group(5)
+        if lo is None or hi is None or hi < lo or (hi - lo) > 256:
+            return match.group(0)
+        items = [f"{indent}[{v}] = {rhs}," for v in range(lo, hi + 1)]
+        if not comma:
+            items[-1] = items[-1][:-1]
+        return NL.join(items)
+
+    content = re.sub(
+        r"^([ \t]*)\[\s*(0x[0-9a-fA-F]+|\d+)\s*\.\.\.\s*(0x[0-9a-fA-F]+|\d+)\s*\]\s*=\s*([^,\n}]+)(,?)",
+        expand_gnu_array_range,
+        content,
+        flags=re.MULTILINE,
+    )
+
+    content = re.sub(r"\b__assert_unreachable\s*\(\s*\)", "abort()", content)
 
     # 6.5 Optional main() renaming
     if rename_main:
@@ -3437,9 +4783,7 @@ def _transform_freebsd_c99_c11(
     return content
 
 
-def transform_file(
-    input_path: str, output_path: str, rename_main: str = ""
-) -> None:
+def transform_file(input_path: str, output_path: str, rename_main: str = "") -> None:
     """
     Read an input C source/header file, apply C89/MSVC transformations,
     rewrite relative local includes if needed, and write to output_path.
@@ -3453,43 +4797,64 @@ def transform_file(
     with open(abs_in, "r", encoding="utf-8", errors="ignore") as f:
         original = f.read()
 
-    def resolve_local_include(match: re.Match[str]) -> str:
-        """Transform and rewrite relative local #include directives."""
-        inc_rel = match.group(1)
-        candidate = os.path.normpath(os.path.join(in_dir, inc_rel))
-        if os.path.isfile(candidate):
-            with open(candidate, "r", encoding="utf-8", errors="ignore") as cf:
-                c_text = cf.read()
-            c_sub = re.sub(
-                r'#\s*include\s+"([^"]+)"', resolve_local_include, c_text
-            )
-            c_trans = transform_source_content(c_sub)
-            if c_trans != c_text:
-                out_dir_abs = os.path.dirname(os.path.abspath(output_path))
-                rel_target = os.path.basename(inc_rel) if os.path.isabs(inc_rel) else inc_rel
-                gen_inc = os.path.join(out_dir_abs, rel_target)
-                os.makedirs(os.path.dirname(gen_inc), exist_ok=True)
-                existing_inc = None
-                if os.path.isfile(gen_inc):
-                    with open(gen_inc, "r", encoding="utf-8", errors="ignore") as ef:
-                        existing_inc = ef.read()
-                if existing_inc != c_trans:
-                    with open(gen_inc, "w", encoding="utf-8") as gf:
-                        gf.write(c_trans)
-                return f'#include "{gen_inc.replace(BS, "/")}"'
-            return f'#include "{candidate.replace(BS, "/")}"'
-        return match.group(0)
+    out_dir_abs = os.path.dirname(os.path.abspath(output_path))
+    resolved_cache: dict[str, str] = {}
+    active_stack: set[str] = set()
+
+    def _rewrite_includes(src_text: str, base_dir: str) -> str:
+        """Recursively transform local #include headers with cycle protection."""
+
+        def resolve_local_include(match: re.Match[str]) -> str:
+            """Resolve and transform a single local #include directive."""
+            inc_rel = match.group(1)
+            candidate = os.path.normpath(os.path.join(base_dir, inc_rel))
+            if not os.path.isfile(candidate):
+                alt = os.path.normpath(os.path.join(in_dir, inc_rel))
+                if os.path.isfile(alt):
+                    candidate = alt
+                else:
+                    return match.group(0)
+            if candidate in resolved_cache:
+                return resolved_cache[candidate]
+            if candidate in active_stack:
+                return f'#include "{candidate.replace(BS, "/")}"'
+            active_stack.add(candidate)
+            try:
+                with open(candidate, "r", encoding="utf-8", errors="ignore") as cf:
+                    c_text = cf.read()
+                c_sub = _rewrite_includes(c_text, os.path.dirname(candidate))
+                c_trans = transform_source_content(c_sub)
+                if c_trans != c_text:
+                    rel_target = (
+                        os.path.basename(inc_rel) if os.path.isabs(inc_rel) else inc_rel
+                    )
+                    gen_inc = os.path.normpath(os.path.join(out_dir_abs, rel_target))
+                    os.makedirs(os.path.dirname(gen_inc), exist_ok=True)
+                    existing_inc = None
+                    if os.path.isfile(gen_inc):
+                        with open(
+                            gen_inc, "r", encoding="utf-8", errors="ignore"
+                        ) as ef:
+                            existing_inc = ef.read()
+                    if existing_inc != c_trans:
+                        with open(gen_inc, "w", encoding="utf-8") as gf:
+                            gf.write(c_trans)
+                    res = f'#include "{gen_inc.replace(BS, "/")}"'
+                else:
+                    res = f'#include "{candidate.replace(BS, "/")}"'
+                resolved_cache[candidate] = res
+                return res
+            finally:
+                active_stack.discard(candidate)
+
+        return re.sub(r'#\s*include\s+"([^"]+)"', resolve_local_include, src_text)
 
     if abs_in.endswith(".c"):
-        original = re.sub(
-            r'#\s*include\s+"([^"]+)"', resolve_local_include, original
-        )
+        original = _rewrite_includes(original, in_dir)
 
     transformed = transform_source_content(original)
     if rename_main:
-        transformed = _transform_freebsd_c99_c11(
-            transformed, rename_main=rename_main
-        )
+        transformed = _transform_freebsd_c99_c11(transformed, rename_main=rename_main)
 
     out_dir = os.path.dirname(os.path.abspath(output_path))
     os.makedirs(out_dir, exist_ok=True)
@@ -3510,12 +4875,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Transform C source files for MSVC compatibility."
     )
-    parser.add_argument(
-        "inputs", nargs="+", help="Input file(s) or input/output pair"
-    )
-    parser.add_argument(
-        "--output", "-o", help="Output file path (for single input)"
-    )
+    parser.add_argument("inputs", nargs="+", help="Input file(s) or input/output pair")
+    parser.add_argument("--output", "-o", help="Output file path (for single input)")
     parser.add_argument(
         "--out-dir", "-d", help="Output directory for generated sources"
     )
@@ -3531,18 +4892,14 @@ def main() -> None:
         if len(args.inputs) != 1:
             print("Error: --output can only be used with a single input file.")
             sys.exit(1)
-        transform_file(
-            args.inputs[0], args.output, rename_main=args.rename_main
-        )
+        transform_file(args.inputs[0], args.output, rename_main=args.rename_main)
     elif args.out_dir:
         for inp in args.inputs:
             rel_name = os.path.basename(inp)
             out_file = os.path.join(args.out_dir, rel_name)
             transform_file(inp, out_file, rename_main=args.rename_main)
     elif len(args.inputs) == 2 and not os.path.isdir(args.inputs[1]):
-        transform_file(
-            args.inputs[0], args.inputs[1], rename_main=args.rename_main
-        )
+        transform_file(args.inputs[0], args.inputs[1], rename_main=args.rename_main)
     else:
         print(
             "Usage: transform_sources.py <input> <output> OR --out-dir <dir> <files...>"

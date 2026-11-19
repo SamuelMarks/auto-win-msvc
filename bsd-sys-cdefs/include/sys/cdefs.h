@@ -284,6 +284,12 @@
 #define __warn_references(sym, msg)
 #endif
 
+#if defined(__APPLE__) && !defined(__clang__)
+#undef __DECONST
+#undef __DEVOLATILE
+#undef __DEQUALIFY
+#endif
+
 #ifndef __DECONST
 /** @brief Cast away const qualifier safely. */
 #define __DECONST(type, var) ((type)(size_t)(const void *)(var))
@@ -426,6 +432,50 @@ static __inline int __awm_bitcount32(unsigned int _x) {
 #endif
 #endif
 
+#ifndef __fallthrough
+#if defined(__GNUC__) && __GNUC__ >= 7
+#define __fallthrough __attribute__((__fallthrough__))
+#else
+/** @brief Hint that switch case falls through intentionally. */
+#define __fallthrough
+#endif
+#endif
+
+#ifndef __BIT
+#if defined(__GNUC__) || defined(__clang__)
+#define __BIT(__n) (((__n) >= 64) ? 0UL : ((__extension__ 1ULL) << (__n)))
+#elif defined(_MSC_VER)
+#define __BIT(__n) (((__n) >= 64) ? 0Ui64 : (1Ui64 << (__n)))
+#else
+#define __BIT(__n) (((__n) >= 32) ? 0UL : (1UL << (__n)))
+#endif
+#endif
+
+#ifndef __BITS
+#define __BITS(__m, __n) \
+  ((__BIT(((__m) > (__n) ? (__m) : (__n)) + 1) - 1) ^ \
+   (__BIT(((__m) < (__n) ? (__m) : (__n))) - 1))
+#endif
+
+#ifndef __LOWEST_SET_BIT
+#define __LOWEST_SET_BIT(__mask) ((((__mask) - 1) & (__mask)) ^ (__mask))
+#endif
+
+#ifndef __SHIFTOUT
+#define __SHIFTOUT(__x, __mask) (((__x) & (__mask)) / __LOWEST_SET_BIT(__mask))
+#endif
+
+#ifndef __SHIFTIN
+#define __SHIFTIN(__x, __mask) ((__x) * __LOWEST_SET_BIT(__mask))
+#endif
+
+#ifndef __nonstring
+#define __nonstring
+#endif
+#ifndef __dead
+#define __dead __dead2
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -440,6 +490,20 @@ int sys_cdefs_dummy_for_coverage(void);
 }
 #endif /* __cplusplus */
 
+
+#ifndef __arraycount
+#define __arraycount(__x) (sizeof(__x) / sizeof((__x)[0]))
+#endif
+#ifndef __UNCONST
+#define __UNCONST(a) ((void *)(size_t)(const void *)(a))
+#endif
+#ifndef __dead
+#ifdef __dead2
+#define __dead __dead2
+#else
+#define __dead
+#endif
+#endif
 #endif /* SYS_CDEFS_H_ */
 /* clang-format on */
 

@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 typedef bool_t (*resultproc_t)(caddr_t, struct sockaddr_in *);
+typedef resultproc_t clnt_broadcast_resultproc_t;
 
 bool_t pmap_set(u_long program, u_long version, int protocol, u_short port);
 bool_t pmap_unset(u_long program, u_long version);

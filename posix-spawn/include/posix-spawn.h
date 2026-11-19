@@ -344,6 +344,31 @@ int posix_spawnattr_getsigmask(const posix_spawnattr_t *attr,
 int posix_spawnattr_setsigmask(posix_spawnattr_t *attr,
                                const sigset_t *sigmask);
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+/**
+ * @brief Overrides Win32 OS hooks used by posix-spawn for deterministic branch
+ * testing.
+ * @param[in] get_osfh_fn Custom CRT fd to OS handle hook, or NULL for default.
+ * @param[in] mod_fname_fn Custom GetModuleFileNameA hook, or NULL for default.
+ * @param[in] create_proc_fn Custom CreateProcessA hook, or NULL for default.
+ * @param[in] close_handle_fn Custom CloseHandle hook, or NULL for default.
+ */
+void posix_spawn_set_win32_hooks(ptrdiff_t (*get_osfh_fn)(int),
+                                 unsigned long (*mod_fname_fn)(char *,
+                                                               unsigned long),
+                                 int (*create_proc_fn)(const char *, char *,
+                                                       unsigned long, void *,
+                                                       void *, void *),
+                                 int (*close_handle_fn)(void *));
+
+/**
+ * @brief Sets the tracked child process count and returns the previous count.
+ * @param[in] new_count New child process table count.
+ * @return Previous child process table count.
+ */
+int posix_spawn_set_child_count(int new_count);
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

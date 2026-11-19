@@ -120,11 +120,12 @@ def main():
     vcpkg_path = (
         os.environ.get("VCPKG_INSTALLATION_ROOT")
         or os.environ.get("VCPKG_ROOT")
+        or os.path.expanduser("~/repos/vcpkg")
         or r"C:\Users\samue\repos\vcpkg"
     )
-    if not os.path.exists(vcpkg_path):
+    if os.name != "nt" or not os.path.exists(vcpkg_path):
         print(
-            "Skipping rsync downstream test because VCPKG is not set in the environment."
+            "Skipping rsync Visual Studio downstream test (requires Windows + VCPKG)."
         )
     else:
         rsync_path, rsync_is_tmp = setup_repo(
@@ -141,16 +142,20 @@ def main():
             )
 
         # Configure and build rsync
-        with open(os.path.join(rsync_path, "CMakeLists.txt"), "a") as f:
-            f.write(
-                "\nif(TARGET popt)\n  target_compile_definitions(popt PRIVATE HAVE_CONFIG_H=1)\nendif()\n"
-            )
-            f.write(
-                'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rounding.h "#define EXTRA_ROUNDING 0\\n")\n'
-            )
-            f.write(
-                'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git-version.h "#define RSYNC_GITOBJ \\"\\"\\n")\n'
-            )
+        rsync_cmake_file = os.path.join(rsync_path, "CMakeLists.txt")
+        with open(rsync_cmake_file, "r", encoding="utf-8", errors="ignore") as rf:
+            existing_cmake = rf.read()
+        if "RSYNC_GITOBJ" not in existing_cmake:
+            with open(rsync_cmake_file, "a", encoding="utf-8") as f:
+                f.write(
+                    "\nif(TARGET popt)\n  target_compile_definitions(popt PRIVATE HAVE_CONFIG_H=1)\nendif()\n"
+                )
+                f.write(
+                    'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rounding.h "#define EXTRA_ROUNDING 0\\n")\n'
+                )
+                f.write(
+                    'file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git-version.h "#define RSYNC_GITOBJ \\"\\"\\n")\n'
+                )
 
         cmake_cmd = [
             "cmake",
@@ -171,11 +176,12 @@ def main():
         run_cmd(cmake_cmd, cwd=rsync_path)
         run_cmd(["cmake", "--build", "build", "--config", "Release"], cwd=rsync_path)
 
-        # 4. Test jq (Native MSVC / OpenWatcom DOS port via cmake/jq-port)
-        jq_port_dir = os.path.join(repo_root, "cmake", "jq-port")
-        if os.path.exists(jq_port_dir):
-            print("=== Testing jq (cmake/jq-port) ===")
-            jq_build_dir = os.path.join(temp_dir, "jq_build")
+    # 4. Test jq (Native MSVC / Host / OpenWatcom DOS port via cmake/jq-port)
+    jq_port_dir = os.path.join(current_awm_dir, "cmake", "jq-port")
+    if os.path.exists(jq_port_dir):
+        print("=== Testing jq (cmake/jq-port) ===")
+        jq_build_dir = tempfile.mkdtemp(prefix="jq-downstream-")
+        try:
             cmake_cmd = [
                 "cmake",
                 "-B",
@@ -183,11 +189,24 @@ def main():
                 "-S",
                 jq_port_dir,
                 "-DCMAKE_BUILD_TYPE=Release",
-                f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={repo_root}",
+                f"-DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC={current_awm_dir}",
             ]
             run_cmd(cmake_cmd)
-            run_cmd(["cmake", "--build", jq_build_dir, "--config", "Release"])
-            run_cmd(["ctest", "--test-dir", jq_build_dir, "-C", "Release", "--output-on-failure"])
+            run_cmd(
+                ["cmake", "--build", jq_build_dir, "--config", "Release", "-j", "4"]
+            )
+            run_cmd(
+                [
+                    "ctest",
+                    "--test-dir",
+                    jq_build_dir,
+                    "-C",
+                    "Release",
+                    "--output-on-failure",
+                ]
+            )
+        finally:
+            shutil.rmtree(jq_build_dir, ignore_errors=True)
 
     print("All downstream tests passed!")
 

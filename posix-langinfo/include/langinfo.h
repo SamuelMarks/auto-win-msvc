@@ -1,5 +1,26 @@
 #ifndef POSIX_LANGINFO_LANGINFO_H
+
+/* clang-format off */
+#if !defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) && \
+    !defined(__WATCOMC__) && (defined(__GNUC__) || defined(__clang__))
+#if defined(__has_include_next)
+#if __has_include_next(<langinfo.h>)
+#pragma GCC system_header
+#include_next <langinfo.h>
+#define AWM_HAS_HOST_LANGINFO 1
+#endif
+#else
+#pragma GCC system_header
+#include_next <langinfo.h>
+#define AWM_HAS_HOST_LANGINFO 1
+#endif
+#endif
+/* clang-format on */
+
+#ifndef POSIX_LANGINFO_LANGINFO_H
 #define POSIX_LANGINFO_LANGINFO_H
+
+#if !defined(AWM_HAS_HOST_LANGINFO)
 
 /**
  * @file langinfo.h
@@ -133,6 +154,8 @@ typedef int nl_item;
 #define nl_langinfo posix_langinfo
 #endif
 
+#endif /* !AWM_HAS_HOST_LANGINFO */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,3 +172,4 @@ char *posix_langinfo(nl_item item);
 #endif /* __cplusplus */
 
 #endif /* POSIX_LANGINFO_LANGINFO_H */
+#endif /* !POSIX_LANGINFO_LANGINFO_H */

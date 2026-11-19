@@ -70,14 +70,12 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    # Remove default /W3
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
     string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 ")
-    # Enable Address Sanitizer for modern MSVC (VS 2019 16.9+)
-    # if(MSVC_VERSION GREATER_EQUAL 1928)
-    #    add_compile_options(/fsanitize=address /Zi)
-    #    add_link_options(/DEBUG)
-    # endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    add_compile_options(/WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
     # Enable ASan on Unix platforms as well for testing, skip for MinGW
@@ -114,7 +112,7 @@ target_include_directories(test_posix-mman PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-mman PRIVATE posix-mman)
 
 if(MSVC)
-    target_link_libraries(posix-mman PUBLIC Advapi32)
+    target_link_libraries(posix-mman PUBLIC advapi32)
 endif()
 
 add_test(NAME test_posix-mman COMMAND test_posix-mman)

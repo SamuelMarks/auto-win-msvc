@@ -303,6 +303,30 @@ int shmget(key_t key, size_t size, int shmflg);
  */
 auto_win_msvc_error_t posix_ipc_get_info(int *out_available);
 
+#ifdef _WIN32
+/**
+ * @brief Overrides allocator hooks used by posix-ipc for OOM testing.
+ * @param[in] malloc_fn Custom malloc function, or NULL to restore default.
+ * @param[in] calloc_fn Custom calloc function, or NULL to restore default.
+ */
+void posix_ipc_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                               void *(*calloc_fn)(size_t, size_t));
+
+/**
+ * @brief Overrides Win32 synchronization and mapping hooks for branch testing.
+ * @param[in] get_file_info_fn Custom GetFileInformationByHandle hook, or NULL.
+ * @param[in] map_view_fn Custom MapViewOfFile hook, or NULL.
+ * @param[in] cmpxchg_fn Custom InterlockedCompareExchange hook, or NULL.
+ * @param[in] reset_event_fn Custom ResetEvent hook, or NULL.
+ * @param[in] wait_event_fn Custom WaitForSingleObject hook, or NULL.
+ */
+void posix_ipc_set_win32_hooks(int (*get_file_info_fn)(void *, void *),
+                               void *(*map_view_fn)(void *, unsigned long),
+                               long (*cmpxchg_fn)(volatile long *, long, long),
+                               int (*reset_event_fn)(void *),
+                               unsigned long (*wait_event_fn)(void *));
+#endif /* _WIN32 */
+
 #endif /* _WIN32 */
 
 #ifdef __cplusplus

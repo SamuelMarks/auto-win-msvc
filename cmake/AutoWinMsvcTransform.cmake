@@ -119,7 +119,8 @@ function(auto_win_msvc_transform_sources)
     set(_seen_src_abs "")
     foreach(src IN LISTS TRANSFORM_SOURCES)
         get_filename_component(src_abs "${src}" ABSOLUTE)
-        if(NOT EXISTS "${src_abs}")
+        get_source_file_property(_src_is_generated "${src_abs}" GENERATED)
+        if(NOT EXISTS "${src_abs}" AND NOT _src_is_generated)
             continue()
         endif()
         if(src_abs IN_LIST _seen_src_abs)
@@ -141,11 +142,16 @@ function(auto_win_msvc_transform_sources)
             list(APPEND _extra_transform_args "--rename-main" "${TRANSFORM_RENAME_MAIN}")
         endif()
 
-        # Transform immediately at configure time so headers/sources exist for tooling
-        execute_process(
-            COMMAND "${_python_bin}" "${_transform_script}" ${_extra_transform_args} "${src_abs}" "${out_src}"
-            RESULT_VARIABLE _res
-        )
+        # Transform immediately at configure time when source already exists on disk
+        if(EXISTS "${src_abs}")
+            execute_process(
+                COMMAND "${_python_bin}" "${_transform_script}" ${_extra_transform_args} "${src_abs}" "${out_src}"
+                RESULT_VARIABLE _res
+            )
+            if(NOT _res EQUAL 0)
+                message(FATAL_ERROR "auto_win_msvc_transform_sources failed (${_res}) for ${src_abs}")
+            endif()
+        endif()
 
         # Register build-time dependency for automated rebuilds if source changes
         add_custom_command(

@@ -63,6 +63,19 @@ extern "C" {
 #endif
 #endif
 
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN _LITTLE_ENDIAN
+#endif
+#ifndef BIG_ENDIAN
+#define BIG_ENDIAN _BIG_ENDIAN
+#endif
+#ifndef PDP_ENDIAN
+#define PDP_ENDIAN _PDP_ENDIAN
+#endif
+#ifndef BYTE_ORDER
+#define BYTE_ORDER _BYTE_ORDER
+#endif
+
 #ifndef betoh16
 /** @brief Converts 16-bit integer from big-endian to host order. */
 #if defined(be16toh)

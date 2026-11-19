@@ -67,10 +67,12 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 )
-    # Enable AddressSanitizer if supported (VS 2019 16.9+)
-    # add_compile_options(/fsanitize=address /Zi)
-            # add_link_options(/DEBUG) # Uncomment if using modern MSVC
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    add_compile_options(/WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
     add_compile_definitions(_XOPEN_SOURCE=700 _DEFAULT_SOURCE _POSIX_C_SOURCE=200809L)

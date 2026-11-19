@@ -1,5 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -38,7 +36,7 @@ static BOOL mock_QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
 
 static BOOL mock_QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount) {
   if (g_mock_QueryPerformanceCounter_ret) {
-    lpPerformanceCount->QuadPart = 1000;
+    lpPerformanceCount->QuadPart = 1500;
     return TRUE;
   }
   return FALSE;
@@ -90,7 +88,6 @@ static HANDLE mock_OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle,
 #define MACOS_MACH_MOCK_GetProcessTimes mock_GetProcessTimes
 #define MACOS_MACH_MOCK_OpenProcess mock_OpenProcess
 
-/* Rename functions so they don't conflict with libmacos-mach.a */
 #define macos_mach_init my_macos_mach_init
 #define mach_absolute_time my_mach_absolute_time
 #define task_info my_task_info
@@ -115,53 +112,75 @@ static HANDLE mock_OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle,
 #endif
 
 TEST test_macos_mach_init(void) {
-  auto_win_msvc_error_t rc;
   int status = 0;
-  (void)rc;
-  (void)status;
 
-  rc = macos_mach_init(NULL);
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, macos_mach_init(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, macos_mach_init(&status));
+  ASSERT_EQ(1, status);
 
-  rc = macos_mach_init(&status);
+#if defined(_WIN32)
+  status = 0;
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, my_macos_mach_init(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, my_macos_mach_init(&status));
+  ASSERT_EQ(1, status);
+#endif
 
   PASS();
 }
 
 TEST test_task_info(void) {
   kern_return_t ret;
-  mach_msg_type_number_t outCnt = sizeof(struct task_basic_info);
+  mach_msg_type_number_t outCnt =
+      (mach_msg_type_number_t)(sizeof(struct task_basic_info) / sizeof(int));
+  mach_msg_type_number_t smallCnt = 0;
   struct task_basic_info info;
-  (void)ret;
 
 #if defined(_WIN32)
+  /* Also call linked task_info once */
+  (void)task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
+
   g_mock_GetProcessMemoryInfo_ret = 1;
   g_mock_GetProcessTimes_ret = 1;
   ret =
       CALL_task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
+  ASSERT_EQ(KERN_SUCCESS, ret);
 
-  /* Test fallback memory info failure */
+  /* Explicit non-(-1) target_task handle branch */
+  ret = CALL_task_info((task_t)2, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
+  ASSERT_EQ(KERN_SUCCESS, ret);
+
+  /* Memory info failure */
   g_mock_GetProcessMemoryInfo_ret = 0;
   ret =
       CALL_task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
+  ASSERT_EQ(KERN_SUCCESS, ret);
 
-  /* Test fallback times failure */
+  /* Process times failure */
   g_mock_GetProcessTimes_ret = 0;
   ret =
       CALL_task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
+  ASSERT_EQ(KERN_SUCCESS, ret);
 
-  ret = CALL_task_info((task_t)-1, 1 /* TASK_THREAD_TIMES_INFO */,
-                       (task_info_t)&info, &outCnt);
+  /* Flavor != TASK_BASIC_INFO and too-small count */
+  ASSERT_EQ(-1, CALL_task_info((task_t)-1, 1, (task_info_t)&info, &outCnt));
+  ASSERT_EQ(-1, CALL_task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info,
+                               &smallCnt));
 
-  ret = CALL_task_info((task_t)0, TASK_BASIC_INFO, (task_info_t)&info, &outCnt);
-
-  ret = CALL_task_info((task_t)-1, -1, (task_info_t)&info, &outCnt);
-
+  /* All 4 validation branches: target_task==0, flavor<0, out==NULL, cnt==NULL
+   */
+  ASSERT_EQ(-1, CALL_task_info((task_t)0, TASK_BASIC_INFO, (task_info_t)&info,
+                               &outCnt));
+  ASSERT_EQ(-1, CALL_task_info((task_t)-1, -1, (task_info_t)&info, &outCnt));
+  ASSERT_EQ(-1, CALL_task_info((task_t)-1, TASK_BASIC_INFO, NULL, &outCnt));
+  ASSERT_EQ(-1, CALL_task_info((task_t)-1, TASK_BASIC_INFO, (task_info_t)&info,
+                               NULL));
 #else
-  /* UNIX Fallback tests */
-  ret = CALL_task_info(0, -1, NULL, NULL);
-
-  ret = CALL_task_info((task_t)1, 1, (task_info_t)&info, &outCnt);
-
+  (void)smallCnt;
+  (void)ret;
+#if !defined(__APPLE__)
+  (void)CALL_task_info(0, -1, NULL, NULL);
+#endif
+  (void)CALL_task_info((task_t)1, 1, (task_info_t)&info, &outCnt);
 #endif
 
   PASS();
@@ -169,29 +188,30 @@ TEST test_task_info(void) {
 
 TEST test_task_for_pid(void) {
   kern_return_t ret;
-  mach_port_t t;
-  (void)ret;
+  mach_port_t t = 0;
 
 #if defined(_WIN32)
+  (void)task_for_pid((mach_port_t)0, -1, &t);
+
   g_mock_OpenProcess_ret = (HANDLE)1;
   ret = CALL_task_for_pid((mach_port_t)-1, (int)GetCurrentProcessId(), &t);
+  ASSERT_EQ(KERN_SUCCESS, ret);
+  ASSERT(t != 0);
 
-  /* ASSERT */ (void)(t != 0);
-
-  /* Test failure branch */
+  /* OpenProcess NULL failure */
   g_mock_OpenProcess_ret = NULL;
-  ret = CALL_task_for_pid((mach_port_t)-1, (int)GetCurrentProcessId(), &t);
+  ASSERT_EQ(-1,
+            CALL_task_for_pid((mach_port_t)-1, (int)GetCurrentProcessId(), &t));
 
-  ret = CALL_task_for_pid((mach_port_t)0, -1, &t);
-
-  ret = CALL_task_for_pid((mach_port_t)-1, -1, &t);
-
+  /* Validation branches: t == NULL and target_tport == 0 */
+  ASSERT_EQ(-1, CALL_task_for_pid((mach_port_t)-1, 1, NULL));
+  ASSERT_EQ(-1, CALL_task_for_pid((mach_port_t)0, 1, &t));
 #else
-  /* UNIX Fallback */
-  ret = CALL_task_for_pid(0, -1, NULL);
-
-  ret = CALL_task_for_pid((mach_port_t)1, 1, &t);
-
+  (void)ret;
+#if !defined(__APPLE__)
+  (void)CALL_task_for_pid(0, -1, NULL);
+#endif
+  (void)CALL_task_for_pid((mach_port_t)1, 1, &t);
 #endif
 
   PASS();
@@ -201,33 +221,28 @@ TEST test_mach_task_self(void) {
   task_t t = mach_task_self();
   (void)t;
 #if defined(_WIN32)
-
-#else
-
+  ASSERT_EQ((task_t)-1, my_mach_task_self());
 #endif
   PASS();
 }
 
 TEST test_mach_absolute_time(void) {
-  uint64_t t;
+  uint64_t t = mach_absolute_time();
   (void)t;
 #if defined(_WIN32)
   g_mock_QueryPerformanceFrequency_ret = 1;
   g_mock_QueryPerformanceCounter_ret = 1;
   t = CALL_mach_absolute_time();
-  /* ASSERT */ (void)(t > 0);
+  ASSERT(t > 0);
 
-  /* Test failure branches */
   g_mock_QueryPerformanceFrequency_ret = 0;
-  t = CALL_mach_absolute_time();
+  ASSERT_EQ((uint64_t)0, CALL_mach_absolute_time());
 
   g_mock_QueryPerformanceFrequency_ret = 1;
   g_mock_QueryPerformanceCounter_ret = 0;
-  t = CALL_mach_absolute_time();
-
+  ASSERT_EQ((uint64_t)0, CALL_mach_absolute_time());
 #else
-  t = CALL_mach_absolute_time();
-
+  (void)CALL_mach_absolute_time();
 #endif
   PASS();
 }

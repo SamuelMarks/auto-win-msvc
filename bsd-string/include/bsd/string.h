@@ -9,6 +9,9 @@
 
 #include <sys/types.h>
 #include <stddef.h>
+#if defined(__GLIBC__)
+#include <string.h>
+#endif
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
 #endif
@@ -30,7 +33,7 @@ typedef unsigned short mode_t;
 
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) || \
     defined(__MSDOS__) || defined(__WATCOMC__) || defined(__linux__) || \
-    defined(__CYGWIN__)
+    defined(__CYGWIN__) || defined(__APPLE__)
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
     !defined(__NetBSD__)
@@ -41,6 +44,7 @@ typedef unsigned short mode_t;
  * @param[in] size Size of destination buffer.
  * @return Total length of the string tried to create (strlen(src)).
  */
+#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 38)))
 size_t strlcpy(char *dst, const char *src, size_t size);
 
 /**
@@ -51,6 +55,7 @@ size_t strlcpy(char *dst, const char *src, size_t size);
  * @return Total length of the string tried to create.
  */
 size_t strlcat(char *dst, const char *src, size_t size);
+#endif
 
 /**
  * @brief Locate a substring in a length-limited string.
@@ -68,21 +73,17 @@ char *strnstr(const char *big, const char *little, size_t len);
  */
 void strmode(int mode, char *p);
 
+#endif /* !__APPLE__ && !__FreeBSD__ && !__OpenBSD__ && !__NetBSD__ */
+
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 /**
  * @brief Zero a memory buffer without being optimized away by the compiler.
  * @param[out] buf Buffer to zero.
  * @param[in] len Number of bytes to zero.
  */
+#if !(defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25)))
 void explicit_bzero(void *buf, size_t len);
-
-/**
- * @brief Constant-time memory comparison (BSD bcmp semantics).
- * @param[in] b1 First buffer.
- * @param[in] b2 Second buffer.
- * @param[in] n Number of bytes to compare.
- * @return 0 if equal, non-zero otherwise.
- */
-int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
+#endif
 
 /**
  * @brief Constant-time lexicographical memory comparison.
@@ -92,6 +93,19 @@ int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
  * @return <0, 0, or >0.
  */
 int timingsafe_memcmp(const void *b1, const void *b2, size_t n);
+#endif
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
+    !defined(__NetBSD__)
+
+/**
+ * @brief Constant-time memory comparison (BSD bcmp semantics).
+ * @param[in] b1 First buffer.
+ * @param[in] b2 Second buffer.
+ * @param[in] n Number of bytes to compare.
+ * @return 0 if equal, non-zero otherwise.
+ */
+int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
 
 /**
  * @brief Convert file flags bitmask into a comma-separated string.

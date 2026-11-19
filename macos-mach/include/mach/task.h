@@ -3,11 +3,16 @@
 
 /**
  * @file mach/task.h
- * @brief Forwarding compatibility header to mach/mach.h.
+ * @brief Polyfill for macOS <mach/task.h>.
  */
 
 /* clang-format off */
+#if defined(__APPLE__) && (defined(__GNUC__) || defined(__clang__))
+#pragma GCC system_header
+#include_next <mach/task.h>
+#else
 #include "mach.h"
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus

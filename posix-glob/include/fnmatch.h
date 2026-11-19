@@ -27,6 +27,16 @@
 extern "C" {
 #endif
 
+#ifndef FNM_LEADING_DIR
+#define FNM_LEADING_DIR 0x08
+#endif
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD 0x10
+#endif
+#ifndef FNM_IGNORECASE
+#define FNM_IGNORECASE FNM_CASEFOLD
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

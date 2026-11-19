@@ -136,6 +136,13 @@ extern "C" {
        (var) && ((tvar) = SLIST_NEXT((var), field), 1); (var) = (tvar))
 #endif
 
+#ifndef SLIST_FOREACH_PREVPTR
+#define SLIST_FOREACH_PREVPTR(var, varp, head, field) \
+  for ((varp) = &SLIST_FIRST((head)); \
+       ((var) = *(varp)) != NULL; \
+       (varp) = &SLIST_NEXT((var), field))
+#endif
+
 #ifndef SLIST_SWAP
 #define SLIST_SWAP(head1, head2, type) \
   do { \
@@ -447,6 +454,10 @@ extern "C" {
 /*
  * Tail queue definitions.
  */
+#if defined(__GLIBC__) && defined(__STRICT_ANSI__)
+#undef TAILQ_HEAD
+#undef TAILQ_ENTRY
+#endif
 #ifndef TAILQ_HEAD
 #define TAILQ_HEAD(name, type) \
   struct name { \

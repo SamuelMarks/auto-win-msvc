@@ -14,6 +14,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#ifndef WINAPI
+#if defined(_M_IX86) || defined(__i386__)
+#define WINAPI __stdcall
+#else
+#define WINAPI
+#endif
+#endif
 #include <psapi.h>
 #include <stdio.h>
 #else
@@ -25,8 +32,19 @@
 #undef getrlimit
 #undef setrlimit
 
+#if defined(_MSC_VER) || defined(_WIN32)
+#ifndef POSIX_SYS_RESOURCE_MOCK_GetProcessTimes
+#define POSIX_SYS_RESOURCE_MOCK_GetProcessTimes GetProcessTimes
+#endif
+#ifndef POSIX_SYS_RESOURCE_MOCK_GetProcessMemoryInfo
+#define POSIX_SYS_RESOURCE_MOCK_GetProcessMemoryInfo GetProcessMemoryInfo
+#endif
+#endif
+
 /**
  * @brief Retrieves information on posix-sys-resource availability.
+ * @param[out] out_available Pointer receiving availability status (1).
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on NULL pointer.
  */
 auto_win_msvc_error_t posix_sys_resource_get_info(int *out_available) {
   if (out_available == NULL) {
@@ -38,6 +56,12 @@ auto_win_msvc_error_t posix_sys_resource_get_info(int *out_available) {
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+/**
+ * @brief Retrieves resource usage metrics for the calling process on Windows.
+ * @param who Target selector (must be RUSAGE_SELF).
+ * @param[out] usage Destination rusage structure.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_getrusage(int who, struct rusage *usage) {
   FILETIME creation_time;
   FILETIME exit_time;
@@ -57,8 +81,9 @@ int posix_getrusage(int who, struct rusage *usage) {
 
   memset(usage, 0, sizeof(struct rusage));
 
-  if (GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time,
-                      &kernel_time, &user_time)) {
+  if (POSIX_SYS_RESOURCE_MOCK_GetProcessTimes(GetCurrentProcess(),
+                                              &creation_time, &exit_time,
+                                              &kernel_time, &user_time)) {
     ULARGE_INTEGER kernel;
     ULARGE_INTEGER user;
     kernel.LowPart = kernel_time.dwLowDateTime;
@@ -73,7 +98,8 @@ int posix_getrusage(int who, struct rusage *usage) {
     usage->ru_stime.tv_usec = (long)((kernel.QuadPart % 10000000) / 10);
   }
 
-  if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+  if (POSIX_SYS_RESOURCE_MOCK_GetProcessMemoryInfo(GetCurrentProcess(), &pmc,
+                                                   sizeof(pmc))) {
     usage->ru_maxrss = (long)(pmc.PeakWorkingSetSize / 1024);
     usage->ru_majflt = (long)pmc.PageFaultCount;
   }
@@ -81,6 +107,12 @@ int posix_getrusage(int who, struct rusage *usage) {
   return 0;
 }
 
+/**
+ * @brief Queries soft and hard resource limits on Windows.
+ * @param resource Resource identifier (e.g., RLIMIT_NOFILE).
+ * @param[out] rlp Destination rlimit structure.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_getrlimit(int resource, struct rlimit *rlp) {
   if (rlp == NULL) {
     errno = EFAULT;
@@ -88,7 +120,7 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
   }
 
   if (resource == RLIMIT_NOFILE) {
-    rlp->rlim_cur = _getmaxstdio();
+    rlp->rlim_cur = (rlim_t)_getmaxstdio();
     rlp->rlim_max = 8192;
     return 0;
   }
@@ -98,6 +130,12 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
   return 0;
 }
 
+/**
+ * @brief Configures soft and hard resource limits on Windows.
+ * @param resource Resource identifier (e.g., RLIMIT_NOFILE).
+ * @param rlp New resource limit values.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_setrlimit(int resource, const struct rlimit *rlp) {
   if (rlp == NULL) {
     errno = EFAULT;
@@ -118,6 +156,12 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
 
 #else
 
+/**
+ * @brief Retrieves resource usage metrics on POSIX hosts.
+ * @param who Target selector.
+ * @param[out] usage Destination rusage structure.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_getrusage(int who, struct rusage *usage) {
   if (usage == NULL) {
     errno = EFAULT;
@@ -136,6 +180,12 @@ int posix_getrusage(int who, struct rusage *usage) {
 #endif
 }
 
+/**
+ * @brief Queries soft and hard resource limits on POSIX hosts.
+ * @param resource Resource identifier.
+ * @param[out] rlp Destination rlimit structure.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_getrlimit(int resource, struct rlimit *rlp) {
   if (rlp == NULL) {
     errno = EFAULT;
@@ -155,6 +205,12 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
 #endif
 }
 
+/**
+ * @brief Configures soft and hard resource limits on POSIX hosts.
+ * @param resource Resource identifier.
+ * @param rlp New resource limit values.
+ * @return 0 on success, or -1 on error with errno set.
+ */
 int posix_setrlimit(int resource, const struct rlimit *rlp) {
   if (rlp == NULL) {
     errno = EFAULT;

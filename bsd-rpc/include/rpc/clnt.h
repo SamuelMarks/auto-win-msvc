@@ -18,6 +18,14 @@
 extern "C" {
 #endif
 
+#define CLSET_TIMEOUT 1
+#define CLGET_TIMEOUT 2
+#define CLGET_SERVER_ADDR 3
+#define CLGET_FD 6
+#define CLGET_SVC_ADDR 7
+#define CLSET_FD_CLOSE 8
+#define CLSET_FD_NCLOSE 9
+
 enum clnt_stat {
   RPC_SUCCESS = 0,
   RPC_CANTENCODEARGS = 1,
@@ -40,11 +48,24 @@ enum clnt_stat {
 };
 
 #define RPC_ANYSOCK -1
+#define RPC_ANYFD RPC_ANYSOCK
 
 struct rpc_err {
   enum clnt_stat re_status;
   int re_errno;
+  struct {
+    rpcvers_t low;
+    rpcvers_t high;
+  } re_vers;
 };
+
+struct netconfig;
+
+struct rpc_createerr {
+  enum clnt_stat cf_stat;
+  struct rpc_err cf_error;
+};
+extern struct rpc_createerr rpc_createerr;
 
 typedef struct __rpc_client CLIENT;
 
@@ -77,6 +98,19 @@ CLIENT *clnt_create(const char *hostname, rpcprog_t prog, rpcvers_t vers,
                     const char *proto);
 CLIENT *clnt_tp_create(const char *hostname, rpcprog_t prog, rpcvers_t vers,
                        const struct netconfig *nconf);
+CLIENT *clnt_tli_create(int fd, const struct netconfig *nconf,
+                        struct netbuf *bindaddr, rpcprog_t prog, rpcvers_t vers,
+                        u_int sendsz, u_int recvsz);
+CLIENT *clnt_vc_create(int fd, const struct netbuf *raddr, rpcprog_t prog,
+                       rpcvers_t vers, u_int sendsz, u_int recvsz);
+CLIENT *clnt_dg_create(int fd, const struct netbuf *svcaddr, rpcprog_t program,
+                       rpcvers_t version, u_int sendsz, u_int recvsz);
+CLIENT *clnt_raw_create(rpcprog_t prog, rpcvers_t vers);
+bool_t rpcb_unset(rpcprog_t program, rpcvers_t version,
+                  const struct netconfig *nconf);
+struct netbuf *rpcb_getaddr(rpcprog_t program, rpcvers_t version,
+                            const struct netconfig *nconf,
+                            struct sockaddr *address, const char *host);
 CLIENT *clntudp_create(struct sockaddr_in *raddr, u_long program,
                        u_long version, struct timeval wait, int *sockp);
 CLIENT *clnttcp_create(struct sockaddr_in *raddr, u_long prog, u_long vers,
@@ -96,6 +130,12 @@ int callrpc(const char *host, int prognum, int versnum, int procnum,
   ((*(rh)->cl_ops->cl_freeres)(rh, xres, resp))
 #define clnt_destroy(rh) ((*(rh)->cl_ops->cl_destroy)(rh))
 #define clnt_control(cl, rq, in) ((*(cl)->cl_ops->cl_control)(cl, rq, in))
+#define clnt_geterr(rh, errp) ((*(rh)->cl_ops->cl_geterr)(rh, errp))
+#define CLNT_CALL clnt_call
+#define CLNT_FREERES clnt_freeres
+#define CLNT_DESTROY clnt_destroy
+#define CLNT_CONTROL clnt_control
+#define CLNT_GETERR clnt_geterr
 
 #ifdef __cplusplus
 }

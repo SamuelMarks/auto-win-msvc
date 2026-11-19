@@ -81,6 +81,10 @@ int strsvisx(char *dst, const char *src, size_t len, int flag,
  * dst. */
 int strsnvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
               const char *extra);
+/** @brief Visually encode a fixed-length buffer with extra chars and error ptr.
+ */
+int strsenvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
+               const char *extra, int *cerr_ptr);
 
 /** @brief Decode a visual representation of a character step-by-step. */
 int unvis(char *cp, int c, int *astate, int flag);

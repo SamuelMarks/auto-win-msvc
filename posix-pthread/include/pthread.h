@@ -1,9 +1,16 @@
-#if defined(__GNUC__)
-#endif
-#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
-    !defined(__DOS__)
-#if defined(__GNUC__) || defined(__clang__)
+/* pthread.h - Strict C89 Header */
+#ifndef AUTO_WIN_MSVC_PTHREAD_SHIM_H
+#define AUTO_WIN_MSVC_PTHREAD_SHIM_H
+
+/**
+ * @file pthread.h
+ * @brief POSIX <pthread.h> passthrough on Unix and portable polyfill on
+ * Windows/DOS.
+ */
+
 /* clang-format off */
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <pthread.h>
 #else
@@ -11,6 +18,7 @@
 #endif
 #else
 #include "posix-pthread.h"
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -21,7 +29,7 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif
+#endif /* AUTO_WIN_MSVC_PTHREAD_SHIM_H */
 
 /* API Contract symbols: pthread_atfork, pthread_attr_destroy,
  * pthread_attr_getdetachstate, pthread_attr_init, pthread_attr_setdetachstate,

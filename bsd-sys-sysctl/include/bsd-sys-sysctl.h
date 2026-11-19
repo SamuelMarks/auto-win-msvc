@@ -207,6 +207,27 @@ auto_win_msvc_error_t bsd_sys_sysctl_get_ncpu(int *out_ncpu);
 #ifndef KERN_PROC_PATHNAME
 #define KERN_PROC_PATHNAME 12
 #endif
+#ifndef KERN_PROC_PROC
+#define KERN_PROC_PROC 8
+#endif
+#ifndef KERN_PROC_SV_NAME
+#define KERN_PROC_SV_NAME 9
+#endif
+#ifndef KERN_PROC_ENV
+#define KERN_PROC_ENV 10
+#endif
+#ifndef KERN_PROC_AUXV
+#define KERN_PROC_AUXV 11
+#endif
+#ifndef KERN_PROC_GROUPS
+#define KERN_PROC_GROUPS 14
+#endif
+#ifndef KERN_PROC_VMMAP
+#define KERN_PROC_VMMAP 32
+#endif
+#ifndef KERN_PROC_FILEDESC
+#define KERN_PROC_FILEDESC 33
+#endif
 #ifndef KERN_PROC_INC_THREAD
 #define KERN_PROC_INC_THREAD 0x10
 #endif

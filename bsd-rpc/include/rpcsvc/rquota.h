@@ -16,12 +16,19 @@ extern "C" {
 
 #define RQUOTAPROG 100011UL
 #define RQUOTAVERS 1UL
+#define EXT_RQUOTAVERS 2UL
 #define RQUOTAPROC_GETQUOTA 1UL
 #define RQUOTAPROC_GETACTIVEQUOTA 2UL
 
 struct getquota_args {
   char *gqa_pathp;
   int gqa_uid;
+};
+
+struct ext_getquota_args {
+  char *gqa_pathp;
+  int gqa_type;
+  int gqa_id;
 };
 
 struct rquota {
@@ -47,6 +54,7 @@ struct getquota_rslt {
 };
 
 bool_t xdr_getquota_args(XDR *xdrs, struct getquota_args *objp);
+bool_t xdr_ext_getquota_args(XDR *xdrs, struct ext_getquota_args *objp);
 bool_t xdr_getquota_rslt(XDR *xdrs, struct getquota_rslt *objp);
 
 #ifdef __cplusplus

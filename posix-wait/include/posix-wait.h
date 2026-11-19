@@ -99,9 +99,15 @@ typedef struct {
 #define WCONTINUED 8
 
 /* Macros for waitid */
+#ifndef WEXITED
 #define WEXITED 4
+#endif
+#ifndef WSTOPPED
 #define WSTOPPED 2
+#endif
+#ifndef WNOWAIT
 #define WNOWAIT 0x01000000
+#endif
 
 /* POSIX wait status macros */
 #define WIFEXITED(status) (((status) & 0x7F) == 0)

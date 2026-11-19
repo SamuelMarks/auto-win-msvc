@@ -27,6 +27,8 @@
 /* clang-format on */
 
 extern int dummy_posix_sockets(void);
+extern int posix_getifaddrs(struct ifaddrs **ifap);
+extern void posix_freeifaddrs(struct ifaddrs *ifa);
 
 TEST test_posix_sockets_get_info(void) {
   int info = 0;
@@ -114,11 +116,9 @@ TEST test_posix_gethostbyaddr(void) {
 }
 
 TEST test_posix_gethostbyname(void) {
-#if !defined(_WIN32)
   struct hostent *he = posix_gethostbyname("localhost");
   /* Localhost might resolve, so we shouldn't assert NULL here rigidly */
   (void)he;
-#endif
   PASS();
 }
 
@@ -133,25 +133,19 @@ TEST test_posix_getnameinfo(void) {
   struct sockaddr sa = {0};
   char node[1] = {0};
   char service[1] = {0};
-  int rc = posix_getnameinfo(&sa, 1, node, 1, service, 1, 1);
-  /* ASSERT_EQ(-1, rc); */
-  rc = posix_getnameinfo(NULL, 1, node, 1, service, 1, 1);
-  /* ASSERT_EQ(-1, rc); */
-  (void)rc;
+  ASSERT_EQ(-1, posix_getnameinfo(&sa, 1, node, 1, service, 1, 1));
+  ASSERT_EQ(-1, posix_getnameinfo(NULL, 1, node, 1, service, 1, 1));
+  ASSERT_EQ(-1, posix_getnameinfo(&sa, 1, NULL, 1, service, 1, 1));
+  ASSERT_EQ(-1, posix_getnameinfo(&sa, 1, node, 1, NULL, 1, 1));
   PASS();
 }
 
 TEST test_posix_ifaddrs(void) {
   struct ifaddrs *ifa = NULL;
-  int rc = getifaddrs(&ifa);
-  /* Allow either success or failure */
-  (void)rc;
-
-  if (rc == 0) {
-    if (ifa != NULL) {
-      freeifaddrs(ifa);
-    }
-  }
+  ASSERT_EQ(-1, posix_getifaddrs(NULL));
+  ASSERT_EQ(-1, posix_getifaddrs(&ifa));
+  ASSERT(ifa == NULL);
+  posix_freeifaddrs(NULL);
   PASS();
 }
 
@@ -252,15 +246,15 @@ TEST test_posix_pselect(void) {
   fd_set rfds, wfds, efds;
   struct timespec ts = {0};
   int sigmask = 0;
-  int rc;
   FD_ZERO(&rfds);
   FD_ZERO(&wfds);
   FD_ZERO(&efds);
-  rc = posix_pselect(1, &rfds, &wfds, &efds, &ts, &sigmask);
-  /* ASSERT_EQ(-1, rc); */
-  rc = posix_pselect(1, NULL, NULL, NULL, NULL, NULL);
-  /* ASSERT_EQ(-1, rc); */
-  (void)rc;
+  ASSERT_EQ(-1, posix_pselect(1, &rfds, &wfds, &efds, &ts, &sigmask));
+  ASSERT_EQ(-1, posix_pselect(1, NULL, &wfds, &efds, &ts, &sigmask));
+  ASSERT_EQ(-1, posix_pselect(1, &rfds, NULL, &efds, &ts, &sigmask));
+  ASSERT_EQ(-1, posix_pselect(1, &rfds, &wfds, NULL, &ts, &sigmask));
+  ASSERT_EQ(-1, posix_pselect(1, &rfds, &wfds, &efds, NULL, &sigmask));
+  ASSERT_EQ(-1, posix_pselect(1, &rfds, &wfds, &efds, &ts, NULL));
   PASS();
 }
 

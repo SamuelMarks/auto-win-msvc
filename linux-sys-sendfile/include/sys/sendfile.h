@@ -33,7 +33,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t *offset, size_t count);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* SYS_SENDFILE_H_ */
 /* clang-format on */

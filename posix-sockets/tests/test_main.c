@@ -1,5 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
 /* clang-format on */
@@ -11,6 +9,7 @@ SUITE_EXTERN(suite_posix_sockets_io);
 SUITE_EXTERN(suite_posix_sockets_sendmsg);
 SUITE_EXTERN(suite_posix_sockets_recvmsg);
 SUITE_EXTERN(suite_posix_sockets_no_macros);
+SUITE_EXTERN(suite_posix_sockets_win32_coverage);
 
 GREATEST_MAIN_DEFS();
 
@@ -23,5 +22,6 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_posix_sockets_sendmsg);
   RUN_SUITE(suite_posix_sockets_recvmsg);
   RUN_SUITE(suite_posix_sockets_no_macros);
+  RUN_SUITE(suite_posix_sockets_win32_coverage);
   GREATEST_MAIN_END();
 }

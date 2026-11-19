@@ -1,4 +1,6 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__) ||          \
+    defined(__linux__) || defined(__CYGWIN__)
 /* clang-format off */
 #include "bsd-sys-event.h"
 #include <errno.h>

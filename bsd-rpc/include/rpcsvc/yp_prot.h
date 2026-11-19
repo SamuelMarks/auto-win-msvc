@@ -29,13 +29,25 @@ extern "C" {
 #define YPPROC_ORDER 10UL
 #define YPPROC_MAPLIST 11UL
 
+#define YPBINDPROG 100007UL
+#define YPBINDVERS 2UL
+#define YPBINDPROC_DOMAIN 2UL
+#define YPBIND_SUCC_VAL 1
+#define YPBIND_FAIL_VAL 2
+
+#define YP_FALSE 0
+#define YP_TRUE 1
+#define YP_NOMORE 2
+
 #define YPMAXRECORD 1024
 #define YPMAXDOMAIN 64
 #define YPMAXMAP 64
 #define YPMAXPEER 256
 
 struct ypmaplist {
+  char *map;
   char ypml_name[YPMAXMAP + 1];
+  struct ypmaplist *next;
   struct ypmaplist *ypml_next;
 };
 
@@ -43,6 +55,48 @@ struct ypresp_maplist {
   unsigned int status;
   struct ypmaplist *list;
 };
+
+struct ypbind_binding {
+  struct in_addr ypbind_binding_addr;
+  unsigned short ypbind_binding_port;
+};
+
+struct ypbind_resp {
+  int ypbind_status;
+  union {
+    int ypbind_error;
+    struct ypbind_binding ypbind_bindinfo;
+  } ypbind_resp_u;
+};
+
+struct keydat_t {
+  unsigned int keydat_len;
+  char *keydat_val;
+};
+
+struct valdat_t {
+  unsigned int valdat_len;
+  char *valdat_val;
+};
+
+struct ypreq_key {
+  char *domain;
+  char *map;
+  struct keydat_t key;
+  struct keydat_t keydat;
+};
+
+struct ypresp_val {
+  int status;
+  int stat;
+  struct valdat_t val;
+  struct valdat_t valdat;
+};
+
+bool_t xdr_domainname(XDR *xdrs, char **objp);
+bool_t xdr_ypbind_resp(XDR *xdrs, struct ypbind_resp *objp);
+bool_t xdr_ypreq_key(XDR *xdrs, struct ypreq_key *objp);
+bool_t xdr_ypresp_val(XDR *xdrs, struct ypresp_val *objp);
 
 #ifdef __cplusplus
 }

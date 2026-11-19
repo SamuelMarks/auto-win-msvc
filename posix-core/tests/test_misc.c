@@ -118,9 +118,7 @@ TEST test_getgroups(void) {
   int rc;
   (void)rc;
   rc = getgroups(0, NULL);
-  if (rc > 0 && rc <= 64) {
-    rc = getgroups(64, grps);
-  } else if (rc == 0) {
+  if (rc >= 0 && rc <= 64) {
     rc = getgroups(64, grps);
   }
 

@@ -1,8 +1,3 @@
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* posix-termios.h - Strict C89 Header */
 /**
  * @file posix-termios.h
@@ -19,6 +14,10 @@ extern "C" {
 #include <sys/types.h>
 #endif
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Retrieves information on posix-termios module availability.

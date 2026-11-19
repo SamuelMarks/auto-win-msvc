@@ -6,7 +6,11 @@
 #endif
 
 #include <sys/types.h>
+#if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST) && _MSC_VER < 1600
+#include "posix-stdint.h"
+#else
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +23,7 @@ int eventfd(unsigned int initval, int flags);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* SYS_EVENTFD_H_ */
 /* clang-format on */

@@ -215,6 +215,46 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize,
  */
 void setpwent(void);
 
+#if defined(_WIN32)
+/**
+ * @brief Hook table for deterministic Win32 and OOM testing in posix-pwdgrp.
+ */
+struct posix_pwdgrp_win32_hooks {
+  void *(*malloc_fn)(size_t sz);     /**< Heap allocator hook. */
+  int (*is_valid_sid_fn)(void *sid); /**< IsValidSid hook. */
+  unsigned char *(*sid_sub_auth_count_fn)(
+      void *sid); /**< GetSidSubAuthorityCount hook. */
+  unsigned long *(*sid_sub_auth_fn)(
+      void *sid, unsigned long idx); /**< GetSidSubAuthority hook. */
+  int (*lookup_account_fn)(const char *name, void *sid, unsigned long *cb_sid,
+                           char *dom, unsigned long *cb_dom,
+                           int *pe_use);    /**< LookupAccountNameA hook. */
+  unsigned long (*get_last_error_fn)(void); /**< GetLastError hook. */
+  int (*wide_to_utf8_fn)(const unsigned short *wstr, char *out,
+                         int out_sz); /**< WideCharToMultiByte hook. */
+  int (*utf8_to_wide_fn)(const char *str, unsigned short *out,
+                         int out_sz); /**< MultiByteToWideChar hook. */
+  unsigned long (*net_group_enum_fn)(
+      unsigned char **buf, unsigned long *entries_read,
+      unsigned long *total_entries,
+      size_t *resume); /**< NetLocalGroupEnum hook. */
+  unsigned long (*net_user_enum_fn)(unsigned char **buf,
+                                    unsigned long *entries_read,
+                                    unsigned long *total_entries,
+                                    size_t *resume); /**< NetUserEnum hook. */
+  unsigned long (*net_user_get_info_fn)(
+      const unsigned short *wname,
+      unsigned char **buf);                    /**< NetUserGetInfo hook. */
+  unsigned long (*net_buf_free_fn)(void *buf); /**< NetApiBufferFree hook. */
+};
+
+/**
+ * @brief Installs or resets Win32 and allocator hooks for posix-pwdgrp tests.
+ * @param[in] hooks Pointer to hook table, or NULL to restore real Win32 APIs.
+ */
+void posix_pwdgrp_set_win32_hooks(const struct posix_pwdgrp_win32_hooks *hooks);
+#endif
+
 #else /* !_WIN32 */
 
 #if !defined(__USE_MISC) && !defined(__USE_XOPEN)
@@ -251,14 +291,6 @@ extern int getpwnam_r(const char *name, struct passwd *pwd, char *buf,
 const char *user_from_uid(uid_t uid, int nouser);
 
 /**
- * @brief Look up UID for a given user name.
- * @param[in] name User name.
- * @param[out] uid Pointer receiving UID.
- * @return 0 on success, -1 if not found.
- */
-int uid_from_user(const char *name, uid_t *uid);
-
-/**
  * @brief Return group name for a given GID.
  * @param[in] gid Group ID.
  * @param[in] nogroup If non-zero, return NULL if GID is unknown, otherwise
@@ -266,14 +298,6 @@ int uid_from_user(const char *name, uid_t *uid);
  * @return Group name string or NULL.
  */
 const char *group_from_gid(gid_t gid, int nogroup);
-
-/**
- * @brief Look up GID for a given group name.
- * @param[in] name Group name.
- * @param[out] gid Pointer receiving GID.
- * @return 0 on success, -1 if not found.
- */
-int gid_from_group(const char *name, gid_t *gid);
 
 /**
  * @brief Rewind password database and optionally keep open.
@@ -288,6 +312,24 @@ int setpassent(int stayopen);
  * @return Always 1.
  */
 int setgroupent(int stayopen);
+#endif
+
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+/**
+ * @brief Look up UID for a given user name.
+ * @param[in] name User name.
+ * @param[out] uid Pointer receiving UID.
+ * @return 0 on success, -1 if not found.
+ */
+int uid_from_user(const char *name, uid_t *uid);
+
+/**
+ * @brief Look up GID for a given group name.
+ * @param[in] name Group name.
+ * @param[out] gid Pointer receiving GID.
+ * @return 0 on success, -1 if not found.
+ */
+int gid_from_group(const char *name, gid_t *gid);
 
 /**
  * @brief Register custom user database lookup callbacks.

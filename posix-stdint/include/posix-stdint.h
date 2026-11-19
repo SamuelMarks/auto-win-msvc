@@ -21,6 +21,10 @@
 #ifndef POSIX_STDINT_H
 #define POSIX_STDINT_H
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC system_header
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -265,7 +269,7 @@ typedef uint64_t uintmax_t;
 #define INT64_MIN (-9223372036854775807L - 1L)
 #else
 /** @brief Minimum value of signed 64-bit integer. */
-#define INT64_MIN (__extension__(-9223372036854775807LL - 1))
+#define INT64_MIN (-9223372036854775807LL - 1)
 #endif
 #endif
 
@@ -278,7 +282,7 @@ typedef uint64_t uintmax_t;
 #define INT64_MAX 9223372036854775807L
 #else
 /** @brief Maximum value of signed 64-bit integer. */
-#define INT64_MAX (__extension__ 9223372036854775807LL)
+#define INT64_MAX 9223372036854775807LL
 #endif
 #endif
 
@@ -291,7 +295,7 @@ typedef uint64_t uintmax_t;
 #define UINT64_MAX 0xffffffffffffffffUL
 #else
 /** @brief Maximum value of unsigned 64-bit integer. */
-#define UINT64_MAX (__extension__ 0xffffffffffffffffULL)
+#define UINT64_MAX 0xffffffffffffffffULL
 #endif
 #endif
 

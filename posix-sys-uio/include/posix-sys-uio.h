@@ -4,23 +4,25 @@
 
 /**
  * @file posix-sys-uio.h
- * @brief POSIX sys/uio.h implementation for MSVC
+ * @brief POSIX sys/uio.h implementation for MSVC and Windows.
  *
- * This header provides the POSIX readv and writev functions
- * mapped to WSASend and _write system calls.
+ * Provides scatter/gather I/O functions (readv, writev, preadv, pwritev)
+ * mapped to WSARecv/WSASend and CRT file I/O on Windows, and native sys/uio.h
+ * on POSIX systems.
  */
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(_WIN32)
-#include <stddef.h> /* size_t */
+#include <stddef.h>
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
-#include <stddef.h> /* size_t */
+#include <stddef.h>
 #else
+#include <sys/types.h>
 #include <sys/uio.h>
 #endif
 
-#if !defined(_MSC_VER)
+#if !defined(_MSC_VER) && (defined(_WIN32) || defined(__MSDOS__) || defined(__WATCOMC__))
 #include <sys/types.h>
 #endif
 /* clang-format on */
@@ -39,8 +41,10 @@ extern "C" {
 auto_win_msvc_error_t posix_sys_uio_get_info(int *out_available);
 
 #if defined(_MSC_VER)
+/** @brief 64-bit file offset type for preadv/pwritev on MSVC. */
 typedef __int64 posix_uio_off_t;
 #else
+/** @brief Platform file offset type for preadv/pwritev. */
 typedef off_t posix_uio_off_t;
 #endif
 
@@ -55,8 +59,8 @@ typedef off_t posix_uio_off_t;
  * @brief Vector structure for scatter/gather I/O operations.
  */
 struct iovec {
-  void *iov_base; /**< Base address */
-  size_t iov_len; /**< Length in bytes */
+  void *iov_base; /**< Base address of buffer */
+  size_t iov_len; /**< Length of buffer in bytes */
 };
 #endif
 #endif
@@ -68,77 +72,66 @@ struct iovec {
 #define IOV_MAX 1024
 #endif
 
+#ifndef readv
+/** @brief Alias readv to posix_readv on Windows/DOS. */
+#define readv posix_readv
+#endif
+#ifndef writev
+/** @brief Alias writev to posix_writev on Windows/DOS. */
+#define writev posix_writev
+#endif
+#ifndef preadv
+/** @brief Alias preadv to posix_preadv on Windows/DOS. */
+#define preadv posix_preadv
+#endif
+#ifndef pwritev
+/** @brief Alias pwritev to posix_pwritev on Windows/DOS. */
+#define pwritev posix_pwritev
+#endif
+
+#endif /* defined(_MSC_VER) || defined(_WIN32) */
+
+struct iovec;
+
 /**
  * @brief Reads data into multiple buffers.
- *
- * @param fd The file descriptor/socket to read from.
- * @param iov A pointer to an array of iovec structures.
- * @param iovcnt The number of elements in the iov array.
- * @return On success, the total bytes read. On error, -1 with errno set
- * appropriately.
+ * @param[in] fd File descriptor or socket handle to read from.
+ * @param[in] iov Pointer to an array of iovec structures.
+ * @param[in] iovcnt Number of elements in the iov array.
+ * @return Total bytes read on success, or -1 on error with errno set.
  */
 long posix_readv(int fd, const struct iovec *iov, int iovcnt);
 
 /**
  * @brief Writes data from multiple buffers.
- *
- * @param fd The file descriptor/socket to write to.
- * @param iov A pointer to an array of iovec structures.
- * @param iovcnt The number of elements in the iov array.
- * @return On success, the total bytes written. On error, -1 with errno set
- * appropriately.
+ * @param[in] fd File descriptor or socket handle to write to.
+ * @param[in] iov Pointer to an array of iovec structures.
+ * @param[in] iovcnt Number of elements in the iov array.
+ * @return Total bytes written on success, or -1 on error with errno set.
  */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt);
 
 /**
  * @brief Reads data into multiple buffers at a specified file offset.
- *
- * @param fd The file descriptor to read from.
- * @param iov A pointer to an array of iovec structures.
- * @param iovcnt The number of elements in the iov array.
- * @param offset The 64-bit file offset to read from.
- * @return On success, the total bytes read. On error, -1 with errno set
- * appropriately.
+ * @param[in] fd File descriptor to read from.
+ * @param[in] iov Pointer to an array of iovec structures.
+ * @param[in] iovcnt Number of elements in the iov array.
+ * @param[in] offset File offset at which to read.
+ * @return Total bytes read on success, or -1 on error with errno set.
  */
 long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
                   posix_uio_off_t offset);
 
 /**
  * @brief Writes data from multiple buffers at a specified file offset.
- *
- * @param fd The file descriptor to write to.
- * @param iov A pointer to an array of iovec structures.
- * @param iovcnt The number of elements in the iov array.
- * @param offset The 64-bit file offset to write to.
- * @return On success, the total bytes written. On error, -1 with errno set
- * appropriately.
+ * @param[in] fd File descriptor to write to.
+ * @param[in] iov Pointer to an array of iovec structures.
+ * @param[in] iovcnt Number of elements in the iov array.
+ * @param[in] offset File offset at which to write.
+ * @return Total bytes written on success, or -1 on error with errno set.
  */
 long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
                    posix_uio_off_t offset);
-
-#ifndef readv
-#define readv posix_readv
-#endif
-#ifndef writev
-#define writev posix_writev
-#endif
-#ifndef preadv
-#define preadv posix_preadv
-#endif
-#ifndef pwritev
-#define pwritev posix_pwritev
-#endif
-
-#else
-
-long posix_readv(int fd, const struct iovec *iov, int iovcnt);
-long posix_writev(int fd, const struct iovec *iov, int iovcnt);
-long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
-                  posix_uio_off_t offset);
-long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
-                   posix_uio_off_t offset);
-
-#endif /* defined(_MSC_VER) || defined(_WIN32) */
 
 #ifdef __cplusplus
 }

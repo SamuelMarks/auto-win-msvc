@@ -28,7 +28,8 @@
 #include <crtdbg.h>
 #endif
 #endif
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
+#include <io.h>
 #include <sys/types.h>
 #elif defined(__CYGWIN__)
 #endif
@@ -247,6 +248,147 @@ __extension__ typedef unsigned long long posix_mman_uint64_t;
 typedef unsigned long long posix_mman_uint64_t;
 #endif
 
+static void default_mman_sysinfo(WIN_SYSTEM_INFO *si) { GetSystemInfo(si); }
+static size_t default_mman_vquery(WIN_LPCVOID addr,
+                                  WIN_MEMORY_BASIC_INFORMATION *mbi,
+                                  size_t len) {
+  return VirtualQuery(addr, mbi, len);
+}
+static WIN_DWORD default_mman_temp_path(WIN_DWORD len, char *buf) {
+  return GetTempPathA(len, buf);
+}
+static WIN_DWORD default_mman_temp_file(const char *path, const char *pfx,
+                                        WIN_UINT uniq, char *out) {
+  return GetTempFileNameA(path, pfx, uniq, out);
+}
+static WIN_HANDLE default_mman_create_map(WIN_HANDLE hFile, WIN_LPVOID attr,
+                                          WIN_DWORD prot, WIN_DWORD hi,
+                                          WIN_DWORD lo, const char *name) {
+  return CreateFileMappingA(hFile, attr, prot, hi, lo, name);
+}
+static WIN_LPVOID default_mman_map_view(WIN_HANDLE hMap, WIN_DWORD acc,
+                                        WIN_DWORD hi, WIN_DWORD lo, size_t len,
+                                        WIN_LPVOID addr) {
+  return MapViewOfFileEx(hMap, acc, hi, lo, len, addr);
+}
+static int default_mman_vprotect(WIN_LPVOID addr, size_t len, WIN_DWORD prot,
+                                 WIN_DWORD *old_prot) {
+  return VirtualProtect(addr, len, prot, old_prot);
+}
+static int default_mman_vlock(WIN_LPVOID addr, size_t len) {
+  return VirtualLock(addr, len);
+}
+static int default_mman_vunlock(WIN_LPVOID addr, size_t len) {
+  return VirtualUnlock(addr, len);
+}
+static int default_mman_flush_view(WIN_LPCVOID addr, size_t len) {
+  return FlushViewOfFile(addr, len);
+}
+static int default_mman_unmap_view(WIN_LPCVOID addr) {
+  return UnmapViewOfFile(addr);
+}
+static void *default_mman_get_mod(const char *name) {
+  return GetModuleHandleA(name);
+}
+static void *default_mman_get_proc(void *mod, const char *name) {
+  return GetProcAddress(mod, name);
+}
+static int default_mman_open_file(const char *path, int oflags) {
+#if defined(_MSC_VER)
+  int fd = -1;
+  if (_sopen_s(&fd, path, oflags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0) {
+    return -1;
+  }
+  return fd;
+#else
+  return _open(path, oflags, _S_IREAD | _S_IWRITE);
+#endif
+}
+
+static void (*g_mman_sysinfo)(WIN_SYSTEM_INFO *) = default_mman_sysinfo;
+static size_t (*g_mman_vquery)(WIN_LPCVOID, WIN_MEMORY_BASIC_INFORMATION *,
+                               size_t) = default_mman_vquery;
+static WIN_DWORD (*g_mman_temp_path)(WIN_DWORD,
+                                     char *) = default_mman_temp_path;
+static WIN_DWORD (*g_mman_temp_file)(const char *, const char *, WIN_UINT,
+                                     char *) = default_mman_temp_file;
+static WIN_HANDLE (*g_mman_create_map)(WIN_HANDLE, WIN_LPVOID, WIN_DWORD,
+                                       WIN_DWORD, WIN_DWORD,
+                                       const char *) = default_mman_create_map;
+static WIN_LPVOID (*g_mman_map_view)(WIN_HANDLE, WIN_DWORD, WIN_DWORD,
+                                     WIN_DWORD, size_t,
+                                     WIN_LPVOID) = default_mman_map_view;
+static int (*g_mman_vprotect)(WIN_LPVOID, size_t, WIN_DWORD,
+                              WIN_DWORD *) = default_mman_vprotect;
+static int (*g_mman_vlock)(WIN_LPVOID, size_t) = default_mman_vlock;
+static int (*g_mman_vunlock)(WIN_LPVOID, size_t) = default_mman_vunlock;
+static int (*g_mman_flush_view)(WIN_LPCVOID, size_t) = default_mman_flush_view;
+static int (*g_mman_unmap_view)(WIN_LPCVOID) = default_mman_unmap_view;
+static void *(*g_mman_get_mod)(const char *) = default_mman_get_mod;
+static void *(*g_mman_get_proc)(void *, const char *) = default_mman_get_proc;
+static int (*g_mman_open_file)(const char *, int) = default_mman_open_file;
+
+/**
+ * @brief Overrides lock, flush, and unmap hooks for posix-mman testing.
+ */
+void posix_mman_set_lock_hooks(int (*vlock_fn)(WIN_LPVOID, size_t),
+                               int (*vunlock_fn)(WIN_LPVOID, size_t),
+                               int (*flush_fn)(WIN_LPCVOID, size_t),
+                               int (*unmap_fn)(WIN_LPCVOID)) {
+  g_mman_vlock = vlock_fn;
+  g_mman_vunlock = vunlock_fn;
+  g_mman_flush_view = flush_fn;
+  g_mman_unmap_view = unmap_fn;
+}
+
+/**
+ * @brief Overrides Win32/CRT hooks used by posix-mman for unit testing.
+ */
+void posix_mman_set_win32_hooks(
+    void (*sysinfo_fn)(WIN_SYSTEM_INFO *),
+    size_t (*vquery_fn)(WIN_LPCVOID, WIN_MEMORY_BASIC_INFORMATION *, size_t),
+    WIN_DWORD (*temp_path_fn)(WIN_DWORD, char *),
+    WIN_DWORD (*temp_file_fn)(const char *, const char *, WIN_UINT, char *),
+    WIN_HANDLE (*create_map_fn)(WIN_HANDLE, WIN_LPVOID, WIN_DWORD, WIN_DWORD,
+                                WIN_DWORD, const char *),
+    WIN_LPVOID (*map_view_fn)(WIN_HANDLE, WIN_DWORD, WIN_DWORD, WIN_DWORD,
+                              size_t, WIN_LPVOID),
+    int (*vprotect_fn)(WIN_LPVOID, size_t, WIN_DWORD, WIN_DWORD *),
+    void *(*get_mod_fn)(const char *),
+    void *(*get_proc_fn)(void *, const char *),
+    int (*open_file_fn)(const char *, int)) {
+  g_mman_sysinfo = sysinfo_fn;
+  g_mman_vquery = vquery_fn;
+  g_mman_temp_path = temp_path_fn;
+  g_mman_temp_file = temp_file_fn;
+  g_mman_create_map = create_map_fn;
+  g_mman_map_view = map_view_fn;
+  g_mman_vprotect = vprotect_fn;
+  g_mman_get_mod = get_mod_fn;
+  g_mman_get_proc = get_proc_fn;
+  g_mman_open_file = open_file_fn;
+}
+
+/**
+ * @brief Resets Win32/CRT hooks used by posix-mman to defaults.
+ */
+void posix_mman_reset_win32_hooks(void) {
+  g_mman_sysinfo = default_mman_sysinfo;
+  g_mman_vquery = default_mman_vquery;
+  g_mman_temp_path = default_mman_temp_path;
+  g_mman_temp_file = default_mman_temp_file;
+  g_mman_create_map = default_mman_create_map;
+  g_mman_map_view = default_mman_map_view;
+  g_mman_vprotect = default_mman_vprotect;
+  g_mman_vlock = default_mman_vlock;
+  g_mman_vunlock = default_mman_vunlock;
+  g_mman_flush_view = default_mman_flush_view;
+  g_mman_unmap_view = default_mman_unmap_view;
+  g_mman_get_mod = default_mman_get_mod;
+  g_mman_get_proc = default_mman_get_proc;
+  g_mman_open_file = default_mman_open_file;
+}
+
 /*
  * madvise - give advice about use of memory
  */
@@ -273,10 +415,10 @@ int madvise(void *addr, size_t length, int advice) {
   }
 
   hProcess = GetCurrentProcess();
-  hKernel32 = GetModuleHandleA("kernel32.dll");
+  hKernel32 = g_mman_get_mod("kernel32.dll");
 
   if (hKernel32 != NULL) {
-    pPrefetchVirtualMemory = (PrefetchVirtualMemory_t)(size_t)GetProcAddress(
+    pPrefetchVirtualMemory = (PrefetchVirtualMemory_t)(size_t)g_mman_get_proc(
         hKernel32, "PrefetchVirtualMemory");
   }
 
@@ -304,7 +446,7 @@ int mlock(const void *addr, size_t len) {
     errno = EINVAL;
     return -1;
   }
-  if (VirtualLock((WIN_LPVOID)(size_t)addr, len) != 0) {
+  if (g_mman_vlock((WIN_LPVOID)(size_t)addr, len) != 0) {
     return 0;
   }
   errno = ENOMEM;
@@ -319,10 +461,6 @@ int mlockall(int flags) {
   WIN_LPVOID addr = 0;
   WIN_MEMORY_BASIC_INFORMATION mbi;
 
-  if (flags) {
-    /* parameters checked */
-  }
-
   if (flags & ~(1 | 2)) {
     errno = EINVAL;
     return -1;
@@ -332,17 +470,17 @@ int mlockall(int flags) {
     return 0;
   }
 
-  GetSystemInfo(&si);
+  g_mman_sysinfo(&si);
 
   while (addr < si.lpMaximumApplicationAddress) {
     WIN_LPVOID next_addr;
-    if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
+    if (g_mman_vquery(addr, &mbi, sizeof(mbi)) == 0) {
       break;
     }
 
     if (mbi.State == WIN_MEM_COMMIT && !(mbi.Protect & WIN_PAGE_NOACCESS) &&
         !(mbi.Protect & WIN_PAGE_GUARD)) {
-      VirtualLock(mbi.BaseAddress, mbi.RegionSize);
+      g_mman_vlock(mbi.BaseAddress, mbi.RegionSize);
     }
 
     next_addr = (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
@@ -373,9 +511,6 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     if (prot & PROT_WRITE) {
       flProtect = WIN_PAGE_EXECUTE_READWRITE;
       dwDesiredAccess = WIN_FILE_MAP_WRITE | WIN_FILE_MAP_EXECUTE;
-    } else if (prot & PROT_READ) {
-      flProtect = WIN_PAGE_EXECUTE_READ;
-      dwDesiredAccess = WIN_FILE_MAP_READ | WIN_FILE_MAP_EXECUTE;
     } else {
       flProtect = WIN_PAGE_EXECUTE_READ;
       dwDesiredAccess = WIN_FILE_MAP_READ | WIN_FILE_MAP_EXECUTE;
@@ -384,9 +519,6 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     if (prot & PROT_WRITE) {
       flProtect = WIN_PAGE_READWRITE;
       dwDesiredAccess = WIN_FILE_MAP_WRITE;
-    } else if (prot & PROT_READ) {
-      flProtect = WIN_PAGE_READONLY;
-      dwDesiredAccess = WIN_FILE_MAP_READ;
     } else {
       flProtect = WIN_PAGE_READONLY;
       dwDesiredAccess = WIN_FILE_MAP_READ;
@@ -408,9 +540,9 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     dwDesiredAccess |= WIN_FILE_MAP_EXECUTE;
     dwMaximumSizeHigh = (WIN_DWORD)((len64 >> 32) & 0xFFFFFFFF);
     dwMaximumSizeLow = (WIN_DWORD)(len64 & 0xFFFFFFFF);
-    hMap = CreateFileMappingA(WIN_INVALID_HANDLE_VALUE, NULL,
-                              WIN_PAGE_EXECUTE_READWRITE, dwMaximumSizeHigh,
-                              dwMaximumSizeLow, NULL);
+    hMap = g_mman_create_map(WIN_INVALID_HANDLE_VALUE, NULL,
+                             WIN_PAGE_EXECUTE_READWRITE, dwMaximumSizeHigh,
+                             dwMaximumSizeLow, NULL);
   } else {
     if (fd == -1) {
       errno = EBADF;
@@ -421,8 +553,8 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
       errno = EBADF;
       return MAP_FAILED;
     }
-    hMap = CreateFileMappingA(hFile, NULL, flProtect, dwMaximumSizeHigh,
-                              dwMaximumSizeLow, NULL);
+    hMap = g_mman_create_map(hFile, NULL, flProtect, dwMaximumSizeHigh,
+                             dwMaximumSizeLow, NULL);
   }
 
   if (hMap == NULL) {
@@ -436,11 +568,11 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
         (!(flags & MAP_ANONYMOUS)) ? (size_t)(off64 & 0xFFFFU) : 0;
     posix_mman_uint64_t aligned_off64 = off64 - (posix_mman_uint64_t)gran_delta;
     size_t map_len = length + gran_delta;
-    map = MapViewOfFileEx(
+    map = g_mman_map_view(
         hMap, dwDesiredAccess, (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
         (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), map_len, addr);
     if (map == NULL && !(flags & MAP_ANONYMOUS)) {
-      map = MapViewOfFileEx(hMap, dwDesiredAccess,
+      map = g_mman_map_view(hMap, dwDesiredAccess,
                             (WIN_DWORD)((aligned_off64 >> 32) & 0xFFFFFFFF),
                             (WIN_DWORD)(aligned_off64 & 0xFFFFFFFF), 0, addr);
     }
@@ -457,7 +589,7 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
 
   if ((prot & (PROT_READ | PROT_WRITE | PROT_EXEC)) == 0) {
     WIN_DWORD oldProt = 0;
-    VirtualProtect((WIN_LPVOID)map, length, WIN_PAGE_NOACCESS, &oldProt);
+    g_mman_vprotect((WIN_LPVOID)map, length, WIN_PAGE_NOACCESS, &oldProt);
   }
 
   return map;
@@ -481,7 +613,7 @@ int mprotect(void *addr, size_t len, int prot) {
     } else if (prot & PROT_READ) {
       flProtect = WIN_PAGE_EXECUTE_READ;
     } else {
-      flProtect = WIN_PAGE_EXECUTE_READ;
+      flProtect = WIN_PAGE_EXECUTE;
     }
   } else {
     if (prot & PROT_WRITE) {
@@ -493,23 +625,23 @@ int mprotect(void *addr, size_t len, int prot) {
     }
   }
 
-  if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, flProtect, &oldProtect)) {
+  if (g_mman_vprotect((WIN_LPVOID)(size_t)addr, len, flProtect, &oldProtect)) {
     return 0;
   }
 
   if (flProtect == WIN_PAGE_READWRITE) {
-    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_WRITECOPY,
-                       &oldProtect)) {
+    if (g_mman_vprotect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_WRITECOPY,
+                        &oldProtect)) {
       return 0;
     }
   } else if (flProtect == WIN_PAGE_EXECUTE_READWRITE) {
-    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len,
-                       WIN_PAGE_EXECUTE_WRITECOPY, &oldProtect)) {
+    if (g_mman_vprotect((WIN_LPVOID)(size_t)addr, len,
+                        WIN_PAGE_EXECUTE_WRITECOPY, &oldProtect)) {
       return 0;
     }
   } else if (flProtect == WIN_PAGE_EXECUTE) {
-    if (VirtualProtect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_EXECUTE_READ,
-                       &oldProtect)) {
+    if (g_mman_vprotect((WIN_LPVOID)(size_t)addr, len, WIN_PAGE_EXECUTE_READ,
+                        &oldProtect)) {
       return 0;
     }
   }
@@ -522,15 +654,13 @@ int mprotect(void *addr, size_t len, int prot) {
  * msync - synchronize a file with a memory map
  */
 int msync(void *addr, size_t length, int flags) {
-  if (flags) {
-    /* parameters checked */
-  }
+  (void)flags;
   if (addr == NULL || length == 0) {
     errno = EINVAL;
     return -1;
   }
 
-  if (FlushViewOfFile((WIN_LPCVOID)addr, length) != 0) {
+  if (g_mman_flush_view((WIN_LPCVOID)addr, length) != 0) {
     return 0;
   }
 
@@ -546,7 +676,7 @@ int munlock(const void *addr, size_t len) {
     errno = EINVAL;
     return -1;
   }
-  if (VirtualUnlock((WIN_LPVOID)(size_t)addr, len) != 0) {
+  if (g_mman_vunlock((WIN_LPVOID)(size_t)addr, len) != 0) {
     return 0;
   }
   errno = ENOMEM;
@@ -561,17 +691,17 @@ int munlockall(void) {
   WIN_LPVOID addr = 0;
   WIN_MEMORY_BASIC_INFORMATION mbi;
 
-  GetSystemInfo(&si);
+  g_mman_sysinfo(&si);
 
   while (addr < si.lpMaximumApplicationAddress) {
     WIN_LPVOID next_addr;
-    if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
+    if (g_mman_vquery(addr, &mbi, sizeof(mbi)) == 0) {
       break;
     }
 
     if (mbi.State == WIN_MEM_COMMIT && !(mbi.Protect & WIN_PAGE_NOACCESS) &&
         !(mbi.Protect & WIN_PAGE_GUARD)) {
-      VirtualUnlock(mbi.BaseAddress, mbi.RegionSize);
+      g_mman_vunlock(mbi.BaseAddress, mbi.RegionSize);
     }
 
     next_addr = (WIN_LPVOID)((char *)mbi.BaseAddress + mbi.RegionSize);
@@ -592,12 +722,12 @@ int munmap(void *addr, size_t length) {
     errno = EINVAL;
     return -1;
   }
-  if (UnmapViewOfFile((WIN_LPCVOID)addr)) {
+  if (g_mman_unmap_view((WIN_LPCVOID)addr)) {
     return 0;
   }
   {
     const void *aligned_addr = (const void *)((size_t)addr & ~(size_t)0xFFFFU);
-    if (aligned_addr != addr && UnmapViewOfFile((WIN_LPCVOID)aligned_addr)) {
+    if (aligned_addr != addr && g_mman_unmap_view((WIN_LPCVOID)aligned_addr)) {
       return 0;
     }
   }
@@ -612,12 +742,12 @@ static error_type_t generate_shm_path(const char *name, char *file_path,
   size_t i;
   char buf[2];
 
-  if (name == NULL || file_path == NULL || file_path_len == 0) {
+  if (name == NULL) {
     errno = EINVAL;
     return EINVAL;
   }
 
-  if (GetTempPathA(WIN_MAX_PATH, temp_path) == 0) {
+  if (g_mman_temp_path(WIN_MAX_PATH, temp_path) == 0) {
     errno = ENOENT;
     return ENOENT;
   }
@@ -650,30 +780,16 @@ static error_type_t generate_shm_path(const char *name, char *file_path,
  */
 int shm_open(const char *name, int oflag, mode_t mode) {
   char file_path[WIN_MAX_PATH];
-  int fd;
   error_type_t rc;
 
-  if (mode) {
-    /* parameters checked */
-  }
+  (void)mode;
 
   rc = generate_shm_path(name, file_path, WIN_MAX_PATH);
   if (rc != ERR_NONE) {
     return -1;
   }
 
-#if defined(_MSC_VER)
-  if (_sopen_s(&fd, file_path, oflag | _O_BINARY, _SH_DENYNO,
-               _S_IREAD | _S_IWRITE) != 0) {
-    return -1;
-  }
-#else
-  fd = _open(file_path, oflag | _O_BINARY, _S_IREAD | _S_IWRITE);
-  if (fd == -1) {
-    return -1;
-  }
-#endif
-  return fd;
+  return g_mman_open_file(file_path, oflag | _O_BINARY);
 }
 
 /*
@@ -703,7 +819,6 @@ int shm_unlink(const char *name) {
 int posix_memfd_create(const char *name, unsigned int flags) {
   char temp_path[WIN_MAX_PATH];
   char temp_file[WIN_MAX_PATH];
-  int fd;
   int oflags;
 
   if (name == NULL) {
@@ -714,11 +829,11 @@ int posix_memfd_create(const char *name, unsigned int flags) {
     errno = EINVAL;
     return -1;
   }
-  if (!GetTempPathA(WIN_MAX_PATH, temp_path)) {
+  if (!g_mman_temp_path(WIN_MAX_PATH, temp_path)) {
     errno = ENOSYS;
     return -1;
   }
-  if (!GetTempFileNameA(temp_path, "mfd", 0, temp_file)) {
+  if (!g_mman_temp_file(temp_path, "mfd", 0, temp_file)) {
     errno = ENOSYS;
     return -1;
   }
@@ -726,22 +841,10 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   if (flags & MFD_CLOEXEC) {
     oflags |= _O_NOINHERIT;
   }
-#if defined(_MSC_VER)
-  if (_sopen_s(&fd, temp_file, oflags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0) {
-    return -1;
-  }
-#else
-  fd = _open(temp_file, oflags, _S_IREAD | _S_IWRITE);
-  if (fd < 0) {
-    return -1;
-  }
-#endif
-  return fd;
+  return g_mman_open_file(temp_file, oflags);
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__DOS__)
-
-#include <io.h>
 
 #define DOS_MAX_MMAPS 32
 static struct {
@@ -1052,15 +1155,16 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   rnd_val = (unsigned int)rand();
 #if defined(_MSC_VER)
   strcpy_s(temp_file, sizeof(temp_file), "/tmp/mfd_");
+  pos = 9;
 #else
-  strcpy(temp_file, "/tmp/mfd_");
+  (memcpy)(temp_file, "/tmp/mfd_", 9);
+  pos = 9;
 #endif
-  pos = strlen(temp_file);
   i = 0;
   do {
     num_buf[i++] = (char)('0' + (pid_val % 10UL));
     pid_val /= 10UL;
-  } while (pid_val > 0UL && i < sizeof(num_buf));
+  } while (pid_val > 0UL);
   while (i > 0) {
     temp_file[pos++] = num_buf[--i];
   }
@@ -1069,7 +1173,7 @@ int posix_memfd_create(const char *name, unsigned int flags) {
   do {
     num_buf[i++] = (char)('0' + (rnd_val % 10U));
     rnd_val /= 10U;
-  } while (rnd_val > 0U && i < sizeof(num_buf));
+  } while (rnd_val > 0U);
   while (i > 0) {
     temp_file[pos++] = num_buf[--i];
   }

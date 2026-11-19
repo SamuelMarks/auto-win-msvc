@@ -59,6 +59,9 @@ typedef struct {
   unsigned long __bits[CPU_SETSIZE / (sizeof(unsigned long) * 8)];
 } cpuset_t;
 
+/** @brief Number of unsigned long words in cpuset_t. */
+#define _CPU_SET_NWORDS (CPU_SETSIZE / (sizeof(unsigned long) * 8))
+
 /**
  * @brief Initialize CPU set to zero
  * @param set Pointer to cpuset_t
@@ -66,7 +69,7 @@ typedef struct {
 #define CPU_ZERO(set)                                                          \
   do {                                                                         \
     size_t _i;                                                                 \
-    for (_i = 0; _i < sizeof((set)->__bits) / sizeof(unsigned long); _i++)     \
+    for (_i = 0; _i < _CPU_SET_NWORDS; _i++)                                   \
       (set)->__bits[_i] = 0;                                                   \
   } while ((void)0, 0)
 
@@ -77,9 +80,10 @@ typedef struct {
  */
 #define CPU_SET(cpu, set)                                                      \
   do {                                                                         \
-    if ((cpu) < CPU_SETSIZE)                                                   \
-      (set)->__bits[(cpu) / _CPU_SET_ULONG_BITS] |=                            \
-          (1UL << ((cpu) % _CPU_SET_ULONG_BITS));                              \
+    size_t _cpu_idx = (size_t)(cpu);                                           \
+    if (_cpu_idx < (size_t)CPU_SETSIZE)                                        \
+      (set)->__bits[(_cpu_idx / _CPU_SET_ULONG_BITS) % _CPU_SET_NWORDS] |=     \
+          (1UL << (_cpu_idx % _CPU_SET_ULONG_BITS));                           \
   } while ((void)0, 0)
 
 /**
@@ -89,9 +93,10 @@ typedef struct {
  */
 #define CPU_CLR(cpu, set)                                                      \
   do {                                                                         \
-    if ((cpu) < CPU_SETSIZE)                                                   \
-      (set)->__bits[(cpu) / _CPU_SET_ULONG_BITS] &=                            \
-          ~(1UL << ((cpu) % _CPU_SET_ULONG_BITS));                             \
+    size_t _cpu_idx = (size_t)(cpu);                                           \
+    if (_cpu_idx < (size_t)CPU_SETSIZE)                                        \
+      (set)->__bits[(_cpu_idx / _CPU_SET_ULONG_BITS) % _CPU_SET_NWORDS] &=     \
+          ~(1UL << (_cpu_idx % _CPU_SET_ULONG_BITS));                          \
   } while ((void)0, 0)
 
 /**
@@ -101,9 +106,11 @@ typedef struct {
  * @return 1 if set, 0 otherwise
  */
 #define CPU_ISSET(cpu, set)                                                    \
-  (((cpu) < CPU_SETSIZE) ? (((set)->__bits[(cpu) / _CPU_SET_ULONG_BITS] &      \
-                             (1UL << ((cpu) % _CPU_SET_ULONG_BITS))) != 0)     \
-                         : 0)
+  (((size_t)(cpu) < (size_t)CPU_SETSIZE)                                       \
+       ? (((set)->__bits[(((size_t)(cpu)) / _CPU_SET_ULONG_BITS) %             \
+                         _CPU_SET_NWORDS] &                                    \
+           (1UL << (((size_t)(cpu)) % _CPU_SET_ULONG_BITS))) != 0)             \
+       : 0)
 
 #ifndef _CPULEVEL_T_DEFINED
 #define _CPULEVEL_T_DEFINED

@@ -42,7 +42,13 @@ struct statstime {
   int if_opackets;
 };
 
+typedef struct statstime statstime;
+#ifndef FSCALE
+#define FSCALE (1 << 8)
+#endif
+
 bool_t xdr_statstime(XDR *xdrs, struct statstime *objp);
+int rstat(const char *host, struct statstime *statp);
 
 #ifdef __cplusplus
 }

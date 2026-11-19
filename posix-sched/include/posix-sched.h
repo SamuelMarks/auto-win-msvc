@@ -27,24 +27,31 @@ extern "C" {
 #endif
 
 #if defined(__GNUC__)
+/** @brief Underlying 64-bit unsigned integer bitmask type for cpu_set_t. */
 __extension__ typedef unsigned long long mask_bit_type;
 #elif defined(_MSC_VER) || defined(__WATCOMC__)
+/** @brief Underlying 64-bit unsigned integer bitmask type for cpu_set_t. */
 typedef unsigned __int64 mask_bit_type;
 #else
+/** @brief Underlying 64-bit unsigned integer bitmask type for cpu_set_t. */
 typedef unsigned long long mask_bit_type;
 #endif
 
 #if !defined(_BITS_CPU_SET_H) && !defined(_CPU_SET_T_DEFINED)
+/** @brief Guard macro indicating cpu_set_t has been defined. */
 #define _CPU_SET_T_DEFINED
 /**
  * @brief Structure for representing a CPU affinity mask.
  */
 typedef struct cpu_set {
 #if defined(__GNUC__)
+  /** @brief Bitmask of active CPUs. */
   __extension__ unsigned long long bits;
 #elif defined(_MSC_VER) || defined(__WATCOMC__)
+  /** @brief Bitmask of active CPUs. */
   unsigned __int64 bits;
 #else
+  /** @brief Bitmask of active CPUs. */
   unsigned long long bits;
 #endif
 } cpu_set_t;
@@ -161,12 +168,15 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask);
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
 
 #ifndef sched_yield
+/** @brief POSIX sched_yield alias. */
 #define sched_yield posix_sched_yield
 #endif
 #ifndef sched_setaffinity
+/** @brief Linux/GNU sched_setaffinity alias. */
 #define sched_setaffinity posix_sched_setaffinity
 #endif
 #ifndef sched_getaffinity
+/** @brief Linux/GNU sched_getaffinity alias. */
 #define sched_getaffinity posix_sched_getaffinity
 #endif
 

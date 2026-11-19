@@ -79,6 +79,9 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
     if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
         string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     else()
@@ -122,19 +125,28 @@ if(NOT TARGET pcre2-8 AND NOT TARGET pcre2::pcre2-8)
 
         get_directory_property(_old_opts COMPILE_OPTIONS)
         set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
+        set(_regex_saved_bsl "${BUILD_SHARED_LIBS}")
+        set(_regex_saved_pic "${CMAKE_POSITION_INDEPENDENT_CODE}")
+        set(BUILD_SHARED_LIBS OFF)
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
         FetchContent_MakeAvailable(pcre2)
         if(CMAKE_C_COMPILER_ID MATCHES "Watcom" AND TARGET pcre2-8-static)
             target_compile_options(pcre2-8-static PRIVATE -za99)
         endif()
 
+        set(BUILD_SHARED_LIBS "${_regex_saved_bsl}")
+        set(CMAKE_POSITION_INDEPENDENT_CODE "${_regex_saved_pic}")
         set_directory_properties(PROPERTIES COMPILE_OPTIONS "${_old_opts}")
     endif()
 endif()
 endif()
 
 add_library(posix-regex src/posix-regex.c)
-set_target_properties(posix-regex PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-regex PROPERTIES
+    DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS"
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
 target_include_directories(posix-regex PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 if(TARGET pcre2::pcre2-8)
     target_link_libraries(posix-regex PRIVATE pcre2::pcre2-8)

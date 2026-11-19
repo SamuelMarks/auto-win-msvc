@@ -6,13 +6,11 @@
 /* clang-format off */
 #include "posix-termios.h"
 
+#include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
-#include <stddef.h>
 #if defined(_WIN32)
 #include <stdlib.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -22,6 +20,13 @@
 #endif
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #include <crtdbg.h>
+#endif
+#endif
+/* clang-format on */
+
+#ifdef _WIN32
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
 static void termios_null_invalid_param_handler(const wchar_t *expression,
                                                const wchar_t *function,
                                                const wchar_t *file,
@@ -31,6 +36,7 @@ static void termios_null_invalid_param_handler(const wchar_t *expression,
   }
 }
 #endif
+
 static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   ptrdiff_t h = -1;
   int saved_err = errno;
@@ -51,53 +57,18 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   errno = saved_err;
   return h;
 }
-#else
-#define safe_get_osfhandle(fd) ((fd) < 0 ? (ptrdiff_t)-1 : (ptrdiff_t)(fd))
-#endif
-#endif
-
-
-#ifndef NUM_FORMAT_CAST
-#if defined(_MSC_VER)
-#define NUM_FORMAT_CAST __int64
-#else
-#define NUM_FORMAT_CAST long
-#endif
-#endif
-
-#ifndef NUM_FORMAT
-#if defined(_MSC_VER)
-#define NUM_FORMAT "%I64d"
-#else
-#define NUM_FORMAT "%ld"
-#endif
-#endif
-
-#ifdef _WIN32
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#include <../ucrt/io.h>
-#else
-#include <io.h>
-#endif
-#include <stdlib.h>
-/* clang-format on */
-
-/* Helper definitions to avoid <windows.h> */
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 
 typedef void *HANDLE;
 typedef unsigned long DWORD;
 typedef int BOOL;
 
-/** \brief INVALID_HANDLE_VALUE macro. */
+/** @brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
-/** \brief STD_INPUT_HANDLE macro. */
+/** @brief STD_INPUT_HANDLE macro. */
 #define STD_INPUT_HANDLE ((DWORD) - 10)
-/** \brief STD_OUTPUT_HANDLE macro. */
+/** @brief STD_OUTPUT_HANDLE macro. */
 #define STD_OUTPUT_HANDLE ((DWORD) - 11)
-/** \brief STD_ERROR_HANDLE macro. */
+/** @brief STD_ERROR_HANDLE macro. */
 #define STD_ERROR_HANDLE ((DWORD) - 12)
 
 #define ENABLE_PROCESSED_INPUT 0x0001
@@ -105,9 +76,9 @@ typedef int BOOL;
 #define ENABLE_ECHO_INPUT 0x0004
 #define ENABLE_PROCESSED_OUTPUT 0x0001
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define FILE_TYPE_CHAR 0x0002
+#define SETXOFF 1
+#define SETXON 2
 
 __declspec(dllimport) HANDLE __stdcall GetStdHandle(DWORD nStdHandle);
 __declspec(dllimport) BOOL __stdcall FlushFileBuffers(HANDLE hFile);
@@ -123,106 +94,91 @@ __declspec(dllimport) BOOL __stdcall EscapeCommFunction(HANDLE hFile,
 __declspec(dllimport) BOOL __stdcall SetCommBreak(HANDLE hFile);
 __declspec(dllimport) BOOL __stdcall ClearCommBreak(HANDLE hFile);
 __declspec(dllimport) void __stdcall Sleep(DWORD dwMilliseconds);
-#define FILE_TYPE_CHAR 0x0002
-#define SETXOFF 1
-#define SETXON 2
 
-#ifdef __cplusplus
+static ptrdiff_t default_termios_osfhandle(intptr_t fd) {
+  return safe_get_osfhandle(fd);
 }
-#endif
+static HANDLE default_termios_std_handle(DWORD nStdHandle) {
+  return GetStdHandle(nStdHandle);
+}
+static BOOL default_termios_flush_file(HANDLE hFile) {
+  return FlushFileBuffers(hFile);
+}
+static BOOL default_termios_get_mode(HANDLE hConsoleHandle, DWORD *lpMode) {
+  return GetConsoleMode(hConsoleHandle, lpMode);
+}
+static BOOL default_termios_set_mode(HANDLE hConsoleHandle, DWORD dwMode) {
+  return SetConsoleMode(hConsoleHandle, dwMode);
+}
+static DWORD default_termios_file_type(HANDLE hFile) {
+  return GetFileType(hFile);
+}
+static BOOL default_termios_set_break(HANDLE hFile) {
+  return SetCommBreak(hFile);
+}
 
-#endif
+static ptrdiff_t (*g_termios_osfhandle)(intptr_t) = default_termios_osfhandle;
+static HANDLE (*g_termios_std_handle)(DWORD) = default_termios_std_handle;
+static BOOL (*g_termios_flush_file)(HANDLE) = default_termios_flush_file;
+static BOOL (*g_termios_get_mode)(HANDLE, DWORD *) = default_termios_get_mode;
+static BOOL (*g_termios_set_mode)(HANDLE, DWORD) = default_termios_set_mode;
+static DWORD (*g_termios_file_type)(HANDLE) = default_termios_file_type;
+static BOOL (*g_termios_set_break)(HANDLE) = default_termios_set_break;
 
-#ifdef _MSC_VER
-#if _MSC_VER >= 1400
-#define USE_SAFE_CRT 1
-#endif
-#endif
-
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-#else
-#endif
-
-#ifdef _WIN32
 /**
- * @brief Helper to format error. Returns int (exit code) as required.
+ * @brief Overrides Win32 hooks used by posix-termios for testing.
  */
-static int format_error_msg(char *buffer, size_t size, int errcode) {
-  if (!buffer || size == 0)
-    return 1;
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-  sprintf_s(buffer, size, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
-#else
-#if defined(_MSC_VER)
-  sprintf_s(buffer, sizeof(buffer), "Error code: " NUM_FORMAT,
-            (NUM_FORMAT_CAST)errcode);
-#else
-  sprintf(buffer, "Error code: " NUM_FORMAT, (NUM_FORMAT_CAST)errcode);
-#endif
-#endif
-  return 0;
+void posix_termios_set_win32_hooks(ptrdiff_t (*osfhandle_fn)(intptr_t),
+                                   HANDLE (*std_handle_fn)(DWORD),
+                                   BOOL (*flush_file_fn)(HANDLE),
+                                   BOOL (*get_mode_fn)(HANDLE, DWORD *),
+                                   BOOL (*set_mode_fn)(HANDLE, DWORD),
+                                   DWORD (*file_type_fn)(HANDLE),
+                                   BOOL (*set_break_fn)(HANDLE)) {
+  g_termios_osfhandle = osfhandle_fn;
+  g_termios_std_handle = std_handle_fn;
+  g_termios_flush_file = flush_file_fn;
+  g_termios_get_mode = get_mode_fn;
+  g_termios_set_mode = set_mode_fn;
+  g_termios_file_type = file_type_fn;
+  g_termios_set_break = set_break_fn;
 }
-#endif
-
-#ifdef _WIN32
-
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-/** \brief null_invalid_parameter_handler function. */
-static void __cdecl null_invalid_parameter_handler(
-    const wchar_t *expression, const wchar_t *function, const wchar_t *file,
-    unsigned int line,
-    size_t pReserved /* Changed from uintptr_t to size_t to avoid stdint.h */
-) {
-  if (expression || function || file || line || pReserved) {
-    /* parameters checked */
-  }
-}
-#endif
 
 /**
- * @brief Internal helper to get HANDLE from file descriptor. Returns int (0 for
- * success) and sets HANDLE.
+ * @brief Resets Win32 hooks used by posix-termios to defaults.
+ */
+void posix_termios_reset_win32_hooks(void) {
+  g_termios_osfhandle = default_termios_osfhandle;
+  g_termios_std_handle = default_termios_std_handle;
+  g_termios_flush_file = default_termios_flush_file;
+  g_termios_get_mode = default_termios_get_mode;
+  g_termios_set_mode = default_termios_set_mode;
+  g_termios_file_type = default_termios_file_type;
+  g_termios_set_break = default_termios_set_break;
+}
+
+/**
+ * @brief Internal helper to get HANDLE from file descriptor.
  */
 static int get_handle_from_fd_helper(int fd, HANDLE *out_handle) {
-  HANDLE h = INVALID_HANDLE_VALUE;
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-  _invalid_parameter_handler old_handler;
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-  old_handler = _set_thread_local_invalid_parameter_handler(
-      (_invalid_parameter_handler)null_invalid_parameter_handler);
-#else
-  old_handler = _set_invalid_parameter_handler(
-      (_invalid_parameter_handler)null_invalid_parameter_handler);
-#endif
-#endif
-
-  if (fd >= 0) {
-    h = (HANDLE)(size_t)safe_get_osfhandle(fd);
-  }
-
-#if defined(__STDC_SECURE_LIB__) || (defined(_MSC_VER) && _MSC_VER >= 1400)
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-  _set_thread_local_invalid_parameter_handler(old_handler);
-#else
-  _set_invalid_parameter_handler(old_handler);
-#endif
-#endif
+  HANDLE h = (HANDLE)(size_t)g_termios_osfhandle((intptr_t)fd);
 
   if (h == INVALID_HANDLE_VALUE) {
-    if (fd == 0)
-      h = GetStdHandle(STD_INPUT_HANDLE);
-    else if (fd == 1)
-      h = GetStdHandle(STD_OUTPUT_HANDLE);
-    else if (fd == 2)
-      h = GetStdHandle(STD_ERROR_HANDLE);
+    if (fd == 0) {
+      h = g_termios_std_handle(STD_INPUT_HANDLE);
+    } else if (fd == 1) {
+      h = g_termios_std_handle(STD_OUTPUT_HANDLE);
+    } else if (fd == 2) {
+      h = g_termios_std_handle(STD_ERROR_HANDLE);
+    }
   }
 
   *out_handle = h;
-  return (h != INVALID_HANDLE_VALUE) ? 0 : 1;
+  return (h != NULL && h != INVALID_HANDLE_VALUE) ? 0 : 1;
 }
 #endif
 
-/** \brief cfgetispeed function. */
+/** @brief cfgetispeed function. */
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 speed_t cfgetispeed(const struct termios *termios_p) {
   if (!termios_p)
@@ -230,14 +186,14 @@ speed_t cfgetispeed(const struct termios *termios_p) {
   return termios_p->c_ispeed;
 }
 
-/** \brief cfgetospeed function. */
+/** @brief cfgetospeed function. */
 speed_t cfgetospeed(const struct termios *termios_p) {
   if (!termios_p)
     return 0;
   return termios_p->c_ospeed;
 }
 
-/** \brief cfsetispeed function. */
+/** @brief cfsetispeed function. */
 int cfsetispeed(struct termios *termios_p, speed_t speed) {
   if (!termios_p)
     return -1;
@@ -245,7 +201,7 @@ int cfsetispeed(struct termios *termios_p, speed_t speed) {
   return 0;
 }
 
-/** \brief cfsetospeed function. */
+/** @brief cfsetospeed function. */
 int cfsetospeed(struct termios *termios_p, speed_t speed) {
   if (!termios_p)
     return -1;
@@ -253,18 +209,15 @@ int cfsetospeed(struct termios *termios_p, speed_t speed) {
   return 0;
 }
 
-/** \brief tcdrain function. */
+/** @brief tcdrain function. */
 int tcdrain(int fd) {
 #ifdef _WIN32
   HANDLE h;
-  char errbuf[64];
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE) {
-    if (FlushFileBuffers(h)) {
+  if (get_handle_from_fd_helper(fd, &h) == 0) {
+    if (g_termios_flush_file(h)) {
       return 0;
     }
   }
-  format_error_msg(errbuf, sizeof(errbuf), fd);
   return -1;
 #else
   if (!fd) {
@@ -275,14 +228,12 @@ int tcdrain(int fd) {
 #endif
 }
 
-/** rief tcflow function. */
+/** @brief tcflow function. */
 int tcflow(int fd, int action) {
 #ifdef _WIN32
   HANDLE h;
-  char errbuf[64];
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE) {
-    if (GetFileType(h) != FILE_TYPE_CHAR) {
+  if (get_handle_from_fd_helper(fd, &h) == 0) {
+    if (g_termios_file_type(h) != FILE_TYPE_CHAR) {
       errno = ENOTTY;
       return -1;
     }
@@ -295,14 +246,12 @@ int tcflow(int fd, int action) {
       return 0;
     case TCIOFF:
     case TCION:
-      /* Unsupported direct emulation for these, ignore */
       return 0;
     default:
       errno = EINVAL;
       return -1;
     }
   }
-  format_error_msg(errbuf, sizeof(errbuf), fd);
   errno = EBADF;
   return -1;
 #else
@@ -313,13 +262,11 @@ int tcflow(int fd, int action) {
 #endif
 }
 
-/** rief tcflush function. */
-
+/** @brief tcflush function. */
 int tcflush(int fd, int queue_selector) {
 #ifdef _WIN32
   HANDLE h;
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE) {
+  if (get_handle_from_fd_helper(fd, &h) == 0) {
     if (queue_selector == TCIFLUSH || queue_selector == TCIOFLUSH) {
       FlushConsoleInputBuffer(h);
     }
@@ -333,7 +280,7 @@ int tcflush(int fd, int queue_selector) {
 #endif
 }
 
-/** \brief tcgetattr function. */
+/** @brief tcgetattr function. */
 #endif
 int tcgetattr(int fd, struct termios *termios_p) {
 #ifdef _WIN32
@@ -351,8 +298,7 @@ int tcgetattr(int fd, struct termios *termios_p) {
   termios_p->c_ispeed = B9600;
   termios_p->c_ospeed = B9600;
 
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE && GetConsoleMode(h, &mode)) {
+  if (get_handle_from_fd_helper(fd, &h) == 0 && g_termios_get_mode(h, &mode)) {
     if (fd == 0) {
       if (mode & ENABLE_ECHO_INPUT)
         termios_p->c_lflag |= ECHO;
@@ -388,30 +334,27 @@ int tcgetattr(int fd, struct termios *termios_p) {
 }
 
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/** \brief tcgetsid function. */
+/** @brief tcgetsid function. */
 pid_t tcgetsid(int fd) {
   (void)fd;
   return -1;
 }
 
-/** rief tcsendbreak function. */
+/** @brief tcsendbreak function. */
 int tcsendbreak(int fd, int duration) {
 #ifdef _WIN32
   HANDLE h;
-  char errbuf[64];
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE) {
-    if (GetFileType(h) != FILE_TYPE_CHAR) {
+  if (get_handle_from_fd_helper(fd, &h) == 0) {
+    if (g_termios_file_type(h) != FILE_TYPE_CHAR) {
       errno = ENOTTY;
       return -1;
     }
-    if (SetCommBreak(h)) {
+    if (g_termios_set_break(h)) {
       Sleep(duration > 0 ? (unsigned long)duration * 250 : 250);
       ClearCommBreak(h);
     }
     return 0;
   }
-  format_error_msg(errbuf, sizeof(errbuf), fd);
   errno = EBADF;
   return -1;
 #else
@@ -422,24 +365,20 @@ int tcsendbreak(int fd, int duration) {
 #endif
 }
 
-/** rief tcsetattr function. */
-
+/** @brief tcsetattr function. */
 #endif
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 #ifdef _WIN32
   HANDLE h;
   DWORD mode;
 
-  if (optional_actions) {
-    /* parameters checked */
-  }
+  (void)optional_actions;
 
   if (!termios_p) {
     return -1;
   }
 
-  if (get_handle_from_fd_helper(fd, &h) == 0 && h &&
-      h != INVALID_HANDLE_VALUE && GetConsoleMode(h, &mode)) {
+  if (get_handle_from_fd_helper(fd, &h) == 0 && g_termios_get_mode(h, &mode)) {
     if (fd == 0) {
       if (termios_p->c_lflag & ECHO)
         mode |= ENABLE_ECHO_INPUT;
@@ -461,7 +400,7 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
       else
         mode &= ~ENABLE_PROCESSED_OUTPUT;
     }
-    if (SetConsoleMode(h, mode)) {
+    if (g_termios_set_mode(h, mode)) {
       return 0;
     }
   }
@@ -476,7 +415,6 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
 
 /**
  * @brief Set terminal attributes to raw mode.
- * @param termios_p Pointer to termios structure.
  */
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 void cfmakeraw(struct termios *termios_p) {

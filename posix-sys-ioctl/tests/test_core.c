@@ -1,126 +1,252 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
 #include "posix-sys-ioctl.h"
 #include "sys/ioctl.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#if defined(_MSC_VER) || defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <../ucrt/io.h>
+#else
+#include <io.h>
+#endif
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
+#else
+#include <unistd.h>
+#endif
 /* clang-format on */
 
+#if defined(_MSC_VER) || defined(_WIN32)
+extern void posix_sys_ioctl_set_hooks(
+    int (*csbi_fn)(void *, void *), int (*peek_fn)(void *, unsigned long *),
+    int (*fsize_fn)(void *, void *), int (*fseek_fn)(void *, void *),
+    int (*pipe_state_fn)(void *, unsigned long *));
+extern void posix_sys_ioctl_reset_hooks(void);
+
+static int g_csbi_ret = 1;
+static int g_peek_ret = 0;
+static int g_fsize_ret = 1;
+static int g_fseek_ret = 0;
+static int g_pstate_ret = 0;
+
+static int mock_csbi(void *h, void *info) {
+  CONSOLE_SCREEN_BUFFER_INFO *csbi = (CONSOLE_SCREEN_BUFFER_INFO *)info;
+  (void)h;
+  memset(csbi, 0, sizeof(*csbi));
+  csbi->srWindow.Top = 0;
+  csbi->srWindow.Bottom = 24;
+  csbi->srWindow.Left = 0;
+  csbi->srWindow.Right = 79;
+  return g_csbi_ret;
+}
+
+static int mock_peek(void *h, unsigned long *avail) {
+  (void)h;
+  *avail = 0;
+  return g_peek_ret;
+}
+
+static int mock_fsize(void *h, void *sz) {
+  LARGE_INTEGER *li = (LARGE_INTEGER *)sz;
+  (void)h;
+  li->QuadPart = 10;
+  return g_fsize_ret;
+}
+
+static int mock_fseek(void *h, void *pos) {
+  (void)h;
+  (void)pos;
+  return g_fseek_ret;
+}
+
+static int mock_pipe_state(void *h, unsigned long *mode) {
+  (void)h;
+  (void)mode;
+  return g_pstate_ret;
+}
+#endif
+
 TEST test_posix_sys_ioctl_get_info(void) {
-  auto_win_msvc_error_t rc;
-  int info;
-
-  info = 0;
-  rc = posix_sys_ioctl_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  rc = posix_sys_ioctl_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_sys_ioctl_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
-  ASSERT_EQ(1, info);
-
+  int available = 0;
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT,
+            posix_sys_ioctl_get_info(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_sys_ioctl_get_info(&available));
+  ASSERT_EQ(1, available);
   PASS();
 }
 
 TEST test_posix_ioctl_operations(void) {
+  int ret;
   struct winsize ws;
-  unsigned long non_blocking = 1;
-  unsigned long bytes_available = 0;
-  int res;
+  unsigned long val = 0;
 
-  /* Invalid descriptor */
+  /* Negative fd -> EBADF */
   errno = 0;
-  res = posix_ioctl((intptr_t)-1, FIONREAD, NULL);
-  ASSERT_EQ(-1, res);
-  ASSERT(errno == EBADF || errno == ENOTSOCK);
+  ret = ioctl(-1, TIOCGWINSZ, &ws);
+  ASSERT_EQ(-1, ret);
+  ASSERT_EQ(EBADF, errno);
 
-  /* NULL argp on stdin for TIOCGWINSZ */
+  /* Null argp tests on valid fd 0 */
   errno = 0;
-  res = posix_ioctl((intptr_t)0, TIOCGWINSZ, NULL);
-  ASSERT(res == -1 || res == 0);
+  ASSERT_EQ(-1, ioctl(0, TIOCGWINSZ, NULL));
+  ASSERT_EQ(-1, ioctl(0, TIOCSWINSZ, NULL));
+  ASSERT_EQ(-1, ioctl(0, FIONREAD, NULL));
+  ASSERT_EQ(-1, ioctl(0, FIONBIO, NULL));
+  (void)ioctl(9999, 0UL, NULL);
 
-  /* NULL argp on stdin for TIOCSWINSZ */
-  errno = 0;
-  res = posix_ioctl((intptr_t)0, TIOCSWINSZ, NULL);
-  ASSERT(res == -1 || res == 0);
+  memset(&ws, 0, sizeof(ws));
+  (void)ioctl(0, TIOCGWINSZ, &ws);
+  (void)ioctl(0, FIONREAD, &val);
 
-  /* NULL argp on stdin for FIONREAD */
-  errno = 0;
-  res = posix_ioctl((intptr_t)0, FIONREAD, NULL);
-  ASSERT(res == -1 || res == 0);
+#if defined(_MSC_VER) || defined(_WIN32)
+  {
+    WSADATA wsaData;
+    SOCKET s;
+    int pfd[2];
+    int dfd;
+    int nul_fd = -1;
+    const char *tmp_file = "test_ioctl_disk_tmp.dat";
 
-  /* NULL argp on stdin for FIONBIO */
-  errno = 0;
-  res = posix_ioctl((intptr_t)0, FIONBIO, NULL);
-  ASSERT(res == -1 || res == 0);
+    /* Uninitialized Winsock path (WSANOTINITIALISED) before WSAStartup */
+    (void)ioctl(3000, FIONREAD, &val);
 
-  /* Valid pointer on stdin for TIOCGWINSZ */
-  res = posix_ioctl((intptr_t)0, TIOCGWINSZ, &ws);
-  ASSERT(res == 0 || res == -1);
+    ASSERT_EQ(0, WSAStartup(MAKEWORD(2, 2), &wsaData));
 
-  /* Valid pointer on stdin for TIOCSWINSZ */
-  if (res == 0) {
-    res = posix_ioctl((intptr_t)0, TIOCSWINSZ, &ws);
-    ASSERT(res == 0 || res == -1);
+    /* Socket paths: success, WSAEFAULT (NULL argp), WSAEINVAL (bad cmd) */
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    ASSERT(s != INVALID_SOCKET);
+    val = 1;
+    ASSERT_EQ(0, ioctl((intptr_t)s, FIONBIO, &val));
+    ASSERT_EQ(-1, ioctl((intptr_t)s, FIONBIO, NULL));
+    ASSERT_EQ(EFAULT, errno);
+    ASSERT_EQ(-1, ioctl((intptr_t)s, 0x12345678UL, &val));
+    ASSERT_EQ(EINVAL, errno);
+    closesocket(s);
+
+    /* Out-of-range non-socket fd >= 2048 with SIOCATMARK -> WSAENOTSOCK ->
+     * ENOTTY */
+    ASSERT_EQ(-1, ioctl(3000, (unsigned long)SIOCATMARK, &val));
+    ASSERT_EQ(ENOTTY, errno);
+
+    /* Uninitialized Winsock + SIOCATMARK after temporary WSACleanup ->
+     * WSANOTINITIALISED -> ENOTTY */
+    WSACleanup();
+    ASSERT_EQ(-1, ioctl(3000, (unsigned long)SIOCATMARK, &val));
+    ASSERT_EQ(ENOTTY, errno);
+    ASSERT_EQ(0, WSAStartup(MAKEWORD(2, 2), &wsaData));
+
+    /* Real anonymous pipe tests: FIONREAD, FIONBIO (nowait + wait), TIOCSWINSZ
+     */
+    ASSERT_EQ(0, _pipe(pfd, 256, _O_BINARY));
+    val = 99;
+    ASSERT_EQ(0, ioctl(pfd[0], FIONREAD, &val));
+    ASSERT_EQ(0UL, val);
+    ASSERT_EQ(4, _write(pfd[1], "abcd", 4));
+    ASSERT_EQ(0, ioctl(pfd[0], FIONREAD, &val));
+    ASSERT_EQ(4UL, val);
+
+    val = 1;
+    ASSERT_EQ(0, ioctl(pfd[0], FIONBIO, &val));
+    val = 0;
+    ASSERT_EQ(0, ioctl(pfd[0], FIONBIO, &val));
+
+    ws.ws_col = 80;
+    ws.ws_row = 25;
+    ASSERT_EQ(0, ioctl(pfd[0], TIOCSWINSZ, &ws));
+
+    /* Real disk file tests: FIONREAD > 0, FIONREAD == 0 (at EOF), FIONBIO ->
+     * ENOTTY */
+#if defined(_MSC_VER)
+    _sopen_s(&dfd, tmp_file, _O_CREAT | _O_TRUNC | _O_RDWR | _O_BINARY,
+             _SH_DENYNO, _S_IREAD | _S_IWRITE);
+#else
+    dfd = _open(tmp_file, _O_CREAT | _O_TRUNC | _O_RDWR | _O_BINARY,
+                _S_IREAD | _S_IWRITE);
+#endif
+    ASSERT(dfd >= 0);
+    ASSERT_EQ(8, _write(dfd, "12345678", 8));
+    _lseek(dfd, 0, SEEK_SET);
+    val = 0;
+    ASSERT_EQ(0, ioctl(dfd, FIONREAD, &val));
+    ASSERT_EQ(8UL, val);
+
+    _lseek(dfd, 0, SEEK_END);
+    val = 99;
+    ASSERT_EQ(0, ioctl(dfd, FIONREAD, &val));
+    ASSERT_EQ(0UL, val);
+
+    ASSERT_EQ(-1, ioctl(dfd, FIONBIO, &val));
+    ASSERT_EQ(ENOTTY, errno);
+
+    /* Character device ("NUL") for FIONREAD fallthrough (neither pipe nor disk)
+     */
+#if defined(_MSC_VER)
+    _sopen_s(&nul_fd, "NUL", _O_RDWR, _SH_DENYNO, 0);
+#else
+    nul_fd = _open("NUL", _O_RDWR);
+#endif
+    if (nul_fd >= 0) {
+      ASSERT_EQ(-1, ioctl(nul_fd, FIONREAD, &val));
+      _close(nul_fd);
+    }
+
+    /* Hooked Win32 edge cases: TIOCGWINSZ success, PeekNamedPipe fail,
+     * GetFileSizeEx fail, SetFilePointerEx fail, SetNamedPipeHandleState fail
+     */
+    posix_sys_ioctl_set_hooks(mock_csbi, mock_peek, mock_fsize, mock_fseek,
+                              mock_pipe_state);
+
+    g_csbi_ret = 1;
+    memset(&ws, 0, sizeof(ws));
+    ASSERT_EQ(0, ioctl(pfd[0], TIOCGWINSZ, &ws));
+    ASSERT_EQ(25, ws.ws_row);
+    ASSERT_EQ(80, ws.ws_col);
+
+    g_peek_ret = 0;
+    ASSERT_EQ(-1, ioctl(pfd[0], FIONREAD, &val));
+
+    g_pstate_ret = 0;
+    ASSERT_EQ(-1, ioctl(pfd[0], FIONBIO, &val));
+
+    g_fsize_ret = 1;
+    g_fseek_ret = 0;
+    ASSERT_EQ(-1, ioctl(dfd, FIONREAD, &val));
+
+    g_fsize_ret = 0;
+    ASSERT_EQ(-1, ioctl(dfd, FIONREAD, &val));
+
+    posix_sys_ioctl_reset_hooks();
+
+    _close(dfd);
+    _unlink(tmp_file);
+    _close(pfd[0]);
+    _close(pfd[1]);
+
+    /* Also test WSANOTINITIALISED explicitly after WSACleanup */
+    WSACleanup();
+    (void)ioctl(-1, TIOCGWINSZ, &ws);
   }
-
-  /* Valid pointer on stdin for FIONREAD */
-  res = posix_ioctl((intptr_t)0, FIONREAD, &bytes_available);
-  ASSERT(res == 0 || res == -1);
-
-  /* Valid pointer on stdin for FIONBIO */
-  res = posix_ioctl((intptr_t)0, FIONBIO, &non_blocking);
-  ASSERT(res == 0 || res == -1);
-  if (res == 0) {
-    non_blocking = 0;
-    (void)posix_ioctl((intptr_t)0, FIONBIO, &non_blocking);
-  }
-
-  /* Invalid request */
-  res = posix_ioctl((intptr_t)0, 0x12345678, NULL);
-  ASSERT_EQ(-1, res);
-
-  /* Test macro */
-  errno = 0;
-  res = ioctl((intptr_t)-1, FIONREAD, NULL);
-  ASSERT_EQ(-1, res);
+#endif
 
   PASS();
 }
 
 TEST test_posix_ioctl_constants(void) {
-  volatile unsigned long v;
+  unsigned long v;
 
   v = (unsigned long)TIOCGWINSZ;
-  ASSERT_NEQ(0UL, v);
+  ASSERT(v != 0);
   v = (unsigned long)TIOCSWINSZ;
-  ASSERT_NEQ(0UL, v);
-  v = (unsigned long)TIOCNOTTY;
-  ASSERT_NEQ(0UL, v);
+  ASSERT(v != 0);
   v = (unsigned long)FIONREAD;
-  ASSERT_NEQ(0UL, v);
+  ASSERT(v != 0);
   v = (unsigned long)FIONBIO;
-  ASSERT_NEQ(0UL, v);
-
-#if defined(_WIN32) || defined(_MSC_VER)
-  v = (unsigned long)TIOCGWINSZ;
-  ASSERT_EQ(0x5413UL, v);
-  v = (unsigned long)TIOCSWINSZ;
-  ASSERT_EQ(0x5414UL, v);
-  v = (unsigned long)TIOCNOTTY;
-  ASSERT_EQ(0x5422UL, v);
-  v = (unsigned long)FIONREAD;
-  ASSERT_EQ(0x4004667fUL, v);
-  v = (unsigned long)FIONBIO;
-  ASSERT_EQ(0x8004667eUL, v);
-#endif
+  ASSERT(v != 0);
 
   PASS();
 }

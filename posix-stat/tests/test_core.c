@@ -307,6 +307,9 @@ TEST test_stat_basic(void) {
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
 #if !defined(__linux__)
+  res = posix_stat("//proc", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISDIR(st.st_mode));
   res = posix_stat("/proc", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
@@ -319,12 +322,23 @@ TEST test_stat_basic(void) {
   res = posix_stat("/proc/self/", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
+  res = posix_stat("/proc/self/stat", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
+  res = posix_stat("/proc/cpuinfo", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
+  res = posix_stat("/proc/+bad", &st);
+  ASSERT_EQ(0, res);
+  ASSERT(S_ISREG(st.st_mode));
   res = posix_stat("/proc/1", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
   res = posix_stat("/proc/1/stat", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISREG(st.st_mode));
+#else
+  (void)posix_stat("//nonexistent_xyz_999", &st);
 #endif
 
   res = posix_lstat(NULL, &st);
@@ -335,9 +349,11 @@ TEST test_stat_basic(void) {
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
 #if !defined(__linux__)
-  res = posix_lstat("/proc", &st);
+  res = posix_lstat("//proc", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
+#else
+  (void)posix_lstat("//nonexistent_xyz_999", &st);
 #endif
 #endif
 
@@ -897,7 +913,341 @@ TEST test_chmod(void) {
   PASS();
 }
 
+#if defined(_WIN32)
+typedef struct mock_stat_ft {
+  unsigned long dwLowDateTime;
+  unsigned long dwHighDateTime;
+} mock_stat_ft_t;
+
+typedef struct mock_stat_fad {
+  unsigned long dwFileAttributes;
+  mock_stat_ft_t ftCreationTime;
+  mock_stat_ft_t ftLastAccessTime;
+  mock_stat_ft_t ftLastWriteTime;
+  unsigned long nFileSizeHigh;
+  unsigned long nFileSizeLow;
+} mock_stat_fad_t;
+
+typedef struct mock_stat_bhfi {
+  unsigned long dwFileAttributes;
+  mock_stat_ft_t ftCreationTime;
+  mock_stat_ft_t ftLastAccessTime;
+  mock_stat_ft_t ftLastWriteTime;
+  unsigned long dwVolumeSerialNumber;
+  unsigned long nFileSizeHigh;
+  unsigned long nFileSizeLow;
+  unsigned long nNumberOfLinks;
+  unsigned long nFileIndexHigh;
+  unsigned long nFileIndexLow;
+} mock_stat_bhfi_t;
+
+static const char *g_mock_final_path = "C:\\dir";
+static unsigned long g_mock_final_ret = 6;
+
+static unsigned long __stdcall mock_final_path_fn(void *hFile, char *buf,
+                                                  unsigned long sz,
+                                                  unsigned long flags) {
+  (void)hFile;
+  (void)flags;
+  if (g_mock_final_ret > 0 && g_mock_final_ret < sz && g_mock_final_path) {
+    size_t l = strlen(g_mock_final_path);
+    memcpy(buf, g_mock_final_path, l + 1);
+  }
+  return g_mock_final_ret;
+}
+
+static void *mock_get_mod_null(const char *name) {
+  (void)name;
+  return NULL;
+}
+
+static void *mock_get_proc_null(void *hMod, const char *name) {
+  (void)hMod;
+  (void)name;
+  return NULL;
+}
+
+static void *mock_get_proc_final(void *hMod, const char *name) {
+  (void)hMod;
+  (void)name;
+  return (void *)(size_t)mock_final_path_fn;
+}
+
+static unsigned long mock_get_attrs_fail(const char *path) {
+  (void)path;
+  return (unsigned long)-1;
+}
+
+static int mock_set_attrs_fail(const char *path, unsigned long attrs) {
+  (void)path;
+  (void)attrs;
+  return 0;
+}
+
+static int mock_get_attrs_ex_reparse(const char *path, void *info) {
+  mock_stat_fad_t *d = (mock_stat_fad_t *)info;
+  (void)path;
+  memset(d, 0, sizeof(*d));
+  d->dwFileAttributes = 1024UL; /* FILE_ATTRIBUTE_REPARSE_POINT */
+  d->ftCreationTime.dwHighDateTime = 30000000UL;
+  d->ftLastAccessTime.dwHighDateTime = 30000000UL;
+  d->ftLastWriteTime.dwHighDateTime = 30000000UL;
+  return 1;
+}
+
+static int g_mock_bhfi_mode = 0;
+static int mock_get_info_fn(void *hFile, void *info) {
+  mock_stat_bhfi_t *b = (mock_stat_bhfi_t *)info;
+  (void)hFile;
+  if (g_mock_bhfi_mode == 0) {
+    return 0;
+  }
+  memset(b, 0, sizeof(*b));
+  if (g_mock_bhfi_mode == 1) {
+    /* vol == 0, idx == 0, links == 0 */
+    b->dwVolumeSerialNumber = 0;
+    b->nFileIndexLow = 0;
+    b->nFileIndexHigh = 0;
+    b->nNumberOfLinks = 0;
+  } else {
+    /* vol != 0, idx != 0 but (idx & 0xFFFF) == 0 -> st_ino = 1, links >= 32767
+     */
+    b->dwVolumeSerialNumber = 0x1234UL;
+    b->nFileIndexLow = 0x10000UL;
+    b->nFileIndexHigh = 0;
+    b->nNumberOfLinks = 40000UL;
+  }
+  return 1;
+}
+
+static int mock_set_time_fail(void *h, const void *c, const void *a,
+                              const void *m) {
+  (void)h;
+  (void)c;
+  (void)a;
+  (void)m;
+  return 0;
+}
+
+static void *mock_create_file_fail(const char *p, unsigned long acc,
+                                   unsigned long sh, unsigned long disp,
+                                   unsigned long fl) {
+  (void)p;
+  (void)acc;
+  (void)sh;
+  (void)disp;
+  (void)fl;
+  return (void *)(size_t)-1;
+}
+#endif
+
+TEST test_posix_stat_extra_coverage(void) {
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
+  ASSERT_EQ(-1, chflags(NULL, 0));
+  ASSERT_EQ(0, chflags(".", 0));
+  ASSERT_EQ(-1, lchflags(NULL, 0));
+  ASSERT_EQ(0, lchflags(".", 0));
+  ASSERT_EQ(-1, fchflags(-1, 0));
+  ASSERT_EQ(0, fchflags(0, 0));
+#endif
+
+#if defined(_WIN32)
+  {
+    ptrdiff_t h = 0;
+    char buf[260];
+    struct posix_stat pst;
+    struct timespec bad_ts[2];
+    FILE *fp;
+    int fd;
+    size_t i;
+    const char *vpaths[] = {
+        "/dev/null",  "\\dev\\null", "\\proc",          "\\proc\\",
+        "/proc/",     "\\proc\\1",   "\\proc\\1\\",     "\\proc\\1\\stat",
+        "/proc/self", "/proc/self/", "/proc/self/stat", "/proc/cpu",
+        "/proc/+bad", "version",     "uptime",          "meminfo",
+        "loadavg",    "stat",        "mounts",          "filesystems",
+        "swaps",      "cpuinfo"};
+
+    /* Safe get osfhandle on closed valid-range fd (0 <= fd < 2048) */
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT,
+              posix_stat_safe_get_osfhandle(999, &h));
+    ASSERT_EQ(-1, (long)h);
+
+    /* Create temporary file & open fd for tests */
+#if defined(_MSC_VER)
+    if (fopen_s(&fp, "test_stat_extra.txt", "w") != 0) {
+      fp = NULL;
+    }
+#else
+    fp = fopen("test_stat_extra.txt", "w");
+#endif
+    ASSERT(fp != NULL);
+    fputs("extra\n", fp);
+    fclose(fp);
+#if defined(_MSC_VER)
+    if (_sopen_s(&fd, "test_stat_extra.txt", _O_RDWR, _SH_DENYNO,
+                 _S_IREAD | _S_IWRITE) != 0) {
+      fd = -1;
+    }
+#else
+    fd = open("test_stat_extra.txt", O_RDWR, 0644);
+#endif
+    ASSERT(fd >= 0);
+
+    /* IS_ABSOLUTE_PATH branches with non-AT_FDCWD dirfd */
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "\\abs", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "/abs", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "C:\\abs", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "C:/abs", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "C:rel", buf, sizeof(buf)));
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT,
+              posix_stat_resolve_at_path(999, "rel", buf, sizeof(buf)));
+
+    /* resolve_at_path Win32 hook branches */
+    posix_stat_set_win32_hooks(mock_get_mod_null, NULL, NULL, NULL, NULL, NULL,
+                               NULL, NULL);
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_NOT_FOUND,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_null, NULL, NULL, NULL, NULL,
+                               NULL, NULL);
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_NOT_IMPLEMENTED,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_final, NULL, NULL, NULL,
+                               NULL, NULL, NULL);
+    g_mock_final_ret = 0;
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_NOT_FOUND,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+    g_mock_final_ret = 300;
+    ASSERT_EQ(AUTO_WIN_MSVC_ERROR_NOT_FOUND,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    /* Strip \\?\ resulting in len == 0 */
+    g_mock_final_path = "\\\\?\\";
+    g_mock_final_ret = 4;
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    /* Ending with '\\' and '/' and non-slash with exact out_size == len + 1 */
+    g_mock_final_path = "C:\\dir\\";
+    g_mock_final_ret = 7;
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    g_mock_final_path = "C:/dir/";
+    g_mock_final_ret = 7;
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "rel", buf, sizeof(buf)));
+
+    g_mock_final_path = "C:\\dir";
+    g_mock_final_ret = 6;
+    ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+              posix_stat_resolve_at_path(fd, "r", buf, 7));
+
+    /* fchmod Win32 failure branches */
+    posix_stat_set_win32_hooks(mock_get_mod_null, NULL, NULL, NULL, NULL, NULL,
+                               NULL, NULL);
+    ASSERT_EQ(-1, fchmod(fd, 0644));
+
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_null, NULL, NULL, NULL, NULL,
+                               NULL, NULL);
+    ASSERT_EQ(-1, fchmod(fd, 0644));
+
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_final, NULL, NULL, NULL,
+                               NULL, NULL, NULL);
+    g_mock_final_ret = 0;
+    ASSERT_EQ(-1, fchmod(fd, 0644));
+
+    g_mock_final_path = "test_stat_extra.txt";
+    g_mock_final_ret = (unsigned long)strlen(g_mock_final_path);
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_final, mock_get_attrs_fail,
+                               NULL, NULL, NULL, NULL, NULL);
+    ASSERT_EQ(-1, fchmod(fd, 0644));
+
+    posix_stat_set_win32_hooks(NULL, mock_get_proc_final, NULL,
+                               mock_set_attrs_fail, NULL, NULL, NULL, NULL);
+    ASSERT_EQ(-1, fchmod(fd, 0644));
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    /* populate_posix_stat_extras & CreateFileA failure in posix_stat */
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, mock_get_info_fn,
+                               NULL, NULL);
+    g_mock_bhfi_mode = 0;
+    ASSERT_EQ(0, posix_fstat(fd, &pst));
+    g_mock_bhfi_mode = 1;
+    ASSERT_EQ(0, posix_fstat(fd, &pst));
+    g_mock_bhfi_mode = 2;
+    ASSERT_EQ(0, posix_fstat(fd, &pst));
+    ASSERT_EQ(1, (int)pst.st_ino);
+
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                               mock_create_file_fail);
+    ASSERT_EQ(0, posix_stat("test_stat_extra.txt", &pst));
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    /* posix_fstat NULL & bad fd */
+    ASSERT_EQ(-1, posix_fstat(fd, NULL));
+    ASSERT_EQ(-1, posix_fstat(-1, &pst));
+
+    /* All virtual /proc and /dev/null paths + leading // */
+    ASSERT_EQ(0, posix_stat("//proc", &pst));
+    ASSERT_EQ(0, posix_lstat("//proc", &pst));
+    for (i = 0; i < sizeof(vpaths) / sizeof(vpaths[0]); i++) {
+      ASSERT_EQ(0, posix_stat(vpaths[i], &pst));
+    }
+
+    /* Reparse point branch in posix_lstat via hook */
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL,
+                               mock_get_attrs_ex_reparse, NULL, NULL, NULL);
+    ASSERT_EQ(0, posix_lstat("fake_symlink", &pst));
+    ASSERT(S_ISLNK(pst.st_mode));
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    /* futimens & utimensat invalid tv_nsec and SetFileTime failure */
+    bad_ts[0].tv_sec = 0;
+    bad_ts[0].tv_nsec = -5;
+    bad_ts[1].tv_sec = 0;
+    bad_ts[1].tv_nsec = 0;
+    ASSERT_EQ(-1, futimens(fd, bad_ts));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", bad_ts, 0));
+
+    bad_ts[0].tv_nsec = 0;
+    bad_ts[1].tv_nsec = 1000000000L;
+    ASSERT_EQ(-1, futimens(fd, bad_ts));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", bad_ts, 0));
+
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL,
+                               mock_set_time_fail, NULL);
+    ASSERT_EQ(-1, futimens(fd, NULL));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", NULL, 0));
+    posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+    /* mkdirat, mkfifo, mkfifoat */
+    ASSERT_EQ(-1, mkdirat(AT_FDCWD, NULL, 0755));
+    rmdir("test_mkdirat_dir");
+    ASSERT_EQ(0, mkdirat(AT_FDCWD, "test_mkdirat_dir", 0755));
+    ASSERT_EQ(0, rmdir("test_mkdirat_dir"));
+    ASSERT_EQ(-1, mkfifo("test_fifo", 0644));
+    ASSERT_EQ(-1, mkfifoat(AT_FDCWD, "test_fifo", 0644));
+
+    close(fd);
+    remove("test_stat_extra.txt");
+  }
+#endif
+  PASS();
+}
+
 SUITE(suite_posix_stat_core) {
+  RUN_TEST(test_posix_stat_extra_coverage);
   RUN_TEST(test_posix_stat_get_info);
   RUN_TEST(test_posix_stat_error_codes);
 #if defined(_WIN32)

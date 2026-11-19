@@ -74,6 +74,9 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
     if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
         string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     else()
@@ -101,7 +104,10 @@ endif()
 
 
 add_library(posix-ucontext src/posix-ucontext.c)
-set_target_properties(posix-ucontext PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-ucontext PROPERTIES
+    DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS"
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
 target_include_directories(posix-ucontext PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()

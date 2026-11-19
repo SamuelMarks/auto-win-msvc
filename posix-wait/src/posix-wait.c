@@ -1,5 +1,8 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/* posix-wait.c - Strict C89 Implementation */
+/**
+ * @file posix-wait.c
+ * @brief POSIX sys/wait.h implementation and compatibility layer.
+ */
 #if !defined(_XOPEN_SOURCE)
 #define _XOPEN_SOURCE 700
 #endif
@@ -10,11 +13,10 @@
 /* clang-format off */
 #include "posix-wait.h"
 #include <errno.h>
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #if defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
-
 #if defined(_M_AMD64) && !defined(_AMD64_)
 #define _AMD64_
 #elif defined(_M_IX86) && !defined(_X86_)
@@ -29,20 +31,17 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 #include <winsock2.h>
 #else
 #include <handleapi.h>
 #include <minwindef.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
-/* clang-format on */
 #endif
+#endif
+/* clang-format on */
+
+#if defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 
 #ifndef INFINITE
 #define INFINITE 0xFFFFFFFF
@@ -56,56 +55,9 @@
 #define WAIT_TIMEOUT 258L
 #endif
 
-/** \brief wait function. */
-pid_t wait(int *stat_loc) { return waitpid(-1, stat_loc, 0); }
-
-/** \brief wait3 function. */
-pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
-  pid_t ret;
-  if (rusage != NULL) {
-    unsigned char *p = (unsigned char *)rusage;
-    size_t k;
-    for (k = 0; k < 72; k++) {
-      p[k] = 0;
-    }
-  }
-  ret = waitpid(-1, stat_loc, options);
-  return ret;
-}
-
-/* Missing functions from TlHelp32 */
-typedef void *WIN_HANDLE;
 typedef unsigned long WIN_DWORD;
-typedef const char *WIN_LPCSTR;
 
-#define WIN_TH32CS_SNAPPROCESS 0x00000002
-typedef struct tagWIN_PROCESSENTRY32 {
-  WIN_DWORD dwSize;
-  WIN_DWORD cntUsage;
-  WIN_DWORD th32ProcessID;
-  WIN_DWORD th32DefaultHeapID;
-  WIN_DWORD th32ModuleID;
-  WIN_DWORD cntThreads;
-  WIN_DWORD th32ParentProcessID;
-  long pcPriClassBase;
-  WIN_DWORD dwFlags;
-  char szExeFile[260];
-} WIN_PROCESSENTRY32;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-__declspec(dllimport) WIN_HANDLE __stdcall
-CreateToolhelp32Snapshot(WIN_DWORD dwFlags, WIN_DWORD th32ProcessID);
-__declspec(dllimport) int __stdcall Process32First(WIN_HANDLE hSnapshot,
-                                                   WIN_PROCESSENTRY32 *lppe);
-__declspec(dllimport) int __stdcall Process32Next(WIN_HANDLE hSnapshot,
-                                                  WIN_PROCESSENTRY32 *lppe);
-__declspec(dllimport) WIN_DWORD __stdcall GetCurrentProcessId(void);
 __declspec(dllimport) void __stdcall Sleep(WIN_DWORD dwMilliseconds);
-#ifdef __cplusplus
-}
-#endif
 
 __declspec(selectany) void *g_posix_child_handles[1024] = {0};
 __declspec(selectany) unsigned long g_posix_child_pids[1024] = {0};
@@ -119,14 +71,14 @@ __declspec(selectany) int g_posix_child_count = 0;
 #pragma comment(linker,                                                        \
                 "/alternatename:awm_vfork_try_reap=awm_vfork_try_reap_stub")
 #endif
-/** \brief Fallback stub when posix-core is not linked. */
+/** @brief Fallback stub when posix-core is not linked. */
 int awm_vfork_try_reap_stub(int pid, int *stat_loc) {
   (void)pid;
   (void)stat_loc;
   return 0;
 }
 #elif defined(__GNUC__) || defined(__clang__)
-/** \brief Weak fallback stub when posix-core is not linked. */
+/** @brief Weak fallback stub when posix-core is not linked. */
 int __attribute__((weak)) awm_vfork_try_reap(int pid, int *stat_loc) {
   (void)pid;
   (void)stat_loc;
@@ -134,14 +86,103 @@ int __attribute__((weak)) awm_vfork_try_reap(int pid, int *stat_loc) {
 }
 #endif
 
-/** \brief waitpid function. */
 extern int awm_vfork_try_reap(int pid, int *stat_loc);
+
+static HANDLE default_wait_open(DWORD access, BOOL inherit, DWORD pid) {
+  return OpenProcess(access, inherit, pid);
+}
+static DWORD default_wait_single(HANDLE h, DWORD ms) {
+  return WaitForSingleObject(h, ms);
+}
+static BOOL default_wait_exit_code(HANDLE h, DWORD *code) {
+  return GetExitCodeProcess(h, code);
+}
+static BOOL default_wait_terminate(HANDLE h, UINT sig) {
+  return TerminateProcess(h, sig);
+}
+static BOOL default_wait_close(HANDLE h) { return CloseHandle(h); }
+static int default_wait_reap(int pid, int *stat_loc) {
+  return awm_vfork_try_reap(pid, stat_loc);
+}
+
+static HANDLE (*g_wait_open)(DWORD, BOOL, DWORD) = default_wait_open;
+static DWORD (*g_wait_single)(HANDLE, DWORD) = default_wait_single;
+static BOOL (*g_wait_exit_code)(HANDLE, DWORD *) = default_wait_exit_code;
+static BOOL (*g_wait_terminate)(HANDLE, UINT) = default_wait_terminate;
+static BOOL (*g_wait_close)(HANDLE) = default_wait_close;
+static int (*g_wait_reap)(int, int *) = default_wait_reap;
+
+/**
+ * @brief Overrides OpenProcess and WaitForSingleObject hooks for testing.
+ */
+void posix_wait_set_open_wait_hooks(void *(*open_fn)(unsigned long, int,
+                                                     unsigned long),
+                                    unsigned long (*single_fn)(void *,
+                                                               unsigned long)) {
+  g_wait_open = (HANDLE (*)(DWORD, BOOL, DWORD))open_fn;
+  g_wait_single = (DWORD (*)(HANDLE, DWORD))single_fn;
+}
+
+/**
+ * @brief Overrides process status, termination, close, and vfork hooks.
+ */
+void posix_wait_set_proc_hooks(int (*exit_code_fn)(void *, unsigned long *),
+                               int (*terminate_fn)(void *, unsigned int),
+                               int (*close_fn)(void *),
+                               int (*reap_fn)(int, int *)) {
+  g_wait_exit_code = (BOOL (*)(HANDLE, DWORD *))exit_code_fn;
+  g_wait_terminate = (BOOL (*)(HANDLE, UINT))terminate_fn;
+  g_wait_close = (BOOL (*)(HANDLE))close_fn;
+  g_wait_reap = reap_fn;
+}
+
+/**
+ * @brief Resets all posix-wait Win32 hooks to defaults.
+ */
+void posix_wait_reset_hooks(void) {
+  g_wait_open = default_wait_open;
+  g_wait_single = default_wait_single;
+  g_wait_exit_code = default_wait_exit_code;
+  g_wait_terminate = default_wait_terminate;
+  g_wait_close = default_wait_close;
+  g_wait_reap = default_wait_reap;
+}
+
+/**
+ * @brief Populates or clears child tracking table entries for unit testing.
+ */
+void posix_wait_test_set_children(int count, void *h0, unsigned long pid0) {
+  g_posix_child_count = count;
+  if (count > 0) {
+    g_posix_child_handles[0] = h0;
+    g_posix_child_pids[0] = pid0;
+  }
+}
+
+/** @brief wait function. */
+pid_t wait(int *stat_loc) { return waitpid(-1, stat_loc, 0); }
+
+/** @brief wait3 function. */
+pid_t wait3(int *stat_loc, int options, struct rusage *rusage) {
+  pid_t ret;
+  if (rusage != NULL) {
+    unsigned char *p = (unsigned char *)rusage;
+    size_t k;
+    for (k = 0; k < 72; k++) {
+      p[k] = 0;
+    }
+  }
+  ret = waitpid(-1, stat_loc, options);
+  return ret;
+}
+
+/** @brief waitpid function. */
 pid_t waitpid(pid_t pid, int *stat_loc, int options) {
   DWORD wait_res;
   DWORD exit_code;
   int i;
   {
-    int rpid = awm_vfork_try_reap((int)pid, stat_loc);
+    int rpid = g_wait_reap((int)pid, stat_loc);
     if (rpid > 0) {
       return (pid_t)rpid;
     }
@@ -160,17 +201,17 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
         return (pid_t)-1;
       }
       for (i = 0; i < g_posix_child_count; i++) {
-        if (WaitForSingleObject(g_posix_child_handles[i], 0) == WAIT_OBJECT_0) {
+        if (g_wait_single(g_posix_child_handles[i], 0) == WAIT_OBJECT_0) {
           pid_t ret;
           if (stat_loc != NULL) {
-            if (GetExitCodeProcess(g_posix_child_handles[i], &exit_code)) {
+            if (g_wait_exit_code(g_posix_child_handles[i], &exit_code)) {
               *stat_loc = ((int)(exit_code & 0xFF) << 8);
             } else {
               *stat_loc = 0;
             }
           }
           ret = (pid_t)g_posix_child_pids[i];
-          CloseHandle(g_posix_child_handles[i]);
+          g_wait_close(g_posix_child_handles[i]);
           g_posix_child_handles[i] =
               g_posix_child_handles[g_posix_child_count - 1];
           g_posix_child_pids[i] = g_posix_child_pids[g_posix_child_count - 1];
@@ -181,7 +222,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       if (options & WNOHANG) {
         return 0;
       }
-      Sleep(50);
+      Sleep(10);
     }
   }
 
@@ -197,7 +238,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
     }
 
     if (found_idx == -1) {
-      hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE,
+      hProcess = g_wait_open(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE,
                              (DWORD)pid);
     }
 
@@ -206,41 +247,40 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
       return (pid_t)-1;
     }
 
-    wait_res =
-        WaitForSingleObject(hProcess, (options & WNOHANG) ? 0 : INFINITE);
+    wait_res = g_wait_single(hProcess, (options & WNOHANG) ? 0 : INFINITE);
     if (wait_res == WAIT_TIMEOUT) {
       if (found_idx == -1)
-        CloseHandle(hProcess);
+        g_wait_close(hProcess);
       return 0;
     } else if (wait_res == WAIT_OBJECT_0) {
       if (stat_loc != NULL) {
-        if (GetExitCodeProcess(hProcess, &exit_code)) {
+        if (g_wait_exit_code(hProcess, &exit_code)) {
           *stat_loc = ((int)(exit_code & 0xFF) << 8);
         } else {
           *stat_loc = 0;
         }
       }
       if (found_idx != -1) {
-        CloseHandle(g_posix_child_handles[found_idx]);
+        g_wait_close(g_posix_child_handles[found_idx]);
         g_posix_child_handles[found_idx] =
             g_posix_child_handles[g_posix_child_count - 1];
         g_posix_child_pids[found_idx] =
             g_posix_child_pids[g_posix_child_count - 1];
         g_posix_child_count--;
       } else {
-        CloseHandle(hProcess);
+        g_wait_close(hProcess);
       }
       return pid;
     }
 
     if (found_idx == -1)
-      CloseHandle(hProcess);
+      g_wait_close(hProcess);
     errno = EINVAL;
     return (pid_t)-1;
   }
 }
 
-/** \brief waitid function. */
+/** @brief waitid function. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   pid_t res;
   int status = 0;
@@ -278,7 +318,7 @@ int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
   return -1;
 }
 
-/** \brief posix_wait_kill function. */
+/** @brief posix_wait_kill function. */
 int posix_wait_kill(pid_t pid, int sig) {
   HANDLE hProcess;
   if (pid <= 0) {
@@ -286,25 +326,25 @@ int posix_wait_kill(pid_t pid, int sig) {
     return -1;
   }
   if (sig == 0) {
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+    hProcess = g_wait_open(PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
     if (hProcess) {
-      CloseHandle(hProcess);
+      g_wait_close(hProcess);
       return 0;
     }
     errno = ESRCH;
     return -1;
   }
-  hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
+  hProcess = g_wait_open(PROCESS_TERMINATE, FALSE, (DWORD)pid);
   if (!hProcess) {
     errno = ESRCH;
     return -1;
   }
-  if (!TerminateProcess(hProcess, (UINT)sig)) {
-    CloseHandle(hProcess);
+  if (!g_wait_terminate(hProcess, (UINT)sig)) {
+    g_wait_close(hProcess);
     errno = EPERM;
     return -1;
   }
-  CloseHandle(hProcess);
+  g_wait_close(hProcess);
   return 0;
 }
 
@@ -364,7 +404,7 @@ int posix_wait_kill(pid_t pid, int sig) {
 
 #endif /* MSDOS || WATCOMC */
 
-/* Non-standard Microsoft-compatible cwait */
+/** @brief Non-standard Microsoft-compatible cwait. */
 intptr_t posix_cwait(int *termstat, intptr_t pid, int action) {
   (void)action;
   return waitpid((pid_t)pid, termstat, 0);
@@ -431,9 +471,6 @@ auto_win_msvc_error_t posix_wait_get_info(int *out_available) {
   *out_available = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
-
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
 
 typedef int make_iso_compilers_happy_tu_posix_wait;
 

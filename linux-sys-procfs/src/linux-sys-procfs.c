@@ -19,6 +19,15 @@
 #endif
 /* clang-format on */
 
+#if defined(_WIN32)
+#ifndef LINUX_SYS_PROCFS_MOCK_GetTickCount
+#define LINUX_SYS_PROCFS_MOCK_GetTickCount GetTickCount
+#endif
+#ifndef LINUX_SYS_PROCFS_MOCK_GlobalMemoryStatusEx
+#define LINUX_SYS_PROCFS_MOCK_GlobalMemoryStatusEx GlobalMemoryStatusEx
+#endif
+#endif
+
 #if !defined(__linux__)
 #if defined(__APPLE__)
 #ifdef __cplusplus
@@ -46,11 +55,11 @@ int sysinfo(struct sysinfo *info) {
 #if defined(_WIN32)
   {
     MEMORYSTATUSEX stat_ex;
-    DWORD ticks_ms = GetTickCount();
+    DWORD ticks_ms = LINUX_SYS_PROCFS_MOCK_GetTickCount();
     info->uptime = (long)(ticks_ms / 1000UL);
     info->mem_unit = 4096U;
     stat_ex.dwLength = sizeof(stat_ex);
-    if (GlobalMemoryStatusEx(&stat_ex)) {
+    if (LINUX_SYS_PROCFS_MOCK_GlobalMemoryStatusEx(&stat_ex)) {
       DWORDLONG total_pages = stat_ex.ullTotalPhys / (DWORDLONG)4096U;
       DWORDLONG avail_pages = stat_ex.ullAvailPhys / (DWORDLONG)4096U;
       DWORDLONG swap_total =
@@ -116,6 +125,6 @@ auto_win_msvc_error_t linux_sys_procfs_init(int *out_status) {
   *out_status = 1;
   return AUTO_WIN_MSVC_SUCCESS;
 }
-
 #endif
+
 typedef int make_iso_compilers_happy_tu_linux_sys_procfs;

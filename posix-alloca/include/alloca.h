@@ -10,6 +10,13 @@
 #include "auto-win-msvc-error.h"
 #if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) || defined(__MINGW32__)
 #include <malloc.h>
+#elif defined(__GNUC__) || defined(__clang__)
+#if defined(__has_include_next)
+#if __has_include_next(<alloca.h>)
+#pragma GCC system_header
+#include_next <alloca.h>
+#endif
+#endif
 #else
 #include <stdlib.h>
 #endif

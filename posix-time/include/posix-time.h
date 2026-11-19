@@ -2,6 +2,11 @@
 #ifndef POSIX_TIME_H
 #define POSIX_TIME_H
 
+/**
+ * @file posix-time.h
+ * @brief POSIX sys/time.h and time.h polyfills for MSVC, Windows, and DOS.
+ */
+
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 
@@ -20,6 +25,7 @@
 
 #if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 #include <time.h>
+#include <sys/utime.h>
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(_WIN32)
 #include <winsock2.h>
 #endif
@@ -185,8 +191,10 @@ struct itimerval {
 #if defined(_MSC_VER)
 
 #endif
-#define tzset _tzset     /**< Map tzset to _tzset on Windows */
-#define utimbuf _utimbuf /**< Map utimbuf to _utimbuf on Windows */
+#define tzset _tzset /**< Map tzset to _tzset on Windows */
+#if defined(_MSC_VER) && defined(__STDC__)
+#define utimbuf _utimbuf /**< Map utimbuf to _utimbuf in strict ANSI mode */
+#endif
 
 /* Functions that require polyfill on Windows */
 
@@ -256,6 +264,29 @@ int clock_settime(int clk_id, const struct timespec *tp);
  */
 int nanosleep(const struct timespec *req, struct timespec *rem);
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+/**
+ * @brief Thread-safe version of localtime for MinGW.
+ * @param timep A pointer to the time_t value to convert.
+ * @param result A pointer to a tm structure to store the result.
+ * @return A pointer to the result, or NULL on error.
+ */
+struct tm *posix_localtime_r(const time_t *timep, struct tm *result);
+
+/**
+ * @brief Thread-safe version of gmtime for MinGW.
+ * @param timep A pointer to the time_t value to convert.
+ * @param result A pointer to a tm structure to store the result.
+ * @return A pointer to the result, or NULL on error.
+ */
+struct tm *posix_gmtime_r(const time_t *timep, struct tm *result);
+#undef localtime_r
+/** @brief Alias localtime_r to posix_localtime_r on MinGW. */
+#define localtime_r posix_localtime_r
+#undef gmtime_r
+/** @brief Alias gmtime_r to posix_gmtime_r on MinGW. */
+#define gmtime_r posix_gmtime_r
+#else
 /**
  * @brief Thread-safe version of localtime.
  * @param timep A pointer to the time_t value to convert.
@@ -271,6 +302,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
  * @return A pointer to the result, or NULL on error.
  */
 struct tm *gmtime_r(const time_t *timep, struct tm *result);
+#endif
 
 /**
  * @brief Parse a time string into a struct tm.

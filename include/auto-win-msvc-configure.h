@@ -14,11 +14,18 @@
  */
 
 /* clang-format off */
+#if defined(__WATCOMC__)
+#include <stddef.h>
+#endif
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 
 /* Strip unsupported GCC/Clang attributes */
+#if !defined(__clang__)
+#if !defined(__GNUC__) && !defined(__clang__)
 #ifndef __attribute__
 #define __attribute__(x)
+#endif
+#endif
 #endif
 
 /* Thread-local storage specifier */
@@ -31,10 +38,10 @@
 #endif
 
 /* C89 inline polyfill */
-#ifndef inline
+#if !defined(__cplusplus) && !defined(inline)
 #define inline __inline
 #endif
-#ifndef __inline__
+#if !defined(__cplusplus) && !defined(__inline__)
 #define __inline__ __inline
 #endif
 #ifndef __restrict
@@ -73,7 +80,20 @@
 #define POP_SAVED_FUNCTION_VISIBILITY
 #endif
 #if defined(_MSC_VER)
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES 1
+#endif
+#ifndef ftello
+#define ftello _ftelli64
+#endif
+#ifndef fseeko
+#define fseeko _fseeki64
+#endif
+#if defined(__cplusplus)
+extern "C" void _ReadWriteBarrier(void);
+#else
 void _ReadWriteBarrier(void);
+#endif
 #pragma intrinsic(_ReadWriteBarrier)
 #ifndef barrier
 #define barrier() _ReadWriteBarrier()
@@ -345,11 +365,10 @@ void __attribute__((weak)) __gcov_dump(void) {}
 #endif
 
 #if defined(_MSC_VER) || defined(_WIN32)
-#if defined(_MSC_VER)
 #include <malloc.h>
+#include <setjmp.h>
 #ifndef alloca
 #define alloca _alloca
-#endif
 #endif
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -482,8 +501,70 @@ extern int awm_vfork_try_reap(int pid, int *stat_loc);
 #define _exit(s) awm_vfork_exit(s)
 #endif
 
+#if !defined(AUTO_WIN_MSVC_NO_EVENT2)
+#if defined(__has_include)
 #if __has_include(<event2/util.h>)
 #include <event2/util.h>
+#endif
+#endif
+#endif
+
+#ifndef AWM_CFG_SETVBUF
+#define AWM_CFG_SETVBUF(stream, buf, mode, size) setvbuf((stream), (buf), (mode), (size))
+#endif
+#ifndef AWM_CFG_WSASTARTUP
+#define AWM_CFG_WSASTARTUP(ver, data) WSAStartup((ver), (data))
+#endif
+#ifndef AWM_CFG_SOCKET
+#define AWM_CFG_SOCKET(af, type, proto) socket((af), (type), (proto))
+#endif
+#ifndef AWM_CFG_BIND
+#define AWM_CFG_BIND(s, addr, len) bind((s), (addr), (len))
+#endif
+#ifndef AWM_CFG_GETSOCKNAME
+#define AWM_CFG_GETSOCKNAME(s, addr, len) getsockname((s), (addr), (len))
+#endif
+#ifndef AWM_CFG_LISTEN
+#define AWM_CFG_LISTEN(s, backlog) listen((s), (backlog))
+#endif
+#ifndef AWM_CFG_CONNECT
+#define AWM_CFG_CONNECT(s, addr, len) connect((s), (addr), (len))
+#endif
+#ifndef AWM_CFG_ACCEPT
+#define AWM_CFG_ACCEPT(s, addr, len) accept((s), (addr), (len))
+#endif
+#ifndef AWM_CFG_CLOSESOCKET
+#define AWM_CFG_CLOSESOCKET(s) closesocket(s)
+#endif
+#ifndef AWM_CFG_IOCTLSOCKET
+#define AWM_CFG_IOCTLSOCKET(s, cmd, argp) ioctlsocket((s), (cmd), (argp))
+#endif
+#ifndef AWM_CFG_SLEEP
+#define AWM_CFG_SLEEP(ms) Sleep(ms)
+#endif
+#ifndef AWM_CFG_DUP2
+#define AWM_CFG_DUP2(oldfd, newfd) _dup2((oldfd), (newfd))
+#endif
+#ifndef AWM_CFG_OPENPROCESS
+#define AWM_CFG_OPENPROCESS(access, inherit, pid) OpenProcess((access), (inherit), (pid))
+#endif
+#ifndef AWM_CFG_TERMINATEPROCESS
+#define AWM_CFG_TERMINATEPROCESS(h, code) TerminateProcess((h), (code))
+#endif
+#ifndef AWM_CFG_CLOSEHANDLE
+#define AWM_CFG_CLOSEHANDLE(h) CloseHandle(h)
+#endif
+#ifndef AWM_CFG_WAITFORSINGLEOBJECT
+#define AWM_CFG_WAITFORSINGLEOBJECT(h, ms) WaitForSingleObject((h), (ms))
+#endif
+#ifndef AWM_CFG_GETEXITCODEPROCESS
+#define AWM_CFG_GETEXITCODEPROCESS(h, code) GetExitCodeProcess((h), (code))
+#endif
+#ifndef AWM_CFG_MALLOC
+#define AWM_CFG_MALLOC(sz) malloc(sz)
+#endif
+#ifndef AWM_CFG_REALLOC
+#define AWM_CFG_REALLOC(ptr, sz) realloc((ptr), (sz))
 #endif
 
 #ifndef F_GETFD
@@ -532,17 +613,20 @@ typedef intptr_t ssize_t;
  * @brief Ensures Winsock2 is initialized exactly once per process.
  * @return 0 on success, -1 on failure.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 static __inline int auto_win_msvc_ensure_wsastartup(void) {
     static int initialized = 0;
     if (!initialized) {
         WSADATA wsaData;
-        if (setvbuf(stdout, NULL, _IONBF, 0) != 0) {
+        if (AWM_CFG_SETVBUF(stdout, NULL, _IONBF, 0) != 0) {
             return -1;
         }
-        if (setvbuf(stderr, NULL, _IONBF, 0) != 0) {
+        if (AWM_CFG_SETVBUF(stderr, NULL, _IONBF, 0) != 0) {
             return -1;
         }
-        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        if (AWM_CFG_WSASTARTUP(MAKEWORD(2, 2), &wsaData) != 0) {
             return -1;
         }
         initialized = 1;
@@ -556,7 +640,7 @@ static __inline int auto_win_msvc_ensure_wsastartup(void) {
  * @return 0 on success, -1 on failure with errno set.
  */
 static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
-#if defined(EVENT2_UTIL_H_INCLUDED_) || __has_include(<event2/util.h>)
+#if defined(EVENT2_UTIL_H_INCLUDED_)
     evutil_socket_t fds[2];
     if (auto_win_msvc_ensure_wsastartup() != 0) {
         return -1;
@@ -575,7 +659,7 @@ static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
         return -1;
     }
 
-    listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    listener = (SOCKET)AWM_CFG_SOCKET(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listener == INVALID_SOCKET) return -1;
 
     memset(&addr, 0, sizeof(addr));
@@ -583,34 +667,34 @@ static __inline int auto_win_msvc_native_pipe(int pipefd[2]) {
     addr.sin_addr.S_un.S_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port = 0;
 
-    if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
-        closesocket(listener);
+    if (AWM_CFG_BIND(listener, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        AWM_CFG_CLOSESOCKET(listener);
         return -1;
     }
-    if (getsockname(listener, (struct sockaddr *)&addr, &addrlen) == SOCKET_ERROR) {
-        closesocket(listener);
+    if (AWM_CFG_GETSOCKNAME(listener, (struct sockaddr *)&addr, &addrlen) == SOCKET_ERROR) {
+        AWM_CFG_CLOSESOCKET(listener);
         return -1;
     }
-    if (listen(listener, 1) == SOCKET_ERROR) {
-        closesocket(listener);
+    if (AWM_CFG_LISTEN(listener, 1) == SOCKET_ERROR) {
+        AWM_CFG_CLOSESOCKET(listener);
         return -1;
     }
 
-    s1 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    s1 = (SOCKET)AWM_CFG_SOCKET(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s1 == INVALID_SOCKET) {
-        closesocket(listener);
+        AWM_CFG_CLOSESOCKET(listener);
         return -1;
     }
-    if (connect(s1, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
-        closesocket(s1);
-        closesocket(listener);
+    if (AWM_CFG_CONNECT(s1, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        AWM_CFG_CLOSESOCKET(s1);
+        AWM_CFG_CLOSESOCKET(listener);
         return -1;
     }
 
-    s2 = accept(listener, NULL, NULL);
-    closesocket(listener);
+    s2 = (SOCKET)AWM_CFG_ACCEPT(listener, NULL, NULL);
+    AWM_CFG_CLOSESOCKET(listener);
     if (s2 == INVALID_SOCKET) {
-        closesocket(s1);
+        AWM_CFG_CLOSESOCKET(s1);
         return -1;
     }
 
@@ -646,7 +730,7 @@ static __inline int auto_win_msvc_fcntl(intptr_t fd, int cmd, ...) {
         flags = va_arg(ap, int);
         va_end(ap);
         mode = (flags & O_NONBLOCK) ? 1 : 0;
-        if (ioctlsocket(s, FIONBIO, &mode) != 0) {
+        if (AWM_CFG_IOCTLSOCKET(s, FIONBIO, &mode) != 0) {
             return -1;
         }
         return 0;
@@ -732,7 +816,7 @@ static __inline int auto_win_msvc_pthread_once(pthread_once_t *once_control, voi
         once_control->p = (void *)2;
     } else {
         while (once_control->p != (void *)2) {
-            Sleep(1);
+            AWM_CFG_SLEEP(1);
         }
     }
     return 0;
@@ -747,7 +831,7 @@ static __inline int auto_win_msvc_pthread_once(pthread_once_t *once_control, voi
  * @return Target descriptor on success, -1 on error.
  */
 static __inline int auto_win_msvc_dup2(int oldfd, int newfd) {
-    int r = _dup2(oldfd, newfd);
+    int r = AWM_CFG_DUP2(oldfd, newfd);
     if (r == 0) {
         return newfd;
     }
@@ -774,15 +858,15 @@ static __inline int auto_win_msvc_kill(pid_t pid, int sig) {
         return 0;
     }
     {
-        HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
+        HANDLE h = AWM_CFG_OPENPROCESS(PROCESS_TERMINATE, FALSE, (DWORD)pid);
         if (!h) {
             return 0;
         }
-        if (!TerminateProcess(h, (UINT)sig)) {
-            CloseHandle(h);
+        if (!AWM_CFG_TERMINATEPROCESS(h, (UINT)sig)) {
+            AWM_CFG_CLOSEHANDLE(h);
             return -1;
         }
-        if (!CloseHandle(h)) {
+        if (!AWM_CFG_CLOSEHANDLE(h)) {
             return -1;
         }
     }
@@ -802,6 +886,7 @@ extern int awm_vfork_try_reap(int pid, int *stat_loc);
 static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options) {
     HANDLE h;
     int rpid = awm_vfork_try_reap((int)pid, status);
+    (void)options;
     if (rpid > 0) {
         return (pid_t)rpid;
     }
@@ -809,25 +894,23 @@ static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options)
         errno = ECHILD;
         return (pid_t)-1;
     }
-    if (options) {
-    }
-    h = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+    h = AWM_CFG_OPENPROCESS(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
     if (h) {
-        DWORD wait_res = WaitForSingleObject(h, 2000);
+        DWORD wait_res = AWM_CFG_WAITFORSINGLEOBJECT(h, 2000);
         if (wait_res == WAIT_FAILED) {
-            CloseHandle(h);
+            AWM_CFG_CLOSEHANDLE(h);
             return (pid_t)-1;
         }
         if (status) {
             DWORD code = 0;
-            if (GetExitCodeProcess(h, &code)) {
+            if (AWM_CFG_GETEXITCODEPROCESS(h, &code)) {
                 *status = ((int)(code & 0xff) << 8);
             } else {
-                CloseHandle(h);
+                AWM_CFG_CLOSEHANDLE(h);
                 return (pid_t)-1;
             }
         }
-        if (!CloseHandle(h)) {
+        if (!AWM_CFG_CLOSEHANDLE(h)) {
             return (pid_t)-1;
         }
         return pid;
@@ -901,7 +984,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
     if (*lineptr == NULL || *n == 0) {
         *n = 128;
-        *lineptr = (char *)malloc(*n);
+        *lineptr = (char *)AWM_CFG_MALLOC(*n);
         if (*lineptr == NULL) {
             errno = ENOMEM;
             return -1;
@@ -911,7 +994,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     while ((c = fgetc(stream)) != EOF) {
         if (pos + 2 >= *n) {
             size_t new_size = *n * 2;
-            char *new_ptr = (char *)realloc(*lineptr, new_size);
+            char *new_ptr = (char *)AWM_CFG_REALLOC(*lineptr, new_size);
             if (new_ptr == NULL) {
                 errno = ENOMEM;
                 return -1;
@@ -924,7 +1007,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
             break;
     }
 
-    if (pos == 0 && c == EOF)
+    if (pos == 0)
         return -1;
 
     (*lineptr)[pos] = '\0';
@@ -984,12 +1067,6 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 #define fseeko _fseeki64
 #endif
 
-#include <malloc.h>
-#ifndef alloca
-#define alloca _alloca
-#endif
-
-#include <setjmp.h>
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))
 static __inline int auto_win_msvc_clear_jmp_frame(_JBTYPE *env, int rc) {
     ((unsigned __int64 *)env)[0] = 0;
@@ -1014,12 +1091,23 @@ typedef jmp_buf sigjmp_buf;
  * @param[in] str Input null-terminated path string.
  * @return Pointer to the last slash/backslash, or NULL if none exists.
  */
-static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
+static
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+    __inline
+#elif defined(__GNUC__) || defined(__clang__)
+    __inline__
+#endif
+    char *auto_win_msvc_strrchr_slash(const char *str) {
     const char *s1 = strrchr(str, '/');
     const char *s2 = strrchr(str, '\\');
-    if (s1 && s2) return (char *)(s1 > s2 ? s1 : s2);
-    return (char *)(s1 ? s1 : s2);
+    union { const char *c; char *m; } u;
+    u.c = (s1 && s2) ? (s1 > s2 ? s1 : s2) : (s1 ? s1 : s2);
+    return u.m;
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
 #include <errno.h>
@@ -1222,7 +1310,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
             break;
     }
 
-    if (pos == 0 && c == EOF)
+    if (pos == 0)
         return -1;
 
     (*lineptr)[pos] = '\0';
@@ -1238,19 +1326,31 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 static __inline char *auto_win_msvc_strrchr_slash(const char *str) {
     const char *s1 = strrchr(str, '/');
     const char *s2 = strrchr(str, '\\');
-    if (s1 && s2) return (char *)(s1 > s2 ? s1 : s2);
-    return (char *)(s1 ? s1 : s2);
+    union { const char *c; char *m; } u;
+    u.c = (s1 && s2) ? (s1 > s2 ? s1 : s2) : (s1 ? s1 : s2);
+    return u.m;
+}
+
+#else
+
+/**
+ * @brief Locates the last path separator (forward slash or backslash) in str.
+ * @param[in] str Input null-terminated path string.
+ * @return Pointer to the last slash/backslash, or NULL if none exists.
+ */
+static
+#if defined(__GNUC__) || defined(__clang__)
+    __inline__
+#endif
+    char *auto_win_msvc_strrchr_slash(const char *str) {
+    const char *s1 = strrchr(str, '/');
+    const char *s2 = strrchr(str, '\\');
+    union { const char *c; char *m; } u;
+    u.c = (s1 && s2) ? (s1 > s2 ? s1 : s2) : (s1 ? s1 : s2);
+    return u.m;
 }
 
 #endif /* _MSC_VER || _WIN32 */
 /* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif /* AUTO_WIN_MSVC_CONFIGURE_H */

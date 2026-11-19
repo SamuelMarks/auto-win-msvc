@@ -3,11 +3,13 @@
 
 /**
  * @file soundcard.h
- * @brief OSS/FreeBSD audio device ioctl definitions (<sys/soundcard.h>).
+ * @brief OSS/FreeBSD audio and MIDI device ioctl definitions
+ * (<sys/soundcard.h>).
  */
 
 /* clang-format off */
 #include <sys/ioccom.h>
+#include <sys/ioctl.h>
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -31,7 +33,10 @@ extern "C" {
 #define AFMT_S24_LE 0x00010000
 #define AFMT_S24_BE 0x00020000
 #define AFMT_F32_LE 0x00100000
+#define AFMT_F32_BE 0x00200000
 #define AFMT_S16_NE AFMT_S16_LE
+#define AFMT_F32_NE AFMT_F32_LE
+#define AFMT_FLOAT AFMT_F32_NE
 
 #define SNDCTL_DSP_RESET _IO('P', 0)
 #define SNDCTL_DSP_SYNC _IO('P', 1)
@@ -40,10 +45,63 @@ extern "C" {
 #define SNDCTL_DSP_GETBLKSIZE _IOWR('P', 4, int)
 #define SNDCTL_DSP_SETFMT _IOWR('P', 5, int)
 #define SNDCTL_DSP_CHANNELS _IOWR('P', 6, int)
+#define SOUND_PCM_WRITE_CHANNELS _IOWR('P', 6, int)
+#define SOUND_PCM_WRITE_FILTER _IOWR('P', 7, int)
 #define SNDCTL_DSP_POST _IO('P', 8)
 #define SNDCTL_DSP_SUBDIVIDE _IOWR('P', 9, int)
 #define SNDCTL_DSP_SETFRAGMENT _IOWR('P', 10, int)
 #define SNDCTL_DSP_GETFMTS _IOR('P', 11, int)
+#define SNDCTL_DSP_GETODELAY _IOR('P', 23, int)
+#define SOUND_PCM_WRITE_BITS SNDCTL_DSP_SETFMT
+#define SOUND_PCM_WRITE_RATE SNDCTL_DSP_SPEED
+
+/* MIDI controller numbers */
+#define CTL_BANK_SELECT 0x00
+#define CTL_MODWHEEL 0x01
+#define CTL_BREATH 0x02
+#define CTL_FOOT 0x04
+#define CTL_PORTAMENTO_TIME 0x05
+#define CTL_DATA_ENTRY 0x06
+#define CTL_MAIN_VOLUME 0x07
+#define CTL_BALANCE 0x08
+#define CTL_PAN 0x0a
+#define CTL_EXPRESSION 0x0b
+#define CTL_GENERAL_PURPOSE1 0x10
+#define CTL_GENERAL_PURPOSE2 0x11
+#define CTL_GENERAL_PURPOSE3 0x12
+#define CTL_GENERAL_PURPOSE4 0x13
+#define CTL_DAMPER_PEDAL 0x40
+#define CTL_SUSTAIN CTL_DAMPER_PEDAL
+#define CTL_HOLD CTL_DAMPER_PEDAL
+#define CTL_PORTAMENTO 0x41
+#define CTL_SOSTENUTO 0x42
+#define CTL_SOFT_PEDAL 0x43
+#define CTL_HOLD2 0x45
+#define CTL_GENERAL_PURPOSE5 0x50
+#define CTL_GENERAL_PURPOSE6 0x51
+#define CTL_GENERAL_PURPOSE7 0x52
+#define CTL_GENERAL_PURPOSE8 0x53
+#define CTL_EXT_EFF_DEPTH 0x5b
+#define CTL_TREMOLO_DEPTH 0x5c
+#define CTL_CHORUS_DEPTH 0x5d
+#define CTL_DETUNE_DEPTH 0x5e
+#define CTL_CELESTE_DEPTH CTL_DETUNE_DEPTH
+#define CTL_PHASER_DEPTH 0x5f
+#define CTL_DATA_INCREMENT 0x60
+#define CTL_DATA_DECREMENT 0x61
+#define CTL_NONREG_PARM_NUM_LSB 0x62
+#define CTL_NONREG_PARM_NUM_MSB 0x63
+#define CTL_REGIST_PARM_NUM_LSB 0x64
+#define CTL_REGIST_PARM_NUM_MSB 0x65
+
+#define MIDI_NOTEOFF 0x80
+#define MIDI_NOTEON 0x90
+#define MIDI_KEY_PRESSURE 0xA0
+#define MIDI_CTL_CHANGE 0xB0
+#define MIDI_PGM_CHANGE 0xC0
+#define MIDI_CHN_PRESSURE 0xD0
+#define MIDI_PITCH_BEND 0xE0
+#define MIDI_SYSTEM_PREFIX 0xF0
 
 #ifdef __cplusplus
 }

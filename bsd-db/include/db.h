@@ -34,6 +34,23 @@ extern "C" {
 #define R_SETCURSOR 10
 #define R_RECNOSYNC 11
 
+#ifndef _BSD_DB_RECNO_TYPES_DEFINED
+#define _BSD_DB_RECNO_TYPES_DEFINED
+typedef uint32_t pgno_t;
+typedef uint16_t indx_t;
+typedef uint32_t recno_t;
+#endif
+
+#ifndef MAX_PAGE_NUMBER
+#define MAX_PAGE_NUMBER 0xffffffffUL
+#endif
+#ifndef MAX_PAGE_OFFSET
+#define MAX_PAGE_OFFSET 65535U
+#endif
+#ifndef MAX_REC_NUMBER
+#define MAX_REC_NUMBER 0xffffffffUL
+#endif
+
 /** @brief Database type enumeration. */
 typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 

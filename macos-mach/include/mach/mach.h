@@ -3,18 +3,33 @@
 
 /**
  * @file mach/mach.h
- * @brief Polyfill for macOS <mach/mach.h>.
+ * @brief Polyfill for macOS <mach/mach.h> (forwards to system header on Apple).
  */
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
+#if defined(__APPLE__) && (defined(__GNUC__) || defined(__clang__))
+#pragma GCC system_header
+#include_next <mach/mach.h>
+#include <mach/mach_time.h>
+#else
 #include <stddef.h>
 #include <posix-stdint.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Initializes macos-mach availability check.
+ * @param[out] out_status Pointer receiving initialization status.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on NULL pointer.
+ */
+auto_win_msvc_error_t macos_mach_init(int *out_status);
+
+#if !(defined(__APPLE__) && (defined(__GNUC__) || defined(__clang__)))
 
 typedef unsigned int mach_port_t;
 typedef mach_port_t task_t;
@@ -25,9 +40,6 @@ typedef unsigned int mach_msg_type_number_t;
 
 #define TASK_BASIC_INFO 20
 
-/**
- * @brief Basic task info structure.
- */
 struct task_basic_info {
   int virtual_size;
   int resident_size;
@@ -39,46 +51,18 @@ struct task_basic_info {
 
 #define KERN_SUCCESS 0
 
-/**
- * @brief Initializes and validates the macos-mach module.
- * @param[out] out_status Pointer to an integer receiving the initialized
- * status.
- * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
- */
-auto_win_msvc_error_t macos_mach_init(int *out_status);
-
-/**
- * @brief Returns the current absolute time in nanoseconds.
- * @return Absolute time or 0.
- */
+/** @brief Returns current monotonic Mach absolute time ticks. */
 uint64_t mach_absolute_time(void);
-
-/**
- * @brief Returns information about a task.
- * @param target_task The task port.
- * @param flavor Type of information requested.
- * @param task_info_out Pointer to output buffer.
- * @param task_info_outCnt Pointer to size of output buffer.
- * @return KERN_SUCCESS or -1.
- */
+/** @brief Retrieves task information for target_task. */
 kern_return_t task_info(task_t target_task, task_flavor_t flavor,
                         task_info_t task_info_out,
                         mach_msg_type_number_t *task_info_outCnt);
-
-/**
- * @brief Returns the task port for the calling process.
- * @return Task port.
- */
+/** @brief Returns the Mach port for the current task. */
 task_t mach_task_self(void);
-
-/**
- * @brief Obtains a task port given a process ID.
- * @param target_tport Target task port.
- * @param pid Process ID.
- * @param[out] t Output task port pointer.
- * @return KERN_SUCCESS or -1.
- */
+/** @brief Obtains the Mach task port for a given process ID. */
 kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t);
+
+#endif /* !__APPLE__ */
 
 #ifdef __cplusplus
 }

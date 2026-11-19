@@ -1,5 +1,10 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+/**
+ * @file linux-getopt.c
+ * @brief Polyfill implementation for GNU getopt and getopt_long.
+ */
+
 /* clang-format off */
 #define LINUX_GETOPT_EXPORTS
 #include "linux-getopt.h"
@@ -7,9 +12,13 @@
 #include <string.h>
 /* clang-format on */
 
+/** @brief Pointer to argument of current option. */
 char *linux_optarg = NULL;
+/** @brief Index in argv of the next element to be scanned. */
 int linux_optind = 1;
+/** @brief Callers store zero here to inhibit error messages. */
 int linux_opterr = 1;
+/** @brief Set to an option character which was unrecognized. */
 int linux_optopt = 0;
 
 static char *nextchar = NULL;
@@ -17,9 +26,13 @@ static char *nextchar = NULL;
 #if (defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||               \
      defined(__MSDOS__)) &&                                                    \
     !defined(__WATCOMC__)
+/** @brief Standard POSIX optarg alias. */
 char *optarg = NULL;
+/** @brief Standard POSIX optind alias. */
 int optind = 1;
+/** @brief Standard POSIX opterr alias. */
 int opterr = 1;
+/** @brief Standard POSIX optopt alias. */
 int optopt = 0;
 #endif
 
@@ -165,6 +178,7 @@ int linux_getopt_long(int argc, char *const argv[], const char *optstring,
 #if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
     defined(__MSDOS__) || defined(__WATCOMC__)
 #if !defined(__WATCOMC__)
+/** @brief Standard POSIX getopt wrapper synchronizing global state. */
 int getopt(int argc, char *const argv[], const char *optstring) {
   int res;
   if (optind != linux_optind) {
@@ -180,6 +194,7 @@ int getopt(int argc, char *const argv[], const char *optstring) {
 }
 #endif
 
+/** @brief GNU getopt_long wrapper synchronizing global state. */
 int getopt_long(int argc, char *const argv[], const char *optstring,
                 const struct option *longopts, int *longindex) {
   int res;
@@ -196,9 +211,13 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
 }
 #endif
 
+/** @brief Returns current option argument string. */
 const char *linux_get_optarg(void) { return linux_optarg; }
+/** @brief Returns current argv scan index. */
 int linux_get_optind(void) { return linux_optind; }
+/** @brief Returns current error reporting flag. */
 int linux_get_opterr(void) { return linux_opterr; }
+/** @brief Returns most recent unrecognized option character. */
 int linux_get_optopt(void) { return linux_optopt; }
 
 /** @brief Initializes and resets the linux-getopt module state. */

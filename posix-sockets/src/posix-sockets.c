@@ -1,8 +1,6 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /* posix-sockets.c - Strict C89 Implementation */
 #define POSIX_SOCKETS_EXPORTS
-#if defined(_MSC_VER)
-#endif
 /* clang-format off */
 #include "posix-sockets.h"
 
@@ -24,6 +22,7 @@ typedef int error_type_t;
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ifaddrs.h"
 #if defined(_WIN32)
 #include <fcntl.h>
@@ -43,6 +42,249 @@ typedef int error_type_t;
 #ifndef _O_BINARY
 #define _O_BINARY 0x8000
 #endif
+#ifndef EINVAL
+#define EINVAL 38
+#endif
+
+#if defined(_WIN32)
+#undef freeaddrinfo
+#undef gai_strerror
+#undef getaddrinfo
+#undef getnameinfo
+#undef getservbyname
+#undef getservbyport
+#undef select
+#undef accept
+#undef bind
+#undef connect
+#undef getpeername
+#undef getsockname
+#undef getsockopt
+#undef listen
+#undef recv
+#undef send
+#undef setsockopt
+#undef shutdown
+#undef socket
+
+__declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
+__declspec(dllimport) int __stdcall
+PeekNamedPipe(void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
+              unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
+              unsigned long *lpBytesLeftThisMessage);
+
+static void *default_sock_malloc(size_t size) { return malloc(size); }
+static void *default_sock_calloc(size_t count, size_t size) {
+  return calloc(count, size);
+}
+static void default_sock_free(void *ptr) { free(ptr); }
+static intptr_t default_sock_get_osfhandle(int fd) {
+  return _get_osfhandle(fd);
+}
+static int default_sock_open_osfhandle(intptr_t osfhandle, int flags) {
+  return _open_osfhandle(osfhandle, flags);
+}
+static int default_sock_close(int fd) { return _close(fd); }
+static int default_sock_read(int fd, void *buf, unsigned int count) {
+  return _read(fd, buf, count);
+}
+static int default_sock_write(int fd, const void *buf, unsigned int count) {
+  return _write(fd, buf, count);
+}
+static int default_wsa_startup(WORD ver, LPWSADATA data) {
+  return WSAStartup(ver, data);
+}
+static int default_wsa_get_last_error(void) { return WSAGetLastError(); }
+static SOCKET default_wsa_socket_w(int af, int type, int protocol,
+                                   LPWSAPROTOCOL_INFOW info, GROUP g,
+                                   DWORD flags) {
+  return WSASocketW(af, type, protocol, info, g, flags);
+}
+static int default_closesocket(SOCKET s) { return closesocket(s); }
+static int default_ioctlsocket(SOCKET s, long cmd, u_long *argp) {
+  return ioctlsocket(s, cmd, argp);
+}
+static int default_bind(SOCKET s, const struct sockaddr *name, int namelen) {
+  return bind(s, name, namelen);
+}
+static int default_getsockname(SOCKET s, struct sockaddr *name, int *namelen) {
+  return getsockname(s, name, namelen);
+}
+static int default_getpeername(SOCKET s, struct sockaddr *name, int *namelen) {
+  return getpeername(s, name, namelen);
+}
+static int default_listen(SOCKET s, int backlog) { return listen(s, backlog); }
+static SOCKET default_accept(SOCKET s, struct sockaddr *addr, int *addrlen) {
+  return accept(s, addr, addrlen);
+}
+static int default_connect(SOCKET s, const struct sockaddr *name, int namelen) {
+  return connect(s, name, namelen);
+}
+static int default_getsockopt(SOCKET s, int level, int optname, char *optval,
+                              int *optlen) {
+  return getsockopt(s, level, optname, optval, optlen);
+}
+static int default_setsockopt(SOCKET s, int level, int optname,
+                              const char *optval, int optlen) {
+  return setsockopt(s, level, optname, optval, optlen);
+}
+static int default_shutdown(SOCKET s, int how) { return shutdown(s, how); }
+static int default_recv(SOCKET s, char *buf, int len, int flags) {
+  return recv(s, buf, len, flags);
+}
+static int default_send(SOCKET s, const char *buf, int len, int flags) {
+  return send(s, buf, len, flags);
+}
+static int default_select(int nfds, fd_set *readfds, fd_set *writefds,
+                          fd_set *exceptfds, const struct timeval *timeout) {
+  return select(nfds, readfds, writefds, exceptfds, timeout);
+}
+static int default_wsa_recv(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                            LPDWORD bytes_recvd, LPDWORD flags,
+                            LPWSAOVERLAPPED overlapped,
+                            LPWSAOVERLAPPED_COMPLETION_ROUTINE comp) {
+  return WSARecv(s, buffers, buffer_count, bytes_recvd, flags, overlapped,
+                 comp);
+}
+static int default_wsa_recv_from(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                                 LPDWORD bytes_recvd, LPDWORD flags,
+                                 struct sockaddr *from, LPINT fromlen,
+                                 LPWSAOVERLAPPED overlapped,
+                                 LPWSAOVERLAPPED_COMPLETION_ROUTINE comp) {
+  return WSARecvFrom(s, buffers, buffer_count, bytes_recvd, flags, from,
+                     fromlen, overlapped, comp);
+}
+static int default_wsa_send(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                            LPDWORD bytes_sent, DWORD flags,
+                            LPWSAOVERLAPPED overlapped,
+                            LPWSAOVERLAPPED_COMPLETION_ROUTINE comp) {
+  return WSASend(s, buffers, buffer_count, bytes_sent, flags, overlapped, comp);
+}
+static int default_wsa_send_to(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                               LPDWORD bytes_sent, DWORD flags,
+                               const struct sockaddr *to, int tolen,
+                               LPWSAOVERLAPPED overlapped,
+                               LPWSAOVERLAPPED_COMPLETION_ROUTINE comp) {
+  return WSASendTo(s, buffers, buffer_count, bytes_sent, flags, to, tolen,
+                   overlapped, comp);
+}
+static int default_getaddrinfo(PCSTR nodename, PCSTR servname,
+                               const ADDRINFOA *hints, PADDRINFOA *res) {
+  return getaddrinfo(nodename, servname, hints, res);
+}
+static void default_freeaddrinfo(PADDRINFOA ai) { freeaddrinfo(ai); }
+static struct servent *default_getservbyname(const char *name,
+                                             const char *proto) {
+  return getservbyname(name, proto);
+}
+static struct servent *default_getservbyport(int port, const char *proto) {
+  return getservbyport(port, proto);
+}
+static unsigned long default_get_file_type(void *file_handle) {
+  return GetFileType(file_handle);
+}
+static int default_peek_named_pipe(void *named_pipe, void *buffer,
+                                   unsigned long buffer_size,
+                                   unsigned long *bytes_read,
+                                   unsigned long *total_bytes_avail,
+                                   unsigned long *bytes_left_this_message) {
+  return PeekNamedPipe(named_pipe, buffer, buffer_size, bytes_read,
+                       total_bytes_avail, bytes_left_this_message);
+}
+static void default_sleep(DWORD milliseconds) { Sleep(milliseconds); }
+
+static const struct posix_sockets_win32_hooks k_default_sock_hooks = {
+    default_sock_malloc,
+    default_sock_calloc,
+    default_sock_free,
+    default_sock_get_osfhandle,
+    default_sock_open_osfhandle,
+    default_sock_close,
+    default_sock_read,
+    default_sock_write,
+    default_wsa_startup,
+    default_wsa_get_last_error,
+    default_wsa_socket_w,
+    default_closesocket,
+    default_ioctlsocket,
+    default_bind,
+    default_getsockname,
+    default_getpeername,
+    default_listen,
+    default_accept,
+    default_connect,
+    default_getsockopt,
+    default_setsockopt,
+    default_shutdown,
+    default_recv,
+    default_send,
+    default_select,
+    default_wsa_recv,
+    default_wsa_recv_from,
+    default_wsa_send,
+    default_wsa_send_to,
+    default_getaddrinfo,
+    default_freeaddrinfo,
+    default_getservbyname,
+    default_getservbyport,
+    default_get_file_type,
+    default_peek_named_pipe,
+    default_sleep};
+
+static struct posix_sockets_win32_hooks g_sock_hooks = {
+    default_sock_malloc,
+    default_sock_calloc,
+    default_sock_free,
+    default_sock_get_osfhandle,
+    default_sock_open_osfhandle,
+    default_sock_close,
+    default_sock_read,
+    default_sock_write,
+    default_wsa_startup,
+    default_wsa_get_last_error,
+    default_wsa_socket_w,
+    default_closesocket,
+    default_ioctlsocket,
+    default_bind,
+    default_getsockname,
+    default_getpeername,
+    default_listen,
+    default_accept,
+    default_connect,
+    default_getsockopt,
+    default_setsockopt,
+    default_shutdown,
+    default_recv,
+    default_send,
+    default_select,
+    default_wsa_recv,
+    default_wsa_recv_from,
+    default_wsa_send,
+    default_wsa_send_to,
+    default_getaddrinfo,
+    default_freeaddrinfo,
+    default_getservbyname,
+    default_getservbyport,
+    default_get_file_type,
+    default_peek_named_pipe,
+    default_sleep};
+
+void posix_sockets_get_default_win32_hooks(
+    struct posix_sockets_win32_hooks *out_hooks) {
+  if (out_hooks != NULL) {
+    *out_hooks = k_default_sock_hooks;
+  }
+}
+
+void posix_sockets_set_win32_hooks(
+    const struct posix_sockets_win32_hooks *hooks) {
+  if (hooks != NULL) {
+    g_sock_hooks = *hooks;
+  } else {
+    g_sock_hooks = k_default_sock_hooks;
+  }
+}
+#endif /* _WIN32 */
 
 #ifndef SAFE_GET_OSFHANDLE
 #define SAFE_GET_OSFHANDLE
@@ -53,8 +295,11 @@ static void sock_null_invalid_param_handler(const wchar_t *expression,
                                             const wchar_t *file,
                                             unsigned int line,
                                             uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-  }
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
 static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
@@ -68,11 +313,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(sock_null_invalid_param_handler);
     AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
-    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    h = (ptrdiff_t)g_sock_hooks.get_osfhandle_fn((int)fd);
     _set_invalid_parameter_handler(old);
   }
 #else
-  h = (ptrdiff_t)_get_osfhandle((int)fd);
+  h = (ptrdiff_t)g_sock_hooks.get_osfhandle_fn((int)fd);
 #endif
   errno = saved_err;
   if (h == -2) {
@@ -91,6 +336,7 @@ intptr_t posix_get_dup_socket(intptr_t fd);
 void posix_set_dup_socket(intptr_t fd, intptr_t s);
 intptr_t posix_lookup_crt_socket(intptr_t fd);
 void posix_register_crt_socket(intptr_t fd, intptr_t s);
+
 static SOCKET resolve_socket_or_fd_sock(intptr_t fd) {
   intptr_t s = posix_get_dup_socket(fd);
   if (s != 0) {
@@ -108,7 +354,6 @@ static SOCKET resolve_socket_or_fd_sock(intptr_t fd) {
 #endif
 
 #ifdef _WIN32
-
 static int _wsaErrorToErrno(int err) {
   switch (err) {
   case WSAEWOULDBLOCK:
@@ -170,16 +415,16 @@ static int _wsaErrorToErrno(int err) {
   }
 }
 
-#endif
-#ifdef _WIN32
 static void __cdecl null_invalid_parameter_handler_auto(const wchar_t *a,
                                                         const wchar_t *b,
                                                         const wchar_t *c,
                                                         unsigned int d,
                                                         uintptr_t e) {
-  if (a || b || c || d || e) {
-    /* parameter error handled */
-  }
+  (void)a;
+  (void)b;
+  (void)c;
+  (void)d;
+  (void)e;
 }
 
 static void __cdecl __init_winsock_auto(void) {
@@ -187,6 +432,7 @@ static void __cdecl __init_winsock_auto(void) {
   WSAStartup(MAKEWORD(2, 2), &wsaData);
   _set_invalid_parameter_handler(
       (_invalid_parameter_handler)null_invalid_parameter_handler_auto);
+  null_invalid_parameter_handler_auto(NULL, NULL, NULL, 0, 0);
 }
 
 #if defined(_MSC_VER)
@@ -207,30 +453,25 @@ __attribute__((constructor)) static void __init_winsock_auto_gcc(void) {
   __init_winsock_auto();
 }
 #endif
-#endif
-
-#ifndef EINVAL
-#define EINVAL 38
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#else
-#endif
-
-#ifdef _WIN32
-/* Helper removed */
 
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0x4000
 #endif
 
 static SOCKET nb_sockets[8192] = {0};
+
+/**
+ * @brief Sets or clears tracked non-blocking state for a Winsock SOCKET.
+ * @param[in] s Winsock SOCKET handle.
+ * @param[in] nb Non-zero to mark non-blocking, 0 to clear.
+ */
 void set_nonblock(SOCKET s, int nb) {
   int i;
   for (i = 0; i < 8192; i++) {
     if (nb_sockets[i] == s) {
-      if (!nb)
+      if (!nb) {
         nb_sockets[i] = 0;
+      }
       return;
     }
   }
@@ -243,132 +484,192 @@ void set_nonblock(SOCKET s, int nb) {
     }
   }
 }
+
+/**
+ * @brief Queries tracked non-blocking flag for a Winsock SOCKET.
+ * @param[in] s Winsock SOCKET handle.
+ * @return O_NONBLOCK when tracked as non-blocking, or 0 otherwise.
+ */
 int get_nonblock(SOCKET s) {
   int i;
-  for (i = 0; i < 8192; i++)
-    if (nb_sockets[i] == s)
+  for (i = 0; i < 8192; i++) {
+    if (nb_sockets[i] == s) {
       return O_NONBLOCK;
+    }
+  }
   return 0;
 }
+
+/**
+ * @brief Clears tracked non-blocking state for a Winsock SOCKET.
+ * @param[in] s Winsock SOCKET handle.
+ * @return ERR_NONE.
+ */
 error_type_t clear_nonblock(SOCKET s) {
   set_nonblock(s, 0);
   return ERR_NONE;
 }
+
+/**
+ * @brief Copies tracked non-blocking state from src to dst SOCKET.
+ * @param[in] src Source SOCKET handle.
+ * @param[in] dst Destination SOCKET handle.
+ */
 void copy_nonblock(SOCKET src, SOCKET dst) {
-  if (get_nonblock(src))
+  if (get_nonblock(src)) {
     set_nonblock(dst, 1);
+  }
 }
 
 static unsigned char g_is_socket[65536] = {0};
 static intptr_t g_dup_sockets[64] = {0};
 static intptr_t g_crt_sockets[65536] = {0};
+
+/**
+ * @brief Retrieves duplicated SOCKET handle mapped to a low descriptor.
+ * @param[in] fd Descriptor index.
+ * @return Mapped SOCKET handle, or 0 if none.
+ */
 intptr_t posix_get_dup_socket(intptr_t fd) {
   if (fd >= 0 && fd < 64) {
     return g_dup_sockets[fd];
   }
   return 0;
 }
+
+/**
+ * @brief Associates a duplicated SOCKET handle with a low descriptor.
+ * @param[in] fd Descriptor index.
+ * @param[in] s SOCKET handle (or 0 to clear).
+ */
 void posix_set_dup_socket(intptr_t fd, intptr_t s) {
   if (fd >= 0 && fd < 64) {
     g_dup_sockets[fd] = s;
   }
 }
+
+/**
+ * @brief Looks up a CRT descriptor's registered SOCKET handle.
+ * @param[in] fd Descriptor index.
+ * @return Registered SOCKET handle, or 0 if none.
+ */
 intptr_t posix_lookup_crt_socket(intptr_t fd) {
   if (fd >= 0 && fd < 65536) {
     return g_crt_sockets[fd];
   }
   return 0;
 }
+
+/**
+ * @brief Registers a SOCKET handle for a CRT descriptor.
+ * @param[in] fd Descriptor index.
+ * @param[in] s SOCKET handle (or 0 to clear).
+ */
 void posix_register_crt_socket(intptr_t fd, intptr_t s) {
   if (fd >= 0 && fd < 65536) {
     g_crt_sockets[fd] = s;
   }
 }
+
+/**
+ * @brief Marks a descriptor as a socket in the descriptor table.
+ * @param[in] fd Descriptor index.
+ * @return ERR_NONE.
+ */
 error_type_t mark_as_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 65536)
+  if (fd >= 0 && fd < 65536) {
     g_is_socket[fd] = 1;
+  }
   return ERR_NONE;
 }
+
+/**
+ * @brief Clears socket marker for a descriptor in the descriptor table.
+ * @param[in] fd Descriptor index.
+ * @return ERR_NONE.
+ */
 error_type_t clear_as_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 65536)
+  if (fd >= 0 && fd < 65536) {
     g_is_socket[fd] = 0;
+  }
   return ERR_NONE;
 }
+
+/**
+ * @brief Checks whether a descriptor is tracked as a socket.
+ * @param[in] fd Descriptor index.
+ * @return Non-zero if socket, 0 otherwise.
+ */
 int is_socket(intptr_t fd) {
-  if (fd >= 0 && fd < 65536)
+  if (fd >= 0 && fd < 65536) {
     return g_is_socket[fd];
-  return 1; /* Assuming large FDs are sockets */
+  }
+  return 1;
 }
+#endif /* _WIN32 */
 
-#endif
+/** @brief Closes the host database connection (no-op stub). */
+void posix_endhostent(void) { return; }
 
-/** \brief posix_endhostent function. */
-void posix_endhostent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
-  return;
-}
+/** @brief Closes the network database connection (no-op stub). */
+void posix_endnetent(void) { return; }
 
-void posix_endnetent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
-  return;
-}
+/** @brief Closes the protocol database connection (no-op stub). */
+void posix_endprotoent(void) { return; }
 
-void posix_endprotoent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
-  return;
-}
+/** @brief Closes the services database connection (no-op stub). */
+void posix_endservent(void) { return; }
 
-void posix_endservent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
-  return;
-}
 #define POSIX_AI_CUSTOM_MAGIC 0x41574D53
 
+/**
+ * @brief Frees address information allocated by posix_getaddrinfo.
+ * @param[in] ai Address info list to free.
+ */
 void posix_freeaddrinfo(struct addrinfo *ai) {
   (void)ai;
 #ifdef _WIN32
-#undef freeaddrinfo
   if (ai == NULL) {
     return;
   }
   if (ai->ai_flags == POSIX_AI_CUSTOM_MAGIC) {
-    free(ai);
+    g_sock_hooks.free_fn(ai);
     return;
   }
-  freeaddrinfo(ai);
+  g_sock_hooks.freeaddrinfo_fn(ai);
 #endif
 }
+
+/**
+ * @brief Translates a getaddrinfo error code into a human-readable string.
+ * @param[in] ecode Error code.
+ * @return Static descriptive string.
+ */
 const char *posix_gai_strerror(int ecode) {
 #ifdef _WIN32
-#undef gai_strerror
   return gai_strerrorA(ecode);
 #else
   static char buf[64];
 #if defined(_MSC_VER)
   sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
 #else
-#if defined(_MSC_VER)
-  sprintf_s(buf, sizeof(buf), "Unknown error %d", (int)ecode);
-#else
   sprintf(buf, "Unknown error %d", (int)ecode);
-#endif
 #endif
   return buf;
 #endif
 }
 
+/**
+ * @brief Resolves host and service names to socket addresses.
+ * @param[in] nodename Host name or IPv4 literal.
+ * @param[in] servname Service name or port string.
+ * @param[in] hints Optional addrinfo hints.
+ * @param[out] res Output addrinfo list pointer.
+ * @return 0 on success, or non-zero error code.
+ */
 int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res) {
 #ifdef _WIN32
-#undef getaddrinfo
   int ret;
   if (nodename != NULL && nodename[0] >= '0' && nodename[0] <= '9') {
     const char *p = nodename;
@@ -401,7 +702,7 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
       unsigned long ip_host =
           (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
       unsigned long ip_be = htonl(ip_host);
-      struct addrinfo *ai = (struct addrinfo *)calloc(
+      struct addrinfo *ai = (struct addrinfo *)g_sock_hooks.calloc_fn(
           1, sizeof(struct addrinfo) + sizeof(struct sockaddr_in));
       if (ai != NULL && res != NULL) {
         struct sockaddr_in *sin = (struct sockaddr_in *)(ai + 1);
@@ -424,27 +725,29 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
         return 0;
       }
       if (ai != NULL) {
-        free(ai);
+        g_sock_hooks.free_fn(ai);
       }
     }
   }
-  ret = getaddrinfo(nodename, servname, hints, res);
+  ret = g_sock_hooks.getaddrinfo_fn(nodename, servname, hints, res);
   if (ret != 0) {
-    if (ret == WSANOTINITIALISED || WSAGetLastError() == WSANOTINITIALISED) {
+    if (ret == WSANOTINITIALISED ||
+        g_sock_hooks.wsa_get_last_error_fn() == WSANOTINITIALISED) {
       WSADATA wsaData;
-      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
-        ret = getaddrinfo(nodename, servname, hints, res);
+      if (g_sock_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) == 0) {
+        ret = g_sock_hooks.getaddrinfo_fn(nodename, servname, hints, res);
       }
     }
 #ifdef AI_ADDRCONFIG
     if (ret != 0 && hints != NULL && (hints->ai_flags & AI_ADDRCONFIG)) {
       struct addrinfo fallback_hints = *hints;
       fallback_hints.ai_flags &= ~AI_ADDRCONFIG;
-      ret = getaddrinfo(nodename, servname, &fallback_hints, res);
+      ret =
+          g_sock_hooks.getaddrinfo_fn(nodename, servname, &fallback_hints, res);
     }
 #endif
     if (ret != 0) {
-      errno = _wsaErrorToErrno(WSAGetLastError());
+      errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     }
   }
   return ret;
@@ -458,38 +761,30 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
 #endif
 }
 
+/** @brief Looks up host entry by address (stub returning NULL with EINVAL). */
 struct hostent *posix_gethostbyaddr(const void *addr, posix_socklen_t len,
                                     int type) {
   (void)addr;
   (void)len;
   (void)type;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Looks up host entry by name (stub returning NULL with EINVAL). */
 struct hostent *posix_gethostbyname(const char *name) {
   (void)name;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Reads next host database entry (stub returning NULL with EINVAL). */
 struct hostent *posix_gethostent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
-/** \brief posix_getnameinfo function. */
+/** @brief Reverse-resolves socket address to host and service names (stub). */
 int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
                       char *node, posix_socklen_t nodelen, char *service,
                       posix_socklen_t servicelen, int flags) {
@@ -501,71 +796,61 @@ int posix_getnameinfo(const struct sockaddr *sa, posix_socklen_t salen,
   (void)nodelen;
   (void)servicelen;
   (void)flags;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return -1;
 }
 
+/** @brief Looks up network entry by number (stub returning NULL with EINVAL).
+ */
 struct netent *posix_getnetbyaddr(uint32_t net, int type) {
   (void)net;
   (void)type;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Looks up network entry by name (stub returning NULL with EINVAL). */
 struct netent *posix_getnetbyname(const char *name) {
   (void)name;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Reads next network database entry (stub returning NULL with EINVAL).
+ */
 struct netent *posix_getnetent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Looks up protocol entry by name (stub returning NULL with EINVAL). */
 struct protoent *posix_getprotobyname(const char *name) {
   (void)name;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Looks up protocol entry by number (stub returning NULL with EINVAL).
+ */
 struct protoent *posix_getprotobynumber(int proto) {
   (void)proto;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/** @brief Reads next protocol database entry (stub returning NULL with EINVAL).
+ */
 struct protoent *posix_getprotoent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
+/**
+ * @brief Looks up service entry by name and protocol.
+ * @param[in] name Service name.
+ * @param[in] proto Protocol name (or NULL).
+ * @return Pointer to servent structure, or NULL on failure.
+ */
 struct servent *posix_getservbyname(const char *name, const char *proto) {
 #ifdef _WIN32
   static struct servent s_se;
@@ -610,13 +895,13 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
       return &s_se;
     }
   }
-#undef getservbyname
   {
-    struct servent *se = getservbyname(name, proto);
-    if (se == NULL && WSAGetLastError() == WSANOTINITIALISED) {
+    struct servent *se = g_sock_hooks.getservbyname_fn(name, proto);
+    if (se == NULL &&
+        g_sock_hooks.wsa_get_last_error_fn() == WSANOTINITIALISED) {
       WSADATA wsaData;
-      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
-        se = getservbyname(name, proto);
+      if (g_sock_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) == 0) {
+        se = g_sock_hooks.getservbyname_fn(name, proto);
       }
     }
     return se;
@@ -629,14 +914,19 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
 #endif
 }
 
+/**
+ * @brief Looks up service entry by port and protocol.
+ * @param[in] port Port number in network byte order.
+ * @param[in] proto Protocol name (or NULL).
+ * @return Pointer to servent structure, or NULL on failure.
+ */
 struct servent *posix_getservbyport(int port, const char *proto) {
 #ifdef _WIN32
-#undef getservbyport
-  struct servent *se = getservbyport(port, proto);
-  if (se == NULL && WSAGetLastError() == WSANOTINITIALISED) {
+  struct servent *se = g_sock_hooks.getservbyport_fn(port, proto);
+  if (se == NULL && g_sock_hooks.wsa_get_last_error_fn() == WSANOTINITIALISED) {
     WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
-      se = getservbyport(port, proto);
+    if (g_sock_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) == 0) {
+      se = g_sock_hooks.getservbyport_fn(port, proto);
     }
   }
   return se;
@@ -648,52 +938,39 @@ struct servent *posix_getservbyport(int port, const char *proto) {
 #endif
 }
 
+/** @brief Reads next service database entry (stub returning NULL with EINVAL).
+ */
 struct servent *posix_getservent(void) {
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return NULL;
 }
 
-/** \brief posix_sethostent function. */
+/** @brief Opens/rewinds host database (no-op stub). */
 void posix_sethostent(int stayopen) {
   (void)stayopen;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   return;
 }
 
+/** @brief Opens/rewinds network database (no-op stub). */
 void posix_setnetent(int stayopen) {
   (void)stayopen;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   return;
 }
 
+/** @brief Opens/rewinds protocol database (no-op stub). */
 void posix_setprotoent(int stayopen) {
   (void)stayopen;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   return;
 }
 
+/** @brief Opens/rewinds services database (no-op stub). */
 void posix_setservent(int stayopen) {
   (void)stayopen;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   return;
 }
 
-/** \brief posix_pselect function. */
+/** @brief Monitors file descriptor sets with timespec and signal mask (stub).
+ */
 int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                   const struct timespec *timeout, const void *sigmask) {
   if (!readfds || !writefds || !errorfds || !timeout || !sigmask) {
@@ -701,17 +978,11 @@ int posix_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     return -1;
   }
   (void)nfds;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return -1;
 }
 
-/** \brief posix_select function. */
 #if defined(_WIN32)
-#if defined(_MSC_VER)
 #undef FD_ZERO
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
 #define FD_ZERO(set) posix_fd_zero((fd_set *)set)
@@ -731,35 +1002,17 @@ static void posix_fd_set(SOCKET fd, fd_set *set) {
   }
 }
 #define FD_SET(fd, set) posix_fd_set((SOCKET)(fd), (fd_set *)(set))
-#undef FD_CLR
-static void posix_fd_clr(SOCKET fd, fd_set *set) {
-  u_int __i;
-  for (__i = 0; __i < set->fd_count; __i++) {
-    if (set->fd_array[__i] == fd) {
-      while (__i < set->fd_count - 1) {
-        set->fd_array[__i] = set->fd_array[__i + 1];
-        __i++;
-      }
-      set->fd_count--;
-      break;
-    }
-  }
-}
-#define FD_CLR(fd, set) posix_fd_clr((SOCKET)(fd), (fd_set *)(set))
-
 #endif
 
-#endif
-
-extern int is_socket(intptr_t fd);
-#if defined(_WIN32)
-__declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
-__declspec(dllimport) int __stdcall
-PeekNamedPipe(void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
-              unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
-              unsigned long *lpBytesLeftThisMessage);
-#endif
-
+/**
+ * @brief Multiplexes readiness across Winsock sockets, pipes, and disk files.
+ * @param[in] nfds Highest file descriptor plus one.
+ * @param[in,out] readfds Optional read descriptor set.
+ * @param[in,out] writefds Optional write descriptor set.
+ * @param[in,out] errorfds Optional exception descriptor set.
+ * @param[in,out] timeout Optional timeout interval.
+ * @return Number of ready descriptors, or -1 on error.
+ */
 int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
                  struct timeval *timeout) {
 #if defined(_WIN32)
@@ -784,16 +1037,18 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
       int optval = 0;
       int optlen = sizeof(optval);
       if (s != INVALID_SOCKET && s != 0 &&
-          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+          g_sock_hooks.getsockopt_fn(s, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                                     &optlen) == 0) {
         FD_SET(s, &ws_readfds);
         num_sockets++;
       } else {
         ptrdiff_t h = (fd >= 0 && fd < 64) ? safe_get_osfhandle(fd) : -1;
         if (h != -1) {
-          unsigned long ftype = GetFileType((void *)h);
+          unsigned long ftype = g_sock_hooks.get_file_type_fn((void *)h);
           if (ftype == 3 /* FILE_TYPE_PIPE */) {
             unsigned long avail = 0;
-            if (!PeekNamedPipe((void *)h, NULL, 0, NULL, &avail, NULL) ||
+            if (!g_sock_hooks.peek_named_pipe_fn((void *)h, NULL, 0, NULL,
+                                                 &avail, NULL) ||
                 avail > 0) {
               FD_SET((SOCKET)fd, &ready_non_sock_r);
               num_non_sock_ready++;
@@ -818,7 +1073,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
       int optval = 0;
       int optlen = sizeof(optval);
       if (s != INVALID_SOCKET && s != 0 &&
-          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+          g_sock_hooks.getsockopt_fn(s, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                                     &optlen) == 0) {
         FD_SET(s, &ws_writefds);
         num_sockets++;
       } else {
@@ -842,7 +1098,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
       int optval = 0;
       int optlen = sizeof(optval);
       if (s != INVALID_SOCKET && s != 0 &&
-          getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+          g_sock_hooks.getsockopt_fn(s, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                                     &optlen) == 0) {
         FD_SET(s, &ws_errorfds);
         num_sockets++;
       }
@@ -853,10 +1110,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
   }
 
   if (num_sockets > 0) {
-#undef select
-    ret = select(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds,
-                 num_non_sock_ready > 0 ? &zero_tv : timeout);
-#define select posix_select
+    ret = g_sock_hooks.select_fn(0, p_ws_readfds, p_ws_writefds, p_ws_errorfds,
+                                 num_non_sock_ready > 0 ? &zero_tv : timeout);
     if (ret == SOCKET_ERROR) {
       if (num_non_sock_ready > 0) {
         ret = 0;
@@ -866,7 +1121,8 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
       }
     }
   } else if (num_non_sock_ready == 0 && timeout != NULL) {
-    Sleep((DWORD)(timeout->tv_sec * 1000 + timeout->tv_usec / 1000));
+    g_sock_hooks.sleep_fn(
+        (DWORD)(timeout->tv_sec * 1000 + timeout->tv_usec / 1000));
   }
 
   if (readfds) {
@@ -919,24 +1175,30 @@ int posix_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 #endif
 }
 
+/**
+ * @brief Accepts an incoming connection on a listening socket.
+ * @param[in] socket Listening socket descriptor.
+ * @param[out] address Optional peer address buffer.
+ * @param[in,out] address_len Optional peer address buffer length.
+ * @return Accepted socket descriptor, or -1 on error.
+ */
 int posix_accept(intptr_t socket, struct sockaddr *address,
                  posix_socklen_t *address_len) {
 #ifdef _WIN32
-#undef accept
-  SOCKET ret = accept(GET_SOCKET(socket), address, address_len);
+  SOCKET ret = g_sock_hooks.accept_fn(GET_SOCKET(socket), address, address_len);
   if (ret == INVALID_SOCKET) {
-    int err = WSAGetLastError();
-    if (err == WSAEWOULDBLOCK)
+    int err = g_sock_hooks.wsa_get_last_error_fn();
+    if (err == WSAEWOULDBLOCK) {
       errno = EWOULDBLOCK;
-    else
+    } else {
       errno = _wsaErrorToErrno(err);
+    }
     return -1;
   }
 
   copy_nonblock(GET_SOCKET(socket), ret);
   posix_register_crt_socket((intptr_t)ret, (intptr_t)ret);
-  if (mark_as_socket((intptr_t)ret) != ERR_NONE) { /* Ignore */
-  }
+  (void)mark_as_socket((intptr_t)ret);
   return (int)ret;
 #else
   (void)socket;
@@ -947,10 +1209,16 @@ int posix_accept(intptr_t socket, struct sockaddr *address,
 #endif
 }
 
+/**
+ * @brief Binds a socket to a local address (translating AF_UNIX to loopback).
+ * @param[in] socket Socket descriptor.
+ * @param[in] address Local address.
+ * @param[in] address_len Local address length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_bind(intptr_t socket, const struct sockaddr *address,
                posix_socklen_t address_len) {
 #ifdef _WIN32
-#undef bind
   int ret;
   if (address != NULL && address->sa_family == AF_UNIX) {
     struct sockaddr_in fake_addr;
@@ -959,17 +1227,18 @@ int posix_bind(intptr_t socket, const struct sockaddr *address,
     fake_addr.sin_family = AF_INET;
     fake_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     fake_addr.sin_port = 0;
-    ret = bind(GET_SOCKET(socket), (const struct sockaddr *)&fake_addr,
-               sizeof(fake_addr));
+    ret = g_sock_hooks.bind_fn(GET_SOCKET(socket),
+                               (const struct sockaddr *)&fake_addr,
+                               sizeof(fake_addr));
     if (ret == SOCKET_ERROR) {
-      errno = _wsaErrorToErrno(WSAGetLastError());
+      errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
       return -1;
     }
     return 0;
   }
-  ret = bind(GET_SOCKET(socket), address, address_len);
+  ret = g_sock_hooks.bind_fn(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
@@ -982,10 +1251,16 @@ int posix_bind(intptr_t socket, const struct sockaddr *address,
 #endif
 }
 
+/**
+ * @brief Connects a socket to a remote address with loopback startup retry.
+ * @param[in] socket Socket descriptor.
+ * @param[in] address Remote address.
+ * @param[in] address_len Remote address length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_connect(intptr_t socket, const struct sockaddr *address,
                   posix_socklen_t address_len) {
 #ifdef _WIN32
-#undef connect
   SOCKET s;
   int ret;
   if (!address) {
@@ -993,38 +1268,42 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
     return -1;
   }
   s = GET_SOCKET(socket);
-  ret = connect(s, address, address_len);
-  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAECONNREFUSED &&
+  ret = g_sock_hooks.connect_fn(s, address, address_len);
+  if (ret == SOCKET_ERROR &&
+      g_sock_hooks.wsa_get_last_error_fn() == WSAECONNREFUSED &&
       address->sa_family == AF_INET && !get_nonblock(s)) {
     const struct sockaddr_in *sin = (const struct sockaddr_in *)address;
     if (sin->sin_addr.s_addr == htonl(0x7f000001UL) && sin->sin_port != 0) {
       int attempt;
       for (attempt = 0; attempt < 60; attempt++) {
         SOCKET new_s;
-        Sleep(100);
-        new_s = WSASocketW(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
+        g_sock_hooks.sleep_fn(100);
+        new_s =
+            g_sock_hooks.wsa_socket_w_fn(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
         if (new_s == INVALID_SOCKET) {
           break;
         }
-        closesocket(s);
+        g_sock_hooks.closesocket_fn(s);
         s = new_s;
         posix_register_crt_socket(socket, (intptr_t)s);
-        ret = connect(s, address, address_len);
-        if (ret == 0 || WSAGetLastError() != WSAECONNREFUSED) {
+        ret = g_sock_hooks.connect_fn(s, address, address_len);
+        if (ret == 0 ||
+            g_sock_hooks.wsa_get_last_error_fn() != WSAECONNREFUSED) {
           break;
         }
       }
     }
   }
   if (ret == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_sock_hooks.wsa_get_last_error_fn();
     if (err == WSAEISCONN) {
       return 0;
     }
-    if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY)
+    if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS || err == WSAEALREADY) {
       errno = EINPROGRESS;
-    else
+    } else {
       errno = _wsaErrorToErrno(err);
+    }
     return -1;
   }
   return 0;
@@ -1037,13 +1316,20 @@ int posix_connect(intptr_t socket, const struct sockaddr *address,
 #endif
 }
 
+/**
+ * @brief Queries connected peer address of a socket.
+ * @param[in] socket Socket descriptor.
+ * @param[out] address Peer address buffer.
+ * @param[in,out] address_len Peer address buffer length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_getpeername(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
-#undef getpeername
-  int ret = getpeername(GET_SOCKET(socket), address, address_len);
+  int ret =
+      g_sock_hooks.getpeername_fn(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
@@ -1056,13 +1342,20 @@ int posix_getpeername(intptr_t socket, struct sockaddr *address,
 #endif
 }
 
+/**
+ * @brief Queries bound local address of a socket.
+ * @param[in] socket Socket descriptor.
+ * @param[out] address Local address buffer.
+ * @param[in,out] address_len Local address buffer length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_getsockname(intptr_t socket, struct sockaddr *address,
                       posix_socklen_t *address_len) {
 #ifdef _WIN32
-#undef getsockname
-  int ret = getsockname(GET_SOCKET(socket), address, address_len);
+  int ret =
+      g_sock_hooks.getsockname_fn(GET_SOCKET(socket), address, address_len);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
@@ -1075,30 +1368,38 @@ int posix_getsockname(intptr_t socket, struct sockaddr *address,
 #endif
 }
 
+/**
+ * @brief Retrieves a socket option, translating timeval and SO_ERROR values.
+ * @param[in] socket Socket descriptor.
+ * @param[in] level Protocol level.
+ * @param[in] option_name Option identifier.
+ * @param[out] option_value Option output buffer.
+ * @param[in,out] option_len Option buffer length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_getsockopt(intptr_t socket, int level, int option_name,
                      void *option_value, posix_socklen_t *option_len) {
 #ifdef _WIN32
-#undef getsockopt
   int ret;
   if (level == SOL_SOCKET &&
       (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len && *option_len == sizeof(struct timeval)) {
       DWORD ms = 0;
       int ms_len = sizeof(DWORD);
-      ret = getsockopt(GET_SOCKET(socket), level, option_name, (char *)&ms,
-                       &ms_len);
+      ret = g_sock_hooks.getsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                       (char *)&ms, &ms_len);
       if (ret == 0) {
-        struct timeval *tv = (struct timeval *)((size_t)option_value);
+        struct timeval *tv = (struct timeval *)option_value;
         tv->tv_sec = ms / 1000;
         tv->tv_usec = (ms % 1000) * 1000;
       }
     } else {
-      ret = getsockopt(GET_SOCKET(socket), level, option_name,
-                       (char *)option_value, option_len);
+      ret = g_sock_hooks.getsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                       (char *)option_value, option_len);
     }
   } else {
-    ret = getsockopt(GET_SOCKET(socket), level, option_name,
-                     (char *)option_value, option_len);
+    ret = g_sock_hooks.getsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                     (char *)option_value, option_len);
     if (ret == 0 && level == SOL_SOCKET && option_name == SO_ERROR) {
       if (*((int *)option_value) != 0) {
         *((int *)option_value) = _wsaErrorToErrno(*((int *)option_value));
@@ -1106,7 +1407,7 @@ int posix_getsockopt(intptr_t socket, int level, int option_name,
     }
   }
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
@@ -1121,31 +1422,43 @@ int posix_getsockopt(intptr_t socket, int level, int option_name,
 #endif
 }
 
+/**
+ * @brief Marks a socket as passive to accept incoming connections.
+ * @param[in] socket Socket descriptor.
+ * @param[in] backlog Maximum pending connection queue length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_listen(intptr_t socket, int backlog) {
 #ifdef _WIN32
-#undef listen
-  int ret = listen(GET_SOCKET(socket), backlog);
+  int ret = g_sock_hooks.listen_fn(GET_SOCKET(socket), backlog);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
 #else
   (void)socket;
   (void)backlog;
-
   errno = EINVAL;
   return -1;
 #endif
 }
 
+/**
+ * @brief Receives data from a connected socket.
+ * @param[in] socket Socket descriptor.
+ * @param[out] buffer Destination buffer.
+ * @param[in] length Maximum bytes to receive.
+ * @param[in] flags Receive flags.
+ * @return Bytes received, or -1 on error.
+ */
 posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
                          int flags) {
 #ifdef _WIN32
-#undef recv
-  int ret = recv(GET_SOCKET(socket), (char *)buffer, (int)length, flags);
+  int ret = g_sock_hooks.recv_fn(GET_SOCKET(socket), (char *)buffer,
+                                 (int)length, flags);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return ret;
@@ -1154,7 +1467,8 @@ posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
 #endif
 }
 
-/** \brief posix_recvfrom function. */
+/** @brief Receives datagram and source address (stub returning -1 with EINVAL).
+ */
 posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length,
                              int flags, struct sockaddr *address,
                              posix_socklen_t *address_len) {
@@ -1164,15 +1478,17 @@ posix_ssize_t posix_recvfrom(intptr_t socket, void *buffer, size_t length,
   (void)flags;
   (void)address;
   (void)address_len;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return -1;
 }
 
-/** \brief posix_recvmsg function. */
+/**
+ * @brief Receives scatter/gather messages from a socket or CRT file descriptor.
+ * @param[in] socket Socket or CRT file descriptor.
+ * @param[in,out] message Message header with iovec array.
+ * @param[in] flags Receive flags.
+ * @return Total bytes received, or -1 on error.
+ */
 posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
                             int flags) {
 #ifdef _WIN32
@@ -1203,7 +1519,8 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
 
   bufs = stack_bufs;
   if (message->msg_iovlen > 16) {
-    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    bufs = (WSABUF *)g_sock_hooks.malloc_fn(sizeof(WSABUF) *
+                                            (size_t)message->msg_iovlen);
     if (!bufs) {
       errno = ENOMEM;
       return -1;
@@ -1217,16 +1534,16 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
 
   s = GET_SOCKET(socket);
   optlen = sizeof(optval);
-  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
-          SOCKET_ERROR &&
-      WSAGetLastError() == WSAENOTSOCK) {
+  if (g_sock_hooks.getsockopt_fn(s, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                                 &optlen) == SOCKET_ERROR &&
+      g_sock_hooks.wsa_get_last_error_fn() == WSAENOTSOCK) {
     posix_ssize_t total = 0;
     for (i = 0; i < message->msg_iovlen; i++) {
-      int r = _read((int)socket, message->msg_iov[i].iov_base,
-                    (unsigned int)message->msg_iov[i].iov_len);
+      int r = g_sock_hooks.read_fn((int)socket, message->msg_iov[i].iov_base,
+                                   (unsigned int)message->msg_iov[i].iov_len);
       if (r < 0) {
         if (bufs != stack_bufs) {
-          free(bufs);
+          g_sock_hooks.free_fn(bufs);
         }
         return total > 0 ? total : -1;
       }
@@ -1236,7 +1553,7 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
       }
     }
     if (bufs != stack_bufs) {
-      free(bufs);
+      g_sock_hooks.free_fn(bufs);
     }
     message->msg_flags = 0;
     return total;
@@ -1246,23 +1563,23 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
   dwFlags = (DWORD)flags;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
     INT fromlen = (INT)message->msg_namelen;
-    rc =
-        WSARecvFrom(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
-                    (struct sockaddr *)message->msg_name, &fromlen, NULL, NULL);
-    if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
+    rc = g_sock_hooks.wsa_recv_from_fn(
+        s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+        (struct sockaddr *)message->msg_name, &fromlen, NULL, NULL);
+    if (rc == 0 || g_sock_hooks.wsa_get_last_error_fn() != WSAEMSGSIZE) {
       message->msg_namelen = (posix_socklen_t)fromlen;
     }
   } else {
-    rc = WSARecv(s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
-                 NULL, NULL);
+    rc = g_sock_hooks.wsa_recv_fn(s, bufs, (DWORD)message->msg_iovlen,
+                                  &bytes_recvd, &dwFlags, NULL, NULL);
   }
 
   if (bufs != stack_bufs) {
-    free(bufs);
+    g_sock_hooks.free_fn(bufs);
   }
 
   if (rc == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_sock_hooks.wsa_get_last_error_fn();
     if (err == WSAEMSGSIZE) {
       message->msg_flags = (int)dwFlags | 0x20;
       return (posix_ssize_t)bytes_recvd;
@@ -1281,13 +1598,21 @@ posix_ssize_t posix_recvmsg(intptr_t socket, struct msghdr *message,
 #endif
 }
 
+/**
+ * @brief Sends data over a connected socket.
+ * @param[in] socket Socket descriptor.
+ * @param[in] message Source buffer.
+ * @param[in] length Number of bytes to send.
+ * @param[in] flags Send flags.
+ * @return Bytes sent, or -1 on error.
+ */
 posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
                          int flags) {
 #ifdef _WIN32
-#undef send
-  int ret = send(GET_SOCKET(socket), (const char *)message, (int)length, flags);
+  int ret = g_sock_hooks.send_fn(GET_SOCKET(socket), (const char *)message,
+                                 (int)length, flags);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return ret;
@@ -1296,7 +1621,13 @@ posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
 #endif
 }
 
-/** \brief posix_sendmsg function. */
+/**
+ * @brief Sends scatter/gather messages over a socket or CRT file descriptor.
+ * @param[in] socket Socket or CRT file descriptor.
+ * @param[in] message Message header with iovec array.
+ * @param[in] flags Send flags.
+ * @return Total bytes sent, or -1 on error.
+ */
 posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
                             int flags) {
 #ifdef _WIN32
@@ -1325,7 +1656,8 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 
   bufs = stack_bufs;
   if (message->msg_iovlen > 16) {
-    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    bufs = (WSABUF *)g_sock_hooks.malloc_fn(sizeof(WSABUF) *
+                                            (size_t)message->msg_iovlen);
     if (!bufs) {
       errno = ENOMEM;
       return -1;
@@ -1339,16 +1671,16 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 
   s = GET_SOCKET(socket);
   optlen = sizeof(optval);
-  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
-          SOCKET_ERROR &&
-      WSAGetLastError() == WSAENOTSOCK) {
+  if (g_sock_hooks.getsockopt_fn(s, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                                 &optlen) == SOCKET_ERROR &&
+      g_sock_hooks.wsa_get_last_error_fn() == WSAENOTSOCK) {
     posix_ssize_t total = 0;
     for (i = 0; i < message->msg_iovlen; i++) {
-      int w = _write((int)socket, message->msg_iov[i].iov_base,
-                     (unsigned int)message->msg_iov[i].iov_len);
+      int w = g_sock_hooks.write_fn((int)socket, message->msg_iov[i].iov_base,
+                                    (unsigned int)message->msg_iov[i].iov_len);
       if (w < 0) {
         if (bufs != stack_bufs) {
-          free(bufs);
+          g_sock_hooks.free_fn(bufs);
         }
         return total > 0 ? total : -1;
       }
@@ -1358,27 +1690,28 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
       }
     }
     if (bufs != stack_bufs) {
-      free(bufs);
+      g_sock_hooks.free_fn(bufs);
     }
     return total;
   }
 
   bytes_sent = 0;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
-    rc = WSASendTo(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
-                   (DWORD)flags, (const struct sockaddr *)message->msg_name,
-                   (int)message->msg_namelen, NULL, NULL);
+    rc = g_sock_hooks.wsa_send_to_fn(s, bufs, (DWORD)message->msg_iovlen,
+                                     &bytes_sent, (DWORD)flags,
+                                     (const struct sockaddr *)message->msg_name,
+                                     (int)message->msg_namelen, NULL, NULL);
   } else {
-    rc = WSASend(s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
-                 NULL, NULL);
+    rc = g_sock_hooks.wsa_send_fn(s, bufs, (DWORD)message->msg_iovlen,
+                                  &bytes_sent, (DWORD)flags, NULL, NULL);
   }
 
   if (bufs != stack_bufs) {
-    free(bufs);
+    g_sock_hooks.free_fn(bufs);
   }
 
   if (rc == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return (posix_ssize_t)bytes_sent;
@@ -1391,8 +1724,7 @@ posix_ssize_t posix_sendmsg(intptr_t socket, const struct msghdr *message,
 #endif
 }
 
-/** \brief Native Winsock sendmsg helper operating directly on SOCKET handles.
- */
+/* Native Winsock sendmsg helper operating directly on SOCKET handles. */
 posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
                                    int flags) {
 #ifdef _WIN32
@@ -1418,7 +1750,8 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
 
   bufs = stack_bufs;
   if (message->msg_iovlen > 16) {
-    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    bufs = (WSABUF *)g_sock_hooks.malloc_fn(sizeof(WSABUF) *
+                                            (size_t)message->msg_iovlen);
     if (!bufs) {
       errno = ENOMEM;
       return -1;
@@ -1432,34 +1765,37 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
 
   bytes_sent = 0;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
-    rc = WSASendTo((SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
-                   (DWORD)flags, (const struct sockaddr *)message->msg_name,
-                   (int)message->msg_namelen, NULL, NULL);
+    rc = g_sock_hooks.wsa_send_to_fn(
+        (SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
+        (const struct sockaddr *)message->msg_name, (int)message->msg_namelen,
+        NULL, NULL);
   } else {
-    rc = WSASend((SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
-                 (DWORD)flags, NULL, NULL);
+    rc = g_sock_hooks.wsa_send_fn((SOCKET)s, bufs, (DWORD)message->msg_iovlen,
+                                  &bytes_sent, (DWORD)flags, NULL, NULL);
   }
 
-  if (rc == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
+  if (rc == SOCKET_ERROR &&
+      g_sock_hooks.wsa_get_last_error_fn() == WSAENOTSOCK) {
     SOCKET real_s = (SOCKET)safe_get_osfhandle((intptr_t)s);
     if (real_s != (SOCKET)-1 && real_s != 0) {
       if (message->msg_name != NULL && message->msg_namelen > 0) {
-        rc = WSASendTo(real_s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
-                       (DWORD)flags, (const struct sockaddr *)message->msg_name,
-                       (int)message->msg_namelen, NULL, NULL);
+        rc = g_sock_hooks.wsa_send_to_fn(
+            real_s, bufs, (DWORD)message->msg_iovlen, &bytes_sent, (DWORD)flags,
+            (const struct sockaddr *)message->msg_name,
+            (int)message->msg_namelen, NULL, NULL);
       } else {
-        rc = WSASend(real_s, bufs, (DWORD)message->msg_iovlen, &bytes_sent,
-                     (DWORD)flags, NULL, NULL);
+        rc = g_sock_hooks.wsa_send_fn(real_s, bufs, (DWORD)message->msg_iovlen,
+                                      &bytes_sent, (DWORD)flags, NULL, NULL);
       }
     }
   }
 
   if (bufs != stack_bufs) {
-    free(bufs);
+    g_sock_hooks.free_fn(bufs);
   }
 
   if (rc == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_sock_hooks.wsa_get_last_error_fn();
     if (err == WSAEWOULDBLOCK) {
       errno = 140;
     } else if (err == WSAECONNRESET) {
@@ -1479,8 +1815,7 @@ posix_ssize_t posix_sendmsg_native(uintptr_t s, const struct msghdr *message,
 #endif
 }
 
-/** \brief Native Winsock recvmsg helper operating directly on SOCKET handles.
- */
+/* Native Winsock recvmsg helper operating directly on SOCKET handles. */
 posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
                                    int flags) {
 #ifdef _WIN32
@@ -1507,7 +1842,8 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
 
   bufs = stack_bufs;
   if (message->msg_iovlen > 16) {
-    bufs = (WSABUF *)malloc(sizeof(WSABUF) * (size_t)message->msg_iovlen);
+    bufs = (WSABUF *)g_sock_hooks.malloc_fn(sizeof(WSABUF) *
+                                            (size_t)message->msg_iovlen);
     if (!bufs) {
       errno = ENOMEM;
       return -1;
@@ -1523,41 +1859,42 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
   dwFlags = (DWORD)flags;
   if (message->msg_name != NULL && message->msg_namelen > 0) {
     int fromlen = (int)message->msg_namelen;
-    rc = WSARecvFrom((SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd,
-                     &dwFlags, (struct sockaddr *)message->msg_name, &fromlen,
-                     NULL, NULL);
-    if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
+    rc = g_sock_hooks.wsa_recv_from_fn(
+        (SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+        (struct sockaddr *)message->msg_name, &fromlen, NULL, NULL);
+    if (rc == 0 || g_sock_hooks.wsa_get_last_error_fn() != WSAEMSGSIZE) {
       message->msg_namelen = (posix_socklen_t)fromlen;
     }
   } else {
-    rc = WSARecv((SOCKET)s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd,
-                 &dwFlags, NULL, NULL);
+    rc = g_sock_hooks.wsa_recv_fn((SOCKET)s, bufs, (DWORD)message->msg_iovlen,
+                                  &bytes_recvd, &dwFlags, NULL, NULL);
   }
 
-  if (rc == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
+  if (rc == SOCKET_ERROR &&
+      g_sock_hooks.wsa_get_last_error_fn() == WSAENOTSOCK) {
     SOCKET real_s = (SOCKET)safe_get_osfhandle((intptr_t)s);
     if (real_s != (SOCKET)-1 && real_s != 0) {
       if (message->msg_name != NULL && message->msg_namelen > 0) {
         int fromlen = (int)message->msg_namelen;
-        rc = WSARecvFrom(real_s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd,
-                         &dwFlags, (struct sockaddr *)message->msg_name,
-                         &fromlen, NULL, NULL);
-        if (rc == 0 || WSAGetLastError() != WSAEMSGSIZE) {
+        rc = g_sock_hooks.wsa_recv_from_fn(
+            real_s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd, &dwFlags,
+            (struct sockaddr *)message->msg_name, &fromlen, NULL, NULL);
+        if (rc == 0 || g_sock_hooks.wsa_get_last_error_fn() != WSAEMSGSIZE) {
           message->msg_namelen = (posix_socklen_t)fromlen;
         }
       } else {
-        rc = WSARecv(real_s, bufs, (DWORD)message->msg_iovlen, &bytes_recvd,
-                     &dwFlags, NULL, NULL);
+        rc = g_sock_hooks.wsa_recv_fn(real_s, bufs, (DWORD)message->msg_iovlen,
+                                      &bytes_recvd, &dwFlags, NULL, NULL);
       }
     }
   }
 
   if (bufs != stack_bufs) {
-    free(bufs);
+    g_sock_hooks.free_fn(bufs);
   }
 
   if (rc == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_sock_hooks.wsa_get_last_error_fn();
     if (err == WSAEMSGSIZE) {
       message->msg_flags = (int)dwFlags | 0x20;
       return (posix_ssize_t)bytes_recvd;
@@ -1582,7 +1919,7 @@ posix_ssize_t posix_recvmsg_native(uintptr_t s, struct msghdr *message,
 #endif
 }
 
-/** \brief Connection retry helper for asynchronous socket servers. */
+/* Connection retry helper for asynchronous socket servers. */
 int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
                         posix_socklen_t address_len, int max_retries,
                         int delay_ms) {
@@ -1597,7 +1934,8 @@ int posix_connect_retry(intptr_t socket, const struct sockaddr *address,
   return posix_connect(socket, address, address_len);
 }
 
-/** \brief posix_sendto function. */
+/** @brief Sends datagram to destination address (stub returning -1 with
+ * EINVAL). */
 posix_ssize_t posix_sendto(intptr_t socket, const void *message, size_t length,
                            int flags, const struct sockaddr *dest_addr,
                            posix_socklen_t dest_len) {
@@ -1607,18 +1945,22 @@ posix_ssize_t posix_sendto(intptr_t socket, const void *message, size_t length,
   (void)flags;
   (void)dest_addr;
   (void)dest_len;
-
-#ifdef _WIN32
-  /** \brief posix_accept function. */
-#endif
   errno = EINVAL;
   return -1;
 }
 
+/**
+ * @brief Configures a socket option, translating timeval timeouts to DWORD ms.
+ * @param[in] socket Socket descriptor.
+ * @param[in] level Protocol level.
+ * @param[in] option_name Option identifier.
+ * @param[in] option_value Option input buffer.
+ * @param[in] option_len Option input buffer length.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_setsockopt(intptr_t socket, int level, int option_name,
                      const void *option_value, posix_socklen_t option_len) {
 #ifdef _WIN32
-#undef setsockopt
   int ret;
   if (level == SOL_SOCKET && option_name == SO_REUSEADDR) {
     return 0;
@@ -1626,20 +1968,20 @@ int posix_setsockopt(intptr_t socket, int level, int option_name,
   if (level == SOL_SOCKET &&
       (option_name == SO_SNDTIMEO || option_name == SO_RCVTIMEO)) {
     if (option_len == sizeof(struct timeval)) {
-      struct timeval *tv = (struct timeval *)((size_t)option_value);
+      const struct timeval *tv = (const struct timeval *)option_value;
       DWORD ms = (DWORD)(tv->tv_sec * 1000 + tv->tv_usec / 1000);
-      ret = setsockopt(GET_SOCKET(socket), level, option_name,
-                       (const char *)&ms, sizeof(DWORD));
+      ret = g_sock_hooks.setsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                       (const char *)&ms, sizeof(DWORD));
     } else {
-      ret = setsockopt(GET_SOCKET(socket), level, option_name,
-                       (const char *)option_value, option_len);
+      ret = g_sock_hooks.setsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                       (const char *)option_value, option_len);
     }
   } else {
-    ret = setsockopt(GET_SOCKET(socket), level, option_name,
-                     (const char *)option_value, option_len);
+    ret = g_sock_hooks.setsockopt_fn(GET_SOCKET(socket), level, option_name,
+                                     (const char *)option_value, option_len);
   }
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
@@ -1654,45 +1996,56 @@ int posix_setsockopt(intptr_t socket, int level, int option_name,
 #endif
 }
 
+/**
+ * @brief Shuts down part or all of a full-duplex socket connection.
+ * @param[in] socket Socket descriptor.
+ * @param[in] how Shutdown mode (SHUT_RD, SHUT_WR, SHUT_RDWR).
+ * @return 0 on success, or -1 on error.
+ */
 int posix_shutdown(intptr_t socket, int how) {
 #ifdef _WIN32
-#undef shutdown
-  int ret = shutdown(GET_SOCKET(socket), how);
+  int ret = g_sock_hooks.shutdown_fn(GET_SOCKET(socket), how);
   if (ret == SOCKET_ERROR) {
-    errno = _wsaErrorToErrno(WSAGetLastError());
+    errno = _wsaErrorToErrno(g_sock_hooks.wsa_get_last_error_fn());
     return -1;
   }
   return 0;
 #else
   (void)socket;
   (void)how;
-
   errno = EINVAL;
   return -1;
 #endif
 }
 
+/**
+ * @brief Creates a communication endpoint socket.
+ * @param[in] domain Address family (AF_UNIX mapped to AF_INET on Windows).
+ * @param[in] type Socket type.
+ * @param[in] protocol Protocol number.
+ * @return Socket descriptor, or -1 on error.
+ */
 int posix_socket(int domain, int type, int protocol) {
 #ifdef _WIN32
-#undef socket
   SOCKET s;
   int is_icmp_dgram = 0;
-  if (domain == AF_UNIX)
+  if (domain == AF_UNIX) {
     domain = AF_INET;
+  }
   if (type == SOCK_DGRAM && (protocol == 1 || protocol == 58)) {
     is_icmp_dgram = 1;
     protocol = 0;
   }
-  s = WSASocketW(domain, type, protocol, NULL, 0, 0);
+  s = g_sock_hooks.wsa_socket_w_fn(domain, type, protocol, NULL, 0, 0);
   if (s == INVALID_SOCKET) {
-    if (WSAGetLastError() == WSANOTINITIALISED) {
+    if (g_sock_hooks.wsa_get_last_error_fn() == WSANOTINITIALISED) {
       WSADATA wsaData;
-      if (WSAStartup(MAKEWORD(2, 2), &wsaData) == 0) {
-        s = WSASocketW(domain, type, protocol, NULL, 0, 0);
+      if (g_sock_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) == 0) {
+        s = g_sock_hooks.wsa_socket_w_fn(domain, type, protocol, NULL, 0, 0);
       }
     }
     if (s == INVALID_SOCKET) {
-      int werr = WSAGetLastError();
+      int werr = g_sock_hooks.wsa_get_last_error_fn();
       if (type == SOCK_RAW &&
           (werr == WSAEINVAL || werr == WSAEPROTONOSUPPORT ||
            werr == WSAESOCKTNOSUPPORT || werr == WSAEACCES)) {
@@ -1705,25 +2058,29 @@ int posix_socket(int domain, int type, int protocol) {
   }
   if (is_icmp_dgram) {
     unsigned long nb = 1;
-    ioctlsocket(s, FIONBIO, &nb);
+    g_sock_hooks.ioctlsocket_fn(s, FIONBIO, &nb);
     set_nonblock(s, 1);
   }
   posix_register_crt_socket((intptr_t)s, (intptr_t)s);
-  if (mark_as_socket((intptr_t)s) != ERR_NONE) { /* Ignore */
-  }
+  (void)mark_as_socket((intptr_t)s);
   return (int)s;
 #else
   (void)domain;
   (void)type;
   (void)protocol;
-
   errno = EINVAL;
   return -1;
 #endif
 }
 
-/** \brief posix_socketpair function. */
-
+/**
+ * @brief Creates an unnamed pair of connected sockets.
+ * @param[in] domain Address family (AF_UNIX, AF_INET, or AF_UNSPEC).
+ * @param[in] type Socket type.
+ * @param[in] protocol Protocol number.
+ * @param[out] socket_vector Two-element array receiving connected descriptors.
+ * @return 0 on success, or -1 on error.
+ */
 int posix_socketpair(int domain, int type, int protocol,
                      intptr_t socket_vector[2]) {
 #if defined(_WIN32)
@@ -1731,18 +2088,21 @@ int posix_socketpair(int domain, int type, int protocol,
   struct sockaddr_in addr;
   int addrlen = sizeof(addr);
 
-  if (domain != AF_INET && domain != AF_UNSPEC && domain != AF_UNIX)
+  if (domain != AF_INET && domain != AF_UNSPEC && domain != AF_UNIX) {
     return -1;
+  }
 
-  listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
+  listener = g_sock_hooks.wsa_socket_w_fn(AF_INET, type, protocol, NULL, 0, 0);
   if (listener == INVALID_SOCKET) {
-    if (WSAGetLastError() == WSANOTINITIALISED) {
+    if (g_sock_hooks.wsa_get_last_error_fn() == WSANOTINITIALISED) {
       WSADATA wsaData;
-      WSAStartup(MAKEWORD(2, 2), &wsaData);
-      listener = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
+      (void)g_sock_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData);
+      listener =
+          g_sock_hooks.wsa_socket_w_fn(AF_INET, type, protocol, NULL, 0, 0);
     }
-    if (listener == INVALID_SOCKET)
+    if (listener == INVALID_SOCKET) {
       return -1;
+    }
   }
 
   memset(&addr, 0, sizeof(addr));
@@ -1750,57 +2110,66 @@ int posix_socketpair(int domain, int type, int protocol,
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_port = 0;
 
-  if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR)
+  if (g_sock_hooks.bind_fn(listener, (struct sockaddr *)&addr, sizeof(addr)) ==
+      SOCKET_ERROR) {
     goto err;
-  if (getsockname(listener, (struct sockaddr *)&addr, &addrlen) == SOCKET_ERROR)
+  }
+  if (g_sock_hooks.getsockname_fn(listener, (struct sockaddr *)&addr,
+                                  &addrlen) == SOCKET_ERROR) {
     goto err;
-  if (listen(listener, 1) == SOCKET_ERROR)
-    goto err;
-
-  client = WSASocketW(AF_INET, type, protocol, NULL, 0, 0);
-  if (client == INVALID_SOCKET)
-    goto err;
-
-  if (connect(client, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
-    closesocket(client);
+  }
+  if (g_sock_hooks.listen_fn(listener, 1) == SOCKET_ERROR) {
     goto err;
   }
 
-  server = accept(listener, NULL, NULL);
+  client = g_sock_hooks.wsa_socket_w_fn(AF_INET, type, protocol, NULL, 0, 0);
+  if (client == INVALID_SOCKET) {
+    goto err;
+  }
+
+  if (g_sock_hooks.connect_fn(client, (struct sockaddr *)&addr, sizeof(addr)) ==
+      SOCKET_ERROR) {
+    g_sock_hooks.closesocket_fn(client);
+    goto err;
+  }
+
+  server = g_sock_hooks.accept_fn(listener, NULL, NULL);
   if (server == INVALID_SOCKET) {
-    closesocket(client);
+    g_sock_hooks.closesocket_fn(client);
     goto err;
   }
 
-  closesocket(listener);
+  g_sock_hooks.closesocket_fn(listener);
 
   {
-    intptr_t fd_server = _open_osfhandle((intptr_t)server, _O_RDWR | _O_BINARY);
-    intptr_t fd_client = _open_osfhandle((intptr_t)client, _O_RDWR | _O_BINARY);
+    intptr_t fd_server =
+        g_sock_hooks.open_osfhandle_fn((intptr_t)server, _O_RDWR | _O_BINARY);
+    intptr_t fd_client =
+        g_sock_hooks.open_osfhandle_fn((intptr_t)client, _O_RDWR | _O_BINARY);
     if (fd_server == -1 || fd_client == -1) {
-      if (fd_server != -1)
-        _close((int)fd_server);
-      else
-        closesocket(server);
-      if (fd_client != -1)
-        _close((int)fd_client);
-      else
-        closesocket(client);
+      if (fd_server != -1) {
+        g_sock_hooks.close_fn((int)fd_server);
+      } else {
+        g_sock_hooks.closesocket_fn(server);
+      }
+      if (fd_client != -1) {
+        g_sock_hooks.close_fn((int)fd_client);
+      } else {
+        g_sock_hooks.closesocket_fn(client);
+      }
       return -1;
     }
     socket_vector[0] = (int)fd_server;
     socket_vector[1] = (int)fd_client;
     posix_register_crt_socket(fd_server, (intptr_t)server);
     posix_register_crt_socket(fd_client, (intptr_t)client);
-    if (mark_as_socket(fd_server) != ERR_NONE) { /* Ignore */
-    }
-    if (mark_as_socket(fd_client) != ERR_NONE) { /* Ignore */
-    }
+    (void)mark_as_socket(fd_server);
+    (void)mark_as_socket(fd_client);
     return 0;
   }
 
 err:
-  closesocket(listener);
+  g_sock_hooks.closesocket_fn(listener);
   return -1;
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
   (void)domain;
@@ -1825,10 +2194,8 @@ err:
 #endif
 }
 
-/* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 
-/* Dummy function to prevent empty translation unit */
 /**
  * @brief Retrieves information on posix-sockets availability.
  * @param[out] out_available Pointer to integer receiving availability status
@@ -1844,6 +2211,11 @@ auto_win_msvc_error_t posix_sockets_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+/**
+ * @brief Enumerates local network interface addresses (stub returning ENOSYS).
+ * @param[out] ifap Output pointer set to NULL.
+ * @return Always -1 with errno set to EINVAL or ENOSYS.
+ */
 int posix_getifaddrs(struct ifaddrs **ifap) {
   if (ifap == NULL) {
     errno = EINVAL;
@@ -1854,12 +2226,16 @@ int posix_getifaddrs(struct ifaddrs **ifap) {
   return -1;
 }
 
-void posix_freeifaddrs(struct ifaddrs *ifa) {
-  if (ifa != NULL) {
-    /* no-op for now as getifaddrs returns ENOSYS */
-  }
-}
+/**
+ * @brief Frees interface address list returned by posix_getifaddrs.
+ * @param[in] ifa Head of interface list (may be NULL).
+ */
+void posix_freeifaddrs(struct ifaddrs *ifa) { (void)ifa; }
 
+/**
+ * @brief No-op helper preventing empty translation unit warnings.
+ * @return Always 0.
+ */
 int dummy_posix_sockets(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sockets;

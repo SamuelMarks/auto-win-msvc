@@ -10,6 +10,8 @@
 /* clang-format off */
 #include <sys/types.h>
 #include <sys/user.h>
+#include <elf.h>
+#include <sys/resource.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <stddef.h>
@@ -20,6 +22,57 @@ extern "C" {
 #endif
 
 struct procstat;
+#define PS_FST_VTYPE_VNON 1
+#define PS_FST_VTYPE_VREG 2
+#define PS_FST_VTYPE_VDIR 3
+#define PS_FST_VTYPE_VBLK 4
+#define PS_FST_VTYPE_VCHR 5
+#define PS_FST_VTYPE_VLNK 6
+#define PS_FST_VTYPE_VSOCK 7
+#define PS_FST_VTYPE_VFIFO 8
+#define PS_FST_VTYPE_VBAD 9
+#define PS_FST_VTYPE_UNKNOWN 255
+
+#define PS_FST_TYPE_VNODE 1
+#define PS_FST_TYPE_FIFO 2
+#define PS_FST_TYPE_SOCKET 3
+#define PS_FST_TYPE_PIPE 4
+#define PS_FST_TYPE_PTS 5
+#define PS_FST_TYPE_KQUEUE 6
+#define PS_FST_TYPE_MQUEUE 8
+#define PS_FST_TYPE_SHM 9
+#define PS_FST_TYPE_SEM 10
+#define PS_FST_TYPE_UNKNOWN 11
+#define PS_FST_TYPE_NONE 12
+#define PS_FST_TYPE_PROCDESC 13
+#define PS_FST_TYPE_DEV 14
+#define PS_FST_TYPE_EVENTFD 15
+#define PS_FST_TYPE_INOTIFY 16
+
+#define PS_FST_UFLAG_RDIR 0x0001
+#define PS_FST_UFLAG_CDIR 0x0002
+#define PS_FST_UFLAG_JAIL 0x0004
+#define PS_FST_UFLAG_TRACE 0x0008
+#define PS_FST_UFLAG_TEXT 0x0010
+#define PS_FST_UFLAG_MMAP 0x0020
+#define PS_FST_UFLAG_CTTY 0x0040
+
+#define PS_FST_FFLAG_READ 0x0001
+#define PS_FST_FFLAG_WRITE 0x0002
+#define PS_FST_FFLAG_NONBLOCK 0x0004
+#define PS_FST_FFLAG_APPEND 0x0008
+#define PS_FST_FFLAG_SHLOCK 0x0010
+#define PS_FST_FFLAG_EXLOCK 0x0020
+#define PS_FST_FFLAG_ASYNC 0x0040
+#define PS_FST_FFLAG_SYNC 0x0080
+#define PS_FST_FFLAG_NOFOLLOW 0x0100
+#define PS_FST_FFLAG_CREAT 0x0200
+#define PS_FST_FFLAG_TRUNC 0x0400
+#define PS_FST_FFLAG_EXCL 0x0800
+#define PS_FST_FFLAG_DIRECT 0x1000
+#define PS_FST_FFLAG_EXEC 0x2000
+#define PS_FST_FFLAG_HASLOCK 0x4000
+
 struct rlimit;
 
 /** @brief Linked list head of file info structures. */
@@ -68,6 +121,8 @@ struct sockstat {
   char dname[32];
   unsigned int send_q;
   unsigned int recv_q;
+  unsigned int sendq;
+  unsigned int recvq;
 };
 
 /** @brief Pipe status details for procstat_get_pipe_info. */
@@ -176,6 +231,58 @@ int procstat_get_sem_info(struct procstat *prstat, struct filestat *fst,
 /** @brief Retrieve shared memory details for an open file entry. */
 int procstat_get_shm_info(struct procstat *prstat, struct filestat *fst,
                           struct shmstat *shm, char *errbuf);
+
+#define PS_ADVLOCK_RO 0x01
+#define PS_ADVLOCK_RW 0x02
+#define PS_ADVLOCK_TYPE_FLOCK 0x01
+#define PS_ADVLOCK_TYPE_PID 0x02
+#define PS_ADVLOCK_TYPE_REMOTE 0x03
+
+struct advlock {
+  int rw;
+  int type;
+  int pid;
+  int sysid;
+  uint64_t file_fsid;
+  uint64_t file_rdev;
+  uint64_t file_fileid;
+  off_t start;
+  off_t len;
+  const char *path;
+  STAILQ_ENTRY(advlock) next;
+};
+STAILQ_HEAD(advlock_list, advlock);
+
+/** @brief Retrieve ELF auxiliary vector for a process. */
+Elf_Auxinfo *procstat_getauxv(struct procstat *prstat, struct kinfo_proc *kp,
+                              unsigned int *cntp);
+/** @brief Free ELF auxiliary vector returned by procstat_getauxv. */
+void procstat_freeauxv(struct procstat *prstat, Elf_Auxinfo *auxv);
+
+struct ptrace_lwpinfo;
+struct kinfo_knote;
+/** @brief Retrieve ptrace LWP thread information from procstat handle. */
+struct ptrace_lwpinfo *procstat_getptlwpinfo(struct procstat *prstat,
+                                             unsigned int *cntp);
+/** @brief Free ptrace LWP array returned by procstat_getptlwpinfo. */
+void procstat_freeptlwpinfo(struct procstat *prstat, struct ptrace_lwpinfo *pl);
+/** @brief Retrieve current resource limit usage array for a process. */
+rlim_t *procstat_getrlimitusage(struct procstat *prstat, struct kinfo_proc *kp,
+                                unsigned int *cntp);
+/** @brief Free resource limit usage array returned by procstat_getrlimitusage.
+ */
+void procstat_freerlimitusage(struct procstat *prstat, rlim_t *resuse);
+/** @brief Retrieve registered knotes for an open kqueue descriptor. */
+struct kinfo_knote *procstat_get_kqueue_info(struct procstat *prstat,
+                                             struct kinfo_proc *kp, int kqfd,
+                                             unsigned int *cntp, char *errbuf);
+/** @brief Free knote array returned by procstat_get_kqueue_info. */
+void procstat_freekqinfo(struct procstat *prstat, struct kinfo_knote *kni);
+
+/** @brief Retrieve advisory file locks across the system. */
+struct advlock_list *procstat_getadvlock(struct procstat *prstat);
+/** @brief Free advisory lock list returned by procstat_getadvlock. */
+void procstat_freeadvlock(struct procstat *prstat, struct advlock_list *lst);
 
 #ifdef __cplusplus
 }

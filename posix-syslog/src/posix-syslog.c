@@ -116,8 +116,7 @@ int setlogmask(int mask) {
   return old_mask;
 }
 
-void syslog(int priority, const char *format, ...) {
-  va_list args;
+void vsyslog(int priority, const char *format, va_list args) {
   char buffer[4096];
   int prio;
 #if defined(_WIN32)
@@ -131,7 +130,6 @@ void syslog(int priority, const char *format, ...) {
     return;
   }
 
-  va_start(args, format);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 #elif defined(_MSC_VER)
@@ -140,7 +138,6 @@ void syslog(int priority, const char *format, ...) {
 #else
   vsnprintf(buffer, sizeof(buffer), format, args);
 #endif
-  va_end(args);
 
   if (g_LogOpt & LOG_PERROR) {
     fprintf(stderr, "%s%s%s\n", g_Ident != NULL ? g_Ident : "",
@@ -163,10 +160,20 @@ void syslog(int priority, const char *format, ...) {
         RegisterEventSourceA(NULL, g_Ident != NULL ? g_Ident : "Application");
   }
 
+  (void)g_Facility;
   if (g_EventSource != NULL) {
-    ReportEventA(g_EventSource, eventType, 0, 0, NULL, 1, 0, strings, NULL);
+    ReportEventA(g_EventSource, eventType,
+                 (WIN_WORD)LOG_FAC(priority | g_Facility), 0, NULL, 1, 0,
+                 strings, NULL);
   }
 #endif
+}
+
+void syslog(int priority, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vsyslog(priority, format, args);
+  va_end(args);
 }
 
 #endif

@@ -74,6 +74,9 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
     if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
         string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     else()

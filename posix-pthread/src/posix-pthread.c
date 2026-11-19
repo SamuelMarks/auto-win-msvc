@@ -1,12 +1,27 @@
+/* posix-pthread.c - Strict C89 Implementation */
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
-/* posix-pthread.c - Strict C89 Implementation */
+
+/**
+ * @file posix-pthread.c
+ * @brief Portable POSIX threads, barriers, spinlocks, scheduling, and
+ * semaphores polyfill for Windows and DOS targets.
+ */
+
 /* clang-format off */
 #include "posix-pthread.h"
 #include <errno.h>
+#include <stddef.h>
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+/* clang-format on */
 
 #ifndef EINVAL
-#define EINVAL 40
+#define EINVAL 22
 #endif
 #ifndef ETIMEDOUT
 #define ETIMEDOUT 138
@@ -14,20 +29,26 @@
 #ifndef EBUSY
 #define EBUSY 16
 #endif
-#ifndef EINVAL
-#define EINVAL 22
-#endif
 #ifndef EAGAIN
 #define EAGAIN 11
 #endif
 #ifndef ENOMEM
 #define ENOMEM 12
 #endif
+#ifndef ENOENT
+#define ENOENT 2
+#endif
+#ifndef EEXIST
+#define EEXIST 17
+#endif
+#ifndef ENOSYS
+#define ENOSYS 40
+#endif
 
 #if (!defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) &&           \
      !defined(__WATCOMC__)) ||                                                 \
     defined(__CYGWIN__)
-/* Nothing to implement, native POSIX used */
+/* Native POSIX threads used on Unix and Cygwin */
 
 #elif defined(__DOS__) || defined(__MSDOS__) ||                                \
     (defined(__WATCOMC__) && !defined(_WIN32))
@@ -37,19 +58,19 @@ static int g_dos_tls_used[POSIX_DOS_MAX_TLS_KEYS];
 static void *g_dos_tls_values[POSIX_DOS_MAX_TLS_KEYS];
 static void (*g_dos_tls_destructors[POSIX_DOS_MAX_TLS_KEYS])(void *);
 
+/** @brief Initialize mutex on DOS. */
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
+  (void)attr;
   if (!mutex) {
     errno = EINVAL;
     return EINVAL;
-  }
-  if (attr) {
-    /* parameters checked */
   }
   mutex->p = (void *)1;
   return 0;
 }
 
+/** @brief Destroy mutex on DOS. */
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
@@ -59,6 +80,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   return 0;
 }
 
+/** @brief Lock mutex on DOS. */
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
@@ -67,6 +89,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   return 0;
 }
 
+/** @brief Try-lock mutex on DOS. */
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
@@ -75,6 +98,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
   return 0;
 }
 
+/** @brief Unlock mutex on DOS. */
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   if (!mutex) {
     errno = EINVAL;
@@ -83,147 +107,158 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   return 0;
 }
 
+/** @brief Create thread stub on single-threaded DOS. */
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
+  (void)attr;
+  (void)arg;
   if (!thread || !start_routine) {
     errno = EINVAL;
     return EINVAL;
   }
-  if (attr || arg) {
-    /* parameters checked */
-  }
   return ENOSYS;
 }
 
+/** @brief Join thread stub on single-threaded DOS. */
 int pthread_join(pthread_t thread, void **retval) {
-  if (retval) {
-    /* parameters checked */
-  }
+  (void)retval;
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Detach thread stub on single-threaded DOS. */
 int pthread_detach(pthread_t thread) {
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Initialize condition variable stub on DOS. */
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
   if (!cond || !attr) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Destroy condition variable stub on DOS. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Signal condition variable stub on DOS. */
 int pthread_cond_signal(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Broadcast condition variable stub on DOS. */
 int pthread_cond_broadcast(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Wait on condition variable stub on DOS. */
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
   if (!cond || !mutex) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
-int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime) {
-  if (abstime) {
-  if (abstime) {
-    /* parameters checked */
-  }
-    /* parameters checked */
-  }
+/** @brief Timed wait on condition variable stub on DOS. */
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+                           const struct timespec *abstime) {
+  (void)abstime;
   if (!cond || !mutex) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
-int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
+/** @brief Initialize rwlock stub on DOS. */
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+                        const pthread_rwlockattr_t *attr) {
   if (!rwlock || !attr) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Destroy rwlock stub on DOS. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Shared lock rwlock stub on DOS. */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Try shared lock rwlock stub on DOS. */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Exclusive lock rwlock stub on DOS. */
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Try exclusive lock rwlock stub on DOS. */
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Unlock rwlock stub on DOS. */
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Allocate thread-specific key on DOS. */
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   unsigned long i;
   if (!key) {
@@ -243,6 +278,7 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   return EAGAIN;
 }
 
+/** @brief Delete thread-specific key on DOS. */
 int pthread_key_delete(pthread_key_t key) {
   if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
     errno = EINVAL;
@@ -254,6 +290,7 @@ int pthread_key_delete(pthread_key_t key) {
   return 0;
 }
 
+/** @brief Read thread-specific value on DOS. */
 void *pthread_getspecific(pthread_key_t key) {
   if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
     return NULL;
@@ -261,6 +298,7 @@ void *pthread_getspecific(pthread_key_t key) {
   return g_dos_tls_values[key];
 }
 
+/** @brief Set thread-specific value on DOS. */
 int pthread_setspecific(pthread_key_t key, const void *value) {
   if (key >= POSIX_DOS_MAX_TLS_KEYS || !g_dos_tls_used[key]) {
     errno = EINVAL;
@@ -274,173 +312,177 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
   return 0;
 }
 
-pthread_t pthread_self(void) {
-  return (pthread_t)1;
-}
+/** @brief Return thread identifier on DOS. */
+pthread_t pthread_self(void) { return (pthread_t)1; }
 
-int pthread_equal(pthread_t t1, pthread_t t2) {
-  return t1 == t2;
-}
+/** @brief Compare thread identifiers on DOS. */
+int pthread_equal(pthread_t t1, pthread_t t2) { return t1 == t2; }
 
-void pthread_exit(void *retval) {
-  if (retval) {
-    /* parameters checked */
-  }
-}
+/** @brief Exit thread no-op on DOS. */
+void pthread_exit(void *retval) { (void)retval; }
 
+/** @brief Cancel thread stub on DOS. */
 int pthread_cancel(pthread_t thread) {
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Set cancel state stub on DOS. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  if (state || oldstate) {
-    /* parameters checked */
-  }
-    return ENOSYS;
+  (void)state;
+  (void)oldstate;
+  return ENOSYS;
 }
 
+/** @brief Set cancel type stub on DOS. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  if (type || oldtype) {
-    /* parameters checked */
-  }
-    return ENOSYS;
+  (void)type;
+  (void)oldtype;
+  return ENOSYS;
 }
 
-void pthread_testcancel(void) {
-}
+/** @brief Cancellation point no-op on DOS. */
+void pthread_testcancel(void) {}
 
+/** @brief Initialize spinlock stub on DOS. */
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
+  (void)pshared;
   if (!lock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Destroy spinlock stub on DOS. */
 int pthread_spin_destroy(pthread_spinlock_t *lock) {
   if (!lock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Lock spinlock stub on DOS. */
 int pthread_spin_lock(pthread_spinlock_t *lock) {
   if (!lock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Try-lock spinlock stub on DOS. */
 int pthread_spin_trylock(pthread_spinlock_t *lock) {
   if (!lock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Unlock spinlock stub on DOS. */
 int pthread_spin_unlock(pthread_spinlock_t *lock) {
   if (!lock) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Initialize semaphore stub on DOS. */
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
-  if (pshared || value) {
-    /* parameters checked */
-  }
+  (void)pshared;
+  (void)value;
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
+/** @brief Destroy semaphore stub on DOS. */
 int sem_destroy(sem_t *sem) {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
+/** @brief Wait semaphore stub on DOS. */
 int sem_wait(sem_t *sem) {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
+/** @brief Try-wait semaphore stub on DOS. */
 int sem_trywait(sem_t *sem) {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
+/** @brief Post semaphore stub on DOS. */
 int sem_post(sem_t *sem) {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
+/** @brief Read semaphore value stub on DOS. */
 int sem_getvalue(sem_t *sem, int *sval) {
-  if (sval) {
-    /* parameters checked */
-  }
+  (void)sval;
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-    return -1;
+  return -1;
 }
 
-int sched_yield(void) {
-  return 0;
-}
+/** @brief Yield processor no-op on DOS. */
+int sched_yield(void) { return 0; }
 
-int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned count) {
-  if (count) {
-    /* parameters checked */
-  }
+/** @brief Initialize barrier stub on DOS. */
+int pthread_barrier_init(pthread_barrier_t *barrier,
+                         const pthread_barrierattr_t *attr, unsigned count) {
+  (void)count;
   if (!barrier || !attr) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Destroy barrier stub on DOS. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
   if (!barrier) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Wait on barrier stub on DOS. */
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
   if (!barrier) {
     errno = EINVAL;
     return -1;
   }
-    return ENOSYS;
+  return ENOSYS;
 }
 
+/** @brief Execute initialization routine once on DOS. */
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
   if (!once_control || !init_routine) {
     errno = EINVAL;
@@ -453,45 +495,65 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
   return 0;
 }
 
-#else
+#else /* _WIN32 && !__CYGWIN__ */
 
-#if defined(_WIN32)
-#include <stdlib.h>
 #define WINAPI __stdcall
-#define INFINITE 0xFFFFFFFFUL
-#define WAIT_OBJECT_0 0UL
-#define WAIT_TIMEOUT 258UL
-#define TLS_OUT_OF_INDEXES 0xFFFFFFFFUL
+#define POSIX_WIN_INFINITE 0xFFFFFFFFUL
+#define POSIX_WIN_WAIT_OBJECT_0 0UL
+#define POSIX_WIN_WAIT_TIMEOUT 258UL
+#define POSIX_WIN_TLS_OUT_OF_INDEXES 0xFFFFFFFFUL
+#define POSIX_SEMAPHORE_ALL_ACCESS 0x1F0003UL
+#define POSIX_ERROR_ALREADY_EXISTS 183UL
+#define POSIX_THREAD_SET_LIMITED_INFO 0x0400UL
 
-typedef void(WINAPI *FARPROC_T)(void);
+#if defined(_MSC_VER) || defined(__WATCOMC__)
+typedef unsigned __int64 posix_sem_uint64_t;
+#elif defined(__GNUC__)
+__extension__ typedef unsigned long long posix_sem_uint64_t;
+#else
+typedef unsigned long long posix_sem_uint64_t;
+#endif
+
+/** @brief Forward-declared Win32 FILETIME layout without including windows.h.
+ */
+struct posix_sem_FILETIME {
+  unsigned long dwLowDateTime;  /**< Low 32 bits of 100ns intervals. */
+  unsigned long dwHighDateTime; /**< High 32 bits of 100ns intervals. */
+};
+
 __declspec(dllimport) unsigned long WINAPI GetCurrentThreadId(void);
 __declspec(dllimport) void *WINAPI GetModuleHandleA(const char *);
-__declspec(dllimport) FARPROC_T WINAPI GetProcAddress(void *, const char *);
-__declspec(dllimport) void *WINAPI
-    CreateThread(void *, size_t, unsigned long(WINAPI *)(void *), void *,
-                 unsigned long, unsigned long *);
-__declspec(dllimport) unsigned long WINAPI
-    WaitForSingleObject(void *, unsigned long);
+__declspec(dllimport) posix_pthread_farproc_t WINAPI
+GetProcAddress(void *, const char *);
+__declspec(dllimport) void *WINAPI CreateThread(void *, size_t,
+                                                unsigned long(WINAPI *)(void *),
+                                                void *, unsigned long,
+                                                unsigned long *);
+__declspec(dllimport) void WINAPI ExitThread(unsigned long);
+__declspec(dllimport) unsigned long WINAPI WaitForSingleObject(void *,
+                                                               unsigned long);
 __declspec(dllimport) int WINAPI CloseHandle(void *);
 __declspec(dllimport) void WINAPI Sleep(unsigned long);
-__declspec(dllimport) void *WINAPI
-    CreateSemaphoreA(void *, long, long, const char *);
+__declspec(dllimport) void *WINAPI CreateSemaphoreA(void *, long, long,
+                                                    const char *);
+__declspec(dllimport) void *WINAPI OpenSemaphoreA(unsigned long, int,
+                                                  const char *);
 __declspec(dllimport) int WINAPI ReleaseSemaphore(void *, long, long *);
 __declspec(dllimport) unsigned long WINAPI TlsAlloc(void);
 __declspec(dllimport) int WINAPI TlsFree(unsigned long);
 __declspec(dllimport) void *WINAPI TlsGetValue(unsigned long);
 __declspec(dllimport) int WINAPI TlsSetValue(unsigned long, void *);
 __declspec(dllimport) unsigned long WINAPI GetLastError(void);
-
-__declspec(dllimport) void WINAPI InitializeCriticalSection(void *);
 __declspec(dllimport) void WINAPI DeleteCriticalSection(void *);
 __declspec(dllimport) void WINAPI EnterCriticalSection(void *);
 __declspec(dllimport) void WINAPI LeaveCriticalSection(void *);
 __declspec(dllimport) unsigned char WINAPI TryEnterCriticalSection(void *);
 __declspec(dllimport) int WINAPI
-    InitializeCriticalSectionAndSpinCount(void *, unsigned long);
-__declspec(dllimport) void *WINAPI
-    OpenThread(unsigned long, int, unsigned long);
+InitializeCriticalSectionAndSpinCount(void *, unsigned long);
+__declspec(dllimport) void *WINAPI OpenThread(unsigned long, int,
+                                              unsigned long);
+__declspec(dllimport) void WINAPI
+GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
 
 #if defined(_MSC_VER)
 #if _MSC_VER >= 1400
@@ -499,291 +561,413 @@ void *_InterlockedCompareExchangePointer(void *volatile *, void *, void *);
 void *_InterlockedExchangePointer(void *volatile *, void *);
 #pragma intrinsic(_InterlockedCompareExchangePointer)
 #pragma intrinsic(_InterlockedExchangePointer)
-#define POSIX_CAS_PTR(dst, val, cmp) _InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) _InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
+#define POSIX_CAS_PTR(dst, val, cmp)                                           \
+  _InterlockedCompareExchangePointer((dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) _InterlockedExchangePointer((dst), (val))
 #else
-__declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
-__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
-#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
+__declspec(dllimport) void *
+    WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
+__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *,
+                                                              void *);
+#define POSIX_CAS_PTR(dst, val, cmp)                                           \
+  InterlockedCompareExchangePointer((dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((dst), (val))
 #endif
 #elif defined(__GNUC__) || defined(__clang__)
-#define POSIX_CAS_PTR(dst, val, cmp) __sync_val_compare_and_swap((void *volatile *)(void *)(dst), (cmp), (val))
-#define POSIX_EXCHANGE_PTR(dst, val) (void)__sync_lock_test_and_set((void *volatile *)(void *)(dst), (val))
+#define POSIX_CAS_PTR(dst, val, cmp)                                           \
+  __sync_val_compare_and_swap((dst), (cmp), (val))
+#define POSIX_EXCHANGE_PTR(dst, val)                                           \
+  (void)__sync_lock_test_and_set((dst), (val))
 #else
-__declspec(dllimport) void *WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
-__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *, void *);
-#define POSIX_CAS_PTR(dst, val, cmp) InterlockedCompareExchangePointer((void *volatile *)(void *)(dst), (val), (cmp))
-#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((void *volatile *)(void *)(dst), (val))
+__declspec(dllimport) void *
+    WINAPI InterlockedCompareExchangePointer(void *volatile *, void *, void *);
+__declspec(dllimport) void *WINAPI InterlockedExchangePointer(void *volatile *,
+                                                              void *);
+#define POSIX_CAS_PTR(dst, val, cmp)                                           \
+  InterlockedCompareExchangePointer((dst), (val), (cmp))
+#define POSIX_EXCHANGE_PTR(dst, val) InterlockedExchangePointer((dst), (val))
 #endif
 
-typedef long(WINAPI *PFN_SetThreadDescription)(void *, const wchar_t *);
-/** \brief dyn_SetThreadDescription function. */
-static int WINAPI dyn_SetThreadDescription(void *a0, const wchar_t *a1) {
-  static PFN_SetThreadDescription pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn =
-          (PFN_SetThreadDescription)GetProcAddress(mod, "SetThreadDescription");
-    init = 1;
+static void *default_malloc(size_t size) { return malloc(size); }
+static void default_free(void *ptr) { free(ptr); }
+static void *default_get_module_handle_a(const char *name) {
+  return GetModuleHandleA(name);
+}
+static posix_pthread_farproc_t default_get_proc_address(void *mod,
+                                                        const char *name) {
+  return GetProcAddress(mod, name);
+}
+static unsigned long default_get_current_thread_id(void) {
+  return GetCurrentThreadId();
+}
+static void *
+default_create_thread(size_t stack_size,
+                      unsigned long(POSIX_PTHREAD_WINAPI *start_fn)(void *),
+                      void *arg) {
+  return CreateThread(NULL, stack_size, start_fn, arg, 0, NULL);
+}
+static void default_exit_thread(unsigned long code) { ExitThread(code); }
+static unsigned long default_wait_for_single_object(void *handle,
+                                                    unsigned long ms) {
+  return WaitForSingleObject(handle, ms);
+}
+static int default_close_handle(void *handle) { return CloseHandle(handle); }
+static void default_sleep_ms(unsigned long ms) { Sleep(ms); }
+static unsigned long default_tls_alloc(void) { return TlsAlloc(); }
+static int default_tls_free(unsigned long idx) { return TlsFree(idx); }
+static void *default_tls_get_value(unsigned long idx) {
+  return TlsGetValue(idx);
+}
+static int default_tls_set_value(unsigned long idx, void *val) {
+  return TlsSetValue(idx, val);
+}
+static unsigned long default_get_last_error(void) { return GetLastError(); }
+static void *default_open_thread(unsigned long access, int inherit,
+                                 unsigned long tid) {
+  return OpenThread(access, inherit, tid);
+}
+static int default_init_cs_spin(void *cs, unsigned long spin) {
+  return InitializeCriticalSectionAndSpinCount(cs, spin);
+}
+static void default_delete_cs(void *cs) { DeleteCriticalSection(cs); }
+static void default_enter_cs(void *cs) { EnterCriticalSection(cs); }
+static void default_leave_cs(void *cs) { LeaveCriticalSection(cs); }
+static unsigned char default_try_enter_cs(void *cs) {
+  return TryEnterCriticalSection(cs);
+}
+static void *default_create_semaphore_a(long initial_count, long max_count,
+                                        const char *name) {
+  return CreateSemaphoreA(NULL, initial_count, max_count, name);
+}
+static void *default_open_semaphore_a(unsigned long access, int inherit,
+                                      const char *name) {
+  return OpenSemaphoreA(access, inherit, name);
+}
+static int default_release_semaphore(void *sem, long release_count,
+                                     long *prev_count) {
+  return ReleaseSemaphore(sem, release_count, prev_count);
+}
+static void default_get_system_time_as_filetime(unsigned long *low_dt,
+                                                unsigned long *high_dt) {
+  struct posix_sem_FILETIME ft;
+  GetSystemTimeAsFileTime(&ft);
+  *low_dt = ft.dwLowDateTime;
+  *high_dt = ft.dwHighDateTime;
+}
+static void *default_cas_ptr(void *volatile *dst, void *exchange,
+                             void *comparand) {
+  return POSIX_CAS_PTR(dst, exchange, comparand);
+}
+static void default_exchange_ptr(void *volatile *dst, void *val) {
+  (void)POSIX_EXCHANGE_PTR(dst, val);
+}
+
+static const struct posix_pthread_win32_hooks g_default_hooks = {
+    default_malloc,
+    default_free,
+    default_get_module_handle_a,
+    default_get_proc_address,
+    default_get_current_thread_id,
+    default_create_thread,
+    default_exit_thread,
+    default_wait_for_single_object,
+    default_close_handle,
+    default_sleep_ms,
+    default_tls_alloc,
+    default_tls_free,
+    default_tls_get_value,
+    default_tls_set_value,
+    default_get_last_error,
+    default_open_thread,
+    default_init_cs_spin,
+    default_delete_cs,
+    default_enter_cs,
+    default_leave_cs,
+    default_try_enter_cs,
+    default_create_semaphore_a,
+    default_open_semaphore_a,
+    default_release_semaphore,
+    default_get_system_time_as_filetime,
+    default_cas_ptr,
+    default_exchange_ptr};
+
+static struct posix_pthread_win32_hooks g_hooks = {
+    default_malloc,
+    default_free,
+    default_get_module_handle_a,
+    default_get_proc_address,
+    default_get_current_thread_id,
+    default_create_thread,
+    default_exit_thread,
+    default_wait_for_single_object,
+    default_close_handle,
+    default_sleep_ms,
+    default_tls_alloc,
+    default_tls_free,
+    default_tls_get_value,
+    default_tls_set_value,
+    default_get_last_error,
+    default_open_thread,
+    default_init_cs_spin,
+    default_delete_cs,
+    default_enter_cs,
+    default_leave_cs,
+    default_try_enter_cs,
+    default_create_semaphore_a,
+    default_open_semaphore_a,
+    default_release_semaphore,
+    default_get_system_time_as_filetime,
+    default_cas_ptr,
+    default_exchange_ptr};
+
+/** @brief Cached kernel32 dynamic procedure table. */
+struct posix_pthread_dyn_cache {
+  int init_set_thread_desc;
+  posix_pthread_farproc_t pfn_set_thread_desc;
+  int init_srw_init;
+  posix_pthread_farproc_t pfn_srw_init;
+  int init_srw_acq_excl;
+  posix_pthread_farproc_t pfn_srw_acq_excl;
+  int init_srw_rel_excl;
+  posix_pthread_farproc_t pfn_srw_rel_excl;
+  int init_srw_acq_sh;
+  posix_pthread_farproc_t pfn_srw_acq_sh;
+  int init_srw_rel_sh;
+  posix_pthread_farproc_t pfn_srw_rel_sh;
+  int init_srw_try_excl;
+  posix_pthread_farproc_t pfn_srw_try_excl;
+  int init_srw_try_sh;
+  posix_pthread_farproc_t pfn_srw_try_sh;
+  int init_cv_init;
+  posix_pthread_farproc_t pfn_cv_init;
+  int init_cv_sleep;
+  posix_pthread_farproc_t pfn_cv_sleep;
+  int init_cv_wake;
+  posix_pthread_farproc_t pfn_cv_wake;
+  int init_cv_wake_all;
+  posix_pthread_farproc_t pfn_cv_wake_all;
+};
+
+static struct posix_pthread_dyn_cache g_dyn_cache;
+static unsigned long g_real_cleanup_tls_index = POSIX_WIN_TLS_OUT_OF_INDEXES;
+static unsigned long g_cleanup_tls_index = POSIX_WIN_TLS_OUT_OF_INDEXES;
+
+#ifdef _MSC_VER
+#pragma push_macro("read")
+#undef read
+#pragma section(".CRT$XCU", read)
+#pragma pop_macro("read")
+static void __cdecl __init_pthread_cleanup(void) {
+  g_real_cleanup_tls_index = default_tls_alloc();
+  g_cleanup_tls_index = g_real_cleanup_tls_index;
+}
+__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_pthread_cleanup_ptr)(
+    void) = __init_pthread_cleanup;
+#elif defined(__GNUC__) || defined(__clang__)
+__attribute__((constructor)) static void __init_pthread_cleanup(void) {
+  g_real_cleanup_tls_index = default_tls_alloc();
+  g_cleanup_tls_index = g_real_cleanup_tls_index;
+}
+#endif
+
+/** @brief Populate out_hooks with default Win32 and CRT implementations. */
+void posix_pthread_get_default_win32_hooks(
+    struct posix_pthread_win32_hooks *out_hooks) {
+  if (out_hooks == NULL) {
+    return;
   }
-  if (pfn) {
+  *out_hooks = g_default_hooks;
+}
+
+/** @brief Install custom Win32/allocator hooks or restore defaults on NULL. */
+void posix_pthread_set_win32_hooks(
+    const struct posix_pthread_win32_hooks *hooks) {
+  memset(&g_dyn_cache, 0, sizeof(g_dyn_cache));
+  if (hooks == NULL) {
+    g_hooks = g_default_hooks;
+    g_cleanup_tls_index = g_real_cleanup_tls_index;
+  } else {
+    g_hooks = *hooks;
+    if (g_hooks.tls_alloc != default_tls_alloc) {
+      g_cleanup_tls_index = g_hooks.tls_alloc();
+    } else {
+      g_cleanup_tls_index = g_real_cleanup_tls_index;
+    }
+  }
+}
+
+static posix_pthread_farproc_t
+resolve_kernel32_proc(int *init_flag, posix_pthread_farproc_t *cached_pfn,
+                      const char *name) {
+  if (!*init_flag) {
+    void *mod = g_hooks.get_module_handle_a("kernel32.dll");
+    if (mod != NULL) {
+      *cached_pfn = g_hooks.get_proc_address(mod, name);
+    }
+    *init_flag = 1;
+  }
+  return *cached_pfn;
+}
+
+typedef long(WINAPI *PFN_SetThreadDescription)(void *, const wchar_t *);
+typedef void(WINAPI *PFN_InitializeSRWLock)(void **);
+typedef void(WINAPI *PFN_AcquireSRWLockExclusive)(void **);
+typedef void(WINAPI *PFN_ReleaseSRWLockExclusive)(void **);
+typedef void(WINAPI *PFN_AcquireSRWLockShared)(void **);
+typedef void(WINAPI *PFN_ReleaseSRWLockShared)(void **);
+typedef unsigned char(WINAPI *PFN_TryAcquireSRWLockExclusive)(void **);
+typedef unsigned char(WINAPI *PFN_TryAcquireSRWLockShared)(void **);
+typedef void(WINAPI *PFN_InitializeConditionVariable)(void **);
+typedef int(WINAPI *PFN_SleepConditionVariableSRW)(void **, void **,
+                                                   unsigned long,
+                                                   unsigned long);
+typedef void(WINAPI *PFN_WakeConditionVariable)(void **);
+typedef void(WINAPI *PFN_WakeAllConditionVariable)(void **);
+
+static int WINAPI dyn_SetThreadDescription(void *a0, const wchar_t *a1) {
+  PFN_SetThreadDescription pfn =
+      (PFN_SetThreadDescription)resolve_kernel32_proc(
+          &g_dyn_cache.init_set_thread_desc, &g_dyn_cache.pfn_set_thread_desc,
+          "SetThreadDescription");
+  if (pfn != NULL) {
     pfn(a0, a1);
     return 0;
   }
   return EINVAL;
 }
 
-typedef void(WINAPI *PFN_InitializeSRWLock)(void **);
-/** \brief dyn_InitializeSRWLock function. */
 static void WINAPI dyn_InitializeSRWLock(void **a0) {
-  static PFN_InitializeSRWLock pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_InitializeSRWLock)GetProcAddress(mod, "InitializeSRWLock");
-    init = 1;
-  }
-  if (pfn)
+  PFN_InitializeSRWLock pfn = (PFN_InitializeSRWLock)resolve_kernel32_proc(
+      &g_dyn_cache.init_srw_init, &g_dyn_cache.pfn_srw_init,
+      "InitializeSRWLock");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-typedef void(WINAPI *PFN_AcquireSRWLockExclusive)(void **);
-/** \brief dyn_AcquireSRWLockExclusive function. */
 static void WINAPI dyn_AcquireSRWLockExclusive(void **a0) {
-  static PFN_AcquireSRWLockExclusive pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_AcquireSRWLockExclusive)GetProcAddress(
-          mod, "AcquireSRWLockExclusive");
-    init = 1;
-  }
-  if (pfn)
+  PFN_AcquireSRWLockExclusive pfn =
+      (PFN_AcquireSRWLockExclusive)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_acq_excl, &g_dyn_cache.pfn_srw_acq_excl,
+          "AcquireSRWLockExclusive");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-typedef void(WINAPI *PFN_ReleaseSRWLockExclusive)(void **);
-/** \brief dyn_ReleaseSRWLockExclusive function. */
 static void WINAPI dyn_ReleaseSRWLockExclusive(void **a0) {
-  static PFN_ReleaseSRWLockExclusive pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_ReleaseSRWLockExclusive)GetProcAddress(
-          mod, "ReleaseSRWLockExclusive");
-    init = 1;
-  }
-  if (pfn)
+  PFN_ReleaseSRWLockExclusive pfn =
+      (PFN_ReleaseSRWLockExclusive)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_rel_excl, &g_dyn_cache.pfn_srw_rel_excl,
+          "ReleaseSRWLockExclusive");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-typedef void(WINAPI *PFN_AcquireSRWLockShared)(void **);
-/** \brief dyn_AcquireSRWLockShared function. */
 static void WINAPI dyn_AcquireSRWLockShared(void **a0) {
-  static PFN_AcquireSRWLockShared pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn =
-          (PFN_AcquireSRWLockShared)GetProcAddress(mod, "AcquireSRWLockShared");
-    init = 1;
-  }
-  if (pfn)
+  PFN_AcquireSRWLockShared pfn =
+      (PFN_AcquireSRWLockShared)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_acq_sh, &g_dyn_cache.pfn_srw_acq_sh,
+          "AcquireSRWLockShared");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-#if 0
-typedef void (WINAPI * PFN_ReleaseSRWLockShared)(void**);
-/** \brief dyn_ReleaseSRWLockShared function. */
-static void WINAPI dyn_ReleaseSRWLockShared(void** a0) {
-    static PFN_ReleaseSRWLockShared pfn = 0;
-    static int init = 0;
-    if (!init) {
-        void* mod = GetModuleHandleA("kernel32.dll");
-        if (mod) pfn = (PFN_ReleaseSRWLockShared)GetProcAddress(mod, "ReleaseSRWLockShared");
-        init = 1;
-    }
-    if (pfn) pfn(a0);
+static void WINAPI dyn_ReleaseSRWLockShared(void **a0) {
+  PFN_ReleaseSRWLockShared pfn =
+      (PFN_ReleaseSRWLockShared)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_rel_sh, &g_dyn_cache.pfn_srw_rel_sh,
+          "ReleaseSRWLockShared");
+  if (pfn != NULL) {
+    pfn(a0);
+  }
 }
-#endif
 
-typedef unsigned char(WINAPI *PFN_TryAcquireSRWLockExclusive)(void **);
-/** \brief dyn_TryAcquireSRWLockExclusive function. */
 static unsigned char WINAPI dyn_TryAcquireSRWLockExclusive(void **a0) {
-  static PFN_TryAcquireSRWLockExclusive pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_TryAcquireSRWLockExclusive)GetProcAddress(
-          mod, "TryAcquireSRWLockExclusive");
-    init = 1;
-  }
-  if (pfn)
+  PFN_TryAcquireSRWLockExclusive pfn =
+      (PFN_TryAcquireSRWLockExclusive)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_try_excl, &g_dyn_cache.pfn_srw_try_excl,
+          "TryAcquireSRWLockExclusive");
+  if (pfn != NULL) {
     return pfn(a0);
+  }
   return 0;
 }
 
-typedef unsigned char(WINAPI *PFN_TryAcquireSRWLockShared)(void **);
-/** \brief dyn_TryAcquireSRWLockShared function. */
 static unsigned char WINAPI dyn_TryAcquireSRWLockShared(void **a0) {
-  static PFN_TryAcquireSRWLockShared pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_TryAcquireSRWLockShared)GetProcAddress(
-          mod, "TryAcquireSRWLockShared");
-    init = 1;
-  }
-  if (pfn)
+  PFN_TryAcquireSRWLockShared pfn =
+      (PFN_TryAcquireSRWLockShared)resolve_kernel32_proc(
+          &g_dyn_cache.init_srw_try_sh, &g_dyn_cache.pfn_srw_try_sh,
+          "TryAcquireSRWLockShared");
+  if (pfn != NULL) {
     return pfn(a0);
+  }
   return 0;
 }
 
-typedef void(WINAPI *PFN_InitializeConditionVariable)(void **);
-/** \brief dyn_InitializeConditionVariable function. */
 static void WINAPI dyn_InitializeConditionVariable(void **a0) {
-  static PFN_InitializeConditionVariable pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_InitializeConditionVariable)GetProcAddress(
-          mod, "InitializeConditionVariable");
-    init = 1;
-  }
-  if (pfn)
+  PFN_InitializeConditionVariable pfn =
+      (PFN_InitializeConditionVariable)resolve_kernel32_proc(
+          &g_dyn_cache.init_cv_init, &g_dyn_cache.pfn_cv_init,
+          "InitializeConditionVariable");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-typedef int(WINAPI *PFN_SleepConditionVariableSRW)(void **, void **,
-                                                   unsigned long,
-                                                   unsigned long);
-/** \brief dyn_SleepConditionVariableSRW function. */
 static int WINAPI dyn_SleepConditionVariableSRW(void **a0, void **a1,
                                                 unsigned long a2,
                                                 unsigned long a3) {
-  static PFN_SleepConditionVariableSRW pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_SleepConditionVariableSRW)GetProcAddress(
-          mod, "SleepConditionVariableSRW");
-    init = 1;
-  }
-  if (pfn)
+  PFN_SleepConditionVariableSRW pfn =
+      (PFN_SleepConditionVariableSRW)resolve_kernel32_proc(
+          &g_dyn_cache.init_cv_sleep, &g_dyn_cache.pfn_cv_sleep,
+          "SleepConditionVariableSRW");
+  if (pfn != NULL) {
     return pfn(a0, a1, a2, a3);
+  }
   return 0;
 }
 
-typedef void(WINAPI *PFN_WakeConditionVariable)(void **);
-/** \brief dyn_WakeConditionVariable function. */
 static void WINAPI dyn_WakeConditionVariable(void **a0) {
-  static PFN_WakeConditionVariable pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_WakeConditionVariable)GetProcAddress(mod,
-                                                      "WakeConditionVariable");
-    init = 1;
-  }
-  if (pfn)
+  PFN_WakeConditionVariable pfn =
+      (PFN_WakeConditionVariable)resolve_kernel32_proc(
+          &g_dyn_cache.init_cv_wake, &g_dyn_cache.pfn_cv_wake,
+          "WakeConditionVariable");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-typedef void(WINAPI *PFN_WakeAllConditionVariable)(void **);
-/** \brief dyn_WakeAllConditionVariable function. */
 static void WINAPI dyn_WakeAllConditionVariable(void **a0) {
-  static PFN_WakeAllConditionVariable pfn = 0;
-  static int init = 0;
-  if (!init) {
-    void *mod = GetModuleHandleA("kernel32.dll");
-    if (mod)
-      pfn = (PFN_WakeAllConditionVariable)GetProcAddress(
-          mod, "WakeAllConditionVariable");
-    init = 1;
-  }
-  if (pfn)
+  PFN_WakeAllConditionVariable pfn =
+      (PFN_WakeAllConditionVariable)resolve_kernel32_proc(
+          &g_dyn_cache.init_cv_wake_all, &g_dyn_cache.pfn_cv_wake_all,
+          "WakeAllConditionVariable");
+  if (pfn != NULL) {
     pfn(a0);
+  }
 }
 
-#if 0
-typedef int (WINAPI * PFN_InitOnceBeginInitialize)(void**, unsigned long, int*, void**);
-/** \brief dyn_InitOnceBeginInitialize function. */
-static int WINAPI dyn_InitOnceBeginInitialize(void** a0, unsigned long a1, int* a2, void** a3) {
-    static PFN_InitOnceBeginInitialize pfn = 0;
-    static int init = 0;
-    if (!init) {
-        void* mod = GetModuleHandleA("kernel32.dll");
-        if (mod) pfn = (PFN_InitOnceBeginInitialize)GetProcAddress(mod, "InitOnceBeginInitialize");
-        init = 1;
-    }
-    if (pfn) return pfn(a0, a1, a2, a3);
-    return 0;
-}
-
-
-typedef int (WINAPI * PFN_InitOnceComplete)(void**, unsigned long, void*);
-/** \brief dyn_InitOnceComplete function. */
-static int WINAPI dyn_InitOnceComplete(void** a0, unsigned long a1, void* a2) {
-    static PFN_InitOnceComplete pfn = 0;
-    static int init = 0;
-    if (!init) {
-        void* mod = GetModuleHandleA("kernel32.dll");
-        if (mod) pfn = (PFN_InitOnceComplete)GetProcAddress(mod, "InitOnceComplete");
-        init = 1;
-    }
-    if (pfn) return pfn(a0, a1, a2);
-    return 0;
-}
-
-typedef struct {
-    void *(*start_routine)(void *);
-    void *arg;
-} thread_params_t;
-
-/** \brief thread_start_wrapper function. */
-static int WINAPI thread_start_wrapper(void *arg) {
-    thread_params_t *params = (thread_params_t *)arg;
-    void *(*routine)(void*) = params->start_routine;
-    void *routine_arg = params->arg;
-    free(params);
-    routine(routine_arg);
-    return 0;
-}
-#endif
-#endif
-
-#ifndef POSIX_PTHREAD_ATFORK_MAX
-#define POSIX_PTHREAD_ATFORK_MAX 128
-#endif
-
+/** @brief Linked-list entry for registered pthread_atfork callbacks. */
 typedef struct posix_pthread_atfork_node {
-  void (*prepare)(void);
-  void (*parent)(void);
-  void (*child)(void);
-  struct posix_pthread_atfork_node *next;
+  void (*prepare)(void);                  /**< Pre-fork handler. */
+  void (*parent)(void);                   /**< Post-fork parent handler. */
+  void (*child)(void);                    /**< Post-fork child handler. */
+  struct posix_pthread_atfork_node *next; /**< Next registered entry. */
 } posix_pthread_atfork_node_t;
 
 static posix_pthread_atfork_node_t *g_atfork_head = NULL;
 static posix_pthread_atfork_node_t *g_atfork_tail = NULL;
 static pthread_mutex_t g_atfork_mutex = {NULL};
 
+/** @brief Register fork handlers to run around process duplication. */
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                    void (*child)(void)) {
   posix_pthread_atfork_node_t *node;
 
-  node = (posix_pthread_atfork_node_t *)malloc(
+  node = (posix_pthread_atfork_node_t *)g_hooks.malloc_fn(
       sizeof(posix_pthread_atfork_node_t));
   if (!node) {
     return ENOMEM;
@@ -807,20 +991,23 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void),
 }
 
 static void run_prepare_lifo(posix_pthread_atfork_node_t *node) {
-  if (!node)
+  if (!node) {
     return;
+  }
   run_prepare_lifo(node->next);
   if (node->prepare) {
     node->prepare();
   }
 }
 
+/** @brief Execute registered prepare fork handlers in LIFO order. */
 void posix_pthread_atfork_prepare(void) {
   pthread_mutex_lock(&g_atfork_mutex);
   run_prepare_lifo(g_atfork_head);
   pthread_mutex_unlock(&g_atfork_mutex);
 }
 
+/** @brief Execute registered parent fork handlers in FIFO order. */
 void posix_pthread_atfork_parent(void) {
   posix_pthread_atfork_node_t *curr;
   pthread_mutex_lock(&g_atfork_mutex);
@@ -834,6 +1021,7 @@ void posix_pthread_atfork_parent(void) {
   pthread_mutex_unlock(&g_atfork_mutex);
 }
 
+/** @brief Execute registered child fork handlers in FIFO order. */
 void posix_pthread_atfork_child(void) {
   posix_pthread_atfork_node_t *curr;
   pthread_mutex_lock(&g_atfork_mutex);
@@ -847,284 +1035,288 @@ void posix_pthread_atfork_child(void) {
   pthread_mutex_unlock(&g_atfork_mutex);
 }
 
+/** @brief Internal thread attribute backing structure. */
 struct _posix_pthread_attr {
-  int detachstate;
-  size_t stacksize;
-  size_t guardsize;
-  int inheritsched;
-  int schedpolicy;
-  int contentionscope;
-  struct sched_param schedparam;
-  void *stackaddr;
+  int detachstate;               /**< Detach state flag. */
+  size_t stacksize;              /**< Requested stack size in bytes. */
+  size_t guardsize;              /**< Guard page size in bytes. */
+  int inheritsched;              /**< Scheduling inheritance mode. */
+  int schedpolicy;               /**< Scheduling policy. */
+  int contentionscope;           /**< Contention scope. */
+  struct sched_param schedparam; /**< Scheduling priority parameter. */
+  void *stackaddr;               /**< User-supplied stack base pointer. */
 };
 
-/** \brief pthread_attr_destroy function. */
+/** @brief Destroy a thread attributes object. */
 int pthread_attr_destroy(pthread_attr_t *attr) {
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
-  free(attr->ptr);
+  }
+  g_hooks.free_fn(attr->ptr);
   attr->ptr = NULL;
   return 0;
 }
 
-/** \brief pthread_attr_getdetachstate function. */
+/** @brief Retrieve detach state attribute from thread attributes. */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !detachstate)
+  if (!attr || !attr->ptr || !detachstate) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *detachstate = a->detachstate;
   return 0;
 }
 
-/** \brief pthread_attr_getguardsize function. */
+/** @brief Retrieve stack guard size from thread attributes. */
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !guardsize)
+  if (!attr || !attr->ptr || !guardsize) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *guardsize = a->guardsize;
   return 0;
 }
 
-/** \brief pthread_attr_getinheritsched function. */
+/** @brief Retrieve scheduling inheritance policy from thread attributes. */
 int pthread_attr_getinheritsched(const pthread_attr_t *attr,
                                  int *inheritsched) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !inheritsched)
+  if (!attr || !attr->ptr || !inheritsched) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *inheritsched = a->inheritsched;
   return 0;
 }
 
-/** \brief pthread_attr_getschedparam function. */
+/** @brief Retrieve scheduling parameters from thread attributes. */
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
                                struct sched_param *param) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !param)
+  if (!attr || !attr->ptr || !param) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *param = a->schedparam;
   return 0;
 }
 
-/** \brief pthread_attr_getschedpolicy function. */
+/** @brief Retrieve scheduling policy from thread attributes. */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !policy)
+  if (!attr || !attr->ptr || !policy) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *policy = a->schedpolicy;
   return 0;
 }
 
-/** \brief pthread_attr_getscope function. */
+/** @brief Retrieve contention scope from thread attributes. */
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !contentionscope)
+  if (!attr || !attr->ptr || !contentionscope) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *contentionscope = a->contentionscope;
   return 0;
 }
 
-/** \brief pthread_attr_getstack function. */
+/** @brief Retrieve stack address and size from thread attributes. */
 int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
                           size_t *stacksize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !stackaddr || !stacksize)
+  if (!attr || !attr->ptr || !stackaddr || !stacksize) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *stackaddr = a->stackaddr;
   *stacksize = a->stacksize;
   return 0;
 }
 
-/** \brief pthread_attr_getstacksize function. */
+/** @brief Retrieve stack size from thread attributes. */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !stacksize)
+  if (!attr || !attr->ptr || !stacksize) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   *stacksize = a->stacksize;
   return 0;
 }
 
-/** \brief pthread_attr_init function. */
+/** @brief Initialize a thread attributes object with defaults. */
 int pthread_attr_init(pthread_attr_t *attr) {
   struct _posix_pthread_attr *a;
-  if (!attr)
+  if (!attr) {
     return EINVAL;
-  a = (struct _posix_pthread_attr *)malloc(sizeof(*a));
-  if (!a)
+  }
+  a = (struct _posix_pthread_attr *)g_hooks.malloc_fn(sizeof(*a));
+  if (!a) {
     return ENOMEM;
-  a->detachstate = 0; /* PTHREAD_CREATE_JOINABLE */
+  }
+  a->detachstate = PTHREAD_CREATE_JOINABLE;
   a->stacksize = 0;
-  a->guardsize = 0;
-  a->inheritsched = 0;    /* PTHREAD_INHERIT_SCHED */
-  a->schedpolicy = 0;     /* SCHED_OTHER */
-  a->contentionscope = 0; /* PTHREAD_SCOPE_SYSTEM */
+  a->guardsize = 4096;
+  a->inheritsched = 0;
+  a->schedpolicy = 0;
+  a->contentionscope = 0;
   a->schedparam.sched_priority = 0;
   a->stackaddr = NULL;
   attr->ptr = a;
   return 0;
 }
 
-/** \brief pthread_attr_setdetachstate function. */
+/** @brief Set detach state on thread attributes. */
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
-  if (detachstate != 0 && detachstate != 1)
+  }
+  if (detachstate != PTHREAD_CREATE_JOINABLE &&
+      detachstate != PTHREAD_CREATE_DETACHED) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->detachstate = detachstate;
   return 0;
 }
 
-/** \brief pthread_attr_setguardsize function. */
+/** @brief Set stack guard size on thread attributes. */
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->guardsize = guardsize;
   return 0;
 }
 
-/** \brief pthread_attr_setinheritsched function. */
+/** @brief Set scheduling inheritance mode on thread attributes. */
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->inheritsched = inheritsched;
   return 0;
 }
 
-/** \brief pthread_attr_setschedparam function. */
+/** @brief Set scheduling parameters on thread attributes. */
 int pthread_attr_setschedparam(pthread_attr_t *attr,
                                const struct sched_param *param) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr || !param)
+  if (!attr || !attr->ptr || !param) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->schedparam = *param;
   return 0;
 }
 
-/** \brief pthread_attr_setschedpolicy function. */
+/** @brief Set scheduling policy on thread attributes. */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->schedpolicy = policy;
   return 0;
 }
 
-/** \brief pthread_attr_setscope function. */
+/** @brief Set contention scope on thread attributes. */
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
-  if (contentionscope != 0 && contentionscope != 1)
+  }
+  if (contentionscope != 0 && contentionscope != 1) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->contentionscope = contentionscope;
   return 0;
 }
 
-/** \brief pthread_attr_setstack function. */
+/** @brief Set stack address and size on thread attributes. */
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
                           size_t stacksize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->stackaddr = stackaddr;
   a->stacksize = stacksize;
   return 0;
 }
 
-/** \brief pthread_attr_setstacksize function. */
+/** @brief Set stack size on thread attributes. */
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
   struct _posix_pthread_attr *a;
-  if (!attr || !attr->ptr)
+  if (!attr || !attr->ptr) {
     return EINVAL;
+  }
   a = (struct _posix_pthread_attr *)attr->ptr;
   a->stacksize = stacksize;
   return 0;
 }
 
+/** @brief Internal barrier synchronization backing state. */
 struct _posix_pthread_barrier {
-  unsigned int count;
-  unsigned int limit;
-  unsigned int phase;
-  void *mutex;
-  void *cond;
+  void *mutex;    /**< SRWLock protecting barrier counters. */
+  void *cond;     /**< CONDITION_VARIABLE for phase transition. */
+  unsigned count; /**< Number of threads currently waiting. */
+  unsigned limit; /**< Required thread count per phase. */
+  unsigned phase; /**< Monotonic barrier generation counter. */
 };
 
-/** \brief pthread_barrier_destroy function. */
+/** @brief Destroy a barrier synchronization object. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
-#if defined(_WIN32)
-  struct _posix_pthread_barrier *b;
-  if (!barrier || !barrier->ptr)
+  if (!barrier || !barrier->ptr) {
     return EINVAL;
-  b = (struct _posix_pthread_barrier *)barrier->ptr;
-  free(b);
+  }
+  g_hooks.free_fn(barrier->ptr);
   barrier->ptr = NULL;
   return 0;
-#else
-  if (!barrier) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
+/** @brief Initialize a barrier for a given thread count. */
 int pthread_barrier_init(pthread_barrier_t *barrier,
                          const pthread_barrierattr_t *attr, unsigned count) {
-#if defined(_WIN32)
   struct _posix_pthread_barrier *b;
-  if (!barrier || count == 0)
+  (void)attr;
+  if (!barrier || count == 0) {
     return EINVAL;
-  if (attr) {
-    /* parameters checked */
   }
-  b = (struct _posix_pthread_barrier *)malloc(sizeof(*b));
-  if (!b)
+  b = (struct _posix_pthread_barrier *)g_hooks.malloc_fn(sizeof(*b));
+  if (!b) {
     return ENOMEM;
+  }
+  dyn_InitializeSRWLock(&b->mutex);
+  dyn_InitializeConditionVariable(&b->cond);
   b->count = 0;
   b->limit = count;
   b->phase = 0;
-  dyn_InitializeSRWLock(&b->mutex);
-  dyn_InitializeConditionVariable(&b->cond);
   barrier->ptr = b;
   return 0;
-#else
-  if (!barrier) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (attr || count) {
-    /* parameters checked */
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_barrier_wait function. */
+/** @brief Synchronize participating threads at a barrier. */
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
-#if defined(_WIN32)
   struct _posix_pthread_barrier *b;
-  unsigned int phase;
-  if (!barrier || !barrier->ptr)
+  unsigned phase;
+  if (!barrier || !barrier->ptr) {
     return EINVAL;
+  }
   b = (struct _posix_pthread_barrier *)barrier->ptr;
-
   dyn_AcquireSRWLockExclusive(&b->mutex);
   phase = b->phase;
   b->count++;
@@ -1134,99 +1326,86 @@ int pthread_barrier_wait(pthread_barrier_t *barrier) {
     dyn_WakeAllConditionVariable(&b->cond);
     dyn_ReleaseSRWLockExclusive(&b->mutex);
     return PTHREAD_BARRIER_SERIAL_THREAD;
-  } else {
-    while (phase == b->phase) {
-      dyn_SleepConditionVariableSRW(&b->cond, &b->mutex, 0xFFFFFFFFUL, 0);
-    }
-    dyn_ReleaseSRWLockExclusive(&b->mutex);
-    return 0;
   }
-#else
-  if (!barrier) {
-    errno = EINVAL;
-    return EINVAL;
+  while (phase == b->phase) {
+    dyn_SleepConditionVariableSRW(&b->cond, &b->mutex, POSIX_WIN_INFINITE, 0);
   }
-  return EINVAL;
-#endif
+  dyn_ReleaseSRWLockExclusive(&b->mutex);
+  return 0;
 }
 
-/** \brief pthread_barrierattr_destroy function. */
+/** @brief Destroy a barrier attributes object. */
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   attr->ptr = NULL;
   return 0;
 }
 
-/** \brief pthread_barrierattr_getpshared function. */
+/** @brief Get process-shared attribute from barrier attributes. */
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
                                    int *pshared) {
-  if (!attr || !pshared)
+  if (!attr || !pshared) {
     return EINVAL;
-  *pshared = 0; /* PTHREAD_PROCESS_PRIVATE */
+  }
+  *pshared = PTHREAD_PROCESS_PRIVATE;
   return 0;
 }
 
-/** \brief pthread_barrierattr_init function. */
+/** @brief Initialize a barrier attributes object. */
 int pthread_barrierattr_init(pthread_barrierattr_t *attr) {
-  if (!attr)
+  if (!attr) {
     return EINVAL;
+  }
   attr->ptr = NULL;
   return 0;
 }
 
-/** \brief pthread_barrierattr_setpshared function. */
+/** @brief Set process-shared attribute on barrier attributes. */
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
-  if (!attr)
+  if (!attr || pshared != PTHREAD_PROCESS_PRIVATE) {
     return EINVAL;
-  if (pshared != 0) /* PTHREAD_PROCESS_PRIVATE */
-    return EINVAL;
+  }
   return 0;
 }
 
-/** \brief pthread_cancel function. */
+/** @brief Request cancellation of a target thread. */
 int pthread_cancel(pthread_t thread) {
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-static unsigned long g_cleanup_tls_index = TLS_OUT_OF_INDEXES;
-
-#ifdef _MSC_VER
-#pragma section(".CRT$XCU", read)
-static void __cdecl __init_pthread_cleanup(void) {
-  g_cleanup_tls_index = TlsAlloc();
-}
-__declspec(allocate(".CRT$XCU")) void(__cdecl *__init_pthread_cleanup_ptr)(
-    void) = __init_pthread_cleanup;
-#elif defined(__GNUC__) || defined(__clang__)
-__attribute__((constructor)) static void __init_pthread_cleanup(void) {
-  g_cleanup_tls_index = TlsAlloc();
-}
-#endif
-
+/** @brief Push a cleanup handler onto the calling thread's cleanup stack. */
 void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
                                  void (*routine)(void *), void *arg) {
   struct _pthread_cleanup_buffer *top;
-  if (g_cleanup_tls_index == TLS_OUT_OF_INDEXES)
+  if (!buffer || g_cleanup_tls_index == POSIX_WIN_TLS_OUT_OF_INDEXES) {
     return;
-  top = (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+  }
+  top = (struct _pthread_cleanup_buffer *)g_hooks.tls_get_value(
+      g_cleanup_tls_index);
   buffer->routine = routine;
   buffer->arg = arg;
   buffer->next = top;
-  TlsSetValue(g_cleanup_tls_index, buffer);
+  g_hooks.tls_set_value(g_cleanup_tls_index, buffer);
 }
 
+/** @brief Pop and optionally run the top cleanup handler on the stack. */
 void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
                                 int execute) {
-  if (g_cleanup_tls_index != TLS_OUT_OF_INDEXES) {
+  if (!buffer) {
+    return;
+  }
+  if (g_cleanup_tls_index != POSIX_WIN_TLS_OUT_OF_INDEXES) {
     struct _pthread_cleanup_buffer *top =
-        (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+        (struct _pthread_cleanup_buffer *)g_hooks.tls_get_value(
+            g_cleanup_tls_index);
     if (top == buffer) {
-      TlsSetValue(g_cleanup_tls_index, buffer->next);
+      g_hooks.tls_set_value(g_cleanup_tls_index, buffer->next);
     }
   }
   if (execute && buffer->routine) {
@@ -1234,185 +1413,134 @@ void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
   }
 }
 
-/** \brief pthread_cond_broadcast function. */
+/** @brief Unblock all threads waiting on a condition variable. */
 int pthread_cond_broadcast(pthread_cond_t *cond) {
-#if defined(_WIN32)
-  if (!cond)
-    return EINVAL;
-  dyn_WakeAllConditionVariable(&cond->p);
-  return 0;
-#else
   if (!cond) {
-    errno = EINVAL;
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  dyn_WakeAllConditionVariable(&cond->p);
+  return 0;
 }
 
-/** \brief pthread_cond_destroy function. */
+/** @brief Destroy a condition variable. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_cond_init function. */
+/** @brief Initialize a condition variable. */
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
-#if defined(_WIN32)
-  if (attr) {
-    /* parameters checked */
-  }
-  if (!cond)
+  (void)attr;
+  if (!cond) {
     return EINVAL;
+  }
   dyn_InitializeConditionVariable(&cond->p);
   return 0;
-#else
-  if (!cond) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (attr) {
-    /* parameters checked */
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_cond_signal function. */
+/** @brief Unblock at least one thread waiting on a condition variable. */
 int pthread_cond_signal(pthread_cond_t *cond) {
-#if defined(_WIN32)
-  if (!cond)
+  if (!cond) {
     return EINVAL;
+  }
   dyn_WakeConditionVariable(&cond->p);
   return 0;
-#else
-  if (!cond) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
+/** @brief Wait on a condition variable with a timeout. */
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *abstime) {
-#if defined(_WIN32)
   unsigned long timeout_ms;
-  if (abstime) {
-    /* parameters checked */
+  if (!cond || !mutex || !abstime) {
+    return EINVAL;
   }
-  if (!cond || !mutex || !abstime)
-    return 0;
-  /* basic conversion, not exact abstime semantic */
   timeout_ms =
-      (unsigned long)(abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000);
+      (unsigned long)(abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000L);
   return dyn_SleepConditionVariableSRW(&cond->p, &mutex->p, timeout_ms, 0)
              ? 0
              : ETIMEDOUT;
-#else
-  if (!cond) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (mutex || abstime) {
-    /* parameters checked */
-  }
-  return 0;
-#endif
 }
 
-/** \brief pthread_cond_wait function. */
+/** @brief Wait indefinitely on a condition variable. */
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
-#if defined(_WIN32)
-  if (!cond || !mutex)
-    return 0;
-  return dyn_SleepConditionVariableSRW(&cond->p, &mutex->p, INFINITE, 0)
+  if (!cond || !mutex) {
+    return EINVAL;
+  }
+  return dyn_SleepConditionVariableSRW(&cond->p, &mutex->p, POSIX_WIN_INFINITE,
+                                       0)
              ? 0
              : EINVAL;
-#else
-  if (!cond) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (mutex) {
-    /* parameters checked */
-  }
-  return 0;
-#endif
 }
 
-/** \brief pthread_condattr_destroy function. */
+/** @brief Destroy a condition variable attributes object. */
 int pthread_condattr_destroy(pthread_condattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
+/** @brief Retrieve clock selection from condition variable attributes. */
 int pthread_condattr_getclock(const pthread_condattr_t *attr,
                               clockid_t *clock_id) {
-  if (clock_id) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !clock_id) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *clock_id = 0;
+  return 0;
 }
 
-/** \brief pthread_condattr_getpshared function. */
+/** @brief Retrieve process-shared setting from condition variable attributes.
+ */
 int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !pshared) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
 }
 
-/** \brief pthread_condattr_init function. */
+/** @brief Initialize a condition variable attributes object. */
 int pthread_condattr_init(pthread_condattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
-/** \brief pthread_condattr_setclock function. */
+/** @brief Set clock selection on condition variable attributes. */
 int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
-  if (clock_id) {
-    /* parameters checked */
-  }
+  (void)clock_id;
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_condattr_setpshared function. */
+/** @brief Set process-shared setting on condition variable attributes. */
 int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
+/** @brief Start-routine thunk payload passed to Win32 CreateThread. */
 struct posix_pthread_create_arg {
-  void *(*start_routine)(void *);
-  void *arg;
+  void *(*start_routine)(void *); /**< User thread entry function. */
+  void *arg;                      /**< User argument pointer. */
 };
 
 static unsigned long WINAPI posix_pthread_create_start(void *lpParam) {
@@ -1420,390 +1548,316 @@ static unsigned long WINAPI posix_pthread_create_start(void *lpParam) {
       (struct posix_pthread_create_arg *)lpParam;
   void *(*start_routine)(void *) = pca->start_routine;
   void *arg = pca->arg;
-  free(pca);
+  g_hooks.free_fn(pca);
   start_routine(arg);
   return 0;
 }
 
+/** @brief Create a new thread of execution. */
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
   struct posix_pthread_create_arg *pca;
   void *h;
   size_t stacksize = 0;
+  int detached = PTHREAD_CREATE_JOINABLE;
+
+  if (!thread || !start_routine) {
+    return EINVAL;
+  }
 
   if (attr && attr->ptr) {
     struct _posix_pthread_attr *a = (struct _posix_pthread_attr *)attr->ptr;
     stacksize = a->stacksize;
+    detached = a->detachstate;
   }
 
-  pca = malloc(sizeof(*pca));
-  if (!pca)
+  pca = (struct posix_pthread_create_arg *)g_hooks.malloc_fn(sizeof(*pca));
+  if (!pca) {
     return ENOMEM;
+  }
   pca->start_routine = start_routine;
   pca->arg = arg;
 
-  h = CreateThread(NULL, stacksize, posix_pthread_create_start, pca, 0, NULL);
+  h = g_hooks.create_thread(stacksize, posix_pthread_create_start, pca);
   if (h == NULL) {
-    free(pca);
+    g_hooks.free_fn(pca);
     return EAGAIN;
   }
 
-  if (thread)
+  if (detached == PTHREAD_CREATE_DETACHED) {
+    g_hooks.close_handle(h);
+    *thread = NULL;
+  } else {
     *thread = (pthread_t)h;
+  }
   return 0;
 }
 
-/** \brief pthread_detach function. */
+/** @brief Mark a thread as detached so resources release on termination. */
 int pthread_detach(pthread_t thread) {
-#if defined(_WIN32)
-  if (!thread)
-    return EINVAL;
-  CloseHandle(thread);
-  return 0;
-#else
   if (!thread) {
-    errno = EINVAL;
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  g_hooks.close_handle(thread);
+  return 0;
 }
 
-/** \brief pthread_equal function. */
+/** @brief Compare two thread identifiers for equality. */
 int pthread_equal(pthread_t t1, pthread_t t2) { return t1 == t2; }
 
-__declspec(dllimport) void WINAPI ExitThread(unsigned long);
-
-/** \brief pthread_exit function. */
+/** @brief Terminate the calling thread and run cleanup handlers. */
 void pthread_exit(void *value_ptr) {
-#if defined(_WIN32)
-  if (g_cleanup_tls_index != TLS_OUT_OF_INDEXES) {
+  if (g_cleanup_tls_index != POSIX_WIN_TLS_OUT_OF_INDEXES) {
     struct _pthread_cleanup_buffer *top =
-        (struct _pthread_cleanup_buffer *)TlsGetValue(g_cleanup_tls_index);
+        (struct _pthread_cleanup_buffer *)g_hooks.tls_get_value(
+            g_cleanup_tls_index);
     while (top) {
       if (top->routine) {
         top->routine(top->arg);
       }
       top = top->next;
     }
-    TlsSetValue(g_cleanup_tls_index, NULL);
+    g_hooks.tls_set_value(g_cleanup_tls_index, NULL);
   }
-  ExitThread(value_ptr ? 1 : 0);
-#else
-  if (value_ptr) {
-    /* parameters checked */
-  }
-#endif
+  g_hooks.exit_thread(value_ptr ? 1UL : 0UL);
 }
 
-/** \brief pthread_getconcurrency function. */
-int pthread_getconcurrency(void) { return EINVAL; }
+/** @brief Get current concurrency hint level. */
+int pthread_getconcurrency(void) { return 0; }
 
-/** \brief pthread_getcpuclockid function. */
+/** @brief Obtain CPU-time clock ID of a thread. */
 int pthread_getcpuclockid(pthread_t thread_id, clockid_t *clock_id) {
-  if (clock_id) {
-    /* parameters checked */
-  }
-  if (!thread_id) {
+  if (!thread_id || !clock_id) {
     errno = EINVAL;
     return EINVAL;
   }
-    return 0;
+  *clock_id = 0;
+  return 0;
 }
 
+/** @brief Retrieve scheduling policy and parameters of a thread. */
 int pthread_getschedparam(pthread_t thread, int *policy,
                           struct sched_param *param) {
-  if (policy || param) {
-    /* parameters checked */
-  }
-  if (!thread) {
+  if (!thread || !policy || !param) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *policy = SCHED_OTHER;
+  param->sched_priority = 0;
+  return 0;
 }
 
-/** \brief pthread_getspecific function. */
+/** @brief Read thread-specific value bound to a key. */
 void *pthread_getspecific(pthread_key_t key) {
-#if defined(_WIN32)
-  void *val = TlsGetValue(key);
-  if (!val && GetLastError() != 0) {
+  void *val = g_hooks.tls_get_value(key);
+  if (!val && g_hooks.get_last_error() != 0) {
     return NULL;
   }
   return val;
-#else
-  if (!key) {
-    errno = EINVAL;
-    return NULL;
-  }
-  errno = ENOSYS;
-  return NULL;
-#endif
 }
 
-/** \brief pthread_join function. */
+/** @brief Wait for thread termination. */
 int pthread_join(pthread_t thread, void **value_ptr) {
-#if defined(_WIN32)
-  if (!thread)
+  if (!thread) {
     return EINVAL;
-  if (WaitForSingleObject(thread, INFINITE) == WAIT_OBJECT_0) {
-    if (value_ptr)
-      *value_ptr = 0;
-    CloseHandle(thread);
+  }
+  if (g_hooks.wait_for_single_object(thread, POSIX_WIN_INFINITE) ==
+      POSIX_WIN_WAIT_OBJECT_0) {
+    if (value_ptr) {
+      *value_ptr = NULL;
+    }
+    g_hooks.close_handle(thread);
     return 0;
   }
   return EINVAL;
-#else
-  if (!thread || !value_ptr) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_key_create function. */
+/** @brief Create a thread-specific data key. */
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-#if defined(_WIN32)
   unsigned long index;
-  if (destructor) {
-    /* parameters checked */
-  }
-  if (!key)
+  (void)destructor;
+  if (!key) {
     return EINVAL;
-  index = TlsAlloc();
-  if (index == TLS_OUT_OF_INDEXES)
+  }
+  index = g_hooks.tls_alloc();
+  if (index == POSIX_WIN_TLS_OUT_OF_INDEXES) {
     return EAGAIN;
+  }
   *key = index;
   return 0;
-#else
-  if (!key || !destructor) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
-#endif
 }
 
-/** \brief pthread_key_delete function. */
+/** @brief Delete a thread-specific data key. */
 int pthread_key_delete(pthread_key_t key) {
-#if defined(_WIN32)
-  return TlsFree(key) ? 0 : EINVAL;
-#else
-  if (!key) {
-    errno = EINVAL;
+  return g_hooks.tls_free(key) ? 0 : EINVAL;
+}
+
+/** @brief Destroy a mutex object. */
+int pthread_mutex_destroy(pthread_mutex_t *mutex) {
+  if (!mutex) {
     return EINVAL;
   }
+  mutex->p = NULL;
   return 0;
-#endif
 }
 
-/** \brief pthread_mutex_destroy function. */
-int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-#if defined(_WIN32)
-  if (mutex) {
-    /* parameters checked */
-  }
-  return 0;
-#else
-  return EINVAL;
-  if (!mutex || !mutex) {
-    errno = EINVAL;
-    return -1;
-  }
-  #endif
-}
+/** @brief Initialize a mutex object. */
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
-  if (attr) {
-    /* parameters checked */
-  }
-#if defined(_WIN32)
-  if (!mutex)
+  (void)attr;
+  if (!mutex) {
     return EINVAL;
+  }
   dyn_InitializeSRWLock(&mutex->p);
   return 0;
-#else
-  return EINVAL;
-  if (!mutex || !attr || !mutex || !attr) {
-    errno = EINVAL;
+}
+
+/** @brief Acquire a mutex lock, blocking if necessary. */
+int pthread_mutex_lock(pthread_mutex_t *mutex) {
+  if (!mutex) {
     return EINVAL;
   }
-  #endif
-}
-/** \brief pthread_mutex_lock function. */
-int pthread_mutex_lock(pthread_mutex_t *mutex) {
-#if defined(_WIN32)
-  if (!mutex)
-    return EINVAL;
   dyn_AcquireSRWLockExclusive(&mutex->p);
   return 0;
-#else
-  return EINVAL;
-  if (!mutex || !mutex) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  #endif
 }
+
+/** @brief Acquire a mutex lock with an upper bound time limit. */
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
                             const struct timespec *abstime) {
-  if (abstime) {
-    /* parameters checked */
-  }
-  if (!mutex) {
-    errno = EINVAL;
-    return -1;
-  }
-    return 0;
-}
-/** \brief pthread_mutex_trylock function. */
-int pthread_mutex_trylock(pthread_mutex_t *mutex) {
-#if defined(_WIN32)
-  if (!mutex)
-    return 0;
-  return dyn_TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
-#else
-  return 0;
-  if (!mutex || !abstime || !mutex) {
+  if (!mutex || !abstime) {
     errno = EINVAL;
     return EINVAL;
   }
-  #endif
+  if (dyn_TryAcquireSRWLockExclusive(&mutex->p)) {
+    return 0;
+  }
+  return ETIMEDOUT;
 }
 
-/** \brief pthread_mutex_unlock function. */
-int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-#if defined(_WIN32)
-  if (!mutex)
+/** @brief Attempt to acquire a mutex lock without blocking. */
+int pthread_mutex_trylock(pthread_mutex_t *mutex) {
+  if (!mutex) {
     return EINVAL;
+  }
+  return dyn_TryAcquireSRWLockExclusive(&mutex->p) ? 0 : EBUSY;
+}
+
+/** @brief Release a mutex lock. */
+int pthread_mutex_unlock(pthread_mutex_t *mutex) {
+  if (!mutex) {
+    return EINVAL;
+  }
   dyn_ReleaseSRWLockExclusive(&mutex->p);
   return 0;
-#else
-  if (!mutex) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_mutexattr_destroy function. */
+/** @brief Destroy a mutex attributes object. */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
+/** @brief Retrieve priority ceiling attribute from mutex attributes. */
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
                                      int *prioceiling) {
-  if (prioceiling) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !prioceiling) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *prioceiling = 0;
+  return 0;
 }
 
+/** @brief Retrieve priority protocol from mutex attributes. */
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
                                   int *protocol) {
-  if (protocol) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !protocol) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *protocol = 0;
+  return 0;
 }
 
+/** @brief Retrieve process-shared setting from mutex attributes. */
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr,
                                  int *pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !pshared) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
 }
 
-/** \brief pthread_mutexattr_gettype function. */
+/** @brief Retrieve mutex type attribute. */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) {
-  if (type) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !type) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *type = PTHREAD_MUTEX_NORMAL;
+  return 0;
 }
 
-/** \brief pthread_mutexattr_init function. */
+/** @brief Initialize a mutex attributes object. */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
+/** @brief Set priority ceiling attribute on mutex attributes. */
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
                                      int prioceiling) {
-  if (prioceiling) {
-    /* parameters checked */
-  }
+  (void)prioceiling;
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_mutexattr_setprotocol function. */
+/** @brief Set priority protocol attribute on mutex attributes. */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol) {
-  if (protocol) {
-    /* parameters checked */
-  }
+  (void)protocol;
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_mutexattr_setpshared function. */
+/** @brief Set process-shared setting on mutex attributes. */
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_mutexattr_settype function. */
+/** @brief Set mutex type attribute. */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
-  if (type) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr ||
+      (type != PTHREAD_MUTEX_NORMAL && type != PTHREAD_MUTEX_RECURSIVE &&
+       type != PTHREAD_MUTEX_ERRORCHECK)) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
+/** @brief Execute an initialization routine exactly once. */
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
-#if defined(_WIN32)
   void *prev;
   if (!once_control || !init_routine) {
     return EINVAL;
@@ -1811,293 +1865,260 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void)) {
   if (once_control->p == (void *)2) {
     return 0;
   }
-  prev = POSIX_CAS_PTR(&once_control->p, (void *)1, (void *)0);
+  prev = g_hooks.cas_ptr(&once_control->p, (void *)1, (void *)0);
   if (prev == (void *)0) {
     init_routine();
-    POSIX_EXCHANGE_PTR(&once_control->p, (void *)2);
-    return 0;
-  } else if (prev == (void *)2) {
-    return 0;
-  } else {
-    while (once_control->p != (void *)2) {
-      Sleep(1);
-    }
+    g_hooks.exchange_ptr(&once_control->p, (void *)2);
     return 0;
   }
-#else
-  if (!once_control || !init_routine) {
-    return EINVAL;
+  if (prev == (void *)2) {
+    return 0;
   }
-  if (!once_control->p) {
-    once_control->p = (void *)1;
-    init_routine();
+  while (once_control->p != (void *)2) {
+    g_hooks.sleep_ms(1);
   }
   return 0;
-#endif
 }
 
-/** \brief pthread_rwlock_destroy function. */
+/** @brief Destroy a read-write lock object. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  rwlock->p = NULL;
+  return 0;
 }
 
+/** @brief Initialize a read-write lock object. */
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
-#if defined(_WIN32)
-  if (attr) {
-    /* parameters checked */
-  }
-  if (!rwlock)
+  (void)attr;
+  if (!rwlock) {
     return EINVAL;
+  }
   dyn_InitializeSRWLock(&rwlock->p);
   return 0;
-#else
-  if (!rwlock || !attr) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_rwlock_rdlock function. */
+#define POSIX_MAX_EXCL_RWLOCKS 32
+static pthread_rwlock_t *g_excl_rwlocks[POSIX_MAX_EXCL_RWLOCKS];
+static void *g_excl_rwlocks_lock = NULL;
+
+static void mark_rwlock_exclusive(pthread_rwlock_t *rwlock) {
+  int i;
+  dyn_AcquireSRWLockExclusive(&g_excl_rwlocks_lock);
+  for (i = 0; i < POSIX_MAX_EXCL_RWLOCKS; ++i) {
+    if (g_excl_rwlocks[i] == NULL) {
+      g_excl_rwlocks[i] = rwlock;
+      break;
+    }
+  }
+  dyn_ReleaseSRWLockExclusive(&g_excl_rwlocks_lock);
+}
+
+static int take_rwlock_exclusive(pthread_rwlock_t *rwlock) {
+  int i;
+  int found = 0;
+  dyn_AcquireSRWLockExclusive(&g_excl_rwlocks_lock);
+  for (i = 0; i < POSIX_MAX_EXCL_RWLOCKS; ++i) {
+    if (g_excl_rwlocks[i] == rwlock) {
+      g_excl_rwlocks[i] = NULL;
+      found = 1;
+      break;
+    }
+  }
+  dyn_ReleaseSRWLockExclusive(&g_excl_rwlocks_lock);
+  return found;
+}
+
+/** @brief Acquire a shared read lock on a read-write lock. */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
-#if defined(_WIN32)
-  if (!rwlock)
+  if (!rwlock) {
     return EINVAL;
+  }
   dyn_AcquireSRWLockShared(&rwlock->p);
   return 0;
-#else
-  if (!rwlock) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
+/** @brief Acquire a shared read lock with timeout. */
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  if (abstime) {
-    /* parameters checked */
-  }
-  if (abstime) {
-    /* parameters checked */
-  }
-  if (!rwlock) {
+  if (!rwlock || !abstime) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-    return 0;
+  return dyn_TryAcquireSRWLockShared(&rwlock->p) ? 0 : ETIMEDOUT;
 }
 
+/** @brief Acquire an exclusive write lock with timeout. */
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
                                const struct timespec *abstime) {
-  if (abstime) {
-    /* parameters checked */
-  }
-  if (abstime) {
-    /* parameters checked */
-  }
-  if (!rwlock) {
+  if (!rwlock || !abstime) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
+  if (dyn_TryAcquireSRWLockExclusive(&rwlock->p)) {
+    mark_rwlock_exclusive(rwlock);
     return 0;
+  }
+  return ETIMEDOUT;
 }
 
-/** \brief pthread_rwlock_tryrdlock function. */
+/** @brief Attempt to acquire a shared read lock without blocking. */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
-#if defined(_WIN32)
-  if (!rwlock)
-    return 0;
+  if (!rwlock) {
+    return EINVAL;
+  }
   return dyn_TryAcquireSRWLockShared(&rwlock->p) ? 0 : EBUSY;
-#else
-  if (!rwlock) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return 0;
-#endif
 }
 
-/** \brief pthread_rwlock_trywrlock function. */
+/** @brief Attempt to acquire an exclusive write lock without blocking. */
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
-#if defined(_WIN32)
-  if (!rwlock)
+  if (!rwlock) {
+    return EINVAL;
+  }
+  if (dyn_TryAcquireSRWLockExclusive(&rwlock->p)) {
+    mark_rwlock_exclusive(rwlock);
     return 0;
-  return dyn_TryAcquireSRWLockExclusive(&rwlock->p) ? 0 : EBUSY;
-#else
-  if (!rwlock) {
-    errno = EINVAL;
-    return EINVAL;
   }
-  return 0;
-#endif
+  return EBUSY;
 }
 
-/** \brief pthread_rwlock_unlock function. */
+/** @brief Unlock a read-write lock held in shared or exclusive mode. */
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
-#if defined(_WIN32)
-  if (!rwlock)
-    return EINVAL;
-  /* SRWLock requires separate release functions for shared versus exclusive locks.
-     Without state tracking on the handle, default to releasing exclusive lock. */
-  dyn_ReleaseSRWLockExclusive(&rwlock->p);
-  return 0;
-#else
   if (!rwlock) {
-    errno = EINVAL;
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  if (take_rwlock_exclusive(rwlock)) {
+    dyn_ReleaseSRWLockExclusive(&rwlock->p);
+  } else {
+    dyn_ReleaseSRWLockShared(&rwlock->p);
+  }
+  return 0;
 }
 
-/** \brief pthread_rwlock_wrlock function. */
+/** @brief Acquire an exclusive write lock on a read-write lock. */
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
-#if defined(_WIN32)
-  if (!rwlock)
-    return EINVAL;
-  dyn_AcquireSRWLockExclusive(&rwlock->p);
-  return 0;
-#else
   if (!rwlock) {
-    errno = EINVAL;
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  dyn_AcquireSRWLockExclusive(&rwlock->p);
+  mark_rwlock_exclusive(rwlock);
+  return 0;
 }
 
-/** \brief pthread_rwlockattr_destroy function. */
+/** @brief Destroy a read-write lock attributes object. */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
+/** @brief Retrieve process-shared setting from read-write lock attributes. */
 int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
                                   int *pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || !pshared) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
 }
 
-/** \brief pthread_rwlockattr_init function. */
+/** @brief Initialize a read-write lock attributes object. */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr) {
   if (!attr) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  attr->ptr = NULL;
+  return 0;
 }
 
-/** \brief pthread_rwlockattr_setpshared function. */
+/** @brief Set process-shared setting on read-write lock attributes. */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared) {
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!attr) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_self function. */
+/** @brief Obtain identifier of the calling thread. */
 pthread_t pthread_self(void) {
-#if defined(_WIN32)
-  pthread_t t;
-  t = (void *)(size_t)GetCurrentThreadId();
-  return t;
-#else
-  pthread_t t = {0};
-  return t;
-#endif
+  return (pthread_t)(size_t)g_hooks.get_current_thread_id();
 }
 
-/** \brief pthread_setcancelstate function. */
+/** @brief Atomically set calling thread cancelability state. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  if (!oldstate) {
+  if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  if (state) {
-    /* parameters checked */
+  if (oldstate) {
+    *oldstate = PTHREAD_CANCEL_ENABLE;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_setcanceltype function. */
+/** @brief Atomically set calling thread cancelability type. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  if (!oldtype) {
+  if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  if (type) {
-    /* parameters checked */
+  if (oldtype) {
+    *oldtype = PTHREAD_CANCEL_DEFERRED;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_setconcurrency function. */
+/** @brief Set concurrency hint level. */
 int pthread_setconcurrency(int new_level) {
-  if (new_level) {
-    /* parameters checked */
+  if (new_level < 0) {
+    return EINVAL;
   }
-    return 0;
+  return 0;
 }
 
+/** @brief Update scheduling policy and parameters of a thread. */
 int pthread_setschedparam(pthread_t thread, int policy,
                           const struct sched_param *param) {
-  if (policy || param) {
-    /* parameters checked */
-  }
-  if (!thread) {
+  (void)policy;
+  if (!thread || !param) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_setschedprio function. */
+/** @brief Update scheduling priority of a thread. */
 int pthread_setschedprio(pthread_t thread, int prio) {
-  if (prio) {
-    /* parameters checked */
-  }
+  (void)prio;
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_setname_np function. */
+/** @brief Assign a descriptive debugging name to a thread. */
 int pthread_setname_np(pthread_t thread, const char *name) {
-#if defined(_WIN32)
   wchar_t wname[256];
 #if defined(_MSC_VER)
   size_t out_len = 0;
 #endif
   void *hThread;
   unsigned long threadId;
-  if (name) {
-    /* parameters checked */
-  }
-  if (!thread || !name)
+
+  if (!thread || !name) {
     return EINVAL;
+  }
 
 #if defined(_MSC_VER)
   mbstowcs_s(&out_len, wname, 256, name, 255);
@@ -2106,306 +2127,196 @@ int pthread_setname_np(pthread_t thread, const char *name) {
 #endif
   wname[255] = L'\0';
 
-  /* If thread is actually a thread ID (as returned by our pthread_self), open
-   * it */
   threadId = (unsigned long)(size_t)thread;
-  hThread =
-      OpenThread(0x0400 /* THREAD_SET_LIMITED_INFORMATION */, 0, threadId);
+  hThread = g_hooks.open_thread(POSIX_THREAD_SET_LIMITED_INFO, 0, threadId);
   if (hThread) {
     int res = dyn_SetThreadDescription(hThread, wname);
-    CloseHandle(hThread);
+    g_hooks.close_handle(hThread);
     return res;
   }
 
-  /* Otherwise try setting directly assuming it's a handle (from pthread_create)
-   */
   return dyn_SetThreadDescription(thread, wname);
-#else
-  if (!thread || !name) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_sigmask function. */
-int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-  if (!set || !oset) {
+/** @brief Examine and change blocked signal mask of calling thread. */
+int(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset) {
+  (void)how;
+  if (!set && !oset) {
     errno = EINVAL;
     return -1;
   }
-  if (how) {
-    /* parameters checked */
+  if (oset) {
+    *oset = 0;
   }
-    return 0;
+  return 0;
 }
 
-/** \brief pthread_setspecific function. */
+/** @brief Associate a thread-specific value with a key. */
 int pthread_setspecific(pthread_key_t key, const void *value) {
-#if defined(_WIN32)
-  return TlsSetValue(key, (void *)(size_t)value) ? 0 : EINVAL;
-#else
-  if (!key) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (value) {
-    /* parameters checked */
-  }
-  return 0;
-#endif
+  return g_hooks.tls_set_value(key, (void *)(size_t)value) ? 0 : EINVAL;
 }
 
-/** \brief pthread_spin_destroy function. */
+/** @brief Destroy a spinlock object. */
 int pthread_spin_destroy(pthread_spinlock_t *lock) {
-#if defined(_WIN32)
-  if (!lock || !lock->ptr)
-    return EINVAL;
-  DeleteCriticalSection(lock->ptr);
-  free(lock->ptr);
-  lock->ptr = 0;
-  return 0;
-#else
-  if (!lock) {
-    errno = EINVAL;
+  if (!lock || !lock->ptr) {
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  g_hooks.delete_cs(lock->ptr);
+  g_hooks.free_fn(lock->ptr);
+  lock->ptr = NULL;
+  return 0;
 }
 
-/** \brief pthread_spin_init function. */
+/** @brief Initialize a spinlock object. */
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
-#if defined(_WIN32)
   void *cs;
-  if (pshared) {
-    /* parameters checked */
+  (void)pshared;
+  if (!lock) {
+    return EINVAL;
   }
-  if (!lock)
-    return EINVAL;
-  cs = malloc(48); /* Safe size for CRITICAL_SECTION */
-  if (!cs)
-    return EINVAL;
-  InitializeCriticalSectionAndSpinCount(cs, 4000);
+  cs = g_hooks.malloc_fn(64);
+  if (!cs) {
+    return ENOMEM;
+  }
+  g_hooks.init_cs_spin(cs, 4000UL);
   lock->ptr = cs;
   return 0;
-#else
-  if (!lock) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (pshared) {
-    /* parameters checked */
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_spin_lock function. */
+/** @brief Acquire a spinlock. */
 int pthread_spin_lock(pthread_spinlock_t *lock) {
-#if defined(_WIN32)
-  if (!lock || !lock->ptr)
-    return EINVAL;
-  EnterCriticalSection(lock->ptr);
-  return 0;
-#else
-  if (!lock) {
-    errno = EINVAL;
+  if (!lock || !lock->ptr) {
     return EINVAL;
   }
-  return EINVAL;
-#endif
+  g_hooks.enter_cs(lock->ptr);
+  return 0;
 }
 
-/** \brief pthread_spin_trylock function. */
+/** @brief Attempt to acquire a spinlock without blocking. */
 int pthread_spin_trylock(pthread_spinlock_t *lock) {
-#if defined(_WIN32)
-  if (!lock || !lock->ptr)
-    return 0;
-  return TryEnterCriticalSection(lock->ptr) ? 0 : EBUSY;
-#else
-  if (!lock) {
-    errno = EINVAL;
+  if (!lock || !lock->ptr) {
     return EINVAL;
   }
-  return 0;
-#endif
+  return g_hooks.try_enter_cs(lock->ptr) ? 0 : EBUSY;
 }
 
-/** \brief pthread_spin_unlock function. */
+/** @brief Release a spinlock. */
 int pthread_spin_unlock(pthread_spinlock_t *lock) {
-#if defined(_WIN32)
-  if (!lock || !lock->ptr)
+  if (!lock || !lock->ptr) {
     return EINVAL;
-  LeaveCriticalSection(lock->ptr);
+  }
+  g_hooks.leave_cs(lock->ptr);
   return 0;
-#else
-  if (!lock) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  return EINVAL;
-#endif
 }
 
-/** \brief pthread_testcancel function. */
-void pthread_testcancel(void) { return; }
+/** @brief Create a cancellation point in the calling thread. */
+void pthread_testcancel(void) {}
 
-/** \brief sched_get_priority_max function. */
+/** @brief Get maximum priority value for a scheduling policy. */
 int sched_get_priority_max(int policy) {
-  if (policy) {
-    /* parameters checked */
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
   }
-    return 0;
+  return 15;
 }
 
-/** \brief sched_get_priority_min function. */
+/** @brief Get minimum priority value for a scheduling policy. */
 int sched_get_priority_min(int policy) {
-  if (policy) {
-    /* parameters checked */
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
   }
-    return 0;
+  return -15;
 }
 
-/** \brief sched_getparam function. */
+/** @brief Retrieve scheduling parameters of a process. */
 int sched_getparam(pid_t pid, struct sched_param *param) {
-  if (!param) {
+  if (pid < 0 || !param) {
     errno = EINVAL;
     return -1;
   }
-  if (pid) {
-    /* parameters checked */
-  }
-    return 0;
+  param->sched_priority = 0;
+  return 0;
 }
 
-/** \brief sched_getscheduler function. */
+/** @brief Retrieve scheduling policy of a process. */
 int sched_getscheduler(pid_t pid) {
-  if (pid) {
-    /* parameters checked */
+  if (pid < 0) {
+    errno = EINVAL;
+    return -1;
   }
-    return 0;
+  return SCHED_OTHER;
 }
 
-/** \brief sched_rr_get_interval function. */
+/** @brief Retrieve round-robin execution time quantum for a process. */
 int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
-  if (!interval) {
+  if (pid < 0 || !interval) {
     errno = EINVAL;
     return -1;
   }
-  if (pid) {
-    /* parameters checked */
-  }
-    return 0;
+  interval->tv_sec = 0;
+  interval->tv_nsec = 15625000L;
+  return 0;
 }
 
-/** \brief sched_setparam function. */
+/** @brief Set scheduling parameters of a process. */
 int sched_setparam(pid_t pid, const struct sched_param *param) {
-  if (!param) {
+  if (pid < 0 || !param) {
     errno = EINVAL;
     return -1;
   }
-  if (pid) {
-    /* parameters checked */
-  }
-    return 0;
+  return 0;
 }
 
-/** \brief sched_setscheduler function. */
+/** @brief Set scheduling policy and parameters of a process. */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
-  if (!param) {
+  if (pid < 0 || policy < 0 || !param) {
     errno = EINVAL;
     return -1;
   }
-  if (pid || policy) {
-    /* parameters checked */
-  }
-    return 0;
+  return 0;
 }
 
-/** \brief sched_yield function. */
-int sched_yield(void) { return EINVAL; }
+/** @brief Yield processor execution to another ready thread. */
+int sched_yield(void) {
+  g_hooks.sleep_ms(0);
+  return 0;
+}
 
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-/* clang-format on */
-
-#if defined(_MSC_VER) || defined(__WATCOMC__)
-typedef unsigned __int64 posix_sem_uint64_t;
-#elif defined(__GNUC__)
-__extension__ typedef unsigned long long posix_sem_uint64_t;
-#else
-typedef unsigned long long posix_sem_uint64_t;
-#endif
-
-#if defined(_WIN32)
-__declspec(dllimport) void *WINAPI OpenSemaphoreA(unsigned long, int,
-                                                  const char *);
-struct posix_sem_FILETIME {
-  unsigned long dwLowDateTime;
-  unsigned long dwHighDateTime;
-};
-__declspec(dllimport) void WINAPI
-GetSystemTimeAsFileTime(struct posix_sem_FILETIME *);
-#define POSIX_SEMAPHORE_ALL_ACCESS 0x1F0003
-#define POSIX_ERROR_ALREADY_EXISTS 183UL
-#endif
-
-/** rief sem_close function. */
+/** @brief Close a named semaphore. */
 int sem_close(sem_t *sem) {
-#if defined(_WIN32)
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
   if (sem->p) {
-    CloseHandle(sem->p);
+    g_hooks.close_handle(sem->p);
   }
-  free(sem);
+  g_hooks.free_fn(sem);
   return 0;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-/** rief sem_destroy function. */
+/** @brief Destroy an unnamed semaphore. */
 int sem_destroy(sem_t *sem) {
-#if defined(_WIN32)
   if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  CloseHandle(sem->p);
+  g_hooks.close_handle(sem->p);
   sem->p = NULL;
   return 0;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-/** rief sem_getvalue function. */
+/** @brief Read current value of a semaphore. */
 int sem_getvalue(sem_t *sem, int *sval) {
-#if defined(_WIN32)
   long prev = 0;
   if (!sem || !sem->p || !sval) {
     errno = EINVAL;
     return -1;
   }
-  if (WaitForSingleObject(sem->p, 0) == WAIT_OBJECT_0) {
-    if (ReleaseSemaphore(sem->p, 1, &prev)) {
+  if (g_hooks.wait_for_single_object(sem->p, 0) == POSIX_WIN_WAIT_OBJECT_0) {
+    if (g_hooks.release_semaphore(sem->p, 1, &prev)) {
       *sval = (int)prev + 1;
     } else {
       *sval = 1;
@@ -2414,78 +2325,64 @@ int sem_getvalue(sem_t *sem, int *sval) {
     *sval = 0;
   }
   return 0;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (sval) {
-    /* parameters checked */
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-/** rief sem_init function. */
+/** @brief Initialize an unnamed semaphore. */
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
-#if defined(_WIN32)
   void *h;
-  if (pshared) {
-    /* parameters checked */
-  }
-  if (!sem) {
+  (void)pshared;
+  if (!sem || value > 2147483647U) {
     errno = EINVAL;
     return -1;
   }
-  h = CreateSemaphoreA(NULL, value, 2147483647, NULL);
+  h = g_hooks.create_semaphore_a((long)value, 2147483647L, NULL);
   if (!h) {
     errno = EINVAL;
     return -1;
   }
   sem->p = h;
   return 0;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (pshared || value) {
-    /* parameters checked */
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
+/** @brief Open or create a named semaphore. */
 sem_t *sem_open(const char *name, int oflag, ...) {
-#if defined(_WIN32)
   void *h;
   sem_t *sem;
   char win_name[260];
   unsigned int value = 0;
   int i;
 
-  if (!name) {
+  if (!name || name[0] == '\0') {
     errno = EINVAL;
-    return (sem_t *)(size_t)-1;
+    return SEM_FAILED;
   }
 
-  if (name[0] == '/')
+  if (name[0] == '/') {
     name++;
+  }
+  if (name[0] == '\0') {
+    errno = EINVAL;
+    return SEM_FAILED;
+  }
 
   win_name[0] = '\0';
 #if defined(_MSC_VER)
-  strncat_s(win_name, sizeof(win_name), "Global\\", _TRUNCATE);
+  strncat_s(win_name, sizeof(win_name), "Local", _TRUNCATE);
+#else
+  strncat(win_name, "Local", sizeof(win_name) - 1);
+#endif
+  win_name[5] = (char)92;
+  win_name[6] = '\0';
+#if defined(_MSC_VER)
   strncat_s(win_name, sizeof(win_name), name, _TRUNCATE);
 #else
-  strncat(win_name, "Global\\", sizeof(win_name) - 1);
   strncat(win_name, name, sizeof(win_name) - strlen(win_name) - 1);
 #endif
 
-  for (i = 7; win_name[i]; i++) {
-    if (win_name[i] == '/')
+  for (i = 6; win_name[i] != '\0'; i++) {
+    if (win_name[i] == '/') {
       win_name[i] = '_';
+    }
   }
 
 #ifndef O_CREAT
@@ -2500,89 +2397,77 @@ sem_t *sem_open(const char *name, int oflag, ...) {
     int mode;
     va_start(ap, oflag);
     mode = va_arg(ap, int);
-    if (mode) {
-    }
+    (void)mode;
     value = va_arg(ap, unsigned int);
     va_end(ap);
 
-    h = CreateSemaphoreA(NULL, value, 2147483647, win_name);
-    if (h) {
-      if ((oflag & O_EXCL) && GetLastError() == POSIX_ERROR_ALREADY_EXISTS) {
-        CloseHandle(h);
-        errno = EEXIST;
-        return (sem_t *)(size_t)-1;
-      }
-    } else {
+    if (value > 2147483647U) {
       errno = EINVAL;
-      return (sem_t *)(size_t)-1;
+      return SEM_FAILED;
+    }
+
+    h = g_hooks.create_semaphore_a((long)value, 2147483647L, win_name);
+    if (!h) {
+      errno = EINVAL;
+      return SEM_FAILED;
+    }
+    if ((oflag & O_EXCL) &&
+        g_hooks.get_last_error() == POSIX_ERROR_ALREADY_EXISTS) {
+      g_hooks.close_handle(h);
+      errno = EEXIST;
+      return SEM_FAILED;
     }
   } else {
-    h = OpenSemaphoreA(POSIX_SEMAPHORE_ALL_ACCESS, 0, win_name);
+    h = g_hooks.open_semaphore_a(POSIX_SEMAPHORE_ALL_ACCESS, 0, win_name);
     if (!h) {
       errno = ENOENT;
-      return (sem_t *)(size_t)-1;
+      return SEM_FAILED;
     }
   }
 
-  sem = (sem_t *)malloc(sizeof(sem_t));
+  sem = (sem_t *)g_hooks.malloc_fn(sizeof(sem_t));
   if (!sem) {
-    CloseHandle(h);
+    g_hooks.close_handle(h);
     errno = ENOMEM;
-    return (sem_t *)(size_t)-1;
+    return SEM_FAILED;
   }
   sem->p = h;
   return sem;
-#else
-  if (!name) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-  if (oflag) {
-    /* parameters checked */
-  }
-  errno = ENOSYS;
-  return (sem_t *)(size_t)-1;
-#endif
 }
 
-/** rief sem_post function. */
+/** @brief Increment (unlock) a semaphore. */
 int sem_post(sem_t *sem) {
-#if defined(_WIN32)
   if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  if (!ReleaseSemaphore(sem->p, 1, NULL)) {
+  if (!g_hooks.release_semaphore(sem->p, 1, NULL)) {
     errno = EINVAL;
     return -1;
   }
   return 0;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-/** rief sem_timedwait function. */
+/** @brief Decrement (lock) a semaphore with an absolute timeout. */
 int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
-#if defined(_WIN32)
-  unsigned long timeout = INFINITE;
+  unsigned long timeout = POSIX_WIN_INFINITE;
   unsigned long res;
   if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
   if (abs_timeout) {
-    struct posix_sem_FILETIME ft;
+    unsigned long low_dt = 0;
+    unsigned long high_dt = 0;
     posix_sem_uint64_t now_100ns;
     posix_sem_uint64_t abs_100ns;
-    GetSystemTimeAsFileTime(&ft);
-    now_100ns =
-        ((posix_sem_uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+
+    if (abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec >= 1000000000L) {
+      errno = EINVAL;
+      return -1;
+    }
+    g_hooks.get_system_time_as_filetime(&low_dt, &high_dt);
+    now_100ns = ((posix_sem_uint64_t)high_dt << 32) | low_dt;
     abs_100ns =
         (posix_sem_uint64_t)abs_timeout->tv_sec * (posix_sem_uint64_t)10000000 +
         (posix_sem_uint64_t)abs_timeout->tv_nsec / (posix_sem_uint64_t)100 +
@@ -2594,96 +2479,63 @@ int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
           (unsigned long)((abs_100ns - now_100ns) / (posix_sem_uint64_t)10000);
     }
   }
-  res = WaitForSingleObject(sem->p, timeout);
-  if (res == WAIT_OBJECT_0)
+  res = g_hooks.wait_for_single_object(sem->p, timeout);
+  if (res == POSIX_WIN_WAIT_OBJECT_0) {
     return 0;
-  if (res == WAIT_TIMEOUT) {
+  }
+  if (res == POSIX_WIN_WAIT_TIMEOUT) {
     errno = ETIMEDOUT;
     return -1;
   }
   errno = EINVAL;
   return -1;
-#else
-  if (!sem || !abs_timeout) {
-    errno = EINVAL;
-    return -1;
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-/** rief sem_trywait function. */
+/** @brief Attempt to decrement a semaphore without blocking. */
 int sem_trywait(sem_t *sem) {
-#if defined(_WIN32)
   unsigned long res;
   if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  res = WaitForSingleObject(sem->p, 0);
-  if (res == WAIT_OBJECT_0)
+  res = g_hooks.wait_for_single_object(sem->p, 0);
+  if (res == POSIX_WIN_WAIT_OBJECT_0) {
     return 0;
-  if (res == WAIT_TIMEOUT) {
+  }
+  if (res == POSIX_WIN_WAIT_TIMEOUT) {
     errno = EAGAIN;
     return -1;
   }
   errno = EINVAL;
   return -1;
-#else
-  if (!sem) {
+}
+
+/** @brief Unlink a named semaphore. */
+int sem_unlink(const char *name) {
+  if (!name || name[0] == '\0') {
     errno = EINVAL;
     return -1;
   }
-  errno = ENOSYS;
-  return -1;
-#endif
-}
-
-/** rief sem_unlink function. */
-int sem_unlink(const char *name) {
-  if (name) {
-    /* parameters checked */
-  }
-#if defined(_WIN32)
   return 0;
-#else
-  errno = ENOSYS;
-  return -1;
-  if (!name || !name) {
-    errno = EINVAL;
-    return EINVAL;
-  }
-#endif
 }
 
-/** rief sem_wait function. */
+/** @brief Decrement (lock) a semaphore, blocking if zero. */
 int sem_wait(sem_t *sem) {
-#if defined(_WIN32)
   if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  if (WaitForSingleObject(sem->p, INFINITE) == WAIT_OBJECT_0)
+  if (g_hooks.wait_for_single_object(sem->p, POSIX_WIN_INFINITE) ==
+      POSIX_WIN_WAIT_OBJECT_0) {
     return 0;
+  }
   errno = EINVAL;
   return -1;
-#else
-  if (!sem) {
-    errno = EINVAL;
-    return -1;
-  }
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
-#endif /* Win32 polyfill */
+#endif /* Platform selection */
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
-/* Dummy function to prevent empty translation unit */
+/** @brief Dummy function to prevent empty translation units. */
 int dummy_posix_pthread(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_pthread;

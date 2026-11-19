@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+/** @brief Look up protocol entry by name via Casper netdb channel. */
 static __inline struct protoent *cap_getprotobyname(cap_channel_t *chan,
                                                     const char *name) {
   (void)chan;

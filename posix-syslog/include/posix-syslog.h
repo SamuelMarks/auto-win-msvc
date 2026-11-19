@@ -73,6 +73,12 @@ extern "C" {
 #define LOG_LOCAL6 (22 << 3)
 /** @brief Reserved for local use 7. */
 #define LOG_LOCAL7 (23 << 3)
+#ifndef LOG_PRIMASK
+#define LOG_PRIMASK 0x07
+#endif
+#ifndef LOG_FACMASK
+#define LOG_FACMASK 0x03f8
+#endif
 
 /** @brief Log the PID with each message. */
 #define LOG_PID 0x01
@@ -133,6 +139,15 @@ int setlogmask(int mask);
 #else
 #define POSIX_SYSLOG_PRINTF_ATTR(fmt, args)
 #endif
+
+/**
+ * @brief Generates a log message from a va_list.
+ * @param priority The priority and facility of the message.
+ * @param format Format string.
+ * @param ap Variable argument list.
+ */
+void vsyslog(int priority, const char *format, va_list ap)
+    POSIX_SYSLOG_PRINTF_ATTR(2, 0);
 
 /**
  * @brief Generates a log message.

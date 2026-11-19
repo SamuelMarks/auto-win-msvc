@@ -18,6 +18,9 @@ extern "C" {
 #define EXTATTR_NAMESPACE_EMPTY 0x00000000
 #define EXTATTR_NAMESPACE_USER 0x00000001
 #define EXTATTR_NAMESPACE_SYSTEM 0x00000002
+#ifndef EXTATTR_NAMESPACE_NAMES
+#define EXTATTR_NAMESPACE_NAMES {"empty", "user", "system"}
+#endif
 
 ssize_t extattr_get_fd(int fd, int attrnamespace, const char *attrname,
                        void *data, size_t nbytes);

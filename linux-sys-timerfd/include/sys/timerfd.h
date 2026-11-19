@@ -44,7 +44,7 @@ int timerfd_settime(int fd, int flags, const struct itimerspec *new_value, struc
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* SYS_TIMERFD_H_ */
 /* clang-format on */

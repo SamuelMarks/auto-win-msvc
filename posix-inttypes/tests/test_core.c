@@ -26,6 +26,9 @@ TEST test_imaxabs(void) {
   ASSERT_EQ(5, imaxabs(5));
   ASSERT_EQ(5, imaxabs(-5));
   ASSERT_EQ(0, imaxabs(0));
+  ASSERT_EQ(5, posix_imaxabs(5));
+  ASSERT_EQ(5, posix_imaxabs(-5));
+  ASSERT_EQ(0, posix_imaxabs(0));
   PASS();
 }
 
@@ -35,6 +38,10 @@ TEST test_imaxdiv(void) {
   ASSERT_EQ(1, r.rem);
 
   r = imaxdiv(-10, 3);
+  ASSERT_EQ(-3, r.quot);
+  ASSERT_EQ(-1, r.rem);
+
+  r = posix_imaxdiv(-10, 3);
   ASSERT_EQ(-3, r.quot);
   ASSERT_EQ(-1, r.rem);
   PASS();

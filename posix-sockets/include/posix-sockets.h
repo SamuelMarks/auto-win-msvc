@@ -433,22 +433,21 @@ struct posix_in_pktinfo {
 #ifdef _WIN32
 #ifndef _TIMESPEC_DEFINED
 #define _TIMESPEC_DEFINED
-#if defined(_MSC_VER) && _MSC_VER >= 1900
+#if (defined(_MSC_VER) && _MSC_VER >= 1900) || defined(__MINGW32__)
 #include <time.h>
-/* clang-format on */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #else
 struct timespec {
-  long tv_sec;
+  time_t tv_sec;
   long tv_nsec;
 };
 #endif
 #endif
 #endif /* _WIN32 */
+/* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Opaque structures for the stubs so they compile cross platform */
 struct addrinfo;
@@ -788,6 +787,110 @@ int posix_close(intptr_t fd);
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
 auto_win_msvc_error_t posix_sockets_get_info(int *out_available);
+
+#ifdef _WIN32
+/**
+ * @brief Injectable Win32, Winsock2, and CRT callback table for posix-sockets
+ * unit and OOM testing.
+ */
+struct posix_sockets_win32_hooks {
+  void *(*malloc_fn)(size_t size);               /**< Heap malloc callback. */
+  void *(*calloc_fn)(size_t count, size_t size); /**< Heap calloc callback. */
+  void (*free_fn)(void *ptr);                    /**< Heap free callback. */
+  intptr_t (*get_osfhandle_fn)(int fd); /**< CRT _get_osfhandle callback. */
+  int (*open_osfhandle_fn)(intptr_t osfhandle,
+                           int flags); /**< CRT _open_osfhandle callback. */
+  int (*close_fn)(int fd);             /**< CRT _close callback. */
+  int (*read_fn)(int fd, void *buf,
+                 unsigned int count); /**< CRT _read callback. */
+  int (*write_fn)(int fd, const void *buf,
+                  unsigned int count); /**< CRT _write callback. */
+  int (*wsa_startup_fn)(WORD version_requested,
+                        LPWSADATA wsa_data); /**< WSAStartup callback. */
+  int (*wsa_get_last_error_fn)(void);        /**< WSAGetLastError callback. */
+  SOCKET (*wsa_socket_w_fn)(int af, int type, int protocol,
+                            LPWSAPROTOCOL_INFOW protocol_info, GROUP g,
+                            DWORD flags); /**< WSASocketW callback. */
+  int (*closesocket_fn)(SOCKET s);        /**< closesocket callback. */
+  int (*ioctlsocket_fn)(SOCKET s, long cmd,
+                        u_long *argp); /**< ioctlsocket callback. */
+  int (*bind_fn)(SOCKET s, const struct sockaddr *name,
+                 int namelen); /**< bind callback. */
+  int (*getsockname_fn)(SOCKET s, struct sockaddr *name,
+                        int *namelen); /**< getsockname callback. */
+  int (*getpeername_fn)(SOCKET s, struct sockaddr *name,
+                        int *namelen);     /**< getpeername callback. */
+  int (*listen_fn)(SOCKET s, int backlog); /**< listen callback. */
+  SOCKET (*accept_fn)(SOCKET s, struct sockaddr *addr,
+                      int *addrlen); /**< accept callback. */
+  int (*connect_fn)(SOCKET s, const struct sockaddr *name,
+                    int namelen); /**< connect callback. */
+  int (*getsockopt_fn)(SOCKET s, int level, int optname, char *optval,
+                       int *optlen); /**< getsockopt callback. */
+  int (*setsockopt_fn)(SOCKET s, int level, int optname, const char *optval,
+                       int optlen);      /**< setsockopt callback. */
+  int (*shutdown_fn)(SOCKET s, int how); /**< shutdown callback. */
+  int (*recv_fn)(SOCKET s, char *buf, int len,
+                 int flags); /**< recv callback. */
+  int (*send_fn)(SOCKET s, const char *buf, int len,
+                 int flags); /**< send callback. */
+  int (*select_fn)(int nfds, fd_set *readfds, fd_set *writefds,
+                   fd_set *exceptfds,
+                   const struct timeval *timeout); /**< select callback. */
+  int (*wsa_recv_fn)(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                     LPDWORD bytes_recvd, LPDWORD flags,
+                     LPWSAOVERLAPPED overlapped,
+                     LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                         completion_routine); /**< WSARecv callback. */
+  int (*wsa_recv_from_fn)(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                          LPDWORD bytes_recvd, LPDWORD flags,
+                          struct sockaddr *from, LPINT fromlen,
+                          LPWSAOVERLAPPED overlapped,
+                          LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                              completion_routine); /**< WSARecvFrom callback. */
+  int (*wsa_send_fn)(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                     LPDWORD bytes_sent, DWORD flags,
+                     LPWSAOVERLAPPED overlapped,
+                     LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                         completion_routine); /**< WSASend callback. */
+  int (*wsa_send_to_fn)(SOCKET s, LPWSABUF buffers, DWORD buffer_count,
+                        LPDWORD bytes_sent, DWORD flags,
+                        const struct sockaddr *to, int tolen,
+                        LPWSAOVERLAPPED overlapped,
+                        LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                            completion_routine); /**< WSASendTo callback. */
+  int (*getaddrinfo_fn)(PCSTR nodename, PCSTR servname, const ADDRINFOA *hints,
+                        PADDRINFOA *res); /**< getaddrinfo callback. */
+  void (*freeaddrinfo_fn)(PADDRINFOA ai); /**< freeaddrinfo callback. */
+  struct servent *(*getservbyname_fn)(
+      const char *name, const char *proto); /**< getservbyname callback. */
+  struct servent *(*getservbyport_fn)(
+      int port, const char *proto); /**< getservbyport callback. */
+  unsigned long (*get_file_type_fn)(
+      void *file_handle); /**< GetFileType callback. */
+  int (*peek_named_pipe_fn)(
+      void *named_pipe, void *buffer, unsigned long buffer_size,
+      unsigned long *bytes_read, unsigned long *total_bytes_avail,
+      unsigned long *bytes_left_this_message); /**< PeekNamedPipe callback. */
+  void (*sleep_fn)(DWORD milliseconds);        /**< Sleep callback. */
+};
+
+/**
+ * @brief Populates out_hooks with the default Win32, Winsock2, and CRT
+ * callbacks.
+ * @param[out] out_hooks Destination hook table to populate.
+ */
+void posix_sockets_get_default_win32_hooks(
+    struct posix_sockets_win32_hooks *out_hooks);
+
+/**
+ * @brief Installs or resets Win32, Winsock2, and allocator hooks for
+ * posix-sockets tests.
+ * @param[in] hooks Pointer to hook table, or NULL to restore real Win32 APIs.
+ */
+void posix_sockets_set_win32_hooks(
+    const struct posix_sockets_win32_hooks *hooks);
+#endif
 
 #define win_compat_sendmsg posix_sendmsg_native
 #define win_compat_recvmsg posix_recvmsg_native

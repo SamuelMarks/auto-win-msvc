@@ -30,6 +30,21 @@ typedef int error_type_t;
 #include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
+#ifndef EOPNOTSUPP
+#define EOPNOTSUPP 95
+#endif
+#ifndef ENOTSUP
+#define ENOTSUP EOPNOTSUPP
+#endif
+#ifndef ELOOP
+#define ELOOP 40
+#endif
+#ifndef EOVERFLOW
+#define EOVERFLOW 75
+#endif
+#ifndef ETXTBSY
+#define ETXTBSY 26
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -302,7 +317,7 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
 #else
 #ifndef O_TEXT
-#define O_TEXT O_TEXT
+#define O_TEXT 0
 #endif
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -311,7 +326,7 @@ __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
 #endif
 #else
 #ifndef O_BINARY
-#define O_BINARY O_BINARY
+#define O_BINARY 0
 #endif
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -421,7 +436,7 @@ int posix_open(const char *pathname, int flags, ...);
 
 /** @brief open */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef open
+/** @brief Opens a file in binary mode on Windows forwarding to posix_open. */
 static __inline int posix_core_open(const char *filename, int oflag, ...) {
   int pmode = 0;
   oflag |= _O_BINARY;
@@ -436,6 +451,7 @@ static __inline int posix_core_open(const char *filename, int oflag, ...) {
   }
   return posix_open(filename, oflag, pmode);
 }
+#ifndef open
 #ifndef AUTO_WIN_MSVC_NO_FUNCTION_MACROS
 #define open posix_core_open
 #endif
@@ -653,26 +669,25 @@ int posix_execvp(const char *file, char *const argv[]);
 #endif
 /** @brief sleep */
 #if defined(_WIN32) && !defined(__CYGWIN__)
+/** @brief Sleeps for the specified number of seconds. */
+static __inline unsigned int posix_core_sleep(unsigned int seconds) {
+  Sleep(seconds * 1000);
+  return 0;
+}
 #ifndef sleep
+#define sleep posix_core_sleep
 #endif
 #else
 /* sleep */
 #endif
 /** @brief usleep */
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef usleep
-
-static __inline unsigned int posix_core_sleep(unsigned int seconds) {
-  Sleep(seconds * 1000);
-  return 0;
-}
-#define sleep posix_core_sleep
-
-/** \brief posix_core_usleep function. */
+/** @brief Sleeps for the specified number of microseconds. */
 static __inline int posix_core_usleep(unsigned int usec) {
   Sleep(usec / 1000);
   return 0;
 }
+#ifndef usleep
 #define usleep posix_core_usleep
 #endif
 #else
@@ -695,31 +710,6 @@ extern int posix_isatty(intptr_t fd);
 #endif
 #else
 /* swab */
-#endif
-/** @brief creat */
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef creat
-static __inline int posix_core_creat(const char *filename, int pmode) {
-  int fd = -1;
-  int win_pmode = pmode & (_S_IREAD | _S_IWRITE);
-  if (win_pmode == 0) {
-    win_pmode = _S_IREAD | _S_IWRITE;
-  }
-#if defined(__STDC_SECURE_LIB__) || defined(__STDC_WANT_SECURE_LIB__) ||       \
-    _MSC_VER >= 1400
-  if (_sopen_s(&fd, filename, _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY,
-               _SH_DENYNO, win_pmode) != 0) {
-    return -1;
-  }
-  return fd;
-#else
-  return _creat(filename, win_pmode);
-#endif
-}
-#define creat posix_core_creat
-#endif
-#else
-/* creat */
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fcntl */
@@ -1381,12 +1371,25 @@ pid_t vfork(void);
 
 /** @brief rename (POSIX semantics) */
 int posix_rename(const char *oldpath, const char *newpath);
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) ||                               \
+    ((defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)) &&       \
+     !defined(_WIN32))
 #undef rename
 #ifndef rename
 #define rename(oldpath, newpath) posix_rename((oldpath), (newpath))
 #endif
 #endif
+
+/**
+ * @brief Formats a mkstemp template into a strict 8.3 MS-DOS filename.
+ * @param[out] out_buf Destination buffer of capacity out_cap.
+ * @param[in] out_cap Capacity of out_buf in bytes (including NUL).
+ * @param[in] tmpl Input template ending with XXXXXX.
+ * @param[in] attempt Monotonic collision retry index.
+ * @return 0 on success, -1 on invalid template or insufficient buffer capacity.
+ */
+int awm_dos_mkstemp_format_83(char *out_buf, size_t out_cap, const char *tmpl,
+                              unsigned int attempt);
 
 /** @brief mkstemp (POSIX semantics with SHARE_DELETE) */
 int posix_mkstemp(char *tmpl);
@@ -1395,6 +1398,44 @@ int posix_mkstemp(char *tmpl);
 #define mkstemp posix_mkstemp
 #endif
 #endif
+
+/**
+ * @brief mkostemp creates and opens a unique temporary file with extra flags.
+ * @param[in,out] tmpl File name template ending with XXXXXX.
+ * @param[in] flags Additional open flags (such as O_BINARY or O_APPEND).
+ * @return Non-negative file descriptor on success, -1 on error with errno set.
+ */
+int posix_mkostemp(char *tmpl, int flags);
+#if (defined(_WIN32) && !defined(__CYGWIN__)) ||                               \
+    ((defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)) &&       \
+     !defined(_WIN32))
+#ifndef mkostemp
+#define mkostemp posix_mkostemp
+#endif
+#endif
+
+/**
+ * @brief Opens a scratch-file simulated pipe stream for single-tasking targets.
+ * @param[in] command Shell command string to execute.
+ * @param[in] type Stream mode ("r", "rb", "w", or "wb").
+ * @return FILE pointer on success, NULL on failure with errno set.
+ */
+FILE *awm_popen_scratch(const char *command, const char *type);
+
+/**
+ * @brief Closes a scratch-file simulated pipe stream opened by
+ * awm_popen_scratch.
+ * @param[in] stream Pipe stream handle.
+ * @return Command exit status on success, -1 on failure with errno set.
+ */
+int awm_pclose_scratch(FILE *stream);
+
+/**
+ * @brief Returns non-zero if stream is open for writing or last I/O was write.
+ * @param[in] stream Standard C FILE stream pointer.
+ * @return Non-zero if writing, 0 otherwise.
+ */
+int awm_fwriting(FILE *stream);
 
 /**
  * @brief mkdtemp creates a unique temporary directory from a template.
@@ -1628,8 +1669,15 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 int getsubopt(char **optionp, char *const *tokens, char **valuep);
 /** @brief Creates and opens a unique temporary file on DOS/OpenWatcom. */
 int mkstemp(char *tmpl);
+/** @brief Creates and opens a unique temporary file with flags on
+ * DOS/OpenWatcom. */
+int mkostemp(char *tmpl, int flags);
 /** @brief Creates a unique temporary directory on DOS/OpenWatcom. */
 char *mkdtemp(char *tmpl);
+/** @brief Opens a simulated pipe stream on DOS/OpenWatcom. */
+FILE *popen(const char *command, const char *type);
+/** @brief Closes a simulated pipe stream on DOS/OpenWatcom. */
+int pclose(FILE *stream);
 /** @brief Stubs fork on single-tasking DOS. */
 int fork(void);
 /** @brief Stubs vfork on single-tasking DOS. */
@@ -1751,6 +1799,329 @@ pid_t setsid(void);
 int getgroups(int size, gid_t list[]);
 /** @brief Stubs setgroups on DOS/OpenWatcom. */
 int setgroups(size_t size, const gid_t *list);
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER)
+/** @brief 64-bit file offset type used by posix_read_write hooks. */
+typedef __int64 posix_rw_off_t;
+#else
+/** @brief Platform file offset type used by posix_read_write hooks. */
+typedef off_t posix_rw_off_t;
+#endif
+
+/** @brief Hook table for mocking Win32 and CRT I/O calls in posix_read_write.
+ */
+struct posix_rw_win32_hooks {
+  void *(*malloc_fn)(size_t size);      /**< Heap allocation callback. */
+  void (*free_fn)(void *ptr);           /**< Heap deallocation callback. */
+  intptr_t (*get_osfhandle_fn)(int fd); /**< CRT _get_osfhandle callback. */
+  int (*open_osfhandle_fn)(intptr_t osfhandle,
+                           int flags); /**< CRT _open_osfhandle callback. */
+  FILE *(*fdopen_fn)(int fd, const char *mode); /**< CRT _fdopen callback. */
+  int (*fileno_fn)(FILE *stream);               /**< CRT _fileno callback. */
+  int (*close_fn)(int fd);                      /**< CRT _close callback. */
+  int (*read_fn)(int fd, void *buf,
+                 unsigned int count); /**< CRT _read callback. */
+  int (*write_fn)(int fd, const void *buf,
+                  unsigned int count); /**< CRT _write callback. */
+  int (*dup_fn)(int fd);               /**< CRT _dup callback. */
+  int (*dup2_fn)(int fd1, int fd2);    /**< CRT _dup2 callback. */
+  posix_rw_off_t (*lseek_fn)(int fd, posix_rw_off_t offset,
+                             int whence); /**< CRT lseek callback. */
+  int (*setmode_fn)(int fd, int mode);    /**< CRT _setmode callback. */
+  int (*vscprintf_fn)(const char *format, va_list argptr)
+      POSIX_CORE_PRINTF_FORMAT(1, 0); /**< Format length callback. */
+  int (*vsprintf_buf_fn)(char *buf, size_t cap, const char *format,
+                         va_list argptr)
+      POSIX_CORE_PRINTF_FORMAT(3, 0); /**< Format buffer callback. */
+  unsigned long (*get_temp_path_fn)(unsigned long buf_len,
+                                    char *buf); /**< GetTempPathA callback. */
+  unsigned int (*get_temp_file_name_fn)(
+      const char *path, const char *prefix, unsigned int unique,
+      char *out_file); /**< GetTempFileNameA callback. */
+  void *(*create_file_fn)(const char *name, unsigned long access,
+                          unsigned long share, void *sa, unsigned long disp,
+                          unsigned long flags,
+                          void *tmpl);  /**< CreateFileA callback. */
+  int (*close_handle_fn)(void *handle); /**< CloseHandle callback. */
+  unsigned long (*get_current_dir_fn)(
+      unsigned long buf_len, char *buf); /**< GetCurrentDirectoryA callback. */
+  unsigned long (*get_file_attributes_fn)(
+      const char *name); /**< GetFileAttributesA callback. */
+  unsigned long (*get_file_type_fn)(void *handle); /**< GetFileType callback. */
+  unsigned long (*get_last_error_fn)(void); /**< GetLastError callback. */
+  void *(*get_module_handle_fn)(
+      const char *name); /**< GetModuleHandleA callback. */
+  void *(*get_proc_address_fn)(
+      void *module, const char *proc_name); /**< GetProcAddress callback. */
+  unsigned long (*get_tick_count_fn)(void); /**< GetTickCount callback. */
+  unsigned long (*get_current_pid_fn)(
+      void); /**< GetCurrentProcessId callback. */
+  int (*read_file_fn)(void *handle, void *buf, unsigned long to_read,
+                      unsigned long *bytes_read,
+                      void *overlapped); /**< ReadFile callback. */
+  int (*write_file_fn)(void *handle, const void *buf, unsigned long to_write,
+                       unsigned long *bytes_written,
+                       void *overlapped); /**< WriteFile callback. */
+  int (*get_overlapped_result_fn)(
+      void *handle, void *overlapped, unsigned long *bytes_transferred,
+      int wait); /**< GetOverlappedResult callback. */
+  int (*set_std_handle_fn)(unsigned long std_id,
+                           void *handle); /**< SetStdHandle callback. */
+  int (*wsa_startup_fn)(unsigned short ver,
+                        void *wsa_data); /**< WSAStartup callback. */
+  int (*wsa_get_last_error_fn)(void);    /**< WSAGetLastError callback. */
+  int (*getsockopt_fn)(uintptr_t s, int level, int optname, char *optval,
+                       int *optlen); /**< getsockopt callback. */
+  int (*recv_fn)(uintptr_t s, char *buf, int len,
+                 int flags); /**< recv callback. */
+  int (*send_fn)(uintptr_t s, const char *buf, int len,
+                 int flags);                /**< send callback. */
+  int (*shutdown_fn)(uintptr_t s, int how); /**< shutdown callback. */
+  int (*closesocket_fn)(uintptr_t s);       /**< closesocket callback. */
+  int (*epoll_close_fn)(int fd);            /**< posix_epoll_close callback. */
+};
+
+/** @brief Copies default Win32 hooks for posix_read_write into out_hooks. */
+void posix_rw_get_default_win32_hooks(struct posix_rw_win32_hooks *out_hooks);
+/** @brief Installs custom Win32 hooks for posix_read_write (NULL resets). */
+void posix_rw_set_win32_hooks(const struct posix_rw_win32_hooks *hooks);
+/** @brief Runs binary stdio initialization (optionally forcing re-init). */
+void posix_rw_ensure_binary_stdio(int force_reinit);
+/** @brief Clears all registered socket stream entries for isolated testing. */
+void posix_rw_reset_socket_streams(void);
+#elif !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&     \
+    !defined(__linux__) && !defined(__CYGWIN__)
+/** @brief Hook table for mocking POSIX calls in posix_read_write. */
+struct posix_rw_posix_hooks {
+  FILE *(*tmpfile_fn)(void); /**< Temporary file stream creation callback. */
+};
+
+/** @brief Copies default POSIX hooks for posix_read_write into out_hooks. */
+void posix_rw_get_default_posix_hooks(struct posix_rw_posix_hooks *out_hooks);
+/** @brief Installs custom POSIX hooks for posix_read_write (NULL resets). */
+void posix_rw_set_posix_hooks(const struct posix_rw_posix_hooks *hooks);
+#endif
+
+/** @brief Hook table for cross-platform scratch/mkostemp helpers in posix-core.
+ */
+struct posix_core_common_hooks {
+  void *(*malloc_fn)(size_t size); /**< Heap allocation callback. */
+  void (*free_fn)(void *ptr);      /**< Heap deallocation callback. */
+  int (*open_scratch_fn)(
+      const char *path); /**< Scratch file creation callback. */
+  FILE *(*fopen_fn)(const char *path,
+                    const char *mode); /**< Stream open callback. */
+  int (*system_fn)(const char *cmd);   /**< Command execution callback. */
+#if !defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) &&            \
+    !defined(__WATCOMC__)
+  int (*mkstemp_fn)(char *tmpl); /**< POSIX mkstemp callback. */
+#endif
+};
+
+/** @brief Copies default cross-platform hooks for posix-core into out_hooks. */
+void posix_core_get_default_common_hooks(
+    struct posix_core_common_hooks *out_hooks);
+/** @brief Installs custom cross-platform hooks for posix-core (NULL resets). */
+void posix_core_set_common_hooks(const struct posix_core_common_hooks *hooks);
+
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+/** @brief Checks whether a file descriptor refers to a terminal device. */
+int posix_isatty(intptr_t fd);
+#endif
+
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+/** @brief Assigns a pointer value through a const-qualified pointer slot. */
+void ASSIGN_CONST_PTR(const void *pptr, void *v);
+/** @brief Zero-allocates memory into a const-qualified pointer slot. */
+void XZALLOC_CONST_PTR(const void *pptr, size_t size);
+#endif
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__GNUC__) || defined(__clang__)
+/** @brief Signed 64-bit integer type for Win32 file size/offset hooks. */
+__extension__ typedef long long posix_core_i64_t;
+/** @brief Unsigned 64-bit integer type for Win32 memory status hooks. */
+__extension__ typedef unsigned long long posix_core_u64_t;
+#else
+/** @brief Signed 64-bit integer type for Win32 file size/offset hooks. */
+typedef __int64 posix_core_i64_t;
+/** @brief Unsigned 64-bit integer type for Win32 memory status hooks. */
+typedef unsigned __int64 posix_core_u64_t;
+#endif
+
+/** @brief Timer callback signature used by Win32 timer queue hooks. */
+typedef void(__stdcall *posix_core_timer_cb_t)(void *param,
+                                               unsigned char fired);
+
+/** @brief Hook table for mocking Win32 and CRT calls in posix-core. */
+struct posix_core_win32_hooks {
+  void *(*malloc_fn)(size_t size);             /**< malloc callback. */
+  void *(*realloc_fn)(void *ptr, size_t sz);   /**< realloc callback. */
+  void (*free_fn)(void *ptr);                  /**< free callback. */
+  intptr_t (*get_osfhandle_fn)(int fd);        /**< _get_osfhandle callback. */
+  int (*open_osfhandle_fn)(intptr_t h, int f); /**< _open_osfhandle callback. */
+  int (*dup_fn)(int fd);                       /**< _dup callback. */
+  int (*dup2_fn)(int fd1, int fd2);            /**< _dup2 callback. */
+  int (*close_fn)(int fd);                     /**< _close callback. */
+  int (*commit_fn)(int fd);                    /**< _commit callback. */
+  int (*locking_fn)(int fd, int mode, long nbytes); /**< _locking callback. */
+  int (*pipe_fn)(int *pfds, unsigned int psize,
+                 int textmode);              /**< _pipe callback. */
+  int (*isatty_fn)(int fd);                  /**< _isatty callback. */
+  int (*open_rdwr_fn)(const char *path);     /**< Read-write open callback. */
+  int (*chsize_fn)(int fd, long size);       /**< _chsize callback. */
+  int (*access_fn)(const char *p, int m);    /**< _access callback. */
+  int (*chmod_fn)(const char *p, int m);     /**< _chmod callback. */
+  int (*unlink_fn)(const char *p);           /**< _unlink callback. */
+  int (*rmdir_fn)(const char *p);            /**< _rmdir callback. */
+  char *(*getcwd_fn)(char *buf, int maxlen); /**< _getcwd callback. */
+  int (*chdir_fn)(const char *p);            /**< _chdir callback. */
+  char *(*fullpath_fn)(char *abs_p, const char *rel_p,
+                       size_t max_len);      /**< _fullpath callback. */
+  int (*mktemp_s_fn)(char *tmpl, size_t sz); /**< _mktemp_s callback. */
+  intptr_t (*execve_fn)(const char *cmd, const char *const *argv,
+                        const char *const *envp); /**< _execve callback. */
+  intptr_t (*spawnve_fn)(int mode, const char *cmd, const char *const *argv,
+                         const char *const *envp); /**< _spawnve callback. */
+  intptr_t (*spawnvpe_fn)(int mode, const char *cmd, const char *const *argv,
+                          const char *const *envp); /**< _spawnvpe callback. */
+  intptr_t (*spawnv_fn)(int mode, const char *cmd,
+                        const char *const *argv); /**< _spawnv callback. */
+  int (*raise_fn)(int sig);                       /**< raise callback. */
+  void *(*get_module_handle_fn)(const char *n);   /**< GetModuleHandleA. */
+  void *(*get_proc_address_fn)(void *m, const char *p); /**< GetProcAddress. */
+  unsigned long (*get_last_error_fn)(void);             /**< GetLastError. */
+  int (*get_file_size_ex_fn)(void *h,
+                             posix_core_i64_t *sz); /**< GetFileSizeEx. */
+  int (*set_file_pointer_ex_fn)(void *h, posix_core_i64_t dist,
+                                posix_core_i64_t *newp,
+                                unsigned long method); /**< SetFilePointerEx. */
+  int (*set_end_of_file_fn)(void *h);                  /**< SetEndOfFile. */
+  int (*lock_file_ex_fn)(void *h, unsigned long fl, unsigned long res,
+                         unsigned long lo, unsigned long hi,
+                         void *ov); /**< LockFileEx. */
+  int (*unlock_file_ex_fn)(void *h, unsigned long res, unsigned long lo,
+                           unsigned long hi, void *ov); /**< UnlockFileEx. */
+  void *(*create_file_mapping_fn)(void *h, void *sa, unsigned long prot,
+                                  unsigned long hi, unsigned long lo,
+                                  const char *name); /**< CreateFileMappingA. */
+  void *(*map_view_of_file_fn)(void *h, unsigned long acc, unsigned long hi,
+                               unsigned long lo,
+                               size_t bytes);     /**< MapViewOfFile. */
+  int (*unmap_view_of_file_fn)(const void *addr); /**< UnmapViewOfFile. */
+  int (*create_timer_fn)(void **out_t, void *q, posix_core_timer_cb_t cb,
+                         void *param, unsigned long due, unsigned long period,
+                         unsigned long fl); /**< CreateTimerQueueTimer. */
+  int (*delete_timer_fn)(void *q, void *t,
+                         void *ev);         /**< DeleteTimerQueueTimer. */
+  unsigned long (*get_tick_count_fn)(void); /**< GetTickCount. */
+  unsigned long (*get_file_attributes_fn)(
+      const char *p); /**< GetFileAttributesA. */
+  unsigned long (*get_current_dir_fn)(unsigned long len,
+                                      char *buf); /**< GetCurrentDirectoryA. */
+  int (*set_current_dir_fn)(const char *p);       /**< SetCurrentDirectoryA. */
+  int (*create_directory_fn)(const char *p, void *sa); /**< CreateDirectoryA. */
+  void *(*create_file_fn)(const char *n, unsigned long acc, unsigned long sh,
+                          void *sa, unsigned long disp, unsigned long fl,
+                          void *tmpl); /**< CreateFileA. */
+  int (*close_handle_fn)(void *h);     /**< CloseHandle. */
+  int (*read_file_fn)(void *h, void *buf, unsigned long n, unsigned long *br,
+                      void *ov); /**< ReadFile. */
+  int (*write_file_fn)(void *h, const void *buf, unsigned long n,
+                       unsigned long *bw, void *ov); /**< WriteFile. */
+  int (*device_io_control_fn)(void *h, unsigned long code, void *in_b,
+                              unsigned long in_sz, void *out_b,
+                              unsigned long out_sz, unsigned long *ret_b,
+                              void *ov); /**< DeviceIoControl. */
+  int (*wide_char_to_multi_byte_fn)(unsigned int cp, unsigned long fl,
+                                    const wchar_t *ws, int wlen, char *mb,
+                                    int mblen, const char *def_c,
+                                    int *used_def); /**< WideCharToMultiByte. */
+  int (*create_hard_link_fn)(const char *new_p, const char *old_p,
+                             void *sa); /**< CreateHardLinkA. */
+  int (*move_file_ex_fn)(const char *old_p, const char *new_p,
+                         unsigned long fl); /**< MoveFileExA. */
+  int (*copy_file_fn)(const char *old_p, const char *new_p,
+                      int fail_if_exists);               /**< CopyFileA. */
+  int (*get_user_name_fn)(char *buf, unsigned long *sz); /**< GetUserNameA. */
+  unsigned long (*sleep_ex_fn)(unsigned long ms,
+                               int alertable);         /**< SleepEx. */
+  unsigned long (*get_logical_drives_fn)(void);        /**< GetLogicalDrives. */
+  unsigned int (*get_drive_type_fn)(const char *root); /**< GetDriveTypeA. */
+  int (*flush_file_buffers_fn)(void *h);               /**< FlushFileBuffers. */
+  void (*get_system_info_fn)(void *si);                /**< GetSystemInfo. */
+  int (*global_memory_status_ex_fn)(void *ms); /**< GlobalMemoryStatusEx. */
+  unsigned long (*get_module_file_name_fn)(
+      void *m, char *buf, unsigned long sz); /**< GetModuleFileNameA. */
+  int (*set_std_handle_fn)(unsigned long id, void *h); /**< SetStdHandle. */
+  int (*set_handle_information_fn)(void *h, unsigned long mask,
+                                   unsigned long fl); /**< SetHandleInfo. */
+  unsigned long (*wait_for_single_object_fn)(
+      void *h, unsigned long ms); /**< WaitForSingleObject. */
+  int (*get_exit_code_process_fn)(
+      void *h, unsigned long *code); /**< GetExitCodeProcess. */
+  int (*ioctlsocket_fn)(uintptr_t s, long cmd,
+                        unsigned long *argp); /**< ioctlsocket. */
+  int (*wsa_get_last_error_fn)(void);         /**< WSAGetLastError. */
+  int (*socketpair_fn)(int dom, int type, int proto,
+                       intptr_t sv[2]); /**< posix_socketpair. */
+  int (*crypt_acquire_context_fn)(size_t *prov, const char *cont,
+                                  const char *prv, unsigned long type,
+                                  unsigned long fl); /**< CryptAcquireCtxA. */
+  int (*crypt_create_hash_fn)(size_t prov, unsigned int alg, size_t key,
+                              unsigned long fl,
+                              size_t *hash); /**< CryptCreateHash. */
+  int (*crypt_hash_data_fn)(size_t hash, const unsigned char *data,
+                            unsigned long len,
+                            unsigned long fl); /**< CryptHashData. */
+  int (*crypt_get_hash_param_fn)(size_t hash, unsigned long param,
+                                 unsigned char *data, unsigned long *len,
+                                 unsigned long fl); /**< CryptGetHashParam. */
+  int (*crypt_destroy_hash_fn)(size_t hash);        /**< CryptDestroyHash. */
+  int (*crypt_release_context_fn)(size_t prov,
+                                  unsigned long fl); /**< CryptReleaseCtx. */
+  int (*crypt_derive_key_fn)(size_t prov, unsigned int alg, size_t base,
+                             unsigned long fl,
+                             size_t *key); /**< CryptDeriveKey. */
+  int (*crypt_encrypt_fn)(size_t key, size_t hash, int final_b,
+                          unsigned long fl, unsigned char *data,
+                          unsigned long *len,
+                          unsigned long cap); /**< CryptEncrypt. */
+  int (*crypt_decrypt_fn)(size_t key, size_t hash, int final_b,
+                          unsigned long fl, unsigned char *data,
+                          unsigned long *len); /**< CryptDecrypt. */
+  int (*crypt_destroy_key_fn)(size_t key);     /**< CryptDestroyKey. */
+};
+
+/** @brief Copies default Win32 hooks for posix-core into out_hooks. */
+void posix_core_get_default_win32_hooks(
+    struct posix_core_win32_hooks *out_hooks);
+/** @brief Installs custom Win32 hooks for posix-core (NULL resets). */
+void posix_core_set_win32_hooks(const struct posix_core_win32_hooks *hooks);
+/** @brief Resets internal timer, fork, and vfork tracking tables for tests. */
+void posix_core_reset_process_state(int child_count, int vfork_depth,
+                                    int reap_count);
+/** @brief Child exit hook used by forked processes on Windows. */
+void my_exit_hook(int status);
+/** @brief Terminates the current process via Kernel32 TerminateProcess. */
+auto_win_msvc_error_t auto_win_exit(int code);
+/** @brief Sets the system clock (stub on Windows). */
+int settimeofday(const void *tv, const void *tz);
+/** @brief Pushes a simulated vfork state frame on Windows. */
+int awm_vfork_push(void **globals_slot);
+/** @brief Retrieves the active jmp_buf pointer for the current vfork frame. */
+void *awm_vfork_jb(void);
+/** @brief Returns the simulated child PID to the parent after vfork longjmp. */
+int awm_vfork_parent_pid(void);
+/** @brief Returns current nesting depth of simulated vfork frames. */
+int awm_vfork_depth(void);
+/** @brief Exits a simulated vfork child frame and restores parent context. */
+void awm_vfork_exit(int status);
+/** @brief Reaps a completed simulated vfork child process. */
+int awm_vfork_try_reap(int pid, int *stat_loc);
 #endif
 
 #ifdef __cplusplus

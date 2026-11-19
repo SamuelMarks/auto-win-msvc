@@ -8,6 +8,7 @@
 #include "posix-netdb.h"
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
+/** @brief Exclude rarely-used Windows headers. */
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
@@ -41,8 +42,27 @@ auto_win_msvc_error_t posix_netdb_get_info(int *out_available) {
 }
 
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
+/** @brief Sentinel ai_flags marker identifying custom-allocated addrinfo nodes.
+ */
 #define POSIX_NETDB_AI_CUSTOM_MAGIC 0x4157
 
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
+static void *default_netdb_calloc(size_t nmemb, size_t size) {
+  return calloc(nmemb, size);
+}
+
+/** @brief Overrideable calloc hook for OOM testing in posix-netdb. */
+void *(*g_posix_netdb_calloc)(size_t, size_t) = default_netdb_calloc;
+
+/** @brief Resets g_posix_netdb_calloc back to the default allocator. */
+void posix_netdb_reset_calloc_hook(void);
+void posix_netdb_reset_calloc_hook(void) {
+  g_posix_netdb_calloc = default_netdb_calloc;
+}
+#endif
+
+/** @brief Resolves host and service names into socket addresses. */
 int posix_getaddrinfo(const char *nodename, const char *servname,
                       const struct addrinfo *hints, struct addrinfo **res) {
   if (res == NULL) {
@@ -82,7 +102,7 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
           ((unsigned long)parts[0] << 24) | ((unsigned long)parts[1] << 16) |
           ((unsigned long)parts[2] << 8) | (unsigned long)parts[3];
       unsigned long ip_be = htonl(ip_host);
-      struct addrinfo *ai = (struct addrinfo *)calloc(
+      struct addrinfo *ai = (struct addrinfo *)g_posix_netdb_calloc(
           1, sizeof(struct addrinfo) + sizeof(struct sockaddr_in));
       if (ai != NULL) {
         struct sockaddr_in *sin = (struct sockaddr_in *)(ai + 1);
@@ -123,6 +143,7 @@ int posix_getaddrinfo(const char *nodename, const char *servname,
 #endif
 }
 
+/** @brief Frees address information list allocated by posix_getaddrinfo. */
 void posix_freeaddrinfo(struct addrinfo *ai) {
   if (ai == NULL) {
     return;
@@ -139,6 +160,7 @@ void posix_freeaddrinfo(struct addrinfo *ai) {
 #endif
 }
 
+/** @brief Returns descriptive error string for getaddrinfo error code. */
 const char *posix_gai_strerror(int ecode) {
   if (ecode == EAI_SYSTEM) {
     return "System error";
@@ -208,7 +230,9 @@ void posix_herror(const char *s) {
   }
 }
 
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_tu_posix_netdb;
 
 #endif
+/** @brief Dummy typedef preventing empty mega translation unit warnings. */
 typedef int make_iso_compilers_happy_mega_batch3_8;

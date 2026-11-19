@@ -174,7 +174,8 @@ class TestTransformSources(unittest.TestCase):
                 "#define fork_transformer fork_transformer_mmu",
                 "int FAST_FUNC setup_unzip_on_fd(int fd, int die_if_not_compressed)",
                 "{",
-                tab + "transformer_state_t *xstate = setup_transformer_on_fd(fd, die_if_not_compressed);",
+                tab
+                + "transformer_state_t *xstate = setup_transformer_on_fd(fd, die_if_not_compressed);",
                 tab + "fork_transformer_and_free(xstate);",
                 tab + "return 0;",
                 "}",
@@ -223,11 +224,14 @@ class TestTransformSources(unittest.TestCase):
                 transform_sources.main()
             self.assertTrue(os.path.isfile(out_c2))
 
-            with mock.patch.object(
-                sys,
-                "argv",
-                ["transform_sources.py", in_c, plain_hdr, "-o", out_c2],
-            ), self.assertRaises(SystemExit):
+            with (
+                mock.patch.object(
+                    sys,
+                    "argv",
+                    ["transform_sources.py", in_c, plain_hdr, "-o", out_c2],
+                ),
+                self.assertRaises(SystemExit),
+            ):
                 transform_sources.main()
 
             out_dir = os.path.join(tmpdir, "outdir")
@@ -238,17 +242,15 @@ class TestTransformSources(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(out_dir, "test_in.c")))
 
             out_c3 = os.path.join(tmpdir, "out3.c")
-            with mock.patch.object(
-                sys, "argv", ["transform_sources.py", in_c, out_c3]
-            ):
+            with mock.patch.object(sys, "argv", ["transform_sources.py", in_c, out_c3]):
                 transform_sources.main()
             self.assertTrue(os.path.isfile(out_c3))
 
-            with mock.patch.object(
-                sys, "argv", ["transform_sources.py", in_c]
-            ), self.assertRaises(SystemExit):
+            with (
+                mock.patch.object(sys, "argv", ["transform_sources.py", in_c]),
+                self.assertRaises(SystemExit),
+            ):
                 transform_sources.main()
-
 
     def test_toybox_transformations(self):
         """Test Toybox-specific source transformations."""
@@ -265,7 +267,170 @@ void f(void) {
         self.assertIn("#define minof(a, b) ((a) < (b) ? (a) : (b))", res)
         self.assertIn("\\033[0m", res)
         self.assertIn("= {0}", res)
-        self.assertIn("{ error_msg(\"bad\"); return; }", res)
+        self.assertIn('{ error_msg("bad"); return; }', res)
+
+    def test_scalar_array_compound_literal_lowering(self):
+        """Test lowering of C99 scalar-array compound literals to C89."""
+        src = (
+            "int f(int i) {\n"
+            "  if (0 <= strcoll (((char []) {i, 0}), ((char []) {i + 1, 0})))\n"
+            "    return 0;\n"
+            "  return puts((char []) {i, 0});\n"
+            "}\n"
+        )
+        res = transform_sources.transform_source_content(src)
+        self.assertIn("char _awm_arr_0[2];", res)
+        self.assertIn("_awm_arr_0[0] = (char)(i);", res)
+        self.assertIn("_awm_arr_1[0] = (char)(i + 1);", res)
+        self.assertNotIn("(char [])", res)
+
+    def test_gnulib_watcom_c89_lowerings(self):
+        """Test { NULL, 0 }, multiline struct clit, { 0, }, _gl_make_timespec, and *const member."""
+        src = (
+            "typedef struct {\n"
+            "  const re_dfa_t *const dfa;\n"
+            "} re_match_context_t;\n"
+            "# define _gl_make_timespec(sec,nsec) \\\n"
+            "    (struct timespec) { .tv_sec = (sec), .tv_nsec = (nsec) }\n"
+            "void g(struct pair *result, void *p, size_t n) {\n"
+            "  mbstate_t st = { 0, };\n"
+            "  *result = (struct pair) { NULL, 0 };\n"
+            "  *result = (struct pair)\n"
+            "    { .a = p, .b = n };\n"
+            "}\n"
+        )
+        res = transform_sources.transform_source_content(src)
+        self.assertIn("const re_dfa_t * dfa;", res)
+        self.assertIn("static __inline struct timespec _gl_make_timespec", res)
+        self.assertIn("mbstate_t st = { 0 };", res)
+        self.assertIn("memset(&(*result), 0, sizeof(*result));", res)
+        self.assertIn("_awm_cl.a = p;", res)
+
+    def test_vla_const_int_and_bswap_shim(self):
+        """Test VLA static/struct guards, const-int inlining, and bswap shim generation."""
+        src = (
+            "const int kBufSz = 16;\n"
+            "const int errno = 0;\n"
+            "static const int kDoubleSz = kBufSz * 2;\n"
+            "struct s_guard {\n"
+            "  int member_arr[dyn_n];\n"
+            "};\n"
+            "int f(int dyn_n, unsigned short v) {\n"
+            "  static int keep_static[dyn_n];\n"
+            "  int fixed_arr[kBufSz];\n"
+            "  switch (dyn_n) {\n"
+            "  case kBufSz:\n"
+            "    return __builtin_bswap16(v);\n"
+            "  }\n"
+            "  return fixed_arr[0] + keep_static[0] + kDoubleSz;\n"
+            "}\n"
+        )
+        res = transform_sources.transform_source_content(src)
+        self.assertIn("static int keep_static[dyn_n];", res)
+        self.assertIn("int member_arr[dyn_n];", res)
+        self.assertIn("int fixed_arr[(16)];", res)
+        self.assertIn("static const int kDoubleSz = (16) * 2;", res)
+        self.assertIn("case (16):", res)
+        self.assertIn("AWM_BSWAP_SHIM_DEFINED", res)
+        self.assertIn("bswap_16(v)", res)
+
+    def test_freebsd_c99_gnu_rewrites_and_edge_cases(self):
+        """Test setmode, C99 param brackets, GNU variadic/ranges, clit macros, and desig inits."""
+        src = (
+            '#define STR_MACRO "hello"\n'
+            "#define LOG_MSG(fmt, args...) printf(fmt, ##args, args)\n"
+            "#define PAIR_INIT \\\n"
+            "  (pair_t){ 1, \\\n"
+            "    2 }\n"
+            "struct const_tag {\n"
+            "  const int fixed;\n"
+            "};\n"
+            "typedef struct {\n"
+            "  const int fixed;\n"
+            "} const_td_t;\n"
+            "void demo(char buf[static 16], unsigned char dig[__min_size(32)]) {\n"
+            "  void *m1 = setmode(foo(a[0], b));\n"
+            "  int m2 = setmode(0, 1);\n"
+            "  const pair_t p1 = { .a = fn(1, 2), .b = 3, };\n"
+            "  struct const_tag ct = { .fixed = 1 };\n"
+            "  const_td_t ctd = { .fixed = 2 };\n"
+            "  my_ctx_t ctx = { .a = 1 };\n"
+            "  pair_t empty_body = { /* .a = 1 */ };\n"
+            "  pair_t comma_only = { , /* .a = 1 */ };\n"
+            "  pair_t mixed_init = { 0, .a = 1 };\n"
+            '  pair_t str_init = { .s = "lit" };\n'
+            "  pair_t macro_str = { .s = STR_MACRO };\n"
+            "  pair_t out;\n"
+            "  out = (pair_t){ .a = fn(1, 2), .sub = { .x = 3, }, };\n"
+            "  out = (pair_t){ .a = 1, , .b = 2 };\n"
+            "  out = (pair_t){ .a = 1, .sub = { , } };\n"
+            "  out = (pair_t){ 0, .a = 1 };\n"
+            "  out = (pair_t){ .a = wrap({1}) };\n"
+            "  int tbl[16] = {\n"
+            "    [1 ... 3] = 7,\n"
+            "    [10 ... 2] = 9,\n"
+            "    [4 ... 5] = 8\n"
+            "  };\n"
+            "  switch (m2) {\n"
+            "  case 'a' ... 'c':\n"
+            "  case 08 ... 09:\n"
+            "  case 9 ... 2:\n"
+            "    break;\n"
+            "  }\n"
+            "  (void)m1; (void)p1; (void)ct; (void)ctd; (void)ctx;\n"
+            "  (void)empty_body; (void)comma_only; (void)mixed_init;\n"
+            "  (void)str_init; (void)macro_str; (void)tbl;\n"
+            "}\n"
+        )
+        res = transform_sources.transform_source_content(src)
+        self.assertIn(
+            "#define LOG_MSG(fmt, ...) printf(fmt, __VA_ARGS__, __VA_ARGS__)", res
+        )
+        self.assertIn("_awm_clit_PAIR_INIT", res)
+        self.assertIn("char buf[16]", res)
+        self.assertIn("unsigned char dig[32]", res)
+        self.assertIn("bsd_setmode(foo(a[0], b))", res)
+        self.assertIn("setmode(0, 1)", res)
+        self.assertIn("p1.a = fn(1, 2);", res)
+        self.assertIn("struct const_tag ct = { .fixed = 1 };", res)
+        self.assertIn("const_td_t ctd = { .fixed = 2 };", res)
+        self.assertIn("my_ctx_t ctx = { .a = 1 };", res)
+        self.assertIn("_awm_cl.sub.x = 3;", res)
+        self.assertIn("[1] = 7,", res)
+        self.assertIn("[5] = 8", res)
+        self.assertNotIn("[5] = 8,", res)
+        self.assertIn("[10 ... 2] = 9,", res)
+        self.assertIn("case 97:", res)
+        self.assertIn("case 08 ... 09:", res)
+
+    def test_include_resolution_cache_cycle_alt_and_rename_main(self):
+        """Test include cache hits, self-referential cycles, in_dir fallback, and rename_main."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sub_dir = os.path.join(tmpdir, "sub")
+            out_dir = os.path.join(tmpdir, "out")
+            os.makedirs(sub_dir, exist_ok=True)
+
+            root_hdr = os.path.join(tmpdir, "root_only.h")
+            with open(root_hdr, "w", encoding="utf-8") as f:
+                f.write("int root_val;\n")
+
+            cycle_hdr = os.path.join(sub_dir, "cycle.h")
+            with open(cycle_hdr, "w", encoding="utf-8") as f:
+                f.write('#include "cycle.h"\n#include "root_only.h"\n')
+
+            in_c = os.path.join(tmpdir, "app.c")
+            with open(in_c, "w", encoding="utf-8") as f:
+                f.write(
+                    '#include "sub/cycle.h"\n'
+                    '#include "sub/cycle.h"\n'
+                    "int main(int argc, char **argv) { return argc + (argv != 0); }\n"
+                )
+
+            out_c = os.path.join(out_dir, "app.c")
+            transform_sources.transform_file(in_c, out_c, rename_main="app_entry")
+            with open(out_c, "r", encoding="utf-8") as f:
+                out_text = f.read()
+            self.assertIn("int app_entry(", out_text)
 
 
 if __name__ == "__main__":  # pragma: no cover

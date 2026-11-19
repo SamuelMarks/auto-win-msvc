@@ -1,5 +1,6 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
-    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__)
+    defined(__WATCOMC__) || defined(__DOS__) || defined(__MSDOS__) ||          \
+    defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 /**
  * @file bsd-sys-endian.c
  * @brief Implementation of BSD <sys/endian.h> byte-order encoding and decoding.

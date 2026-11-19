@@ -1,4 +1,9 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+/**
+ * @file posix-sys-uio.c
+ * @brief Strict C89 implementation of POSIX sys/uio.h scatter/gather I/O.
+ */
+
 /* clang-format off */
 #include "posix-sys-uio.h"
 #include <errno.h>
@@ -10,33 +15,6 @@
 #endif
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK 140
-#endif
-#ifndef ECONNRESET
-#define ECONNRESET 108
-#endif
-#ifndef EINPROGRESS
-#define EINPROGRESS 112
-#endif
-#ifndef EALREADY
-#define EALREADY 103
-#endif
-#ifndef ENOTSOCK
-#define ENOTSOCK 128
-#endif
-#ifndef EMSGSIZE
-#define EMSGSIZE 122
-#endif
-#ifndef EADDRINUSE
-#define EADDRINUSE 100
-#endif
-#ifndef EADDRNOTAVAIL
-#define EADDRNOTAVAIL 101
-#endif
-#ifndef ECONNABORTED
-#define ECONNABORTED 106
-#endif
-#ifndef ECONNREFUSED
-#define ECONNREFUSED 107
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -50,12 +28,102 @@
 #include <stdlib.h>
 #include <winsock2.h>
 #else
-#include <unistd.h>
 #include <stddef.h>
+#include <unistd.h>
 #endif
 /* clang-format on */
 
 #if defined(_MSC_VER) || defined(_WIN32)
+
+typedef int(WSAAPI *uio_wsasend_fn)(SOCKET, LPWSABUF, DWORD, LPDWORD, DWORD,
+                                    LPWSAOVERLAPPED,
+                                    LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+typedef int(WSAAPI *uio_wsarecv_fn)(SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD,
+                                    LPWSAOVERLAPPED,
+                                    LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+typedef int(WSAAPI *uio_wsagetlasterror_fn)(void);
+typedef int (*uio_write_fn)(int, const void *, unsigned int);
+typedef int (*uio_read_fn)(int, void *, unsigned int);
+typedef __int64 (*uio_lseeki64_fn)(int, __int64, int);
+
+static void *default_uio_malloc(size_t sz) { return malloc(sz); }
+static int WSAAPI default_uio_wsasend(SOCKET s, LPWSABUF bufs, DWORD cnt,
+                                      LPDWORD sent, DWORD flags,
+                                      LPWSAOVERLAPPED ov,
+                                      LPWSAOVERLAPPED_COMPLETION_ROUTINE cr) {
+  return WSASend(s, bufs, cnt, sent, flags, ov, cr);
+}
+static int WSAAPI default_uio_wsarecv(SOCKET s, LPWSABUF bufs, DWORD cnt,
+                                      LPDWORD recvd, LPDWORD flags,
+                                      LPWSAOVERLAPPED ov,
+                                      LPWSAOVERLAPPED_COMPLETION_ROUTINE cr) {
+  return WSARecv(s, bufs, cnt, recvd, flags, ov, cr);
+}
+static int WSAAPI default_uio_wsagetlasterror(void) {
+  return WSAGetLastError();
+}
+static int default_uio_write(int fd, const void *buf, unsigned int cnt) {
+  return _write(fd, buf, cnt);
+}
+static int default_uio_read(int fd, void *buf, unsigned int cnt) {
+  return _read(fd, buf, cnt);
+}
+static __int64 default_uio_lseeki64(int fd, __int64 off, int whence) {
+  return _lseeki64(fd, off, whence);
+}
+
+static void *(*g_uio_malloc)(size_t) = default_uio_malloc;
+static uio_wsasend_fn g_uio_wsasend = default_uio_wsasend;
+static uio_wsarecv_fn g_uio_wsarecv = default_uio_wsarecv;
+static uio_wsagetlasterror_fn g_uio_wsagetlasterror =
+    default_uio_wsagetlasterror;
+static uio_write_fn g_uio_write = default_uio_write;
+static uio_read_fn g_uio_read = default_uio_read;
+static uio_lseeki64_fn g_uio_lseeki64 = default_uio_lseeki64;
+
+/**
+ * @brief Overrides the allocator hook used by posix-sys-uio for OOM testing.
+ * @param[in] malloc_fn Replacement malloc function, or NULL to restore default.
+ */
+void posix_sys_uio_set_alloc_hook(void *(*malloc_fn)(size_t)) {
+  g_uio_malloc = (malloc_fn != NULL) ? malloc_fn : default_uio_malloc;
+}
+
+/**
+ * @brief Overrides Win32 Winsock and CRT I/O hooks for deterministic testing.
+ * @param[in] send_fn Replacement WSASend hook, or NULL for default.
+ * @param[in] recv_fn Replacement WSARecv hook, or NULL for default.
+ * @param[in] err_fn Replacement WSAGetLastError hook, or NULL for default.
+ * @param[in] write_fn Replacement _write hook, or NULL for default.
+ * @param[in] read_fn Replacement _read hook, or NULL for default.
+ * @param[in] seek_fn Replacement _lseeki64 hook, or NULL for default.
+ */
+void posix_sys_uio_set_win32_hooks(uio_wsasend_fn send_fn,
+                                   uio_wsarecv_fn recv_fn,
+                                   uio_wsagetlasterror_fn err_fn,
+                                   uio_write_fn write_fn, uio_read_fn read_fn,
+                                   uio_lseeki64_fn seek_fn) {
+  g_uio_wsasend = (send_fn != NULL) ? send_fn : default_uio_wsasend;
+  g_uio_wsarecv = (recv_fn != NULL) ? recv_fn : default_uio_wsarecv;
+  g_uio_wsagetlasterror =
+      (err_fn != NULL) ? err_fn : default_uio_wsagetlasterror;
+  g_uio_write = (write_fn != NULL) ? write_fn : default_uio_write;
+  g_uio_read = (read_fn != NULL) ? read_fn : default_uio_read;
+  g_uio_lseeki64 = (seek_fn != NULL) ? seek_fn : default_uio_lseeki64;
+}
+
+/**
+ * @brief Resets all posix-sys-uio allocator and Win32/CRT hooks to defaults.
+ */
+void posix_sys_uio_reset_hooks(void) {
+  g_uio_malloc = default_uio_malloc;
+  g_uio_wsasend = default_uio_wsasend;
+  g_uio_wsarecv = default_uio_wsarecv;
+  g_uio_wsagetlasterror = default_uio_wsagetlasterror;
+  g_uio_write = default_uio_write;
+  g_uio_read = default_uio_read;
+  g_uio_lseeki64 = default_uio_lseeki64;
+}
 
 #ifndef safe_get_osfhandle
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -64,14 +132,17 @@ static void uio_null_invalid_param_handler(const wchar_t *expression,
                                            const wchar_t *file,
                                            unsigned int line,
                                            uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-  }
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
-static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+static ptrdiff_t safe_get_osfhandle(int fd) {
   ptrdiff_t h = -1;
   int saved_err = errno;
-  if (fd < 0 || fd >= 2048) {
+  if (fd >= 2048) {
     return -1;
   }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -79,22 +150,60 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(uio_null_invalid_param_handler);
     AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
-    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    h = (ptrdiff_t)_get_osfhandle(fd);
     _set_invalid_parameter_handler(old);
   }
 #else
-  h = (ptrdiff_t)_get_osfhandle((int)fd);
+  h = (ptrdiff_t)_get_osfhandle(fd);
 #endif
   errno = saved_err;
   return h;
 }
 #endif
 
-/** \brief posix_writev function. */
+static int uio_wsa_err_to_errno(int wsaErr) {
+  if (wsaErr == WSAEWOULDBLOCK || wsaErr == WSA_IO_PENDING) {
+    return EWOULDBLOCK;
+  }
+  if (wsaErr == WSAECONNRESET) {
+    return 104;
+  }
+  if (wsaErr == WSAEINPROGRESS) {
+    return 115;
+  }
+  if (wsaErr == WSAEALREADY) {
+    return 114;
+  }
+  if (wsaErr == WSAEMSGSIZE) {
+    return 90;
+  }
+  if (wsaErr == WSAEADDRINUSE) {
+    return 98;
+  }
+  if (wsaErr == WSAEADDRNOTAVAIL) {
+    return 99;
+  }
+  if (wsaErr == WSAECONNABORTED) {
+    return 103;
+  }
+  if (wsaErr == WSAECONNREFUSED) {
+    return 111;
+  }
+  return wsaErr;
+}
+
+/**
+ * @brief Writes data from multiple buffers to a socket or file descriptor.
+ * @param[in] fd Socket or file descriptor.
+ * @param[in] iov Array of iovec buffers.
+ * @param[in] iovcnt Count of buffers in iov.
+ * @return Total bytes written, or -1 on error.
+ */
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
   DWORD bytesSent = 0;
   int ret;
   WSABUF *bufs;
+  size_t alloc_cnt;
   int i;
 
   if (fd < 0) {
@@ -102,12 +211,13 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     return -1;
   }
 
-  if (iovcnt < 0 || iovcnt > 1024) {
+  if (iovcnt <= 0 || iovcnt > 1024 || iov == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  bufs = (WSABUF *)malloc(iovcnt * sizeof(WSABUF));
+  alloc_cnt = (size_t)iovcnt;
+  bufs = (WSABUF *)g_uio_malloc(alloc_cnt * sizeof(WSABUF));
   if (!bufs) {
     errno = ENOMEM;
     return -1;
@@ -118,22 +228,25 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
     bufs[i].len = (ULONG)iov[i].iov_len;
   }
 
-  ret = WSASend((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesSent, 0, NULL, NULL);
-  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
-    ret = WSASend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
-                  &bytesSent, 0, NULL, NULL);
+  ret = g_uio_wsasend((SOCKET)(size_t)fd, bufs, (DWORD)iovcnt, &bytesSent, 0,
+                      NULL, NULL);
+  if (ret == SOCKET_ERROR && g_uio_wsagetlasterror() == WSAENOTSOCK) {
+    ret = g_uio_wsasend((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
+                        &bytesSent, 0, NULL, NULL);
   }
   free(bufs);
 
   if (ret == SOCKET_ERROR) {
-    int wsaErr = WSAGetLastError();
+    int wsaErr = g_uio_wsagetlasterror();
     if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
       long total = 0;
       for (i = 0; i < iovcnt; i++) {
-        int written = _write(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+        int written =
+            g_uio_write(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
         if (written < 0) {
-          if (total > 0)
+          if (total > 0) {
             return total;
+          }
           return -1;
         }
         total += written;
@@ -144,42 +257,26 @@ long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
       return total;
     }
 
-    if (wsaErr == WSAEWOULDBLOCK)
-      errno = EWOULDBLOCK;
-    else if (wsaErr == WSA_IO_PENDING)
-      errno = EWOULDBLOCK;
-    else if (wsaErr == WSAECONNRESET)
-      errno = 104; /* ECONNRESET */
-    else if (wsaErr == WSAEINPROGRESS)
-      errno = 115; /* EINPROGRESS */
-    else if (wsaErr == WSAEALREADY)
-      errno = 114; /* EALREADY */
-    else if (wsaErr == WSAENOTSOCK)
-      errno = 108; /* ENOTSOCK */
-    else if (wsaErr == WSAEMSGSIZE)
-      errno = 90; /* EMSGSIZE */
-    else if (wsaErr == WSAEADDRINUSE)
-      errno = 98; /* EADDRINUSE */
-    else if (wsaErr == WSAEADDRNOTAVAIL)
-      errno = 99; /* EADDRNOTAVAIL */
-    else if (wsaErr == WSAECONNABORTED)
-      errno = 103; /* ECONNABORTED */
-    else if (wsaErr == WSAECONNREFUSED)
-      errno = 111; /* ECONNREFUSED */
-    else
-      errno = wsaErr;
+    errno = uio_wsa_err_to_errno(wsaErr);
     return -1;
   }
 
-  return bytesSent;
+  return (long)bytesSent;
 }
 
-/** \brief posix_readv function. */
+/**
+ * @brief Reads data into multiple buffers from a socket or file descriptor.
+ * @param[in] fd Socket or file descriptor.
+ * @param[in] iov Array of iovec buffers.
+ * @param[in] iovcnt Count of buffers in iov.
+ * @return Total bytes read, or -1 on error.
+ */
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
   DWORD bytesRecv = 0;
   DWORD flags = 0;
   int ret;
   WSABUF *bufs;
+  size_t alloc_cnt;
   int i;
 
   if (fd < 0) {
@@ -187,12 +284,13 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
     return -1;
   }
 
-  if (iovcnt < 0 || iovcnt > 1024) {
+  if (iovcnt <= 0 || iovcnt > 1024 || iov == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  bufs = (WSABUF *)malloc(iovcnt * sizeof(WSABUF));
+  alloc_cnt = (size_t)iovcnt;
+  bufs = (WSABUF *)g_uio_malloc(alloc_cnt * sizeof(WSABUF));
   if (!bufs) {
     errno = ENOMEM;
     return -1;
@@ -203,24 +301,25 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
     bufs[i].len = (ULONG)iov[i].iov_len;
   }
 
-  ret =
-      WSARecv((SOCKET)fd, bufs, (DWORD)iovcnt, &bytesRecv, &flags, NULL, NULL);
-  if (ret == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK) {
-    ret = WSARecv((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
-                  &bytesRecv, &flags, NULL, NULL);
+  ret = g_uio_wsarecv((SOCKET)(size_t)fd, bufs, (DWORD)iovcnt, &bytesRecv,
+                      &flags, NULL, NULL);
+  if (ret == SOCKET_ERROR && g_uio_wsagetlasterror() == WSAENOTSOCK) {
+    ret = g_uio_wsarecv((SOCKET)safe_get_osfhandle(fd), bufs, (DWORD)iovcnt,
+                        &bytesRecv, &flags, NULL, NULL);
   }
   free(bufs);
 
   if (ret == SOCKET_ERROR) {
-    int wsaErr = WSAGetLastError();
+    int wsaErr = g_uio_wsagetlasterror();
     if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
       long total = 0;
       for (i = 0; i < iovcnt; i++) {
         int bytes_read =
-            _read(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+            g_uio_read(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
         if (bytes_read < 0) {
-          if (total > 0)
+          if (total > 0) {
             return total;
+          }
           return -1;
         }
         total += bytes_read;
@@ -231,37 +330,21 @@ long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
       return total;
     }
 
-    if (wsaErr == WSAEWOULDBLOCK)
-      errno = EWOULDBLOCK;
-    else if (wsaErr == WSA_IO_PENDING)
-      errno = EWOULDBLOCK;
-    else if (wsaErr == WSAECONNRESET)
-      errno = 104; /* ECONNRESET */
-    else if (wsaErr == WSAEINPROGRESS)
-      errno = 115; /* EINPROGRESS */
-    else if (wsaErr == WSAEALREADY)
-      errno = 114; /* EALREADY */
-    else if (wsaErr == WSAENOTSOCK)
-      errno = 108; /* ENOTSOCK */
-    else if (wsaErr == WSAEMSGSIZE)
-      errno = 90; /* EMSGSIZE */
-    else if (wsaErr == WSAEADDRINUSE)
-      errno = 98; /* EADDRINUSE */
-    else if (wsaErr == WSAEADDRNOTAVAIL)
-      errno = 99; /* EADDRNOTAVAIL */
-    else if (wsaErr == WSAECONNABORTED)
-      errno = 103; /* ECONNABORTED */
-    else if (wsaErr == WSAECONNREFUSED)
-      errno = 111; /* ECONNREFUSED */
-    else
-      errno = wsaErr;
+    errno = uio_wsa_err_to_errno(wsaErr);
     return -1;
   }
 
-  return bytesRecv;
+  return (long)bytesRecv;
 }
 
-/** \brief posix_preadv function. */
+/**
+ * @brief Reads data into multiple buffers at a given file offset.
+ * @param[in] fd File descriptor.
+ * @param[in] iov Array of iovec buffers.
+ * @param[in] iovcnt Count of buffers in iov.
+ * @param[in] offset Target byte offset.
+ * @return Total bytes read, or -1 on error.
+ */
 long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
                   posix_uio_off_t offset) {
   __int64 old_pos;
@@ -272,19 +355,26 @@ long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
     return -1;
   }
 
-  old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
-  if (old_pos == -1 && errno != 0) {
+  old_pos = g_uio_lseeki64(fd, 0, 1);
+  if (old_pos == -1) {
     return posix_readv(fd, iov, iovcnt);
   }
-  if (_lseeki64(fd, offset, 0 /* SEEK_SET */) == -1) {
+  if (g_uio_lseeki64(fd, offset, 0) == -1) {
     return -1;
   }
   res = posix_readv(fd, iov, iovcnt);
-  _lseeki64(fd, old_pos, 0 /* SEEK_SET */);
+  g_uio_lseeki64(fd, old_pos, 0);
   return res;
 }
 
-/** \brief posix_pwritev function. */
+/**
+ * @brief Writes data from multiple buffers at a given file offset.
+ * @param[in] fd File descriptor.
+ * @param[in] iov Array of iovec buffers.
+ * @param[in] iovcnt Count of buffers in iov.
+ * @param[in] offset Target byte offset.
+ * @return Total bytes written, or -1 on error.
+ */
 long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
                    posix_uio_off_t offset) {
   __int64 old_pos;
@@ -295,77 +385,52 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
     return -1;
   }
 
-  old_pos = _lseeki64(fd, 0, 1 /* SEEK_CUR */);
-  if (old_pos == -1 && errno != 0) {
+  old_pos = g_uio_lseeki64(fd, 0, 1);
+  if (old_pos == -1) {
     return posix_writev(fd, iov, iovcnt);
   }
-  if (_lseeki64(fd, offset, 0 /* SEEK_SET */) == -1) {
+  if (g_uio_lseeki64(fd, offset, 0) == -1) {
     return -1;
   }
   res = posix_writev(fd, iov, iovcnt);
-  _lseeki64(fd, old_pos, 0 /* SEEK_SET */);
+  g_uio_lseeki64(fd, old_pos, 0);
   return res;
 }
 
 #elif defined(__MSDOS__) || defined(__WATCOMC__)
 
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK 140
-#endif
-#ifndef ECONNRESET
-#define ECONNRESET 108
-#endif
-#ifndef EINPROGRESS
-#define EINPROGRESS 112
-#endif
-#ifndef EALREADY
-#define EALREADY 103
-#endif
-#ifndef ENOTSOCK
-#define ENOTSOCK 128
-#endif
-#ifndef EMSGSIZE
-#define EMSGSIZE 122
-#endif
-#ifndef EADDRINUSE
-#define EADDRINUSE 100
-#endif
-#ifndef EADDRNOTAVAIL
-#define EADDRNOTAVAIL 101
-#endif
-#ifndef ECONNABORTED
-#define ECONNABORTED 106
-#endif
-#ifndef ECONNREFUSED
-#define ECONNREFUSED 107
-#endif
-
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
-  if (fd || iov || iovcnt) {
-  }
+  (void)fd;
+  (void)iov;
+  (void)iovcnt;
   errno = EINVAL;
   return -1;
 }
 
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
-  if (fd || iov || iovcnt) {
-  }
+  (void)fd;
+  (void)iov;
+  (void)iovcnt;
   errno = EINVAL;
   return -1;
 }
 
 long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
                   posix_uio_off_t offset) {
-  if (fd || iov || iovcnt || offset) {
-  }
+  (void)fd;
+  (void)iov;
+  (void)iovcnt;
+  (void)offset;
   errno = EINVAL;
   return -1;
 }
 
 long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
                    posix_uio_off_t offset) {
-  if (fd || iov || iovcnt || offset) {
-  }
+  (void)fd;
+  (void)iov;
+  (void)iovcnt;
+  (void)offset;
   errno = EINVAL;
   return -1;
 }
@@ -414,6 +479,9 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 
 /**
  * @brief Retrieves information on posix-sys-uio module availability.
+ * @param[out] out_available Pointer to integer receiving availability status.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
 auto_win_msvc_error_t posix_sys_uio_get_info(int *out_available) {
   if (out_available == NULL) {
@@ -423,10 +491,10 @@ auto_win_msvc_error_t posix_sys_uio_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
-/* Dummy function to prevent empty translation unit */
+/**
+ * @brief Dummy symbol ensuring non-empty translation unit across linkers.
+ * @return Always returns 0.
+ */
 int dummy_posix_sys_uio(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sys_uio;

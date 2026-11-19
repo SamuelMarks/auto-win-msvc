@@ -9,6 +9,9 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
+#if defined(__WATCOMC__)
+#include <unistd.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -52,16 +55,42 @@ struct option {
 
 #if defined(_WIN32) || defined(_MSC_VER) || defined(__DOS__) ||                \
     defined(__MSDOS__) || defined(__WATCOMC__)
-#if defined(__WATCOMC__)
-#include <unistd.h>
-#else
+#if !defined(__WATCOMC__)
 /** @brief Current option argument pointer. */
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
+#if defined(LINUX_GETOPT_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
+#endif
 extern char *optarg;
 /** @brief Current argv index. */
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
+#if defined(LINUX_GETOPT_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
+#endif
 extern int optind;
 /** @brief Non-zero to print error messages. */
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
+#if defined(LINUX_GETOPT_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
+#endif
 extern int opterr;
 /** @brief Unrecognized or missing option character. */
+#if (defined(_WIN32) || defined(_MSC_VER)) && defined(LINUX_GETOPT_SHARED)
+#if defined(LINUX_GETOPT_EXPORTS)
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
+#endif
 extern int optopt;
 
 /**

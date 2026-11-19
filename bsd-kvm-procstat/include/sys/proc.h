@@ -64,6 +64,12 @@ extern "C" {
 #ifndef P_INMEM
 #define P_INMEM 0x10000000
 #endif
+#ifndef TDF_INMEM
+#define TDF_INMEM 0x00000004
+#endif
+#ifndef TDF_SINTR
+#define TDF_SINTR 0x00000008
+#endif
 
 /** @brief CPU states for cp_time sysctl. */
 #ifndef CP_USER

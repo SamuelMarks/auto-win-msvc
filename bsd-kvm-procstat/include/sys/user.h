@@ -8,6 +8,10 @@
  */
 
 /* clang-format off */
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+#pragma GCC system_header
+#include_next <sys/user.h>
+#endif
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -15,8 +19,11 @@
 #include <signal.h>
 #if defined(__APPLE__)
 #include <mach/vm_types.h>
+#include <sys/sysctl.h>
 #endif
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#include <posix-stdint.h>
+#else
 #include <stdint.h>
 #endif
 #if defined(__has_include)
@@ -36,6 +43,9 @@ extern "C" {
 
 #ifndef COMMLEN
 #define COMMLEN 19
+#ifndef MAXCOMLEN
+#define MAXCOMLEN 19
+#endif
 #endif
 #ifndef KI_EMULNAMELEN
 #define KI_EMULNAMELEN 16
@@ -54,6 +64,10 @@ extern "C" {
 #endif
 #ifndef TDNAMLEN
 #define TDNAMLEN 16
+#endif
+
+#if defined(__APPLE__) && !defined(kinfo_proc)
+#define kinfo_proc fbsd_kinfo_proc
 #endif
 
 /** @brief Priority info structure inside kinfo_proc. */
@@ -121,6 +135,8 @@ struct kinfo_proc {
   u_char ki_oncpu;
   u_char ki_lastcpu;
   char ki_tdname[TDNAMLEN + 1];
+  char ki_moretdname[MAXCOMLEN + 1];
+  uint32_t ki_cr_flags;
   char ki_wmesg[WMESGLEN + 1];
   char ki_login[LOGNAMELEN + 1];
   char ki_lockname[LOCKNAMELEN + 1];
@@ -190,8 +206,31 @@ struct kinfo_file {
   uint64_t kf_file_fileid;
   uint64_t kf_file_size;
   uint16_t kf_file_mode;
+  union {
+    struct {
+      uint32_t kf_file_type;
+      uint64_t kf_file_fsid;
+      uint64_t kf_file_rdev;
+      uint64_t kf_file_fileid;
+      uint64_t kf_file_size;
+      uint16_t kf_file_mode;
+    } kf_file;
+  } kf_un;
   char kf_path[1024];
 };
+
+#ifndef TDF_IDLETD
+#define TDF_IDLETD 0x00000020
+#endif
+#ifndef NOCPU
+#define NOCPU (-1)
+#endif
+#ifndef KI_LOCKBLOCK
+#define KI_LOCKBLOCK 0x00000001
+#endif
+#ifndef P_HADTHREADS
+#define P_HADTHREADS 0x00000080
+#endif
 
 #define KVME_TYPE_NONE 0
 #define KVME_TYPE_DEFAULT 1
@@ -224,6 +263,7 @@ struct kinfo_vmentry {
   uint64_t kve_offset;
   uint64_t kve_vn_fileid;
   uint64_t kve_vn_fsid;
+  uint32_t kve_vn_fsid_freebsd11;
   int kve_flags;
   int kve_resident;
   int kve_private_resident;
@@ -243,6 +283,43 @@ struct kinfo_kstack {
   lwpid_t kkst_tid;
   int kkst_state;
   char kkst_trace[1024];
+};
+
+#ifndef KI_CRF_CAPABILITY_MODE
+#define KI_CRF_CAPABILITY_MODE 0x0001
+#define KI_CRF_GRP_OVERFLOW 0x80000000U
+#endif
+#ifndef KKST_MAXLEN
+#define KKST_MAXLEN 1024
+#define KKST_STATE_STACKOK 0
+#define KKST_STATE_SWAPPED 1
+#define KKST_STATE_RUNNING 2
+#endif
+#ifndef KVME_FLAG_USER_WIRED
+#define KVME_FLAG_USER_WIRED 0x00000010
+#define KVME_FLAG_SYSVSHM 0x00000020
+#define KVME_FLAG_POSIXSHM 0x00000040
+#define KVME_TYPE_UNKNOWN 255
+#endif
+#ifndef _SIG_MAXSIG
+#define _SIG_MAXSIG 128
+#endif
+#ifndef KERN_PROC_SIGFASTBLK
+#define KERN_PROC_SIGFASTBLK 44
+#endif
+
+struct kinfo_knote {
+  int knt_kq_fd;
+  struct {
+    uintptr_t ident;
+    short filter;
+    unsigned short flags;
+    unsigned int fflags;
+    int64_t data;
+    void *udata;
+    uint64_t ext[4];
+  } knt_event;
+  int knt_status;
 };
 
 #ifdef __cplusplus

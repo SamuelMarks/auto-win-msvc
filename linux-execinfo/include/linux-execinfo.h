@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 #ifndef _ERROR_TYPE_T_DEFINED
+/** @brief Guard macro indicating error_type_t has been defined. */
 #define _ERROR_TYPE_T_DEFINED
 /** @brief Generic error type code. */
 typedef int error_type_t;

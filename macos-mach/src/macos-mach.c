@@ -62,6 +62,7 @@ auto_win_msvc_error_t macos_mach_init(int *out_status) {
  * @brief Polyfill for mach_absolute_time
  * @return Absolute time in nanoseconds, or 0 on error.
  */
+#if !defined(__APPLE__)
 uint64_t mach_absolute_time(void) {
 #if defined(_WIN32)
   LARGE_INTEGER count;
@@ -177,6 +178,7 @@ kern_return_t task_for_pid(mach_port_t target_tport, int pid, mach_port_t *t) {
   return -1;
 }
 
+#endif /* !__APPLE__ */
 typedef int make_iso_compilers_happy_tu_macos_mach;
 
 #endif

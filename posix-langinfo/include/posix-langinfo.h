@@ -8,7 +8,7 @@
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
-#include "langinfo.h"
+#include <langinfo.h>
 #include <stddef.h>
 /* clang-format on */
 

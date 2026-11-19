@@ -1,6 +1,10 @@
+/**
+ * @file posix_dprintf.c
+ * @brief Portable C89 implementation of POSIX dprintf.
+ */
+
 /* clang-format off */
 #include "posix-core.h"
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,19 +14,27 @@
 #else
 #include <io.h>
 #endif
+#elif !defined(_MSC_VER) && !defined(__WATCOMC__)
+#include <unistd.h>
 #endif
 /* clang-format on */
 
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/** \brief dprintf function. */
+/**
+ * @brief Prints formatted output directly to a file descriptor.
+ * @param[in] fd Target file descriptor.
+ * @param[in] fmt Format string.
+ * @return Number of bytes written, or -1 on error.
+ */
 int dprintf(int fd, const char *fmt, ...) {
   char *buf = NULL;
   va_list ap;
-  int ret, written;
+  int ret;
+  int written;
   va_start(ap, fmt);
   ret = vasprintf(&buf, fmt, ap);
   va_end(ap);
-  if (ret < 0 || buf == NULL) {
+  if (ret < 0) {
     return -1;
   }
 #if defined(_WIN32)

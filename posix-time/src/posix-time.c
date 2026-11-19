@@ -1,6 +1,10 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
-/* posix-time.c - Strict C89 Implementation */
+/**
+ * @file posix-time.c
+ * @brief Strict C89 implementation of POSIX sys/time.h and time.h polyfills.
+ */
+
 /* clang-format off */
 #include <ctype.h>
 #include <errno.h>
@@ -16,9 +20,33 @@
 #endif
 #include <winsock2.h>
 #include <signal.h>
-
+#if defined(_M_IX86)
+#ifndef _X86_
+#define _X86_
+#endif
+#elif defined(_M_AMD64)
+#ifndef _AMD64_
+#define _AMD64_
+#endif
+#elif defined(_M_ARM64)
+#ifndef _ARM64_
+#define _ARM64_
+#endif
+#elif defined(_M_ARM)
+#ifndef _ARM_
+#define _ARM_
+#endif
+#endif
+#if !(defined(_MSC_VER) && _MSC_VER < 1700)
+#include <fileapi.h>
+#include <handleapi.h>
+#include <minwindef.h>
+#include <sysinfoapi.h>
+#include <timezoneapi.h>
+#endif
 #endif
 #include "posix-time.h"
+/* clang-format on */
 
 #if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
     defined(__WATCOMC__)
@@ -26,7 +54,7 @@ static const char *posix_parse_int(const char *s, int max_digits, int min_val,
                                    int max_val, int *out_val) {
   int val = 0;
   int count = 0;
-  while (*s == ' ' || *s == '\t') {
+  while (*s == ' ' || *s == (char)9) {
     s++;
   }
   while (count < max_digits && *s >= '0' && *s <= '9') {
@@ -219,44 +247,12 @@ static char *posix_strptime_impl(const char *buf, const char *fmt,
 #endif
 
 #ifdef _WIN32
-#if defined(_M_IX86)
-#ifndef _X86_
-#define _X86_
-#endif
-#elif defined(_M_AMD64)
-#ifndef _AMD64_
-#define _AMD64_
-#endif
-#elif defined(_M_ARM64)
-#ifndef _ARM64_
-#define _ARM64_
-#endif
-#elif defined(_M_ARM)
-#ifndef _ARM_
-#define _ARM_
-#endif
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER < 1700
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#else
-#include <fileapi.h>
-#include <handleapi.h>
-#include <minwindef.h>
-#include <sysinfoapi.h>
-#include <timezoneapi.h>
-/* clang-format on */
-#endif
 
 #ifndef FILE_FLAG_BACKUP_SEMANTICS
 #define FILE_FLAG_BACKUP_SEMANTICS 0x02000000
 #endif
 
 #ifndef INVALID_HANDLE_VALUE
-/** \brief INVALID_HANDLE_VALUE macro. */
 #define INVALID_HANDLE_VALUE ((HANDLE)(size_t)-1)
 #endif
 
@@ -264,25 +260,18 @@ static char *posix_strptime_impl(const char *buf, const char *fmt,
 extern "C" {
 #endif
 
-#if defined(_MSC_VER) && !defined(_WIN64)
-#define POSIX_TIME_STDCALL __stdcall
-#else
-#define POSIX_TIME_STDCALL
-#endif
-
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
 struct _SECURITY_ATTRIBUTES;
-__declspec(dllimport) HANDLE POSIX_TIME_STDCALL
+__declspec(dllimport) HANDLE WINAPI
 CreateWaitableTimerA(struct _SECURITY_ATTRIBUTES *lpTimerAttributes,
                      int bManualReset, const char *lpTimerName);
-typedef void(POSIX_TIME_STDCALL *PTIMERAPCROUTINE)(void *, unsigned long,
-                                                   unsigned long);
-__declspec(dllimport) int POSIX_TIME_STDCALL
+typedef void(WINAPI *PTIMERAPCROUTINE)(void *, unsigned long, unsigned long);
+__declspec(dllimport) int WINAPI
 SetWaitableTimer(HANDLE hTimer, const LARGE_INTEGER *pDueTime, long lPeriod,
                  PTIMERAPCROUTINE pfnCompletionRoutine,
                  void *lpArgToCompletionRoutine, int fResume);
-__declspec(dllimport) int POSIX_TIME_STDCALL CloseHandle(HANDLE hObject);
-__declspec(dllimport) unsigned long POSIX_TIME_STDCALL
+__declspec(dllimport) int WINAPI CloseHandle(HANDLE hObject);
+__declspec(dllimport) unsigned long WINAPI
 WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #endif
 
@@ -304,26 +293,160 @@ WaitForSingleObject(HANDLE hHandle, unsigned long dwMilliseconds);
 #define POSIX_TIME_10 10LL
 #endif
 
-#ifdef _WIN32
-typedef void(__stdcall *posix_GetSystemTimePreciseAsFileTime_t)(FILETIME *);
-static void posix_get_system_time(FILETIME *ft) {
-  static posix_GetSystemTimePreciseAsFileTime_t p = NULL;
-  static int init = 0;
-  if (!init) {
-    HMODULE k = GetModuleHandleA("kernel32.dll");
-    if (k)
-      p = (posix_GetSystemTimePreciseAsFileTime_t)(size_t)GetProcAddress(
-          k, "GetSystemTimePreciseAsFileTime");
-    init = 1;
-  }
-  if (p)
-    p(ft);
-  else
-    GetSystemTimeAsFileTime(ft);
+typedef void(WINAPI *posix_GetSystemTimePreciseAsFileTime_t)(FILETIME *);
+typedef HMODULE(WINAPI *time_get_mod_fn)(LPCSTR);
+typedef FARPROC(WINAPI *time_get_proc_fn)(HMODULE, LPCSTR);
+typedef void(WINAPI *time_get_sys_time_fn)(LPFILETIME);
+typedef DWORD(WINAPI *time_get_tz_fn)(LPTIME_ZONE_INFORMATION);
+typedef HANDLE(WINAPI *time_create_file_fn)(LPCSTR, DWORD, DWORD,
+                                            LPSECURITY_ATTRIBUTES, DWORD, DWORD,
+                                            HANDLE);
+typedef BOOL(WINAPI *time_set_file_time_fn)(HANDLE, const FILETIME *,
+                                            const FILETIME *, const FILETIME *);
+typedef BOOL(WINAPI *time_close_handle_fn)(HANDLE);
+typedef BOOL(WINAPI *time_create_tqt_fn)(PHANDLE, HANDLE, WAITORTIMERCALLBACK,
+                                         PVOID, DWORD, DWORD, ULONG);
+typedef BOOL(WINAPI *time_delete_tqt_fn)(HANDLE, HANDLE, HANDLE);
+typedef int (*time_raise_fn)(int);
+
+static HMODULE WINAPI default_time_get_mod(LPCSTR name) {
+  return GetModuleHandleA(name);
+}
+static FARPROC WINAPI default_time_get_proc(HMODULE mod, LPCSTR name) {
+  return GetProcAddress(mod, name);
+}
+static void WINAPI default_time_get_sys_time(LPFILETIME ft) {
+  GetSystemTimeAsFileTime(ft);
+}
+static DWORD WINAPI default_time_get_tz(LPTIME_ZONE_INFORMATION tzi) {
+  return GetTimeZoneInformation(tzi);
+}
+static HANDLE WINAPI default_time_create_file(LPCSTR fn, DWORD acc, DWORD sh,
+                                              LPSECURITY_ATTRIBUTES sa,
+                                              DWORD disp, DWORD fl, HANDLE tm) {
+  return CreateFileA(fn, acc, sh, sa, disp, fl, tm);
+}
+static BOOL WINAPI default_time_set_file_time(HANDLE h, const FILETIME *c,
+                                              const FILETIME *a,
+                                              const FILETIME *w) {
+  return SetFileTime(h, c, a, w);
+}
+static BOOL WINAPI default_time_close_handle(HANDLE h) {
+  return CloseHandle(h);
+}
+static BOOL WINAPI default_time_create_tqt(PHANDLE ph, HANDLE q,
+                                           WAITORTIMERCALLBACK cb, PVOID param,
+                                           DWORD due, DWORD per, ULONG fl) {
+  return CreateTimerQueueTimer(ph, q, cb, param, due, per, fl);
+}
+static BOOL WINAPI default_time_delete_tqt(HANDLE q, HANDLE t, HANDLE ev) {
+  return DeleteTimerQueueTimer(q, t, ev);
+}
+static int default_time_raise(int sig) {
+  (void)sig;
+  return 0;
+}
+#if !defined(_MSC_VER)
+static struct tm *default_time_localtime(const time_t *t) {
+  return localtime(t);
+}
+static struct tm *default_time_gmtime(const time_t *t) { return gmtime(t); }
+#endif
+
+static posix_GetSystemTimePreciseAsFileTime_t g_time_precise_fn = NULL;
+static int g_time_precise_init = 0;
+static time_get_mod_fn g_time_get_mod = default_time_get_mod;
+static time_get_proc_fn g_time_get_proc = default_time_get_proc;
+static time_get_sys_time_fn g_time_get_sys_time = default_time_get_sys_time;
+static time_get_tz_fn g_time_get_tz = default_time_get_tz;
+static time_create_file_fn g_time_create_file = default_time_create_file;
+static time_set_file_time_fn g_time_set_file_time = default_time_set_file_time;
+static time_close_handle_fn g_time_close_handle = default_time_close_handle;
+static time_create_tqt_fn g_time_create_tqt = default_time_create_tqt;
+static time_delete_tqt_fn g_time_delete_tqt = default_time_delete_tqt;
+static time_raise_fn g_time_raise = default_time_raise;
+#if !defined(_MSC_VER)
+static struct tm *(*g_time_localtime)(const time_t *) = default_time_localtime;
+static struct tm *(*g_time_gmtime)(const time_t *) = default_time_gmtime;
+#endif
+
+static struct itimerval g_timers[3] = {
+    {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
+static HANDLE g_hTimers[3] = {NULL, NULL, NULL};
+
+/**
+ * @brief Overrides Win32 kernel/CRT hooks for deterministic posix-time testing.
+ */
+void posix_time_set_win32_hooks(
+    time_get_mod_fn mod_fn, time_get_proc_fn proc_fn,
+    time_get_sys_time_fn sys_fn, time_get_tz_fn tz_fn,
+    time_create_file_fn cf_fn, time_set_file_time_fn sft_fn,
+    time_close_handle_fn ch_fn, time_create_tqt_fn ctqt_fn,
+    time_delete_tqt_fn dtqt_fn, time_raise_fn raise_fn) {
+  g_time_precise_fn = NULL;
+  g_time_precise_init = 0;
+  g_time_get_mod = (mod_fn != NULL) ? mod_fn : default_time_get_mod;
+  g_time_get_proc = (proc_fn != NULL) ? proc_fn : default_time_get_proc;
+  g_time_get_sys_time = (sys_fn != NULL) ? sys_fn : default_time_get_sys_time;
+  g_time_get_tz = (tz_fn != NULL) ? tz_fn : default_time_get_tz;
+  g_time_create_file = (cf_fn != NULL) ? cf_fn : default_time_create_file;
+  g_time_set_file_time = (sft_fn != NULL) ? sft_fn : default_time_set_file_time;
+  g_time_close_handle = (ch_fn != NULL) ? ch_fn : default_time_close_handle;
+  g_time_create_tqt = (ctqt_fn != NULL) ? ctqt_fn : default_time_create_tqt;
+  g_time_delete_tqt = (dtqt_fn != NULL) ? dtqt_fn : default_time_delete_tqt;
+  g_time_raise = (raise_fn != NULL) ? raise_fn : default_time_raise;
+}
+
+#if !defined(_MSC_VER)
+/**
+ * @brief Overrides CRT localtime/gmtime hooks on non-MSVC Windows toolchains.
+ */
+void posix_time_set_crt_tm_hooks(struct tm *(*lt_fn)(const time_t *),
+                                 struct tm *(*gm_fn)(const time_t *)) {
+  g_time_localtime = (lt_fn != NULL) ? lt_fn : default_time_localtime;
+  g_time_gmtime = (gm_fn != NULL) ? gm_fn : default_time_gmtime;
 }
 #endif
 
-/* Polyfill for gettimeofday using GetSystemTimeAsFileTime */
+/**
+ * @brief Resets all posix-time hooks and cached precise-clock pointers.
+ */
+void posix_time_reset_hooks(void) {
+  g_time_precise_fn = NULL;
+  g_time_precise_init = 0;
+  g_time_get_mod = default_time_get_mod;
+  g_time_get_proc = default_time_get_proc;
+  g_time_get_sys_time = default_time_get_sys_time;
+  g_time_get_tz = default_time_get_tz;
+  g_time_create_file = default_time_create_file;
+  g_time_set_file_time = default_time_set_file_time;
+  g_time_close_handle = default_time_close_handle;
+  g_time_create_tqt = default_time_create_tqt;
+  g_time_delete_tqt = default_time_delete_tqt;
+  g_time_raise = default_time_raise;
+#if !defined(_MSC_VER)
+  g_time_localtime = default_time_localtime;
+  g_time_gmtime = default_time_gmtime;
+#endif
+}
+
+static void posix_get_system_time(FILETIME *ft) {
+  if (!g_time_precise_init) {
+    HMODULE k = g_time_get_mod("kernel32.dll");
+    if (k) {
+      g_time_precise_fn =
+          (posix_GetSystemTimePreciseAsFileTime_t)(size_t)g_time_get_proc(
+              k, "GetSystemTimePreciseAsFileTime");
+    }
+    g_time_precise_init = 1;
+  }
+  if (g_time_precise_fn) {
+    g_time_precise_fn(ft);
+  } else {
+    g_time_get_sys_time(ft);
+  }
+}
+
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
   if (tv) {
     FILETIME ft;
@@ -331,8 +454,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
     posix_get_system_time(&ft);
     uli.LowPart = ft.dwLowDateTime;
     uli.HighPart = ft.dwHighDateTime;
-    /* Convert from 100-nanosecond intervals since 1601 to microseconds since
-     * 1970 */
     uli.QuadPart -= POSIX_TIME_EPOCH;
     tv->tv_sec = (long)(uli.QuadPart / POSIX_TIME_10M);
     tv->tv_usec = (long)((uli.QuadPart % POSIX_TIME_10M) / POSIX_TIME_10);
@@ -341,7 +462,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
   if (tz) {
     TIME_ZONE_INFORMATION tzi;
     DWORD res;
-    res = GetTimeZoneInformation(&tzi);
+    res = g_time_get_tz(&tzi);
     tz->tz_minuteswest = tzi.Bias;
     tz->tz_dsttime = (res == TIME_ZONE_ID_DAYLIGHT) ? 1 : 0;
   }
@@ -349,7 +470,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
   return 0;
 }
 
-/* Polyfill for utimes using SetFileTime */
 int utimes(const char *filename, const struct timeval times[2]) {
   HANDLE hFile;
   FILETIME ftAccess, ftWrite;
@@ -361,9 +481,10 @@ int utimes(const char *filename, const struct timeval times[2]) {
     return -1;
   }
 
-  hFile = CreateFileA(filename, FILE_WRITE_ATTRIBUTES,
-                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  hFile =
+      g_time_create_file(filename, FILE_WRITE_ATTRIBUTES,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                         NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hFile == INVALID_HANDLE_VALUE) {
     errno = ENOENT;
     return -1;
@@ -384,41 +505,27 @@ int utimes(const char *filename, const struct timeval times[2]) {
     ftWrite.dwHighDateTime = uli.HighPart;
     pWrite = &ftWrite;
   } else {
-    GetSystemTimeAsFileTime(&ftAccess);
+    g_time_get_sys_time(&ftAccess);
     ftWrite = ftAccess;
     pAccess = &ftAccess;
     pWrite = &ftWrite;
   }
 
-  if (!SetFileTime(hFile, NULL, pAccess, pWrite)) {
-    CloseHandle(hFile);
+  if (!g_time_set_file_time(hFile, NULL, pAccess, pWrite)) {
+    g_time_close_handle(hFile);
     errno = EACCES;
     return -1;
   }
 
-  CloseHandle(hFile);
+  g_time_close_handle(hFile);
   return 0;
 }
 
-#ifdef _WIN32
-static struct itimerval g_timers[3] = {
-    {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
-static HANDLE g_hTimers[3] = {NULL, NULL, NULL};
-
 static void WINAPI posix_timer_callback(PVOID lpParameter,
                                         BOOLEAN TimerOrWaitFired) {
-  int which = (int)(size_t)lpParameter;
-  if (TimerOrWaitFired) {
-    /* parameters checked */
-  }
-  if (which) {
-    /* parameters checked */
-  }
-  /* Ideally we would raise(SIGALRM) here, but MSVC's raise() aborts on
-   * unsupported signals. We can attempt to call raise(14) (SIGALRM) if
-   * the environment intercepts it, but we'll use a generic approach:
-   */
-  raise(14); /* SIGALRM = 14 */
+  (void)lpParameter;
+  (void)TimerOrWaitFired;
+  g_time_raise(14);
 }
 
 int getitimer(int which, struct itimerval *value) {
@@ -430,7 +537,6 @@ int getitimer(int which, struct itimerval *value) {
   return 0;
 }
 
-/** \brief setitimer function. */
 int setitimer(int which, const struct itimerval *value,
               struct itimerval *ovalue) {
   DWORD dueTime = 0;
@@ -447,7 +553,7 @@ int setitimer(int which, const struct itimerval *value,
   g_timers[which] = *value;
 
   if (g_hTimers[which]) {
-    DeleteTimerQueueTimer(NULL, g_hTimers[which], INVALID_HANDLE_VALUE);
+    g_time_delete_tqt(NULL, g_hTimers[which], INVALID_HANDLE_VALUE);
     g_hTimers[which] = NULL;
   }
 
@@ -456,9 +562,8 @@ int setitimer(int which, const struct itimerval *value,
         (DWORD)(value->it_value.tv_sec * 1000 + value->it_value.tv_usec / 1000);
     period = (DWORD)(value->it_interval.tv_sec * 1000 +
                      value->it_interval.tv_usec / 1000);
-    if (!CreateTimerQueueTimer(&g_hTimers[which], NULL, posix_timer_callback,
-                               (PVOID)(size_t)which, dueTime, period,
-                               0x00000000 /* WT_EXECUTEDEFAULT */)) {
+    if (!g_time_create_tqt(&g_hTimers[which], NULL, posix_timer_callback,
+                           (PVOID)(size_t)which, dueTime, period, 0x00000000)) {
       errno = EINVAL;
       return -1;
     }
@@ -466,36 +571,8 @@ int setitimer(int which, const struct itimerval *value,
 
   return 0;
 }
-#else
-/* Minimal stubs for non-Windows (Cygwin/Linux native POSIX functions are used)
- */
-static struct itimerval g_timers[3] = {
-    {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}, {{0, 0}, {0, 0}}};
-int getitimer(int which, struct itimerval *value) {
-  if (!value) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (which) {
-    /* parameters checked */
-  }
-  return 0;
-}
-int setitimer(int which, const struct itimerval *value,
-              struct itimerval *ovalue) {
-  if (!value || !ovalue) {
-    errno = EINVAL;
-    return -1;
-  }
-  if (which) {
-    /* parameters checked */
-  }
-  return 0;
-}
-#endif
 
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
-/** \brief clock_gettime function. */
 int clock_gettime(int clk_id, struct timespec *tp) {
   if (!tp) {
     errno = EINVAL;
@@ -520,12 +597,10 @@ int clock_gettime(int clk_id, struct timespec *tp) {
       return 0;
     }
   }
-  /* Fallback or unsupported clock ID */
   errno = EINVAL;
   return -1;
 }
 
-/** \brief clock_settime function. */
 int clock_settime(int clk_id, const struct timespec *tp) {
   if (tp == NULL || tp->tv_nsec < 0 || tp->tv_nsec >= 1000000000L) {
     errno = EINVAL;
@@ -554,16 +629,15 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     return -1;
   }
 
-  /* Negative value for relative time in 100-nanosecond intervals */
   li.QuadPart = -((LONGLONG)req->tv_sec * POSIX_TIME_10M + req->tv_nsec / 100);
   if (!SetWaitableTimer(timer, &li, 0, NULL, NULL, 0)) {
-    CloseHandle(timer);
+    g_time_close_handle(timer);
     errno = EINVAL;
     return -1;
   }
 
   WaitForSingleObject(timer, INFINITE);
-  CloseHandle(timer);
+  g_time_close_handle(timer);
 
   if (rem) {
     rem->tv_sec = 0;
@@ -575,17 +649,20 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
 #endif /* !__MINGW32__ */
 
 struct tm *localtime_r(const time_t *timep, struct tm *result) {
-  if (!timep || !result)
+  if (!timep || !result) {
     return NULL;
+  }
 #if defined(_MSC_VER)
-  if (!localtime_s(result, timep))
+  if (!localtime_s(result, timep)) {
     return result;
+  }
   return NULL;
 #else
   {
-    struct tm *res = localtime(timep);
-    if (!res)
+    struct tm *res = g_time_localtime(timep);
+    if (!res) {
       return NULL;
+    }
     *result = *res;
     return result;
   }
@@ -593,17 +670,20 @@ struct tm *localtime_r(const time_t *timep, struct tm *result) {
 }
 
 struct tm *gmtime_r(const time_t *timep, struct tm *result) {
-  if (!timep || !result)
+  if (!timep || !result) {
     return NULL;
+  }
 #if defined(_MSC_VER)
-  if (!gmtime_s(result, timep))
+  if (!gmtime_s(result, timep)) {
     return result;
+  }
   return NULL;
 #else
   {
-    struct tm *res = gmtime(timep);
-    if (!res)
+    struct tm *res = g_time_gmtime(timep);
+    if (!res) {
       return NULL;
+    }
     *result = *res;
     return result;
   }
@@ -664,9 +744,7 @@ int utimes(const char *filename, const struct timeval times[2]) {
     errno = EINVAL;
     return -1;
   }
-  if (times) {
-    /* parameters checked */
-  }
+  (void)times;
   f = fopen(filename, "rb");
   if (!f) {
     errno = ENOENT;
@@ -754,12 +832,6 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm) {
 
 #elif defined(__CYGWIN__)
 #undef clock_settime
-/**
- * @brief Sets the time of the specified clock with POSIX tv_nsec validation.
- * @param clk_id The clock to set.
- * @param tp A pointer to a timespec structure containing the new time.
- * @return 0 on success, -1 on error.
- */
 int posix_cygwin_clock_settime(clockid_t clk_id, const struct timespec *tp) {
   if (tp == NULL || tp->tv_nsec < 0 || tp->tv_nsec >= 1000000000L) {
     errno = EINVAL;
@@ -772,6 +844,9 @@ int posix_cygwin_clock_settime(clockid_t clk_id, const struct timespec *tp) {
 
 /**
  * @brief Retrieves information on posix-time module availability.
+ * @param[out] out_available Pointer to integer receiving availability status.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
 auto_win_msvc_error_t posix_time_get_info(int *out_available) {
   if (out_available == NULL) {
@@ -781,10 +856,10 @@ auto_win_msvc_error_t posix_time_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-/* Prevent empty translation unit */
-typedef int make_iso_compilers_happy_tu;
-
-/* Dummy function to prevent empty translation unit */
+/**
+ * @brief Dummy symbol ensuring non-empty translation unit across linkers.
+ * @return Always returns 0.
+ */
 int dummy_posix_time(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_time;

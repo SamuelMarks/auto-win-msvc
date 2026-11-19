@@ -108,6 +108,31 @@ int posix_posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 int posix_posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #endif
 
+#ifndef O_PATH
+#define O_PATH 0
+#endif
+#ifndef O_EXEC
+#define O_EXEC 0
+#endif
+#ifndef O_SEARCH
+#define O_SEARCH 0
+#endif
+#ifndef O_VERIFY
+#define O_VERIFY 0
+#endif
+#ifndef O_RESOLVE_BENEATH
+#define O_RESOLVE_BENEATH 0
+#endif
+#ifndef O_EXLOCK
+#define O_EXLOCK 0
+#endif
+#ifndef O_SHLOCK
+#define O_SHLOCK 0
+#endif
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
+
 #define __dependencies__ posix - core
 
 #define __include_next__

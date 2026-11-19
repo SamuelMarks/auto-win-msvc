@@ -82,13 +82,19 @@ struct statfs {
 };
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
+/** @brief Unsigned integer type for filesystem block counts. */
 typedef unsigned __int64 linux_fsblkcnt_t;
+/** @brief Unsigned integer type for filesystem file node counts. */
 typedef unsigned __int64 linux_fsfilcnt_t;
 #elif defined(__GNUC__) || defined(__clang__)
+/** @brief Unsigned integer type for filesystem block counts. */
 __extension__ typedef unsigned long long linux_fsblkcnt_t;
+/** @brief Unsigned integer type for filesystem file node counts. */
 __extension__ typedef unsigned long long linux_fsfilcnt_t;
 #else
+/** @brief Unsigned integer type for filesystem block counts. */
 typedef unsigned long linux_fsblkcnt_t;
+/** @brief Unsigned integer type for filesystem file node counts. */
 typedef unsigned long linux_fsfilcnt_t;
 #endif
 

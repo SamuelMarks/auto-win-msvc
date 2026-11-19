@@ -335,13 +335,84 @@ void regfree(regex_t *preg) {
 #elif defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) ||     \
     defined(__MSDOS__) || defined(__WATCOMC__)
 
+static void *default_regex_compile(const char *pat, unsigned int opts,
+                                   int *errcode, size_t *erroff) {
+  PCRE2_SIZE off = 0;
+  pcre2_code *re = pcre2_compile((PCRE2_SPTR)pat, PCRE2_ZERO_TERMINATED,
+                                 (uint32_t)opts, errcode, &off, NULL);
+  *erroff = (size_t)off;
+  return (void *)re;
+}
+
+static int default_regex_pattern_info(void *re, unsigned int *out_captures) {
+  uint32_t cap = 0;
+  int rc =
+      pcre2_pattern_info((const pcre2_code *)re, PCRE2_INFO_CAPTURECOUNT, &cap);
+  *out_captures = (unsigned int)cap;
+  return rc;
+}
+
+static void *default_regex_match_data_create(void *re) {
+  return (void *)pcre2_match_data_create_from_pattern((const pcre2_code *)re,
+                                                      NULL);
+}
+
+static void default_regex_match_data_free(void *md) {
+  pcre2_match_data_free((pcre2_match_data *)md);
+}
+
+static int default_regex_match(void *re, const char *str, size_t len,
+                               size_t start_off, unsigned int opts,
+                               void *match_data) {
+  return pcre2_match((const pcre2_code *)re, (PCRE2_SPTR)str, (PCRE2_SIZE)len,
+                     (PCRE2_SIZE)start_off, (uint32_t)opts,
+                     (pcre2_match_data *)match_data, NULL);
+}
+
+static void *(*g_regex_compile)(const char *, unsigned int, int *,
+                                size_t *) = default_regex_compile;
+static int (*g_regex_pattern_info)(void *,
+                                   unsigned int *) = default_regex_pattern_info;
+static void *(*g_regex_match_data_create)(void *) =
+    default_regex_match_data_create;
+static void (*g_regex_match_data_free)(void *) = default_regex_match_data_free;
+static int (*g_regex_match)(void *, const char *, size_t, size_t, unsigned int,
+                            void *) = default_regex_match;
+
+/**
+ * @brief Overrides PCRE2 hooks for OOM and error-branch unit testing.
+ */
+POSIX_REGEX_EXPORT void posix_regex_set_pcre2_hooks(
+    void *(*compile_fn)(const char *, unsigned int, int *, size_t *),
+    int (*info_fn)(void *, unsigned int *), void *(*md_create_fn)(void *),
+    void (*md_free_fn)(void *),
+    int (*match_fn)(void *, const char *, size_t, size_t, unsigned int,
+                    void *)) {
+  g_regex_compile = compile_fn;
+  g_regex_pattern_info = info_fn;
+  g_regex_match_data_create = md_create_fn;
+  g_regex_match_data_free = md_free_fn;
+  g_regex_match = match_fn;
+}
+
+/**
+ * @brief Resets PCRE2 hooks to defaults.
+ */
+POSIX_REGEX_EXPORT void posix_regex_reset_pcre2_hooks(void) {
+  g_regex_compile = default_regex_compile;
+  g_regex_pattern_info = default_regex_pattern_info;
+  g_regex_match_data_create = default_regex_match_data_create;
+  g_regex_match_data_free = default_regex_match_data_free;
+  g_regex_match = default_regex_match;
+}
+
 /** @brief Compile regular expression pattern. */
 int regcomp(regex_t *preg, const char *pattern, int cflags) {
   int errorcode;
-  PCRE2_SIZE erroroffset;
-  uint32_t options;
+  size_t erroroffset;
+  unsigned int options;
   pcre2_code *re;
-  uint32_t capture_count;
+  unsigned int capture_count;
 
   options = 0;
   capture_count = 0;
@@ -357,8 +428,8 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
     options |= PCRE2_MULTILINE | PCRE2_DOTALL;
   }
 
-  re = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, options,
-                     &errorcode, &erroroffset, NULL);
+  re =
+      (pcre2_code *)g_regex_compile(pattern, options, &errorcode, &erroroffset);
   if (re == NULL) {
     if (errorcode == PCRE2_ERROR_NOMEMORY) {
       return REG_ESPACE;
@@ -367,7 +438,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
   }
 
   preg->re_guts = (void *)re;
-  if (pcre2_pattern_info(re, PCRE2_INFO_CAPTURECOUNT, &capture_count) != 0) {
+  if (g_regex_pattern_info((void *)re, &capture_count) != 0) {
     pcre2_code_free(re);
     preg->re_guts = NULL;
     return REG_BADPAT;
@@ -384,7 +455,7 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   int rc;
   size_t i;
   PCRE2_SIZE *ovector;
-  uint32_t options;
+  unsigned int options;
 
   options = 0;
 
@@ -404,22 +475,22 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
     options |= PCRE2_NOTEOL;
   }
 
-  match_data = pcre2_match_data_create_from_pattern(re, NULL);
+  match_data = (pcre2_match_data *)g_regex_match_data_create((void *)re);
   if (match_data == NULL) {
     return REG_ESPACE;
   }
 
   if ((eflags & REG_STARTEND) && pmatch != NULL &&
       pmatch[0].rm_eo >= pmatch[0].rm_so && pmatch[0].rm_so >= 0) {
-    rc = pcre2_match(re, (PCRE2_SPTR)string, (PCRE2_SIZE)pmatch[0].rm_eo,
-                     (PCRE2_SIZE)pmatch[0].rm_so, options, match_data, NULL);
+    rc = g_regex_match((void *)re, string, (size_t)pmatch[0].rm_eo,
+                       (size_t)pmatch[0].rm_so, options, (void *)match_data);
   } else {
-    rc = pcre2_match(re, (PCRE2_SPTR)string, PCRE2_ZERO_TERMINATED, 0, options,
-                     match_data, NULL);
+    rc = g_regex_match((void *)re, string, (size_t)PCRE2_ZERO_TERMINATED, 0,
+                       options, (void *)match_data);
   }
 
   if (rc < 0) {
-    pcre2_match_data_free(match_data);
+    g_regex_match_data_free((void *)match_data);
     if (rc == PCRE2_ERROR_NOMEMORY) {
       return REG_ESPACE;
     }
@@ -437,7 +508,7 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
     }
   }
 
-  pcre2_match_data_free(match_data);
+  g_regex_match_data_free((void *)match_data);
   return 0;
 }
 
@@ -446,9 +517,7 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf,
                 size_t errbuf_size) {
   const char *msg = "Regex error";
   size_t msg_len;
-  if (preg != NULL) {
-    /* preg provided */
-  }
+  (void)preg;
 
   if (errcode == REG_NOMATCH)
     msg = "No match";

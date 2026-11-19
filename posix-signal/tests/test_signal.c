@@ -475,10 +475,32 @@ TEST test_posix_signal_kill(void) {
   PASS();
 }
 
+#if defined(_WIN32) || defined(_MSC_VER)
+extern void posix_signal_set_crt_signal_hook(
+    posix_sighandler_t (*fn)(int, posix_sighandler_t));
+extern void posix_signal_reset_crt_signal_hook(void);
+
+static posix_sighandler_t mock_crt_signal_err(int signum,
+                                              posix_sighandler_t handler) {
+  (void)signum;
+  (void)handler;
+  return SIG_ERR;
+}
+#endif
+
 TEST test_posix_signal_killpg(void) {
   int res;
+#if defined(_WIN32) || defined(_MSC_VER)
+  pid_t cur_pid = 0;
+#endif
   res = killpg(-1, 0);
   ASSERT_EQ(-1, res);
+  res = killpg(0, 0);
+  ASSERT(res == 0 || res == -1);
+#if defined(_WIN32) || defined(_MSC_VER)
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_signal_get_current_pid(&cur_pid));
+  ASSERT_EQ(0, killpg(cur_pid, 0));
+#endif
   PASS();
 }
 
@@ -509,9 +531,31 @@ TEST test_posix_signal_is_crt_signal(void) {
   ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, is_crt);
 
+  rc = posix_signal_is_crt_signal(SIGILL, &is_crt);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, is_crt);
+
+  rc = posix_signal_is_crt_signal(SIGFPE, &is_crt);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, is_crt);
+
   rc = posix_signal_is_crt_signal(SIGSEGV, &is_crt);
   ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, is_crt);
+
+  rc = posix_signal_is_crt_signal(SIGTERM, &is_crt);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, is_crt);
+
+  rc = posix_signal_is_crt_signal(SIGABRT, &is_crt);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, is_crt);
+
+#ifdef SIGBREAK
+  rc = posix_signal_is_crt_signal(SIGBREAK, &is_crt);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, is_crt);
+#endif
 
   rc = posix_signal_is_crt_signal(SIGUSR1, &is_crt);
   ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
@@ -670,6 +714,88 @@ TEST test_posix_signal_simulations(void) {
                                        &result); /* FLT_DIVIDE_BY_ZERO */
   ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
   ASSERT_EQ(1, g_test_handler_called);
+
+  /* VEH with SA_SIGINFO where sa_sigaction is NULL */
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_sigaction = NULL;
+  sa.sa_flags = SA_SIGINFO;
+  ASSERT_EQ(0, sigaction(SIGSEGV, &sa, NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_exception(0xC0000005UL, &result));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_signal(SIGSEGV, &status));
+
+  /* Pending unblock with SA_SIGINFO and NULL sa_sigaction */
+  sigemptyset(&set);
+  sigaddset(&set, SIGSEGV);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_signal(SIGSEGV, &status));
+  sigemptyset(&set);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+
+  /* VEH and internal_signal_handler and pending unblock with SIG_DFL and
+   * SIG_IGN */
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = SIG_DFL;
+  sa.sa_flags = 0;
+  ASSERT_EQ(0, sigaction(SIGSEGV, &sa, NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_exception(0xC0000005UL, &result));
+
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+  signal(SIGUSR1, SIG_DFL);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_signal(SIGUSR1, &status));
+  sigemptyset(&set);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  ASSERT_EQ(0, sigaction(SIGSEGV, &sa, NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_exception(0xC0000005UL, &result));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_signal(SIGSEGV, &status));
+
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+  signal(SIGUSR1, SIG_IGN);
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS,
+            posix_signal_simulate_signal(SIGUSR1, &status));
+  sigemptyset(&set);
+  sigprocmask(SIG_SETMASK, &set, NULL);
+
+  /* Query CRT signal oldact when handler is SIG_IGN (not internal handler) */
+  {
+    struct sigaction oldsa;
+    signal(SIGSEGV, SIG_IGN);
+    memset(&oldsa, 0, sizeof(oldsa));
+    ASSERT_EQ(0, sigaction(SIGSEGV, NULL, &oldsa));
+    ASSERT_EQ(SIG_IGN, oldsa.sa_handler);
+  }
+
+  /* Reset and test VEH registration starting from SIGILL and SIGFPE */
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_signal_reset(&status));
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = test_custom_handler;
+  ASSERT_EQ(0, sigaction(SIGILL, &sa, NULL));
+
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_signal_reset(&status));
+  ASSERT_EQ(0, sigaction(SIGFPE, &sa, NULL));
+
+  /* Mock CRT signal failure paths in sigaction */
+  posix_signal_set_crt_signal_hook(mock_crt_signal_err);
+  ASSERT_EQ(-1, sigaction(SIGINT, &sa, NULL));
+  {
+    struct sigaction oldsa;
+    ASSERT_EQ(-1, sigaction(SIGINT, NULL, &oldsa));
+  }
+  posix_signal_reset_crt_signal_hook();
 
   /* Cleanup */
   posix_signal_reset(&status);

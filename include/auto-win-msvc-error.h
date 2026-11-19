@@ -86,17 +86,29 @@ extern "C" {
  * @brief Central error codes returned by auto-win-msvc operations.
  */
 typedef enum NO_DISCARD auto_win_msvc_error {
+  /** @brief Operation succeeded. */
   AUTO_WIN_MSVC_SUCCESS = 0,
+  /** @brief Invalid or NULL argument supplied. */
   AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT = 1,
+  /** @brief Memory allocation failed. */
   AUTO_WIN_MSVC_ERROR_OUT_OF_MEMORY = 2,
+  /** @brief Requested feature is not implemented on this platform. */
   AUTO_WIN_MSVC_ERROR_NOT_IMPLEMENTED = 3,
+  /** @brief Underlying operating system call failed. */
   AUTO_WIN_MSVC_ERROR_OS_CALL_FAILED = 4,
+  /** @brief Input/output failure. */
   AUTO_WIN_MSVC_ERROR_IO = 5,
+  /** @brief Caller lacks required permissions. */
   AUTO_WIN_MSVC_ERROR_PERMISSION_DENIED = 6,
+  /** @brief Requested resource was not found. */
   AUTO_WIN_MSVC_ERROR_NOT_FOUND = 7,
+  /** @brief Target resource already exists. */
   AUTO_WIN_MSVC_ERROR_ALREADY_EXISTS = 8,
+  /** @brief Operation timed out. */
   AUTO_WIN_MSVC_ERROR_TIMEOUT = 9,
+  /** @brief Non-blocking operation would block. */
   AUTO_WIN_MSVC_ERROR_WOULD_BLOCK = 10,
+  /** @brief Unclassified or unknown error. */
   AUTO_WIN_MSVC_ERROR_UNKNOWN = 11
 } auto_win_msvc_error_t;
 

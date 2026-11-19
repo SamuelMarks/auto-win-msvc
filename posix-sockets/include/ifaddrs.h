@@ -2,7 +2,7 @@
 #define IFADDRS_H
 
 /* clang-format off */
-#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) &&        \
+#if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) && \
     !defined(__DOS__)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
@@ -11,13 +11,17 @@
 #include <ifaddrs.h>
 #endif
 #else
-
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+    defined(__DOS__)
 
 /**
  * @brief Network interface addresses structure.
@@ -59,11 +63,10 @@ int posix_getifaddrs(struct ifaddrs **ifap);
  */
 void posix_freeifaddrs(struct ifaddrs *ifa);
 
+#endif /* _WIN32 */
+
 #ifdef __cplusplus
 }
-#endif
-
-#endif /* _WIN32 */
-/* clang-format on */
+#endif /* __cplusplus */
 
 #endif /* IFADDRS_H */

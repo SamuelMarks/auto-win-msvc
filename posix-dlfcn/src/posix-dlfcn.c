@@ -1,5 +1,9 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
-/* posix-dlfcn.c - Strict C89 Implementation */
+/**
+ * @file posix-dlfcn.c
+ * @brief Strict C89 POSIX dlfcn.h implementation for Windows/MSVC.
+ */
+
 /* clang-format off */
 #include "posix-dlfcn.h"
 #include <stddef.h>
@@ -65,10 +69,6 @@ typedef struct _WIN_MEMORY_BASIC_INFORMATION {
   WIN_DWORD Type;
 } WIN_MEMORY_BASIC_INFORMATION;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 __declspec(dllimport) WIN_HMODULE __stdcall
 LoadLibraryA(WIN_LPCSTR lpLibFileName);
 __declspec(dllimport) WIN_HMODULE __stdcall
@@ -87,11 +87,83 @@ __declspec(dllimport) size_t __stdcall
 VirtualQuery(const void *lpAddress, WIN_MEMORY_BASIC_INFORMATION *lpBuffer,
              size_t dwLength);
 
-#ifdef __cplusplus
+static WIN_HMODULE default_dlfcn_load_lib(WIN_LPCSTR name) {
+  return LoadLibraryA(name);
 }
-#endif
+static WIN_HMODULE default_dlfcn_get_mod(WIN_LPCSTR name) {
+  return GetModuleHandleA(name);
+}
+static int default_dlfcn_free_lib(WIN_HMODULE mod) { return FreeLibrary(mod); }
+static WIN_FARPROC default_dlfcn_get_proc(WIN_HMODULE mod, WIN_LPCSTR name) {
+  return GetProcAddress(mod, name);
+}
+static WIN_DWORD default_dlfcn_last_err(void) { return GetLastError(); }
+static WIN_DWORD default_dlfcn_mod_fname(WIN_HMODULE mod, WIN_LPSTR buf,
+                                         WIN_DWORD sz) {
+  return GetModuleFileNameA(mod, buf, sz);
+}
+static WIN_DWORD default_dlfcn_fmt_msg(WIN_DWORD flags, const void *src,
+                                       WIN_DWORD msg_id, WIN_DWORD lang_id,
+                                       WIN_LPSTR buf, WIN_DWORD sz,
+                                       void *args) {
+  return FormatMessageA(flags, src, msg_id, lang_id, buf, sz, args);
+}
+static size_t default_dlfcn_vquery(const void *addr,
+                                   WIN_MEMORY_BASIC_INFORMATION *mbi,
+                                   size_t len) {
+  return VirtualQuery(addr, mbi, len);
+}
 
-/* TLS storage for thread-local error message and module name buffer */
+static WIN_HMODULE (*g_dlfcn_load_lib)(WIN_LPCSTR) = default_dlfcn_load_lib;
+static WIN_HMODULE (*g_dlfcn_get_mod)(WIN_LPCSTR) = default_dlfcn_get_mod;
+static int (*g_dlfcn_free_lib)(WIN_HMODULE) = default_dlfcn_free_lib;
+static WIN_FARPROC (*g_dlfcn_get_proc)(WIN_HMODULE,
+                                       WIN_LPCSTR) = default_dlfcn_get_proc;
+static WIN_DWORD (*g_dlfcn_last_err)(void) = default_dlfcn_last_err;
+static WIN_DWORD (*g_dlfcn_mod_fname)(WIN_HMODULE, WIN_LPSTR,
+                                      WIN_DWORD) = default_dlfcn_mod_fname;
+static WIN_DWORD (*g_dlfcn_fmt_msg)(WIN_DWORD, const void *, WIN_DWORD,
+                                    WIN_DWORD, WIN_LPSTR, WIN_DWORD,
+                                    void *) = default_dlfcn_fmt_msg;
+static size_t (*g_dlfcn_vquery)(const void *, WIN_MEMORY_BASIC_INFORMATION *,
+                                size_t) = default_dlfcn_vquery;
+
+/**
+ * @brief Overrides Win32 API hooks for posix-dlfcn unit testing.
+ */
+void posix_dlfcn_set_win32_hooks(
+    WIN_HMODULE (*load_lib_fn)(WIN_LPCSTR),
+    WIN_HMODULE (*get_mod_fn)(WIN_LPCSTR), int (*free_lib_fn)(WIN_HMODULE),
+    WIN_FARPROC (*get_proc_fn)(WIN_HMODULE, WIN_LPCSTR),
+    WIN_DWORD (*last_err_fn)(void),
+    WIN_DWORD (*mod_fname_fn)(WIN_HMODULE, WIN_LPSTR, WIN_DWORD),
+    WIN_DWORD (*fmt_msg_fn)(WIN_DWORD, const void *, WIN_DWORD, WIN_DWORD,
+                            WIN_LPSTR, WIN_DWORD, void *),
+    size_t (*vquery_fn)(const void *, WIN_MEMORY_BASIC_INFORMATION *, size_t)) {
+  g_dlfcn_load_lib = load_lib_fn;
+  g_dlfcn_get_mod = get_mod_fn;
+  g_dlfcn_free_lib = free_lib_fn;
+  g_dlfcn_get_proc = get_proc_fn;
+  g_dlfcn_last_err = last_err_fn;
+  g_dlfcn_mod_fname = mod_fname_fn;
+  g_dlfcn_fmt_msg = fmt_msg_fn;
+  g_dlfcn_vquery = vquery_fn;
+}
+
+/**
+ * @brief Resets Win32 API hooks for posix-dlfcn to defaults.
+ */
+void posix_dlfcn_reset_win32_hooks(void) {
+  g_dlfcn_load_lib = default_dlfcn_load_lib;
+  g_dlfcn_get_mod = default_dlfcn_get_mod;
+  g_dlfcn_free_lib = default_dlfcn_free_lib;
+  g_dlfcn_get_proc = default_dlfcn_get_proc;
+  g_dlfcn_last_err = default_dlfcn_last_err;
+  g_dlfcn_mod_fname = default_dlfcn_mod_fname;
+  g_dlfcn_fmt_msg = default_dlfcn_fmt_msg;
+  g_dlfcn_vquery = default_dlfcn_vquery;
+}
+
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 #define THREAD_LOCAL __declspec(thread)
 #elif defined(__GNUC__) || defined(__clang__)
@@ -105,23 +177,21 @@ static THREAD_LOCAL int thread_dlerror_set = 0;
 static THREAD_LOCAL char thread_dladdr_fname[MAX_PATH] = {0};
 
 /**
- * @brief Helper to set the thread-local error message from a Windows error
- * code.
- * @param err_code Windows system error code.
- * @return AUTO_WIN_MSVC_SUCCESS on completion.
+ * @brief Sets the thread-local error message from a Windows error code.
  */
-static auto_win_msvc_error_t set_dlerror(WIN_DWORD err_code) {
+static void set_dlerror(WIN_DWORD err_code) {
   size_t len;
 
   if (err_code == 0) {
     thread_dlerror_set = 0;
-    return AUTO_WIN_MSVC_SUCCESS;
+    return;
   }
 
-  if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                     NULL, err_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                     thread_dlerror_msg,
-                     (WIN_DWORD)(sizeof(thread_dlerror_msg) - 1), NULL) == 0) {
+  if (g_dlfcn_fmt_msg(FORMAT_MESSAGE_FROM_SYSTEM |
+                          FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, err_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                      thread_dlerror_msg,
+                      (WIN_DWORD)(sizeof(thread_dlerror_msg) - 1), NULL) == 0) {
 #if defined(_MSC_VER)
     sprintf_s(thread_dlerror_msg, sizeof(thread_dlerror_msg),
               "Unknown error code: " NUM_FORMAT, (NUM_FORMAT_CAST)err_code);
@@ -138,7 +208,6 @@ static auto_win_msvc_error_t set_dlerror(WIN_DWORD err_code) {
     }
   }
   thread_dlerror_set = 1;
-  return AUTO_WIN_MSVC_SUCCESS;
 }
 
 /**
@@ -146,18 +215,14 @@ static auto_win_msvc_error_t set_dlerror(WIN_DWORD err_code) {
  */
 void *dlopen(const char *file, int mode) {
   WIN_HMODULE handle;
-  auto_win_msvc_error_t rc;
   if (mode < 0) {
     return NULL;
   }
 
   if (file == NULL) {
-    handle = GetModuleHandleA(NULL);
+    handle = g_dlfcn_get_mod(NULL);
     if (handle == NULL) {
-      rc = set_dlerror(GetLastError());
-      if (rc != AUTO_WIN_MSVC_SUCCESS) {
-        return NULL;
-      }
+      set_dlerror(g_dlfcn_last_err());
     }
     return (void *)handle;
   }
@@ -192,19 +257,16 @@ void *dlopen(const char *file, int mode) {
     p = fixed_file;
     while (*p) {
       if (*p == '/') {
-        *p = '\\';
+        *p = (char)92;
       }
       p++;
     }
 
-    handle = LoadLibraryA(fixed_file);
+    handle = g_dlfcn_load_lib(fixed_file);
   }
 
   if (handle == NULL) {
-    rc = set_dlerror(GetLastError());
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
-      return NULL;
-    }
+    set_dlerror(g_dlfcn_last_err());
     return NULL;
   }
 
@@ -215,21 +277,16 @@ void *dlopen(const char *file, int mode) {
  * @brief Closes a dynamic library handle.
  */
 int dlclose(void *handle) {
-  auto_win_msvc_error_t rc;
-
   if (handle == NULL) {
     return 0;
   }
 
-  if (handle == (void *)GetModuleHandleA(NULL)) {
+  if (handle == (void *)g_dlfcn_get_mod(NULL)) {
     return 0;
   }
 
-  if (!FreeLibrary((WIN_HMODULE)handle)) {
-    rc = set_dlerror(GetLastError());
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
-      return -1;
-    }
+  if (!g_dlfcn_free_lib((WIN_HMODULE)handle)) {
+    set_dlerror(g_dlfcn_last_err());
     return -1;
   }
 
@@ -243,20 +300,16 @@ void *dlsym(void *handle, const char *name) {
   WIN_FARPROC proc;
   void *ret_ptr;
   WIN_HMODULE hModule;
-  auto_win_msvc_error_t rc;
 
   hModule = (WIN_HMODULE)handle;
 
   if (name == NULL) {
-    rc = set_dlerror(ERROR_INVALID_PARAMETER);
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
-      return NULL;
-    }
+    set_dlerror(ERROR_INVALID_PARAMETER);
     return NULL;
   }
 
   if (handle == RTLD_DEFAULT) {
-    hModule = GetModuleHandleA(NULL);
+    hModule = g_dlfcn_get_mod(NULL);
   } else if (handle == RTLD_NEXT) {
 #if defined(_MSC_VER)
     strcpy_s(thread_dlerror_msg, sizeof(thread_dlerror_msg),
@@ -270,12 +323,9 @@ void *dlsym(void *handle, const char *name) {
     return NULL;
   }
 
-  proc = GetProcAddress(hModule, name);
+  proc = g_dlfcn_get_proc(hModule, name);
   if (proc == NULL) {
-    rc = set_dlerror(GetLastError());
-    if (rc != AUTO_WIN_MSVC_SUCCESS) {
-      return NULL;
-    }
+    set_dlerror(g_dlfcn_last_err());
     return NULL;
   }
 
@@ -311,15 +361,15 @@ int dladdr(const void *addr, Dl_info *info) {
     return 0;
   }
 
-  if (VirtualQuery(addr, &mbi, sizeof(mbi)) == 0) {
+  if (g_dlfcn_vquery(addr, &mbi, sizeof(mbi)) == 0) {
     return 0;
   }
 
   handle = (WIN_HMODULE)mbi.AllocationBase;
   info->dli_fbase = (void *)handle;
 
-  len = GetModuleFileNameA(handle, thread_dladdr_fname,
-                           (WIN_DWORD)sizeof(thread_dladdr_fname));
+  len = g_dlfcn_mod_fname(handle, thread_dladdr_fname,
+                          (WIN_DWORD)sizeof(thread_dladdr_fname));
   if (len == 0 || len == sizeof(thread_dladdr_fname)) {
     info->dli_fname = NULL;
   } else {

@@ -1,5 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
 #include "posix-strings.h"
@@ -8,21 +6,10 @@
 /* clang-format on */
 
 TEST test_posix_strings_get_info(void) {
-  auto_win_msvc_error_t rc;
-  int info;
+  int info = 0;
 
-  info = 0;
-  rc = posix_strings_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  rc = posix_strings_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_strings_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, posix_strings_get_info(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_strings_get_info(&info));
   ASSERT_EQ(1, info);
 
   PASS();
@@ -64,10 +51,9 @@ TEST test_strings_bops(void) {
 
 TEST test_strtok_r(void) {
   char str[32];
-  char *saveptr;
+  char *saveptr = NULL;
   char *token;
 
-  saveptr = NULL;
 #if defined(_MSC_VER)
   strcpy_s(str, sizeof(str), "apple,banana,cherry");
 #else
@@ -116,12 +102,115 @@ TEST test_ffsll(void) {
   ASSERT_EQ(2, ffsll(2));
   ASSERT_EQ(9, ffsll(256));
 
-  /* Upper 32 bits test */
   val = (posix_strings_llong)1 << 40;
   ASSERT_EQ(41, ffsll(val));
 
   PASS();
 }
+
+TEST test_posix_strings_extensions(void) {
+  char dst[16];
+  char *endp;
+  void *mp;
+  const char *sample = "abca";
+  int sigs[] = {1,  2,  3,  4,  6,  8,  9,  11, 13,
+                14, 15, 17, 18, 19, 20, 21, 22, 28};
+  size_t i;
+
+  /* posix_stpcpy: empty & non-empty */
+  endp = posix_stpcpy(dst, "");
+  ASSERT_EQ(dst, endp);
+  ASSERT_STR_EQ("", dst);
+
+  endp = posix_stpcpy(dst, "hi");
+  ASSERT_EQ(dst + 2, endp);
+  ASSERT_STR_EQ("hi", dst);
+
+  /* posix_stpncpy: n==0, short src with NUL padding, exact/truncated src */
+  memset(dst, 'X', sizeof(dst));
+  endp = posix_stpncpy(dst, "hi", 0);
+  ASSERT_EQ(dst, endp);
+
+  memset(dst, 'X', sizeof(dst));
+  endp = posix_stpncpy(dst, "hi", 5);
+  ASSERT_EQ(dst + 2, endp);
+  ASSERT_EQ('\0', dst[2]);
+  ASSERT_EQ('\0', dst[3]);
+  ASSERT_EQ('\0', dst[4]);
+
+  memset(dst, 'X', sizeof(dst));
+  endp = posix_stpncpy(dst, "abcdef", 3);
+  ASSERT_EQ(dst + 3, endp);
+  ASSERT_EQ('a', dst[0]);
+  ASSERT_EQ('c', dst[2]);
+
+  /* posix_strchrnul: match at start, match in middle, NUL search, miss */
+  ASSERT_EQ(sample, posix_strchrnul(sample, 'a'));
+  ASSERT_EQ(sample + 2, posix_strchrnul(sample, 'c'));
+  ASSERT_EQ(sample + 4, posix_strchrnul(sample, '\0'));
+  ASSERT_EQ(sample + 4, posix_strchrnul(sample, 'z'));
+
+  /* posix_mempcpy & posix_memrchr */
+  mp = posix_mempcpy(dst, "xyz", 4);
+  ASSERT_EQ((void *)(dst + 4), mp);
+  ASSERT_STR_EQ("xyz", dst);
+
+  ASSERT_EQ(NULL, posix_memrchr(sample, 'a', 0));
+  ASSERT_EQ((const void *)(sample + 3), posix_memrchr(sample, 'a', 4));
+  ASSERT_EQ((const void *)(sample + 1), posix_memrchr(sample, 'b', 4));
+  ASSERT_EQ(NULL, posix_memrchr(sample, 'z', 4));
+
+  /* posix_strsignal: all known signals + unknown default */
+  for (i = 0; i < sizeof(sigs) / sizeof(sigs[0]); ++i) {
+    char *desc = posix_strsignal(sigs[i]);
+    ASSERT(desc != NULL);
+    ASSERT(strlen(desc) > 0);
+  }
+  ASSERT_STR_EQ("Unknown signal 999", posix_strsignal(999));
+
+  PASS();
+}
+
+#if defined(_WIN32)
+#undef mempcpy
+#undef strchrnul
+#undef stpcpy
+#undef stpncpy
+#undef memrchr
+#undef strsignal
+#undef strtok_r
+
+extern void *mempcpy(void *dest, const void *src, size_t n);
+extern char *strchrnul(const char *s, int c);
+extern char *stpcpy(char *dest, const char *src);
+extern char *stpncpy(char *dest, const char *src, size_t n);
+extern void *memrchr(const void *s, int c, size_t n);
+extern char *strsignal(int sig);
+extern char *strtok_r(char *str, const char *delim, char **saveptr);
+
+TEST test_win32_abi_wrappers(void) {
+  char buf[16];
+  char tokbuf[16];
+  char *save = NULL;
+
+  ASSERT_EQ((void *)(buf + 3), mempcpy(buf, "ab", 3));
+  ASSERT_EQ(buf + 1, strchrnul(buf, 'b'));
+  ASSERT_EQ(buf + 2, stpcpy(buf, "cd"));
+  ASSERT_EQ(buf + 2, stpncpy(buf, "ef", 4));
+  ASSERT_EQ((void *)(buf + 1), memrchr(buf, 'f', 2));
+  ASSERT_STR_EQ("Terminated", strsignal(15));
+
+#if defined(_MSC_VER)
+  strcpy_s(tokbuf, sizeof(tokbuf), "x:y");
+#else
+  strcpy(tokbuf, "x:y");
+#endif
+  ASSERT_STR_EQ("x", strtok_r(tokbuf, ":", &save));
+  ASSERT_STR_EQ("y", strtok_r(NULL, ":", &save));
+
+  PASS();
+}
+#endif
 
 SUITE(suite_posix_strings_core) {
   RUN_TEST(test_posix_strings_get_info);
@@ -131,4 +220,8 @@ SUITE(suite_posix_strings_core) {
   RUN_TEST(test_ffs);
   RUN_TEST(test_ffsl);
   RUN_TEST(test_ffsll);
+  RUN_TEST(test_posix_strings_extensions);
+#if defined(_WIN32)
+  RUN_TEST(test_win32_abi_wrappers);
+#endif
 }

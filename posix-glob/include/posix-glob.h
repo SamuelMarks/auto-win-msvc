@@ -47,6 +47,15 @@ auto_win_msvc_error_t posix_glob_get_info(int *out_available);
 /** @} */
 
 #endif
+#ifndef FNM_LEADING_DIR
+#define FNM_LEADING_DIR 0x08 /**< Ignore /... after a matched directory. */
+#endif
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD 0x10 /**< Case-insensitive matching. */
+#endif
+#ifndef FNM_IGNORECASE
+#define FNM_IGNORECASE FNM_CASEFOLD
+#endif
 #ifndef FNM_NOMATCH
 #define FNM_NOMATCH 1 /**< Match failed. */
 #endif
@@ -87,6 +96,12 @@ typedef struct {
 #define GLOB_NOCHECK 0x10  /**< If nothing matches, return the pattern. */
 #define GLOB_APPEND 0x20   /**< Append to results of a previous call. */
 #define GLOB_NOESCAPE 0x40 /**< Backslashes don't quote metacharacters. */
+#ifndef GLOB_BRACE
+#define GLOB_BRACE 0x0080 /**< Expand {a,b} braces. */
+#endif
+#ifndef GLOB_TILDE
+#define GLOB_TILDE 0x0100 /**< Expand ~user home directories. */
+#endif
 #ifndef GLOB_NOMAGIC
 #define GLOB_NOMAGIC 0x0800 /**< If no magic chars, return the pattern. */
 #endif

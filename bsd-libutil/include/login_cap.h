@@ -8,6 +8,7 @@
 
 /* clang-format off */
 #include <sys/types.h>
+#include <sys/resource.h>
 #include <stddef.h>
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
@@ -18,28 +19,41 @@
 extern "C" {
 #endif
 
+/** @brief Set login name in session. */
 #define LOGIN_SETLOGIN 0x0001
+/** @brief Set group ID and supplementary groups. */
 #define LOGIN_SETGROUP 0x0002
+/** @brief Set user ID. */
 #define LOGIN_SETUSER 0x0004
+/** @brief Apply resource limits. */
 #define LOGIN_SETRESOURCES 0x0008
+/** @brief Apply scheduling priority. */
 #define LOGIN_SETPRIORITY 0x0010
+/** @brief Set class environment variables. */
 #define LOGIN_SETENV 0x0020
+/** @brief Set class PATH environment variable. */
 #define LOGIN_SETPATH 0x0040
+/** @brief Set process file creation mask. */
 #define LOGIN_SETUMASK 0x0080
+/** @brief Apply MAC label policy. */
 #define LOGIN_SETMAC 0x0100
+/** @brief Apply CPU affinity mask. */
 #define LOGIN_SETCPUMASK 0x0200
+/** @brief Set kernel login class. */
 #define LOGIN_SETLOGINCLASS 0x0400
+/** @brief Bitmask enabling all login context operations. */
 #define LOGIN_SETALL 0x07ff
 
+/** @brief Default login class name. */
 #define LOGIN_DEFCLASS "default"
 
 struct passwd;
 
 /** @brief Login class capability record structure. */
 typedef struct login_cap {
-  char *lc_class;
-  char *lc_cap;
-  char *lc_style;
+  char *lc_class; /**< Login class name. */
+  char *lc_cap;   /**< Raw capability entry buffer. */
+  char *lc_style; /**< Authentication style string. */
 } login_cap_t;
 
 /**
@@ -48,6 +62,14 @@ typedef struct login_cap {
  * @return Allocated login_cap_t pointer.
  */
 login_cap_t *login_getclass(const char *name);
+
+/**
+ * @brief Retrieve login class entry by class name and user passwd context.
+ * @param[in] name Class name, or NULL for default.
+ * @param[in] pwd Optional user passwd structure.
+ * @return Allocated login_cap_t pointer.
+ */
+login_cap_t *login_getclassbyname(const char *name, const struct passwd *pwd);
 
 /**
  * @brief Retrieve login class entry for a passwd struct.
@@ -86,8 +108,8 @@ int login_getcapbool(login_cap_t *lc, const char *cap, int def);
  * @param[in] err Error value.
  * @return Capability number.
  */
-int64_t login_getcapnum(login_cap_t *lc, const char *cap, int64_t def,
-                        int64_t err);
+rlim_t login_getcapnum(login_cap_t *lc, const char *cap, rlim_t def,
+                       rlim_t err);
 
 /**
  * @brief Retrieve size capability from login class.
@@ -97,8 +119,8 @@ int64_t login_getcapnum(login_cap_t *lc, const char *cap, int64_t def,
  * @param[in] err Error size.
  * @return Capability size in bytes.
  */
-int64_t login_getcapsize(login_cap_t *lc, const char *cap, int64_t def,
-                         int64_t err);
+rlim_t login_getcapsize(login_cap_t *lc, const char *cap, rlim_t def,
+                        rlim_t err);
 
 /**
  * @brief Retrieve string capability from login class.
@@ -119,8 +141,8 @@ const char *login_getcapstr(login_cap_t *lc, const char *cap, const char *def,
  * @param[in] err Error value.
  * @return Capability time in seconds.
  */
-int64_t login_getcaptime(login_cap_t *lc, const char *cap, int64_t def,
-                         int64_t err);
+rlim_t login_getcaptime(login_cap_t *lc, const char *cap, rlim_t def,
+                        rlim_t err);
 
 /**
  * @brief Retrieve path capability from login class.
@@ -151,6 +173,15 @@ int setclasscontext(const char *lcname, unsigned int flags);
  */
 int setusercontext(login_cap_t *lc, const struct passwd *pwd, uid_t uid,
                    unsigned int flags);
+
+/**
+ * @brief Populate environment variables from login class settings.
+ * @param[in] lc Login class handle.
+ * @param[in] pwd Optional user passwd structure.
+ * @param[in] paths Non-zero to configure PATH variables, 0 for other variables.
+ * @return 0 on success.
+ */
+int setclassenvironment(login_cap_t *lc, const struct passwd *pwd, int paths);
 
 #ifdef __cplusplus
 }

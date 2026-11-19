@@ -7,6 +7,7 @@
  * @brief Strict C89 POSIX sys/stat.h header and polyfills for MSVC.
  */
 
+/** @cond INTERNAL */
 #if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -18,6 +19,7 @@
 #define _DEFAULT_SOURCE 1
 #endif
 #endif
+/** @endcond */
 
 /* clang-format off */
 #include <errno.h>
@@ -86,11 +88,13 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* VS2015+ provides struct timespec in time.h */
 #else
+/** @cond INTERNAL */
 #define _TIMESPEC_DEFINED
 #define HAVE_STRUCT_TIMESPEC 1
 #define __timespec_defined 1
 #define _STRUCT_TIMESPEC 1
 #define _DEFINED_struct_timespec
+/** @endcond */
 /**
  * @brief Structure for representing time with nanosecond precision.
  */
@@ -428,23 +432,38 @@ typedef long blkcnt_t;
  * POSIX.1-2008 struct stat.
  */
 struct posix_stat {
-  _dev_t st_dev;           /**< ID of device containing file. */
-  _ino_t st_ino;           /**< Inode number. */
-  unsigned short st_mode;  /**< File type and mode. */
-  short st_nlink;          /**< Number of hard links. */
-  short st_uid;            /**< User ID of owner. */
-  short st_gid;            /**< Group ID of owner. */
-  _dev_t st_rdev;          /**< Device ID (if special file). */
-  __int64 st_size;         /**< Total size, in bytes. */
-  __time64_t st_atime;     /**< Time of last access (seconds). */
-  __time64_t st_mtime;     /**< Time of last modification (seconds). */
-  __time64_t st_ctime;     /**< Time of last status change (seconds). */
-  blksize_t st_blksize;    /**< Block size for filesystem I/O. */
-  blkcnt_t st_blocks;      /**< Number of 512B blocks allocated. */
-  struct timespec st_atim; /**< Time of last access (timespec). */
-  struct timespec st_mtim; /**< Time of last modification (timespec). */
-  struct timespec st_ctim; /**< Time of last status change (timespec). */
+  _dev_t st_dev;               /**< ID of device containing file. */
+  _ino_t st_ino;               /**< Inode number. */
+  unsigned short st_mode;      /**< File type and mode. */
+  short st_nlink;              /**< Number of hard links. */
+  short st_uid;                /**< User ID of owner. */
+  short st_gid;                /**< Group ID of owner. */
+  _dev_t st_rdev;              /**< Device ID (if special file). */
+  __int64 st_size;             /**< Total size, in bytes. */
+  __time64_t st_atime;         /**< Time of last access (seconds). */
+  __time64_t st_mtime;         /**< Time of last modification (seconds). */
+  __time64_t st_ctime;         /**< Time of last status change (seconds). */
+  blksize_t st_blksize;        /**< Block size for filesystem I/O. */
+  blkcnt_t st_blocks;          /**< Number of 512B blocks allocated. */
+  struct timespec st_atim;     /**< Time of last access (timespec). */
+  struct timespec st_mtim;     /**< Time of last modification (timespec). */
+  struct timespec st_ctim;     /**< Time of last status change (timespec). */
+  struct timespec st_birthtim; /**< BSD creation time (timespec). */
+  unsigned long st_flags;      /**< BSD user-defined flags for file. */
+  unsigned long st_gen;        /**< BSD file generation number. */
 };
+#ifndef st_atimespec
+#define st_atimespec st_atim
+#endif
+#ifndef st_mtimespec
+#define st_mtimespec st_mtim
+#endif
+#ifndef st_ctimespec
+#define st_ctimespec st_ctim
+#endif
+#ifndef st_birthtimespec
+#define st_birthtimespec st_birthtim
+#endif
 
 /**
  * @brief Obtains file status, supporting virtual /proc paths and Windows drive
@@ -596,6 +615,14 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, unsigned int dev);
 int mkdirat(int dirfd, const char *pathname, mode_t mode);
 
 /**
+ * @brief Creates a FIFO special file.
+ * @param[in] pathname Path to FIFO to create.
+ * @param[in] mode FIFO permissions.
+ * @return 0 on success, -1 on failure with errno set.
+ */
+int mkfifo(const char *pathname, mode_t mode);
+
+/**
  * @brief Creates a FIFO special file relative to a directory file descriptor.
  * @param[in] dirfd Directory file descriptor or AT_FDCWD.
  * @param[in] pathname Path to FIFO to create.
@@ -615,6 +642,29 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode);
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
               int flags);
 
+/**
+ * @brief Overrides Win32 API hooks used by posix-stat for deterministic branch
+ * testing.
+ * @param[in] get_mod_fn Custom GetModuleHandleA hook, or NULL.
+ * @param[in] get_proc_fn Custom GetProcAddress hook, or NULL.
+ * @param[in] get_attrs_fn Custom GetFileAttributesA hook, or NULL.
+ * @param[in] set_attrs_fn Custom SetFileAttributesA hook, or NULL.
+ * @param[in] get_attrs_ex_fn Custom GetFileAttributesExA hook, or NULL.
+ * @param[in] get_info_fn Custom GetFileInformationByHandle hook, or NULL.
+ * @param[in] set_time_fn Custom SetFileTime hook, or NULL.
+ * @param[in] create_file_fn Custom CreateFileA hook, or NULL.
+ */
+void posix_stat_set_win32_hooks(
+    void *(*get_mod_fn)(const char *),
+    void *(*get_proc_fn)(void *, const char *),
+    unsigned long (*get_attrs_fn)(const char *),
+    int (*set_attrs_fn)(const char *, unsigned long),
+    int (*get_attrs_ex_fn)(const char *, void *),
+    int (*get_info_fn)(void *, void *),
+    int (*set_time_fn)(void *, const void *, const void *, const void *),
+    void *(*create_file_fn)(const char *, unsigned long, unsigned long,
+                            unsigned long, unsigned long));
+
 #else /* !_WIN32 */
 
 #if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
@@ -633,20 +683,29 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
 #if !defined(__USE_XOPEN2K8) &&                                                \
         (!defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L) ||            \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+/** @brief Change permissions of an open file descriptor. */
 extern int fchmod(int fd, mode_t mode);
+/** @brief Change permissions of a file relative to a directory fd. */
 extern int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
+/** @brief Obtain file status relative to a directory fd. */
 extern int fstatat(int dirfd, const char *pathname, struct stat *statbuf,
                    int flags);
+/** @brief Update file timestamps with nanosecond precision by fd. */
 extern int futimens(int fd, const struct timespec times[2]);
 #if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+/** @brief Obtain file status without following symbolic links. */
 extern int lstat(const char *pathname, struct stat *statbuf);
 #endif
+/** @brief Create a special or ordinary file node. */
 extern int mknod(const char *pathname, mode_t mode, dev_t dev);
+/** @brief Create a special or ordinary file node relative to a directory fd. */
 extern int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 /** @brief Create a directory relative to a directory fd on DOS. */
 int mkdirat(int dirfd, const char *pathname, mode_t mode);
 /** @brief Create a FIFO relative to a directory fd on DOS. */
 int mkfifoat(int dirfd, const char *pathname, mode_t mode);
+/** @brief Update file timestamps with nanosecond precision relative to dirfd.
+ */
 extern int utimensat(int dirfd, const char *pathname,
                      const struct timespec times[2], int flags);
 #endif
@@ -673,12 +732,14 @@ int posix_lstat(const char *pathname, void *statbuf);
     !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
 #if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
 #ifndef stat
+/** @brief Inline procfs-emulating wrapper around posix_stat. */
 static __inline int auto_win_msvc_stat_wrap(const char *p, struct stat *b) {
   return posix_stat(p, b);
 }
 #define stat(p, b) auto_win_msvc_stat_wrap((p), (b))
 #endif
 #ifndef lstat
+/** @brief Inline procfs-emulating wrapper around posix_lstat. */
 static __inline int auto_win_msvc_lstat_wrap(const char *p, struct stat *b) {
   return posix_lstat(p, b);
 }

@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+/** @brief Resolves Generic Netlink family ID by name (stub). */
 static __inline uint16_t snl_get_genl_family(struct snl_state *ss,
                                              const char *family_name) {
   (void)ss;

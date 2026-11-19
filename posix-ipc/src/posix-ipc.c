@@ -1,5 +1,10 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+/**
+ * @file posix-ipc.c
+ * @brief Strict C89 implementation of System V POSIX IPC on Windows and DOS.
+ */
+
 /* clang-format off */
 #include "posix-ipc.h"
 #include <stddef.h>
@@ -23,6 +28,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include <io.h>
 #include <stdarg.h>
@@ -50,14 +56,73 @@
 
 #ifdef _WIN32
 
-/* Helper to generate a consistent hash from a file */
+static void *default_ipc_malloc(size_t sz) { return malloc(sz); }
+static void *default_ipc_calloc(size_t n, size_t sz) { return calloc(n, sz); }
+static int default_ipc_get_file_info(void *hFile, void *out_info) {
+  return (int)GetFileInformationByHandle(
+      (HANDLE)hFile, (LPBY_HANDLE_FILE_INFORMATION)out_info);
+}
+static void *default_ipc_map_view(void *hMap, unsigned long access) {
+  return MapViewOfFile((HANDLE)hMap, (DWORD)access, 0, 0, 0);
+}
+static long default_ipc_cmpxchg(volatile long *dest, long exch, long comp) {
+  return (long)InterlockedCompareExchange((LONG volatile *)dest, (LONG)exch,
+                                          (LONG)comp);
+}
+static int default_ipc_reset_event(void *hEvent) {
+  return (int)ResetEvent((HANDLE)hEvent);
+}
+static unsigned long default_ipc_wait_event(void *hEvent) {
+  return (unsigned long)WaitForSingleObject((HANDLE)hEvent, INFINITE);
+}
+
+static void *(*g_ipc_malloc)(size_t) = default_ipc_malloc;
+static void *(*g_ipc_calloc)(size_t, size_t) = default_ipc_calloc;
+static int (*g_ipc_get_file_info)(void *, void *) = default_ipc_get_file_info;
+static void *(*g_ipc_map_view)(void *, unsigned long) = default_ipc_map_view;
+static long (*g_ipc_cmpxchg)(volatile long *, long, long) = default_ipc_cmpxchg;
+static int (*g_ipc_reset_event)(void *) = default_ipc_reset_event;
+static unsigned long (*g_ipc_wait_event)(void *) = default_ipc_wait_event;
+
+/**
+ * @brief Overrides allocator hooks used by posix-ipc for OOM testing.
+ */
+void posix_ipc_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                               void *(*calloc_fn)(size_t, size_t)) {
+  g_ipc_malloc = (malloc_fn != NULL) ? malloc_fn : default_ipc_malloc;
+  g_ipc_calloc = (calloc_fn != NULL) ? calloc_fn : default_ipc_calloc;
+}
+
+/**
+ * @brief Overrides Win32 synchronization and mapping hooks for branch testing.
+ */
+void posix_ipc_set_win32_hooks(int (*get_file_info_fn)(void *, void *),
+                               void *(*map_view_fn)(void *, unsigned long),
+                               long (*cmpxchg_fn)(volatile long *, long, long),
+                               int (*reset_event_fn)(void *),
+                               unsigned long (*wait_event_fn)(void *)) {
+  g_ipc_get_file_info =
+      (get_file_info_fn != NULL) ? get_file_info_fn : default_ipc_get_file_info;
+  g_ipc_map_view = (map_view_fn != NULL) ? map_view_fn : default_ipc_map_view;
+  g_ipc_cmpxchg = (cmpxchg_fn != NULL) ? cmpxchg_fn : default_ipc_cmpxchg;
+  g_ipc_reset_event =
+      (reset_event_fn != NULL) ? reset_event_fn : default_ipc_reset_event;
+  g_ipc_wait_event =
+      (wait_event_fn != NULL) ? wait_event_fn : default_ipc_wait_event;
+}
+
+/**
+ * @brief Converts a pathname and a project identifier to a System V IPC key.
+ * @return The generated IPC key, or (key_t)-1 on failure.
+ */
 key_t ftok(const char *path, int id) {
   HANDLE hFile;
   BY_HANDLE_FILE_INFORMATION fileInfo;
   key_t key = (key_t)-1;
 
-  if (!path)
+  if (!path) {
     return (key_t)-1;
+  }
 
   hFile = CreateFileA(path, GENERIC_READ,
                       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -66,8 +131,8 @@ key_t ftok(const char *path, int id) {
     return (key_t)-1;
   }
 
-  if (GetFileInformationByHandle(hFile, &fileInfo)) {
-    key = (key_t)id << 24;
+  if (g_ipc_get_file_info(hFile, &fileInfo)) {
+    key = (key_t)(((unsigned int)(id & 0xFF)) << 24);
     key |= (key_t)(fileInfo.nFileIndexLow & 0xFFFF);
     key |= (key_t)((fileInfo.nFileIndexHigh & 0xFF) << 16);
   }
@@ -76,11 +141,7 @@ key_t ftok(const char *path, int id) {
   return key;
 }
 
-#ifdef _MSC_VER
 #define LU_FORMAT "%lu"
-#else
-#define LU_FORMAT "%lu"
-#endif
 
 /* --------------------------------------------------------------------------
  * Shared Memory
@@ -92,18 +153,24 @@ static struct {
   size_t size;
 } g_shm[MAX_SHM];
 
-static LONG g_shm_lock = 0;
+static volatile long g_shm_lock = 0;
 
-/** \brief lock_shm function. */
+/** @brief Acquires spinlock protecting shared memory table. */
 static void lock_shm(void) {
-  while (InterlockedCompareExchange(&g_shm_lock, 1, 0) != 0) {
+  while (g_ipc_cmpxchg(&g_shm_lock, 1, 0) != 0) {
     Sleep(0);
   }
 }
-/** \brief unlock_shm function. */
-static void unlock_shm(void) { InterlockedExchange(&g_shm_lock, 0); }
 
-/** \brief shmget function. */
+/** @brief Releases spinlock protecting shared memory table. */
+static void unlock_shm(void) {
+  InterlockedExchange((LONG volatile *)&g_shm_lock, 0);
+}
+
+/**
+ * @brief Gets a System V shared memory segment identifier.
+ * @return A valid shared memory segment identifier on success, -1 on failure.
+ */
 int shmget(key_t key, size_t size, int shmflg) {
   char name[256];
   HANDLE hMap;
@@ -137,40 +204,21 @@ int shmget(key_t key, size_t size, int shmflg) {
 
   if (key == IPC_PRIVATE) {
     static int priv_count = 0;
-#ifdef _MSC_VER
-    sprintf_s(
-        name, sizeof(name), "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
-        (unsigned long)GetCurrentProcessId(), (NUM_FORMAT_CAST)priv_count++);
-#else
 #if defined(_MSC_VER)
     sprintf_s(
         name, sizeof(name), "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
-#else
-    sprintf(
-        name, "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
-#endif
         (unsigned long)GetCurrentProcessId(), (NUM_FORMAT_CAST)priv_count++);
+#else
+    sprintf(name, "Local\\SYSV_SHM_PRIV_" LU_FORMAT "_" NUM_FORMAT,
+            (unsigned long)GetCurrentProcessId(),
+            (NUM_FORMAT_CAST)priv_count++);
 #endif
   } else {
-#ifdef _MSC_VER
 #if defined(_MSC_VER)
     sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
               (NUM_FORMAT_CAST)key);
 #else
     sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (NUM_FORMAT_CAST)key);
-#endif
-#else
-#if defined(_MSC_VER)
-    sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
-              (NUM_FORMAT_CAST)key);
-#else
-#if defined(_MSC_VER)
-    sprintf_s(name, sizeof(name), "Local\\SYSV_SHM_" NUM_FORMAT,
-              (NUM_FORMAT_CAST)key);
-#else
-    sprintf(name, "Local\\SYSV_SHM_" NUM_FORMAT, (NUM_FORMAT_CAST)key);
-#endif
-#endif
 #endif
   }
 
@@ -194,36 +242,45 @@ int shmget(key_t key, size_t size, int shmflg) {
   return empty_idx;
 }
 
+/**
+ * @brief Attaches a System V shared memory segment to the calling process.
+ * @return A pointer to the attached segment on success, or (void*)-1 on
+ * failure.
+ */
 void *shmat(int shmid, const void *shmaddr, int shmflg) {
   HANDLE hMap;
   void *addr;
-  DWORD access = FILE_MAP_ALL_ACCESS;
-  if (shmaddr) {
-    /* parameters checked */
-  }
+  unsigned long access = FILE_MAP_ALL_ACCESS;
+  (void)shmaddr;
 
-  if (shmid < 0 || shmid >= MAX_SHM)
+  if (shmid < 0 || shmid >= MAX_SHM) {
     return (void *)(size_t)-1;
+  }
 
   lock_shm();
   hMap = g_shm[shmid].hMap;
   unlock_shm();
 
-  if (!hMap)
+  if (!hMap) {
     return (void *)(size_t)-1;
+  }
 
   if (shmflg & SHM_RDONLY) {
     access = FILE_MAP_READ;
   }
 
-  addr = MapViewOfFile(hMap, access, 0, 0, 0);
-  if (!addr)
+  addr = g_ipc_map_view(hMap, access);
+  if (!addr) {
     return (void *)(size_t)-1;
+  }
 
   return addr;
 }
 
-/** \brief shmdt function. */
+/**
+ * @brief Detaches a System V shared memory segment from the calling process.
+ * @return 0 on success, -1 on failure.
+ */
 int shmdt(const void *shmaddr) {
   if (UnmapViewOfFile(shmaddr)) {
     return 0;
@@ -231,10 +288,14 @@ int shmdt(const void *shmaddr) {
   return -1;
 }
 
-/** \brief shmctl function. */
+/**
+ * @brief Performs control operations on a System V shared memory segment.
+ * @return 0 on success, -1 on failure.
+ */
 int shmctl(int shmid, int cmd, struct shmid_ds *buf) {
-  if (shmid < 0 || shmid >= MAX_SHM)
+  if (shmid < 0 || shmid >= MAX_SHM) {
     return -1;
+  }
 
   if (cmd == IPC_RMID) {
     lock_shm();
@@ -270,20 +331,27 @@ struct sysv_sem {
   short *semvals;
 };
 static struct sysv_sem g_sems[MAX_SEM];
-static LONG g_sem_lock = 0;
+static volatile long g_sem_lock = 0;
 
-/** \brief lock_sem function. */
+/** @brief Acquires spinlock protecting semaphore table. */
 static void lock_sem(void) {
-  while (InterlockedCompareExchange(&g_sem_lock, 1, 0) != 0) {
+  while (g_ipc_cmpxchg(&g_sem_lock, 1, 0) != 0) {
     Sleep(0);
   }
 }
-/** \brief unlock_sem function. */
-static void unlock_sem(void) { InterlockedExchange(&g_sem_lock, 0); }
 
-/** \brief semget function. */
+/** @brief Releases spinlock protecting semaphore table. */
+static void unlock_sem(void) {
+  InterlockedExchange((LONG volatile *)&g_sem_lock, 0);
+}
+
+/**
+ * @brief Gets a System V semaphore set identifier.
+ * @return A valid semaphore set identifier on success, -1 on failure.
+ */
 int semget(key_t key, int nsems, int semflg) {
   int i, empty_idx = -1;
+  short *semvals;
 
   lock_sem();
   if (key != IPC_PRIVATE) {
@@ -306,7 +374,13 @@ int semget(key_t key, int nsems, int semflg) {
     }
   }
 
-  if (empty_idx == -1 || !(semflg & IPC_CREAT)) {
+  if (empty_idx == -1 || !(semflg & IPC_CREAT) || nsems <= 0) {
+    unlock_sem();
+    return -1;
+  }
+
+  semvals = (short *)g_ipc_calloc((size_t)nsems, sizeof(short));
+  if (!semvals) {
     unlock_sem();
     return -1;
   }
@@ -315,24 +389,29 @@ int semget(key_t key, int nsems, int semflg) {
   g_sems[empty_idx].hEvent = CreateEventA(NULL, TRUE, FALSE, NULL);
   g_sems[empty_idx].key = key;
   g_sems[empty_idx].nsems = nsems;
-  g_sems[empty_idx].semvals = (short *)calloc((size_t)nsems, sizeof(short));
+  g_sems[empty_idx].semvals = semvals;
 
   unlock_sem();
   return empty_idx;
 }
 
-/** \brief semop function. */
+/**
+ * @brief Performs operations on selected System V semaphores.
+ * @return 0 on success, -1 on failure.
+ */
 int semop(int semid, struct sembuf *sops, size_t nsops) {
   struct sysv_sem *sem;
   size_t i;
   int can_apply;
 
-  if (semid < 0 || semid >= MAX_SEM)
+  if (semid < 0 || semid >= MAX_SEM || !sops) {
     return -1;
+  }
 
   sem = &g_sems[semid];
-  if (!sem->hMutex)
+  if (!sem->hMutex) {
     return -1;
+  }
 
 retry:
   WaitForSingleObject(sem->hMutex, INFINITE);
@@ -360,7 +439,7 @@ retry:
       sem->semvals[sops[i].sem_num] =
           (short)(sem->semvals[sops[i].sem_num] + sops[i].sem_op);
     }
-    SetEvent(sem->hEvent); /* wake up waiters */
+    SetEvent(sem->hEvent);
     ReleaseMutex(sem->hMutex);
     return 0;
   } else {
@@ -374,18 +453,21 @@ retry:
 
     if (has_nowait) {
       ReleaseMutex(sem->hMutex);
-      return -1; /* would block */
+      return -1;
     }
 
-    ResetEvent(sem->hEvent);
+    g_ipc_reset_event(sem->hEvent);
     ReleaseMutex(sem->hMutex);
 
-    WaitForSingleObject(sem->hEvent, INFINITE);
+    g_ipc_wait_event(sem->hEvent);
     goto retry;
   }
 }
 
-/** \brief semctl function. */
+/**
+ * @brief Performs control operations on a System V semaphore set.
+ * @return A non-negative value on success, -1 on failure.
+ */
 int semctl(int semid, int semnum, int cmd, ...) {
   struct sysv_sem *sem;
   va_list ap;
@@ -396,12 +478,14 @@ int semctl(int semid, int semnum, int cmd, ...) {
     unsigned short *array;
   } arg;
 
-  if (semid < 0 || semid >= MAX_SEM)
+  if (semid < 0 || semid >= MAX_SEM) {
     return -1;
+  }
 
   sem = &g_sems[semid];
-  if (!sem->hMutex)
+  if (!sem->hMutex) {
     return -1;
+  }
 
   va_start(ap, cmd);
 
@@ -454,16 +538,14 @@ int semctl(int semid, int semnum, int cmd, ...) {
 
   case IPC_RMID:
     lock_sem();
-    if (sem->hMutex) {
-      CloseHandle(sem->hMutex);
-      CloseHandle(sem->hEvent);
-      free(sem->semvals);
-      sem->hMutex = NULL;
-      sem->hEvent = NULL;
-      sem->semvals = NULL;
-      sem->nsems = 0;
-      sem->key = 0;
-    }
+    CloseHandle(sem->hMutex);
+    CloseHandle(sem->hEvent);
+    free(sem->semvals);
+    sem->hMutex = NULL;
+    sem->hEvent = NULL;
+    sem->semvals = NULL;
+    sem->nsems = 0;
+    sem->key = 0;
     unlock_sem();
     res = 0;
     break;
@@ -499,18 +581,24 @@ struct sysv_msg {
 };
 
 static struct sysv_msg g_msgs[MAX_MSG];
-static LONG g_msg_lock = 0;
+static volatile long g_msg_lock = 0;
 
-/** \brief lock_msg function. */
+/** @brief Acquires spinlock protecting message queue table. */
 static void lock_msg(void) {
-  while (InterlockedCompareExchange(&g_msg_lock, 1, 0) != 0) {
+  while (g_ipc_cmpxchg(&g_msg_lock, 1, 0) != 0) {
     Sleep(0);
   }
 }
-/** \brief unlock_msg function. */
-static void unlock_msg(void) { InterlockedExchange(&g_msg_lock, 0); }
 
-/** \brief msgget function. */
+/** @brief Releases spinlock protecting message queue table. */
+static void unlock_msg(void) {
+  InterlockedExchange((LONG volatile *)&g_msg_lock, 0);
+}
+
+/**
+ * @brief Gets a System V message queue identifier.
+ * @return A valid message queue identifier on success, -1 on failure.
+ */
 int msgget(key_t key, int msgflg) {
   int i, empty_idx = -1;
 
@@ -545,48 +633,56 @@ int msgget(key_t key, int msgflg) {
   g_msgs[empty_idx].key = key;
   g_msgs[empty_idx].head = NULL;
   g_msgs[empty_idx].tail = NULL;
-  g_msgs[empty_idx].qbytes = 16384; /* default max bytes */
+  g_msgs[empty_idx].qbytes = 16384;
   g_msgs[empty_idx].cbytes = 0;
 
   unlock_msg();
   return empty_idx;
 }
 
-/** \brief msgsnd function. */
+/**
+ * @brief Sends a message to a System V message queue.
+ * @return 0 on success, -1 on failure.
+ */
 int msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg) {
   struct sysv_msg *mq;
   struct msg_node *node;
   long mtype;
 
-  if (msqid < 0 || msqid >= MAX_MSG)
-    return -1;
-
-  mq = &g_msgs[msqid];
-  if (!mq->hMutex)
-    return -1;
-
-  mtype = *(const long *)msgp;
-  if (mtype <= 0)
-    return -1;
-
-  node = (struct msg_node *)malloc(sizeof(struct msg_node));
-  if (!node)
-    return -1;
-
-  node->msgtyp = mtype;
-  node->size = msgsz;
-  node->data = malloc(msgsz);
-  if (!node->data && msgsz > 0) {
-    free(node);
+  if (msqid < 0 || msqid >= MAX_MSG || !msgp) {
     return -1;
   }
 
+  mq = &g_msgs[msqid];
+  if (!mq->hMutex) {
+    return -1;
+  }
+
+  mtype = *(const long *)msgp;
+  if (mtype <= 0) {
+    return -1;
+  }
+
+  node = (struct msg_node *)g_ipc_malloc(sizeof(struct msg_node));
+  if (!node) {
+    return -1;
+  }
+
+  node->msgtyp = mtype;
+  node->size = msgsz;
   if (msgsz > 0) {
-#ifdef _MSC_VER
+    node->data = g_ipc_malloc(msgsz);
+    if (!node->data) {
+      free(node);
+      return -1;
+    }
+#if defined(_MSC_VER)
     memcpy_s(node->data, msgsz, (const char *)msgp + sizeof(long), msgsz);
 #else
     memcpy(node->data, (const char *)msgp + sizeof(long), msgsz);
 #endif
+  } else {
+    node->data = NULL;
   }
   node->next = NULL;
 
@@ -601,9 +697,9 @@ retry:
       return -1;
     }
 
-    ResetEvent(mq->hEvent);
+    g_ipc_reset_event(mq->hEvent);
     ReleaseMutex(mq->hMutex);
-    WaitForSingleObject(mq->hEvent, INFINITE);
+    g_ipc_wait_event(mq->hEvent);
     goto retry;
   }
 
@@ -615,24 +711,29 @@ retry:
   mq->tail = node;
   mq->cbytes += msgsz;
 
-  SetEvent(mq->hEvent); /* wake up receivers */
+  SetEvent(mq->hEvent);
   ReleaseMutex(mq->hMutex);
 
   return 0;
 }
 
-/** \brief msgrcv function. */
+/**
+ * @brief Receives a message from a System V message queue.
+ * @return The number of bytes copied into the message buffer, or -1 on failure.
+ */
 ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg) {
   struct sysv_msg *mq;
   struct msg_node *prev, *curr, *found_prev, *found;
   size_t copy_size;
 
-  if (msqid < 0 || msqid >= MAX_MSG)
+  if (msqid < 0 || msqid >= MAX_MSG || !msgp) {
     return -1;
+  }
 
   mq = &g_msgs[msqid];
-  if (!mq->hMutex)
+  if (!mq->hMutex) {
     return -1;
+  }
 
 retry:
   WaitForSingleObject(mq->hMutex, INFINITE);
@@ -645,9 +746,7 @@ retry:
   while (curr) {
     if (msgtyp == 0 || (msgtyp > 0 && curr->msgtyp == msgtyp) ||
         (msgtyp < 0 && curr->msgtyp <= -msgtyp)) {
-
       if (msgtyp < 0 && found != NULL && curr->msgtyp >= found->msgtyp) {
-        /* For negative msgtyp, find lowest type <= |msgtyp| */
         prev = curr;
         curr = curr->next;
         continue;
@@ -656,8 +755,9 @@ retry:
       found = curr;
       found_prev = prev;
 
-      if (msgtyp >= 0)
+      if (msgtyp >= 0) {
         break;
+      }
     }
     prev = curr;
     curr = curr->next;
@@ -669,16 +769,14 @@ retry:
       return -1;
     }
 
-    ResetEvent(mq->hEvent);
+    g_ipc_reset_event(mq->hEvent);
     ReleaseMutex(mq->hMutex);
-    WaitForSingleObject(mq->hEvent, INFINITE);
+    g_ipc_wait_event(mq->hEvent);
     goto retry;
   }
 
-  /* We found a message */
   if (found->size > msgsz && !(msgflg & MSG_NOERROR)) {
     ReleaseMutex(mq->hMutex);
-    /* errno = E2BIG; */
     return -1;
   }
 
@@ -686,14 +784,13 @@ retry:
 
   *(long *)msgp = found->msgtyp;
   if (copy_size > 0) {
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
     memcpy_s((char *)msgp + sizeof(long), msgsz, found->data, copy_size);
 #else
     memcpy((char *)msgp + sizeof(long), found->data, copy_size);
 #endif
   }
 
-  /* Remove from queue */
   if (found_prev) {
     found_prev->next = found->next;
   } else {
@@ -705,7 +802,7 @@ retry:
 
   mq->cbytes -= found->size;
 
-  SetEvent(mq->hEvent); /* wake up senders */
+  SetEvent(mq->hEvent);
   ReleaseMutex(mq->hMutex);
 
   free(found->data);
@@ -714,16 +811,21 @@ retry:
   return (ssize_t)copy_size;
 }
 
-/** \brief msgctl function. */
+/**
+ * @brief Performs control operations on a message queue.
+ * @return 0 on success, -1 on failure.
+ */
 int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
   struct sysv_msg *mq;
 
-  if (msqid < 0 || msqid >= MAX_MSG)
+  if (msqid < 0 || msqid >= MAX_MSG) {
     return -1;
+  }
 
   mq = &g_msgs[msqid];
-  if (!mq->hMutex)
+  if (!mq->hMutex) {
     return -1;
+  }
 
   if (cmd == IPC_RMID) {
     struct msg_node *curr, *next;
@@ -1011,6 +1113,8 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
 
 /**
  * @brief Retrieves information on posix-ipc module availability.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
 auto_win_msvc_error_t posix_ipc_get_info(int *out_available) {
   if (out_available == NULL) {

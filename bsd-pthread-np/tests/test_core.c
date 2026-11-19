@@ -1,5 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #if defined(__linux__) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
@@ -9,23 +7,26 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#if defined(__linux__)
+#if defined(_MSC_VER) || defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#elif defined(__linux__)
 #include <sched.h>
 #endif
 /* clang-format on */
 
 TEST test_bsd_pthread_np_init(void) {
   auto_win_msvc_error_t rc;
-  int status;
+  int status = 0;
 
-  status = 0;
   rc = bsd_pthread_np_init(NULL);
-  (void)rc;
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, rc);
 
   rc = bsd_pthread_np_init(&status);
-  (void)rc;
-
-  (void)status;
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, rc);
+  ASSERT_EQ(1, status);
   PASS();
 }
 
@@ -46,42 +47,67 @@ TEST test_pthread_setaffinity_np(void) {
   }
 #else
   {
-    unsigned long mask;
-    pthread_t dummy_thread = (pthread_t)1;
+    unsigned char small_mask;
+    unsigned char big_mask[32];
+    pthread_t invalid_thread = (pthread_t)1;
 
-    mask = 1;
+    memset(big_mask, 0, sizeof(big_mask));
+    big_mask[0] = 1;
+    small_mask = 1;
+
     /* thread = 0 */
-    ret = pthread_setaffinity_np((pthread_t)0, sizeof(mask), &mask);
-    (void)ret;
-    (void)errno;
+    errno = 0;
+    ret = pthread_setaffinity_np((pthread_t)0, sizeof(small_mask), &small_mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(ESRCH, errno);
 
     /* NULL cpuset */
-    ret = pthread_setaffinity_np(dummy_thread, sizeof(mask), NULL);
-    (void)ret;
-    (void)errno;
+    errno = 0;
+    ret = pthread_setaffinity_np(invalid_thread, sizeof(small_mask), NULL);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
 
     /* 0 cpusetsize */
-    ret = pthread_setaffinity_np(dummy_thread, 0, &mask);
-    (void)ret;
-    (void)errno;
+    errno = 0;
+    ret = pthread_setaffinity_np(invalid_thread, 0, &small_mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
 
-    /* Zero mask */
-    mask = 0;
-    ret = pthread_setaffinity_np(dummy_thread, sizeof(mask), &mask);
-    (void)ret;
-    (void)errno;
+    /* Zero mask (both small and oversized > sizeof(DWORD_PTR)/unsigned long) */
+    small_mask = 0;
+    errno = 0;
+    ret =
+        pthread_setaffinity_np(invalid_thread, sizeof(small_mask), &small_mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
+
+    big_mask[0] = 0;
+    errno = 0;
+    ret = pthread_setaffinity_np(invalid_thread, sizeof(big_mask), big_mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
 
     /* Valid mask */
-    mask = 1;
+    small_mask = 1;
+    big_mask[0] = 1;
 #if defined(_MSC_VER) || defined(_WIN32)
-    /* on Windows, dummy_thread=1 might fail SetThreadAffinityMask */
-    ret = pthread_setaffinity_np(dummy_thread, sizeof(mask), &mask);
-    (void)ret;
-    (void)errno;
+    /* Invalid HANDLE fails SetThreadAffinityMask */
+    errno = 0;
+    ret =
+        pthread_setaffinity_np(invalid_thread, sizeof(small_mask), &small_mask);
+    ASSERT_EQ(-1, ret);
+    ASSERT_EQ(EINVAL, errno);
+
+    /* Valid GetCurrentThread() succeeds SetThreadAffinityMask */
+    ret = pthread_setaffinity_np((pthread_t)GetCurrentThread(),
+                                 sizeof(big_mask), big_mask);
+    ASSERT_EQ(0, ret);
 #else
-    /* Fallback returns 0 */
-    ret = pthread_setaffinity_np(dummy_thread, sizeof(mask), &mask);
-    (void)ret;
+    ret =
+        pthread_setaffinity_np(invalid_thread, sizeof(small_mask), &small_mask);
+    ASSERT_EQ(0, ret);
+    ret = pthread_setaffinity_np(invalid_thread, sizeof(big_mask), big_mask);
+    ASSERT_EQ(0, ret);
 #endif
   }
 #endif

@@ -9,8 +9,6 @@
 #include <time.h>
 
 #if defined(_WIN32)
-#ifndef SAFE_GET_OSFHANDLE
-#define SAFE_GET_OSFHANDLE
 #include <errno.h>
 #include <stdlib.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -20,67 +18,10 @@
 #endif
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #include <crtdbg.h>
-static void poll_null_invalid_param_handler(const wchar_t *expression,
-                                            const wchar_t *function,
-                                            const wchar_t *file,
-                                            unsigned int line,
-                                            uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-  }
-}
 #endif
-static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
-  ptrdiff_t h = -1;
-  int saved_err = errno;
-  if (fd < 0 || fd >= 2048) {
-    return -1;
-  }
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-  {
-    _invalid_parameter_handler old =
-        _set_invalid_parameter_handler(poll_null_invalid_param_handler);
-    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
-    h = (ptrdiff_t)_get_osfhandle((int)fd);
-    _set_invalid_parameter_handler(old);
-  }
-#else
-  h = (ptrdiff_t)_get_osfhandle((int)fd);
-#endif
-  errno = saved_err;
-  if (h == -2) {
-    return -1;
-  }
-  return h;
-}
-#endif
-
 #ifndef _WINSOCK2API_
 #include <winsock2.h>
 #endif
-
-extern intptr_t posix_get_dup_socket(intptr_t fd);
-extern intptr_t posix_lookup_crt_socket(intptr_t fd);
-
-static SOCKET resolve_socket_or_fd_poll(intptr_t fd) {
-  ptrdiff_t h;
-  intptr_t s = posix_get_dup_socket(fd);
-  if (s != 0) {
-    return (SOCKET)s;
-  }
-  s = posix_lookup_crt_socket(fd);
-  if (s != 0) {
-    return (SOCKET)s;
-  }
-  if (fd >= 0 && fd < 64) {
-    h = safe_get_osfhandle(fd);
-    if (h != -1) {
-      return (SOCKET)h;
-    }
-  }
-  return (SOCKET)fd;
-}
-
-#define GET_SOCKET(fd) resolve_socket_or_fd_poll(fd)
 #else
 #include <poll.h>
 #endif
@@ -104,11 +45,157 @@ auto_win_msvc_error_t posix_poll_get_info(int *out_available) {
 
 #if defined(_WIN32)
 
+#if defined(_MSC_VER)
+#if defined(_M_IX86)
+#pragma comment(linker,                                                        \
+                "/alternatename:_posix_get_dup_socket=_poll_dup_socket_stub")
+#pragma comment(                                                               \
+    linker, "/alternatename:_posix_lookup_crt_socket=_poll_crt_socket_stub")
+#else
+#pragma comment(linker,                                                        \
+                "/alternatename:posix_get_dup_socket=poll_dup_socket_stub")
+#pragma comment(linker,                                                        \
+                "/alternatename:posix_lookup_crt_socket=poll_crt_socket_stub")
+#endif
+/** @brief Fallback stub for posix_get_dup_socket when posix-sockets is absent.
+ */
+intptr_t poll_dup_socket_stub(intptr_t fd) {
+  (void)fd;
+  return 0;
+}
+/** @brief Fallback stub for posix_lookup_crt_socket when posix-sockets is
+ * absent. */
+intptr_t poll_crt_socket_stub(intptr_t fd) {
+  (void)fd;
+  return 0;
+}
+#endif
+
+extern intptr_t posix_get_dup_socket(intptr_t fd);
+extern intptr_t posix_lookup_crt_socket(intptr_t fd);
+
 __declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
 __declspec(dllimport) int __stdcall
 PeekNamedPipe(void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
               unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
               unsigned long *lpBytesLeftThisMessage);
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+static void poll_null_invalid_param_handler(const wchar_t *expression,
+                                            const wchar_t *function,
+                                            const wchar_t *file,
+                                            unsigned int line,
+                                            uintptr_t pReserved) {
+  if (expression || function || file || line || pReserved) {
+  }
+}
+#endif
+
+static intptr_t default_poll_raw_osfhandle(int fd) {
+  return (intptr_t)_get_osfhandle(fd);
+}
+static intptr_t default_poll_dup_sock(intptr_t fd) {
+  return posix_get_dup_socket(fd);
+}
+static intptr_t default_poll_crt_sock(intptr_t fd) {
+  return posix_lookup_crt_socket(fd);
+}
+static int default_poll_getsockopt(SOCKET s, char *optval, int *optlen) {
+  return getsockopt(s, SOL_SOCKET, SO_TYPE, optval, optlen);
+}
+static unsigned long default_poll_file_type(void *h) { return GetFileType(h); }
+static int default_poll_peek_pipe(void *h, unsigned long *avail) {
+  return PeekNamedPipe(h, NULL, 0, NULL, avail, NULL);
+}
+static int default_poll_select(int nfds, fd_set *rfds, fd_set *wfds,
+                               fd_set *efds, struct timeval *tv) {
+  return select(nfds, rfds, wfds, efds, tv);
+}
+
+static intptr_t (*g_poll_raw_osfhandle)(int) = default_poll_raw_osfhandle;
+static intptr_t (*g_poll_dup_sock)(intptr_t) = default_poll_dup_sock;
+static intptr_t (*g_poll_crt_sock)(intptr_t) = default_poll_crt_sock;
+static int (*g_poll_getsockopt)(SOCKET, char *,
+                                int *) = default_poll_getsockopt;
+static unsigned long (*g_poll_file_type)(void *) = default_poll_file_type;
+static int (*g_poll_peek_pipe)(void *,
+                               unsigned long *) = default_poll_peek_pipe;
+static int (*g_poll_select)(int, fd_set *, fd_set *, fd_set *,
+                            struct timeval *) = default_poll_select;
+
+/**
+ * @brief Overrides Win32/Winsock hooks used by posix-poll for unit testing.
+ */
+void posix_poll_set_hooks(
+    intptr_t (*raw_osf_fn)(int), intptr_t (*dup_sock_fn)(intptr_t),
+    intptr_t (*crt_sock_fn)(intptr_t),
+    int (*getsockopt_fn)(uintptr_t, char *, int *),
+    unsigned long (*ftype_fn)(void *), int (*peek_fn)(void *, unsigned long *),
+    int (*select_fn)(int, void *, void *, void *, void *)) {
+  g_poll_raw_osfhandle = raw_osf_fn;
+  g_poll_dup_sock = dup_sock_fn;
+  g_poll_crt_sock = crt_sock_fn;
+  g_poll_getsockopt = (int (*)(SOCKET, char *, int *))getsockopt_fn;
+  g_poll_file_type = ftype_fn;
+  g_poll_peek_pipe = peek_fn;
+  g_poll_select =
+      (int (*)(int, fd_set *, fd_set *, fd_set *, struct timeval *))select_fn;
+}
+
+/**
+ * @brief Resets Win32/Winsock hooks used by posix-poll to defaults.
+ */
+void posix_poll_reset_hooks(void) {
+  g_poll_raw_osfhandle = default_poll_raw_osfhandle;
+  g_poll_dup_sock = default_poll_dup_sock;
+  g_poll_crt_sock = default_poll_crt_sock;
+  g_poll_getsockopt = default_poll_getsockopt;
+  g_poll_file_type = default_poll_file_type;
+  g_poll_peek_pipe = default_poll_peek_pipe;
+  g_poll_select = default_poll_select;
+}
+
+static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
+  ptrdiff_t h = -1;
+  int saved_err = errno;
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(poll_null_invalid_param_handler);
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
+    h = (ptrdiff_t)g_poll_raw_osfhandle((int)fd);
+    _set_invalid_parameter_handler(old);
+  }
+#else
+  h = (ptrdiff_t)g_poll_raw_osfhandle((int)fd);
+#endif
+  errno = saved_err;
+  if (h == -2) {
+    return -1;
+  }
+  return h;
+}
+
+static SOCKET resolve_socket_or_fd_poll(intptr_t fd) {
+  ptrdiff_t h;
+  intptr_t s = g_poll_dup_sock(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  s = g_poll_crt_sock(fd);
+  if (s != 0) {
+    return (SOCKET)s;
+  }
+  if (fd < 64) {
+    h = safe_get_osfhandle(fd);
+    if (h != -1) {
+      return (SOCKET)h;
+    }
+  }
+  return (SOCKET)fd;
+}
+
+#define GET_SOCKET(fd) resolve_socket_or_fd_poll(fd)
 
 static void posix_fd_zero(fd_set *set) { set->fd_count = 0; }
 #undef FD_ZERO
@@ -167,26 +254,24 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     if (s == (SOCKET)-1) {
       continue;
     }
-    if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) ==
-        SOCKET_ERROR) {
+    if (g_poll_getsockopt(s, (char *)&optval, &optlen) == SOCKET_ERROR) {
       /* Non-socket handle (pipe/file/console) */
-      void *h = ((intptr_t)fds[i].fd >= 0 && (intptr_t)fds[i].fd < 2048)
-                    ? (void *)_get_osfhandle((int)fds[i].fd)
+      void *h = ((intptr_t)fds[i].fd < 2048)
+                    ? (void *)safe_get_osfhandle((intptr_t)fds[i].fd)
                     : (void *)s;
       unsigned long ftype;
       short rev = 0;
-      if (h == (void *)(intptr_t)-1 || h == (void *)(intptr_t)-2) {
+      if (h == (void *)(intptr_t)-1) {
         h = (void *)s;
       }
-      ftype = GetFileType(h);
+      ftype = g_poll_file_type(h);
       if (fds[i].events & POLLOUT) {
         rev |= POLLOUT;
       }
       if (fds[i].events & POLLIN) {
         if (ftype == 3 /* FILE_TYPE_PIPE */) {
           unsigned long avail = 0;
-          if (!PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL)) {
-            /* Pipe broken / EOF -> readable for EOF or HUP */
+          if (!g_poll_peek_pipe(h, &avail)) {
             rev |= POLLIN;
           } else if (avail > 0) {
             rev |= POLLIN;
@@ -236,7 +321,7 @@ int posix_poll(struct pollfd *fds, unsigned long nfds, int timeout) {
     tvp = NULL;
   }
 
-  result = select(max_fd + 1, &read_fds, &write_fds, &except_fds, tvp);
+  result = g_poll_select(max_fd + 1, &read_fds, &write_fds, &except_fds, tvp);
 
   if (result > 0) {
     for (i = 0; i < nfds; ++i) {

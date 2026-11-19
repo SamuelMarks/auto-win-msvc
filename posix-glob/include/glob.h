@@ -26,6 +26,16 @@
 extern "C" {
 #endif
 
+#ifndef GLOB_BRACE
+#define GLOB_BRACE 0x0080
+#endif
+#ifndef GLOB_TILDE
+#define GLOB_TILDE 0x0100
+#endif
+#ifndef GLOB_NOMAGIC
+#define GLOB_NOMAGIC 0x0800
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

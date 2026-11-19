@@ -70,16 +70,21 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 )
-    # Enable AddressSanitizer if supported (VS 2019 16.9+)
-    # add_compile_options(/fsanitize=address /Zi)
-            # add_link_options(/DEBUG) # Uncomment if using modern MSVC
+    if(NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+        find_program(CMAKE_NM NAMES llvm-nm x86_64-w64-mingw32-nm dumpbin)
+    endif()
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    add_compile_options(/WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
 
 add_library(posix-dlfcn src/posix-dlfcn.c)
-set_target_properties(posix-dlfcn PROPERTIES DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS")
+set_target_properties(posix-dlfcn PROPERTIES
+    DEFINE_SYMBOL "auto_win_msvc_export_lib_EXPORTS"
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
 target_include_directories(posix-dlfcn PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 enable_testing()
@@ -102,6 +107,9 @@ endif()
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-dlfcn ${TEST_SOURCES})
 target_link_libraries(test_posix-dlfcn PRIVATE posix-dlfcn)
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_posix-dlfcn PRIVATE ${CMAKE_DL_LIBS})
+endif()
 target_include_directories(test_posix-dlfcn PRIVATE ${greatest_SOURCE_DIR})
 
 add_test(NAME test_posix-dlfcn COMMAND test_posix-dlfcn)

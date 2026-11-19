@@ -1,5 +1,7 @@
-
-/* posix_read_write.c - Strict C89 Implementation */
+/**
+ * @file posix_read_write.c
+ * @brief Strict C89 POSIX I/O stream and descriptor polyfills.
+ */
 
 /* clang-format off */
 #include "posix-core.h"
@@ -36,14 +38,303 @@
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 
+#undef _read
+#undef _write
+#undef read
+#undef write
+#undef open
+#undef creat
+#undef close
+#undef lseek
+#undef dup
+#undef dup2
+#undef fopen
+#undef fdopen
+#undef fgets
+#undef fgets_unlocked
+#undef fprintf
+#undef fread
+#undef fwrite
+#undef fgetc
+#undef getc
+#undef fclose
+#undef feof
+#undef ferror
+#undef fileno
+
+__declspec(dllimport) unsigned long __stdcall
+GetTempPathA(unsigned long nBufferLength, char *lpBuffer);
+__declspec(dllimport) unsigned int __stdcall
+GetTempFileNameA(const char *lpPathName, const char *lpPrefixString,
+                 unsigned int uUnique, char *lpTempFileName);
+
+extern int is_socket(intptr_t fd);
+extern error_type_t mark_as_socket(intptr_t fd);
+extern error_type_t clear_as_socket(intptr_t fd);
+extern error_type_t clear_nonblock(SOCKET s);
+extern intptr_t posix_get_dup_socket(intptr_t fd);
+extern void posix_set_dup_socket(intptr_t fd, intptr_t s);
+extern intptr_t posix_lookup_crt_socket(intptr_t fd);
+extern void posix_register_crt_socket(intptr_t fd, intptr_t s);
+extern int posix_epoll_close(int epfd);
+
+#if defined(_MSC_VER)
+int posix_epoll_close_stub(int epfd) {
+  (void)epfd;
+  return -1;
+}
+#if defined(_M_IX86)
+#pragma comment(linker,                                                        \
+                "/alternatename:_posix_epoll_close=_posix_epoll_close_stub")
+#else
+#pragma comment(linker,                                                        \
+                "/alternatename:posix_epoll_close=posix_epoll_close_stub")
+#endif
+#endif
+
+static void *default_rw_malloc(size_t size) { return malloc(size); }
+static void default_rw_free(void *ptr) { free(ptr); }
+static intptr_t default_rw_get_osfhandle(int fd) { return _get_osfhandle(fd); }
+static int default_rw_open_osfhandle(intptr_t osfhandle, int flags) {
+  return _open_osfhandle(osfhandle, flags);
+}
+static FILE *default_rw_fdopen(int fd, const char *mode) {
+  return _fdopen(fd, mode);
+}
+static int default_rw_fileno(FILE *stream) { return _fileno(stream); }
+static int default_rw_close(int fd) { return _close(fd); }
+static int default_rw_read(int fd, void *buf, unsigned int count) {
+  return _read(fd, buf, count);
+}
+static int default_rw_write(int fd, const void *buf, unsigned int count) {
+  return _write(fd, buf, count);
+}
+static int default_rw_dup(int fd) { return _dup(fd); }
+static int default_rw_dup2(int fd1, int fd2) { return _dup2(fd1, fd2); }
+static posix_rw_off_t default_rw_lseek(int fd, posix_rw_off_t offset,
+                                       int whence) {
+#if defined(_MSC_VER)
+  return _lseeki64(fd, offset, whence);
+#else
+  return (posix_rw_off_t)_lseek(fd, (long)offset, whence);
+#endif
+}
+static int default_rw_setmode(int fd, int mode) { return _setmode(fd, mode); }
+
+static int default_rw_vscprintf(const char *format, va_list argptr)
+    POSIX_CORE_PRINTF_FORMAT(1, 0);
+static int default_rw_vscprintf(const char *format, va_list argptr) {
+#if defined(_MSC_VER)
+  return _vscprintf(format, argptr);
+#else
+  return vsnprintf(NULL, 0, format, argptr);
+#endif
+}
+
+static int default_rw_vsprintf_buf(char *buf, size_t cap, const char *format,
+                                   va_list argptr)
+    POSIX_CORE_PRINTF_FORMAT(3, 0);
+static int default_rw_vsprintf_buf(char *buf, size_t cap, const char *format,
+                                   va_list argptr) {
+#if defined(_MSC_VER)
+  return vsprintf_s(buf, cap, format, argptr);
+#else
+  return vsnprintf(buf, cap, format, argptr);
+#endif
+}
+
+static unsigned long default_rw_get_temp_path(unsigned long buf_len,
+                                              char *buf) {
+  return GetTempPathA(buf_len, buf);
+}
+static unsigned int default_rw_get_temp_file_name(const char *path,
+                                                  const char *prefix,
+                                                  unsigned int unique,
+                                                  char *out_file) {
+  return GetTempFileNameA(path, prefix, unique, out_file);
+}
+static void *default_rw_create_file(const char *name, unsigned long access,
+                                    unsigned long share, void *sa,
+                                    unsigned long disp, unsigned long flags,
+                                    void *tmpl) {
+  return (void *)CreateFileA(name, access, share, (LPSECURITY_ATTRIBUTES)sa,
+                             disp, flags, (HANDLE)tmpl);
+}
+static int default_rw_close_handle(void *handle) {
+  return (int)CloseHandle((HANDLE)handle);
+}
+static unsigned long default_rw_get_current_dir(unsigned long buf_len,
+                                                char *buf) {
+  return GetCurrentDirectoryA(buf_len, buf);
+}
+static unsigned long default_rw_get_file_attributes(const char *name) {
+  return GetFileAttributesA(name);
+}
+static unsigned long default_rw_get_file_type(void *handle) {
+  return GetFileType((HANDLE)handle);
+}
+static unsigned long default_rw_get_last_error(void) { return GetLastError(); }
+static void *default_rw_get_module_handle(const char *name) {
+  return (void *)GetModuleHandleA(name);
+}
+static void *default_rw_get_proc_address(void *module, const char *proc_name) {
+  return (void *)(size_t)GetProcAddress((HMODULE)module, proc_name);
+}
+static unsigned long default_rw_get_tick_count(void) { return GetTickCount(); }
+static unsigned long default_rw_get_current_pid(void) {
+  return GetCurrentProcessId();
+}
+static int default_rw_read_file(void *handle, void *buf, unsigned long to_read,
+                                unsigned long *bytes_read, void *overlapped) {
+  return (int)ReadFile((HANDLE)handle, buf, to_read, bytes_read,
+                       (LPOVERLAPPED)overlapped);
+}
+static int default_rw_write_file(void *handle, const void *buf,
+                                 unsigned long to_write,
+                                 unsigned long *bytes_written,
+                                 void *overlapped) {
+  return (int)WriteFile((HANDLE)handle, buf, to_write, bytes_written,
+                        (LPOVERLAPPED)overlapped);
+}
+static int default_rw_get_overlapped_result(void *handle, void *overlapped,
+                                            unsigned long *bytes_transferred,
+                                            int wait) {
+  return (int)GetOverlappedResult((HANDLE)handle, (LPOVERLAPPED)overlapped,
+                                  bytes_transferred, wait);
+}
+static int default_rw_set_std_handle(unsigned long std_id, void *handle) {
+  return (int)SetStdHandle(std_id, (HANDLE)handle);
+}
+static int default_rw_wsa_startup(unsigned short ver, void *wsa_data) {
+  return WSAStartup(ver, (LPWSADATA)wsa_data);
+}
+static int default_rw_wsa_get_last_error(void) { return WSAGetLastError(); }
+static int default_rw_getsockopt(uintptr_t s, int level, int optname,
+                                 char *optval, int *optlen) {
+  return getsockopt((SOCKET)s, level, optname, optval, optlen);
+}
+static int default_rw_recv(uintptr_t s, char *buf, int len, int flags) {
+  return recv((SOCKET)s, buf, len, flags);
+}
+static int default_rw_send(uintptr_t s, const char *buf, int len, int flags) {
+  return send((SOCKET)s, buf, len, flags);
+}
+static int default_rw_shutdown(uintptr_t s, int how) {
+  return shutdown((SOCKET)s, how);
+}
+static int default_rw_closesocket(uintptr_t s) {
+  return closesocket((SOCKET)s);
+}
+static int default_rw_epoll_close(int fd) { return posix_epoll_close(fd); }
+
+static const struct posix_rw_win32_hooks k_default_rw_hooks = {
+    default_rw_malloc,
+    default_rw_free,
+    default_rw_get_osfhandle,
+    default_rw_open_osfhandle,
+    default_rw_fdopen,
+    default_rw_fileno,
+    default_rw_close,
+    default_rw_read,
+    default_rw_write,
+    default_rw_dup,
+    default_rw_dup2,
+    default_rw_lseek,
+    default_rw_setmode,
+    default_rw_vscprintf,
+    default_rw_vsprintf_buf,
+    default_rw_get_temp_path,
+    default_rw_get_temp_file_name,
+    default_rw_create_file,
+    default_rw_close_handle,
+    default_rw_get_current_dir,
+    default_rw_get_file_attributes,
+    default_rw_get_file_type,
+    default_rw_get_last_error,
+    default_rw_get_module_handle,
+    default_rw_get_proc_address,
+    default_rw_get_tick_count,
+    default_rw_get_current_pid,
+    default_rw_read_file,
+    default_rw_write_file,
+    default_rw_get_overlapped_result,
+    default_rw_set_std_handle,
+    default_rw_wsa_startup,
+    default_rw_wsa_get_last_error,
+    default_rw_getsockopt,
+    default_rw_recv,
+    default_rw_send,
+    default_rw_shutdown,
+    default_rw_closesocket,
+    default_rw_epoll_close};
+
+static struct posix_rw_win32_hooks g_rw_hooks = {
+    default_rw_malloc,
+    default_rw_free,
+    default_rw_get_osfhandle,
+    default_rw_open_osfhandle,
+    default_rw_fdopen,
+    default_rw_fileno,
+    default_rw_close,
+    default_rw_read,
+    default_rw_write,
+    default_rw_dup,
+    default_rw_dup2,
+    default_rw_lseek,
+    default_rw_setmode,
+    default_rw_vscprintf,
+    default_rw_vsprintf_buf,
+    default_rw_get_temp_path,
+    default_rw_get_temp_file_name,
+    default_rw_create_file,
+    default_rw_close_handle,
+    default_rw_get_current_dir,
+    default_rw_get_file_attributes,
+    default_rw_get_file_type,
+    default_rw_get_last_error,
+    default_rw_get_module_handle,
+    default_rw_get_proc_address,
+    default_rw_get_tick_count,
+    default_rw_get_current_pid,
+    default_rw_read_file,
+    default_rw_write_file,
+    default_rw_get_overlapped_result,
+    default_rw_set_std_handle,
+    default_rw_wsa_startup,
+    default_rw_wsa_get_last_error,
+    default_rw_getsockopt,
+    default_rw_recv,
+    default_rw_send,
+    default_rw_shutdown,
+    default_rw_closesocket,
+    default_rw_epoll_close};
+
+/** @brief Copies default Win32 hooks for posix_read_write into out_hooks. */
+void posix_rw_get_default_win32_hooks(struct posix_rw_win32_hooks *out_hooks) {
+  if (out_hooks != NULL) {
+    *out_hooks = k_default_rw_hooks;
+  }
+}
+
+/** @brief Installs custom Win32 hooks for posix_read_write (NULL resets). */
+void posix_rw_set_win32_hooks(const struct posix_rw_win32_hooks *hooks) {
+  if (hooks != NULL) {
+    g_rw_hooks = *hooks;
+  } else {
+    g_rw_hooks = k_default_rw_hooks;
+  }
+}
+
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 static void my_invalid_parameter_handler(const wchar_t *expression,
                                          const wchar_t *function,
                                          const wchar_t *file, unsigned int line,
                                          uintptr_t pReserved) {
-  if (expression || function || file || line || pReserved) {
-    /* parameter error handled */
-  }
+  (void)expression;
+  (void)function;
+  (void)file;
+  (void)line;
+  (void)pReserved;
 }
 #endif
 
@@ -52,7 +343,7 @@ static void my_invalid_parameter_handler(const wchar_t *expression,
 static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   ptrdiff_t h = -1;
   int saved_err = errno;
-  if (fd < 0 || fd >= 2048) {
+  if (fd >= 2048) {
     return -1;
   }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -60,11 +351,11 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
     AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
-    h = (ptrdiff_t)_get_osfhandle((int)fd);
+    h = (ptrdiff_t)g_rw_hooks.get_osfhandle_fn((int)fd);
     _set_invalid_parameter_handler(old);
   }
 #else
-  h = (ptrdiff_t)_get_osfhandle((int)fd);
+  h = (ptrdiff_t)g_rw_hooks.get_osfhandle_fn((int)fd);
 #endif
   errno = saved_err;
   if (h == -2) {
@@ -73,12 +364,6 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   return h;
 }
 #endif
-
-extern int is_socket(intptr_t);
-extern intptr_t posix_get_dup_socket(intptr_t fd);
-extern void posix_set_dup_socket(intptr_t fd, intptr_t s);
-extern intptr_t posix_lookup_crt_socket(intptr_t fd);
-extern void posix_register_crt_socket(intptr_t fd, intptr_t s);
 
 static SOCKET resolve_socket_or_fd(intptr_t fd) {
   intptr_t s = posix_get_dup_socket(fd);
@@ -93,11 +378,6 @@ static SOCKET resolve_socket_or_fd(intptr_t fd) {
 }
 
 #define GET_SOCKET(fd) resolve_socket_or_fd(fd)
-
-#undef _read
-#undef _write
-
-/* Removed g_cloned_cwd */
 
 #if defined(_MSC_VER) && defined(_M_X64) &&                                    \
     !defined(auto_win_msvc_export_lib_EXPORTS)
@@ -166,11 +446,12 @@ static void __cdecl ensure_binary_stdio(void) {
   if (!g_binary_stdio_init) {
     int saved_err = errno;
     WSADATA wsa_data;
-    (void)WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    (void)g_rw_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsa_data);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     (void)_set_invalid_parameter_handler(my_invalid_parameter_handler);
 #if defined(_DEBUG)
-    if (GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") ==
+    if (g_rw_hooks.get_proc_address_fn(
+            g_rw_hooks.get_module_handle_fn("ntdll.dll"), "wine_get_version") ==
         NULL) {
       _CrtSetReportMode(_CRT_ASSERT, 0);
       _CrtSetReportMode(_CRT_ERROR, 0);
@@ -188,16 +469,24 @@ static void __cdecl ensure_binary_stdio(void) {
     _fmode = _O_BINARY;
 #endif
     if (safe_get_osfhandle(0) != -1) {
-      _setmode(0, _O_BINARY);
+      (void)g_rw_hooks.setmode_fn(0, _O_BINARY);
     }
     if (safe_get_osfhandle(1) != -1) {
-      _setmode(1, _O_BINARY);
+      (void)g_rw_hooks.setmode_fn(1, _O_BINARY);
     }
     if (safe_get_osfhandle(2) != -1) {
-      _setmode(2, _O_BINARY);
+      (void)g_rw_hooks.setmode_fn(2, _O_BINARY);
     }
     errno = saved_err;
   }
+}
+
+/** @brief Runs binary stdio initialization (optionally forcing re-init). */
+void posix_rw_ensure_binary_stdio(int force_reinit) {
+  if (force_reinit) {
+    g_binary_stdio_init = 0;
+  }
+  ensure_binary_stdio();
 }
 
 #if defined(_MSC_VER)
@@ -230,12 +519,6 @@ __attribute__((constructor)) static void __init_binary_stdio_gcc(void) {
 }
 #endif
 
-__declspec(dllimport) unsigned long __stdcall
-GetTempPathA(unsigned long nBufferLength, char *lpBuffer);
-__declspec(dllimport) unsigned int __stdcall
-GetTempFileNameA(const char *lpPathName, const char *lpPrefixString,
-                 unsigned int uUnique, char *lpTempFileName);
-
 /**
  * @brief Safely opens a temporary FILE* in the user's temp directory with
  * delete-on-close semantics.
@@ -244,10 +527,10 @@ GetTempFileNameA(const char *lpPathName, const char *lpPrefixString,
 static FILE *safe_tmpfile(void) {
   char tmp_dir[MAX_PATH];
   char tmp_file[MAX_PATH];
-  HANDLE h;
+  void *h;
   int fd;
   FILE *f;
-  DWORD len = GetTempPathA(sizeof(tmp_dir), tmp_dir);
+  DWORD len = g_rw_hooks.get_temp_path_fn(sizeof(tmp_dir), tmp_dir);
   if (len == 0 || len >= sizeof(tmp_dir)) {
 #if defined(_MSC_VER)
     strcpy_s(tmp_dir, sizeof(tmp_dir), ".");
@@ -255,26 +538,26 @@ static FILE *safe_tmpfile(void) {
     strcpy(tmp_dir, ".");
 #endif
   }
-  if (!GetTempFileNameA(tmp_dir, "awm", 0, tmp_file)) {
+  if (!g_rw_hooks.get_temp_file_name_fn(tmp_dir, "awm", 0, tmp_file)) {
     return NULL;
   }
-  h = CreateFileA(tmp_file, GENERIC_READ | GENERIC_WRITE,
-                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-                  CREATE_ALWAYS,
-                  FILE_ATTRIBUTE_TEMPORARY |
-                      0x04000000 /* FILE_FLAG_DELETE_ON_CLOSE */,
-                  NULL);
-  if (h == INVALID_HANDLE_VALUE) {
+  h = g_rw_hooks.create_file_fn(
+      tmp_file, GENERIC_READ | GENERIC_WRITE,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+      CREATE_ALWAYS,
+      FILE_ATTRIBUTE_TEMPORARY | 0x04000000UL /* FILE_FLAG_DELETE_ON_CLOSE */,
+      NULL);
+  if (h == (void *)INVALID_HANDLE_VALUE) {
     return NULL;
   }
-  fd = _open_osfhandle((intptr_t)h, _O_RDWR | _O_BINARY);
+  fd = g_rw_hooks.open_osfhandle_fn((intptr_t)h, _O_RDWR | _O_BINARY);
   if (fd == -1) {
-    CloseHandle(h);
+    (void)g_rw_hooks.close_handle_fn(h);
     return NULL;
   }
-  f = _fdopen(fd, "w+b");
+  f = g_rw_hooks.fdopen_fn(fd, "w+b");
   if (!f) {
-    _close(fd);
+    (void)g_rw_hooks.close_fn(fd);
     return NULL;
   }
   return f;
@@ -283,7 +566,7 @@ static FILE *safe_tmpfile(void) {
 /**
  * @brief Generates a synthetic temporary FILE* if pathname matches a virtual
  * /proc file.
- * @param[in] pathname Path to check.
+ * @param[in] pathname Non-null path to check.
  * @return Temporary FILE* positioned at offset 0, or NULL if not a virtual
  * /proc file.
  */
@@ -292,9 +575,6 @@ static FILE *open_virtual_proc_stream(const char *pathname) {
   char buf[512];
   FILE *tmp_f;
 
-  if (!pathname) {
-    return NULL;
-  }
   if (strcmp(pathname, "/dev/null") == 0 ||
       strcmp(pathname, "\\dev\\null") == 0) {
     return safe_tmpfile();
@@ -317,10 +597,10 @@ static FILE *open_virtual_proc_stream(const char *pathname) {
       DWORDLONG ullAvailExtendedVirtual;
     } WIN_MEMSTATEX;
     typedef BOOL(WINAPI * PFN_GMS)(WIN_MEMSTATEX *);
-    HMODULE hK32 = GetModuleHandleA("kernel32.dll");
-    PFN_GMS pGMS =
-        hK32 ? (PFN_GMS)(size_t)GetProcAddress(hK32, "GlobalMemoryStatusEx")
-             : NULL;
+    void *hK32 = g_rw_hooks.get_module_handle_fn("kernel32.dll");
+    PFN_GMS pGMS = hK32 ? (PFN_GMS)(size_t)g_rw_hooks.get_proc_address_fn(
+                              hK32, "GlobalMemoryStatusEx")
+                        : NULL;
     WIN_MEMSTATEX mem;
     DWORDLONG total_kb = (DWORDLONG)16777216U;
     DWORDLONG avail_kb = (DWORDLONG)8388608U;
@@ -354,7 +634,7 @@ static FILE *open_virtual_proc_stream(const char *pathname) {
   }
 
   if (strcmp(sub, "uptime") == 0) {
-    unsigned long ticks = GetTickCount();
+    unsigned long ticks = g_rw_hooks.get_tick_count_fn();
     tmp_f = safe_tmpfile();
     if (!tmp_f) {
       return NULL;
@@ -454,7 +734,7 @@ static FILE *open_virtual_proc_stream(const char *pathname) {
 
   if ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0) {
     unsigned long pid = (strncmp(sub, "self", 4) == 0)
-                            ? (unsigned long)GetCurrentProcessId()
+                            ? g_rw_hooks.get_current_pid_fn()
                             : strtoul(sub, NULL, 10);
     const char *slash = strchr(sub, '/');
     if (!slash) {
@@ -524,16 +804,19 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
   int flags = 0;
   DWORD dwAccess = 0, dwCreation = OPEN_EXISTING;
   char abs_path[2048];
-  HANDLE h;
-  intptr_t fd;
+  void *h;
+  int fd;
   FILE *f;
-
   char clean_mode[8];
   int mi = 0;
   const char *mp;
 
   if (!pathname || !mode) {
     errno = EINVAL;
+    return NULL;
+  }
+  if (pathname[0] == '\0') {
+    errno = ENOENT;
     return NULL;
   }
 
@@ -577,64 +860,55 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
 
   if (pathname[0] != '/' && pathname[0] != '\\' && pathname[1] != ':') {
     char cwd[1024];
-    if (GetCurrentDirectoryA(1024, cwd) == 0) {
+    size_t cwd_len;
+    size_t path_len = strlen(pathname);
+    if (g_rw_hooks.get_current_dir_fn(sizeof(cwd), cwd) == 0) {
       errno = ENOENT;
       return NULL;
     }
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
-    if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s\\%s", cwd, pathname) < 0) {
+    cwd_len = strlen(cwd);
+    if (cwd_len + 1U + path_len >= sizeof(abs_path)) {
       errno = ENAMETOOLONG;
       return NULL;
     }
+#if defined(_MSC_VER)
+    strcpy_s(abs_path, sizeof(abs_path), cwd);
+    strcat_s(abs_path, sizeof(abs_path), "\\");
+    strcat_s(abs_path, sizeof(abs_path), pathname);
 #else
-    if (_snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
-      errno = ENAMETOOLONG;
-      return NULL;
-    }
-#endif
-#else
-    if (snprintf(abs_path, 2048, "%s\\%s", cwd, pathname) < 0) {
-      errno = ENAMETOOLONG;
-      return NULL;
-    }
+    memcpy(abs_path, cwd, cwd_len);
+    abs_path[cwd_len] = '\\';
+    memcpy(abs_path + cwd_len + 1U, pathname, path_len + 1U);
 #endif
   } else {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#if defined(__STDC_SECURE_LIB__) || _MSC_VER >= 1400
-    if (_snprintf_s(abs_path, 2048, _TRUNCATE, "%s", pathname) < 0) {
+    size_t path_len = strlen(pathname);
+    if (path_len >= sizeof(abs_path)) {
       errno = ENAMETOOLONG;
       return NULL;
     }
+#if defined(_MSC_VER)
+    strcpy_s(abs_path, sizeof(abs_path), pathname);
 #else
-    if (_snprintf(abs_path, 2048, "%s", pathname) < 0) {
-      errno = ENAMETOOLONG;
-      return NULL;
-    }
-#endif
-#else
-    if (snprintf(abs_path, 2048, "%s", pathname) < 0) {
-      errno = ENAMETOOLONG;
-      return NULL;
-    }
+    memcpy(abs_path, pathname, path_len + 1U);
 #endif
   }
 
-  h = CreateFileA(abs_path, dwAccess,
-                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-                  dwCreation, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (h == INVALID_HANDLE_VALUE) {
-    errno = GetLastError();
+  h = g_rw_hooks.create_file_fn(abs_path, dwAccess,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                    FILE_SHARE_DELETE,
+                                NULL, dwCreation, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (h == (void *)INVALID_HANDLE_VALUE) {
+    errno = (int)g_rw_hooks.get_last_error_fn();
     return NULL;
   }
-  fd = _open_osfhandle((intptr_t)h, flags);
+  fd = g_rw_hooks.open_osfhandle_fn((intptr_t)h, flags);
   if (fd == -1) {
-    CloseHandle(h);
+    (void)g_rw_hooks.close_handle_fn(h);
     return NULL;
   }
-  f = _fdopen((int)fd, mode);
+  f = g_rw_hooks.fdopen_fn(fd, mode);
   if (f == NULL) {
-    _close((int)fd);
+    (void)g_rw_hooks.close_fn(fd);
     return NULL;
   }
   return f;
@@ -649,11 +923,13 @@ struct posix_socket_stream_entry {
 
 static struct posix_socket_stream_entry g_socket_streams[64];
 
+/** @brief Clears all registered socket stream entries for isolated testing. */
+void posix_rw_reset_socket_streams(void) {
+  memset(g_socket_streams, 0, sizeof(g_socket_streams));
+}
+
 static void register_socket_stream(FILE *stream, SOCKET sock) {
   int i;
-  if (!stream || sock == (SOCKET)-1 || sock == 0) {
-    return;
-  }
   for (i = 0; i < 64; i++) {
     if (g_socket_streams[i].stream == stream ||
         g_socket_streams[i].stream == NULL) {
@@ -669,31 +945,12 @@ static void register_socket_stream(FILE *stream, SOCKET sock) {
 static struct posix_socket_stream_entry *
 find_socket_stream_entry(FILE *stream) {
   int i;
-  if (!stream) {
-    return NULL;
-  }
   for (i = 0; i < 64; i++) {
     if (g_socket_streams[i].stream == stream) {
       return &g_socket_streams[i];
     }
   }
   return NULL;
-}
-
-static void unregister_socket_stream(FILE *stream) {
-  int i;
-  if (!stream) {
-    return;
-  }
-  for (i = 0; i < 64; i++) {
-    if (g_socket_streams[i].stream == stream) {
-      g_socket_streams[i].stream = NULL;
-      g_socket_streams[i].sock = 0;
-      g_socket_streams[i].eof_flag = 0;
-      g_socket_streams[i].err_flag = 0;
-      return;
-    }
-  }
 }
 
 /** @brief Checks if a CRT file descriptor refers to a Winsock socket without
@@ -704,11 +961,10 @@ static int is_crt_fd_socket(int fd, SOCKET *out_sock) {
   int optval = 0;
   int optlen = sizeof(optval);
   if (sock != (SOCKET)-1 && sock != 0 &&
-      getsockopt(sock, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+      g_rw_hooks.getsockopt_fn(sock, SOL_SOCKET, SO_TYPE, (char *)&optval,
+                               &optlen) == 0) {
     errno = saved_err;
-    if (out_sock) {
-      *out_sock = sock;
-    }
+    *out_sock = sock;
     return 1;
   }
   errno = saved_err;
@@ -718,24 +974,20 @@ static int is_crt_fd_socket(int fd, SOCKET *out_sock) {
 static int is_stream_socket(FILE *stream, SOCKET *out_sock) {
   struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
   int fd;
+  int saved_err;
   if (ent != NULL) {
-    if (out_sock) {
-      *out_sock = ent->sock;
-    }
+    *out_sock = ent->sock;
     return 1;
   }
-  {
-    int saved_err = errno;
-    fd = _fileno(stream);
-    errno = saved_err;
-  }
+  saved_err = errno;
+  fd = g_rw_hooks.fileno_fn(stream);
+  errno = saved_err;
   if (fd >= 0 && is_crt_fd_socket(fd, out_sock)) {
     return 1;
   }
   return 0;
 }
 
-#undef fdopen
 /** @brief Associate stream with file descriptor or socket. */
 FILE *posix_fdopen(intptr_t fd, const char *mode) {
   char clean_mode[8];
@@ -743,7 +995,6 @@ FILE *posix_fdopen(intptr_t fd, const char *mode) {
   const char *mp;
   int crt_fd = (int)fd;
   SOCKET sock = 0;
-  int is_sock = 0;
   FILE *f;
 
   if (fd < 0 || !mode) {
@@ -763,10 +1014,6 @@ FILE *posix_fdopen(intptr_t fd, const char *mode) {
   clean_mode[mi] = '\0';
 
   if (is_crt_fd_socket((int)fd, &sock)) {
-    is_sock = 1;
-  }
-
-  if (is_sock) {
     f = safe_tmpfile();
     if (f != NULL) {
       register_socket_stream(f, sock);
@@ -785,16 +1032,15 @@ FILE *posix_fdopen(intptr_t fd, const char *mode) {
     } else {
       flags |= _O_RDONLY;
     }
-    crt_fd = _open_osfhandle(fd, flags);
+    crt_fd = g_rw_hooks.open_osfhandle_fn(fd, flags);
     if (crt_fd == -1) {
       errno = EBADF;
       return NULL;
     }
   }
-  return _fdopen(crt_fd, clean_mode);
+  return g_rw_hooks.fdopen_fn(crt_fd, clean_mode);
 }
 
-#undef fgets
 /** @brief Read a line from stream or socket-backed stream. */
 char *posix_fgets(char *s, int size, FILE *stream) {
   SOCKET sock;
@@ -806,12 +1052,14 @@ char *posix_fgets(char *s, int size, FILE *stream) {
     int pos = 0;
     while (pos < size - 1) {
       char ch;
-      int r = recv(sock, &ch, 1, 0);
+      int r = g_rw_hooks.recv_fn(sock, &ch, 1, 0);
       if (r <= 0) {
-        if (r == 0 && ent != NULL) {
-          ent->eof_flag = 1;
-        } else if (r == SOCKET_ERROR) {
-          int werr = WSAGetLastError();
+        if (r == 0) {
+          if (ent != NULL) {
+            ent->eof_flag = 1;
+          }
+        } else {
+          int werr = g_rw_hooks.wsa_get_last_error_fn();
           if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
             errno = EAGAIN;
           }
@@ -834,16 +1082,6 @@ char *posix_fgets(char *s, int size, FILE *stream) {
   }
   return fgets(s, size, stream);
 }
-
-#undef fprintf
-#undef fread
-#undef fwrite
-#undef fgetc
-#undef getc
-#undef fclose
-#undef feof
-#undef ferror
-#undef fileno
 
 /** @brief Test end-of-file indicator on stream or socket-backed stream. */
 int posix_feof(FILE *stream) {
@@ -882,7 +1120,7 @@ int posix_fileno(FILE *stream) {
   if (ent != NULL) {
     return (int)ent->sock;
   }
-  return _fileno(stream);
+  return g_rw_hooks.fileno_fn(stream);
 }
 
 /** @brief Close stream or socket-backed stream. */
@@ -895,9 +1133,12 @@ int posix_fclose(FILE *stream) {
   ent = find_socket_stream_entry(stream);
   if (ent != NULL) {
     SOCKET s = ent->sock;
-    unregister_socket_stream(stream);
-    shutdown(s, SD_BOTH);
-    closesocket(s);
+    ent->stream = NULL;
+    ent->sock = 0;
+    ent->eof_flag = 0;
+    ent->err_flag = 0;
+    (void)g_rw_hooks.shutdown_fn(s, SD_BOTH);
+    (void)g_rw_hooks.closesocket_fn(s);
   }
   return fclose(stream);
 }
@@ -911,12 +1152,14 @@ int posix_fgetc(FILE *stream) {
   if (is_stream_socket(stream, &sock)) {
     struct posix_socket_stream_entry *ent = find_socket_stream_entry(stream);
     unsigned char ch;
-    int r = recv(sock, (char *)&ch, 1, 0);
+    int r = g_rw_hooks.recv_fn(sock, (char *)&ch, 1, 0);
     if (r <= 0) {
-      if (r == 0 && ent != NULL) {
-        ent->eof_flag = 1;
-      } else if (r == SOCKET_ERROR) {
-        int werr = WSAGetLastError();
+      if (r == 0) {
+        if (ent != NULL) {
+          ent->eof_flag = 1;
+        }
+      } else {
+        int werr = g_rw_hooks.wsa_get_last_error_fn();
         if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS) {
           errno = EAGAIN;
         }
@@ -943,30 +1186,22 @@ int posix_fprintf(FILE *stream, const char *format, ...) {
     char *buf = NULL;
     int len;
     va_start(ap, format);
-#if defined(_MSC_VER)
-    len = _vscprintf(format, ap);
-#else
-    len = vsnprintf(NULL, 0, format, ap);
-#endif
+    len = g_rw_hooks.vscprintf_fn(format, ap);
     va_end(ap);
     if (len < 0) {
       return -1;
     }
-    buf = (char *)malloc((size_t)len + 1);
+    buf = (char *)g_rw_hooks.malloc_fn((size_t)len + 1U);
     if (!buf) {
       return -1;
     }
     va_start(ap, format);
-#if defined(_MSC_VER)
-    ret = vsprintf_s(buf, (size_t)len + 1, format, ap);
-#else
-    ret = vsnprintf(buf, (size_t)len + 1, format, ap);
-#endif
+    ret = g_rw_hooks.vsprintf_buf_fn(buf, (size_t)len + 1U, format, ap);
     va_end(ap);
     if (ret > 0) {
-      ret = send(sock, buf, ret, 0);
+      ret = g_rw_hooks.send_fn(sock, buf, ret, 0);
     }
-    free(buf);
+    g_rw_hooks.free_fn(buf);
     return ret;
   }
   va_start(ap, format);
@@ -986,12 +1221,15 @@ size_t posix_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t total = size * nmemb;
     size_t got = 0;
     while (got < total) {
-      int r = recv(sock, (char *)ptr + got, (int)(total - got), 0);
+      int r =
+          g_rw_hooks.recv_fn(sock, (char *)ptr + got, (int)(total - got), 0);
       if (r <= 0) {
-        if (r == 0 && ent != NULL) {
-          ent->eof_flag = 1;
-        } else if (r == SOCKET_ERROR) {
-          int werr = WSAGetLastError();
+        if (r == 0) {
+          if (ent != NULL) {
+            ent->eof_flag = 1;
+          }
+        } else {
+          int werr = g_rw_hooks.wsa_get_last_error_fn();
           if (werr == WSAEWOULDBLOCK || werr == WSAEINPROGRESS ||
               werr == WSAETIMEDOUT) {
             if (got == 0) {
@@ -1004,7 +1242,7 @@ size_t posix_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
         break;
       }
       got += (size_t)r;
-      if (size == 1 && got > 0) {
+      if (size == 1) {
         break;
       }
     }
@@ -1021,7 +1259,7 @@ size_t posix_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
   }
   if (is_stream_socket(stream, &sock)) {
     size_t total = size * nmemb;
-    int r = send(sock, (const char *)ptr, (int)total, 0);
+    int r = g_rw_hooks.send_fn(sock, (const char *)ptr, (int)total, 0);
     if (r <= 0) {
       return 0;
     }
@@ -1037,9 +1275,9 @@ int posix_open(const char *pathname, int flags, ...) {
   DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
   DWORD dwCreationDisposition = OPEN_EXISTING;
   DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
-  HANDLE hFile;
+  void *hFile;
   int fd_flags;
-  intptr_t fd;
+  int fd;
   FILE *vproc;
 
   if (!pathname) {
@@ -1052,7 +1290,7 @@ int posix_open(const char *pathname, int flags, ...) {
 
   vproc = open_virtual_proc_stream(pathname);
   if (vproc != NULL) {
-    int vfd = _dup(_fileno(vproc));
+    int vfd = g_rw_hooks.dup_fn(g_rw_hooks.fileno_fn(vproc));
     fclose(vproc);
     return vfd;
   }
@@ -1065,12 +1303,13 @@ int posix_open(const char *pathname, int flags, ...) {
   }
   (void)mode;
 
-  if ((flags & 3) == O_RDONLY)
+  if ((flags & 3) == O_RDONLY) {
     dwDesiredAccess = GENERIC_READ;
-  else if ((flags & 3) == O_WRONLY)
+  } else if ((flags & 3) == O_WRONLY) {
     dwDesiredAccess = GENERIC_WRITE;
-  else if ((flags & 3) == O_RDWR)
+  } else if ((flags & 3) == O_RDWR) {
     dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
+  }
 
   if ((flags & O_CREAT) && (flags & O_EXCL)) {
     dwCreationDisposition = CREATE_NEW;
@@ -1083,22 +1322,23 @@ int posix_open(const char *pathname, int flags, ...) {
   }
 
   if ((flags & 3) == O_RDONLY && !(flags & (O_CREAT | O_TRUNC))) {
-    DWORD attr = GetFileAttributesA(pathname);
+    DWORD attr = g_rw_hooks.get_file_attributes_fn(pathname);
     if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
-      dwFlagsAndAttributes |= 0x02000000; /* FILE_FLAG_BACKUP_SEMANTICS */
+      dwFlagsAndAttributes |= 0x02000000UL; /* FILE_FLAG_BACKUP_SEMANTICS */
     }
   }
 
-  hFile = CreateFileA(pathname, dwDesiredAccess, dwShareMode, NULL,
-                      dwCreationDisposition, dwFlagsAndAttributes, NULL);
-  if (hFile == INVALID_HANDLE_VALUE) {
-    DWORD err = GetLastError();
+  hFile = g_rw_hooks.create_file_fn(pathname, dwDesiredAccess, dwShareMode,
+                                    NULL, dwCreationDisposition,
+                                    dwFlagsAndAttributes, NULL);
+  if (hFile == (void *)INVALID_HANDLE_VALUE) {
+    DWORD err = g_rw_hooks.get_last_error_fn();
     if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS) {
       errno = EEXIST;
     } else if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
     } else if (err == ERROR_ACCESS_DENIED) {
-      DWORD attr = GetFileAttributesA(pathname);
+      DWORD attr = g_rw_hooks.get_file_attributes_fn(pathname);
       if (attr != INVALID_FILE_ATTRIBUTES &&
           (attr & FILE_ATTRIBUTE_DIRECTORY)) {
         errno = EISDIR;
@@ -1112,22 +1352,24 @@ int posix_open(const char *pathname, int flags, ...) {
   }
 
   fd_flags = _O_BINARY;
-  if (flags & O_APPEND)
+  if (flags & O_APPEND) {
     fd_flags |= _O_APPEND;
-  if ((flags & 3) == O_RDONLY)
+  }
+  if ((flags & 3) == O_RDONLY) {
     fd_flags |= _O_RDONLY;
-  else if ((flags & 3) == O_WRONLY)
+  } else if ((flags & 3) == O_WRONLY) {
     fd_flags |= _O_WRONLY;
-  else if ((flags & 3) == O_RDWR)
+  } else if ((flags & 3) == O_RDWR) {
     fd_flags |= _O_RDWR;
+  }
 
-  fd = _open_osfhandle((intptr_t)hFile, fd_flags);
+  fd = g_rw_hooks.open_osfhandle_fn((intptr_t)hFile, fd_flags);
   if (fd == -1) {
-    CloseHandle(hFile);
+    (void)g_rw_hooks.close_handle_fn(hFile);
     errno = EMFILE;
     return -1;
   }
-  return (int)fd;
+  return fd;
 }
 
 /** @brief Create file descriptor with POSIX semantics. */
@@ -1135,7 +1377,38 @@ int posix_creat(const char *pathname, mode_t mode) {
   return posix_open(pathname, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
 
-extern int is_socket(intptr_t fd);
+static int map_wsa_rw_error(int err) {
+  if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT) {
+    return EWOULDBLOCK;
+  }
+  if (err == WSAECONNRESET) {
+    return ECONNRESET;
+  }
+  if (err == WSAEINPROGRESS) {
+    return EINPROGRESS;
+  }
+  if (err == WSAEALREADY) {
+    return EALREADY;
+  }
+  if (err == WSAEMSGSIZE) {
+    return EMSGSIZE;
+  }
+  if (err == WSAEADDRINUSE) {
+    return EADDRINUSE;
+  }
+  if (err == WSAEADDRNOTAVAIL) {
+    return EADDRNOTAVAIL;
+  }
+  if (err == WSAECONNABORTED) {
+    return ECONNABORTED;
+  }
+  if (err == WSAECONNREFUSED) {
+    return ECONNREFUSED;
+  }
+  return err;
+}
+
+/** @brief Read from file descriptor or socket with POSIX semantics. */
 ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
   int ret;
   if (fd < 0) {
@@ -1150,76 +1423,53 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
-    if (old) { /* unused */
-    }
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
-    if (osfh != -1 && osfh != -2) {
-      int rret = _read((int)fd, buf, (unsigned int)count);
+    if (osfh != -1) {
+      int rret = g_rw_hooks.read_fn((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      if (_set_invalid_parameter_handler(old)) { /* Ignore */
-      }
+      (void)_set_invalid_parameter_handler(old);
 #endif
-      if (rret == -1 && errno == EINVAL)
+      if (rret == -1 && errno == EINVAL) {
         errno = EBADF;
+      }
       return rret;
     }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    if (_set_invalid_parameter_handler(old)) { /* Ignore */
-    }
+    (void)_set_invalid_parameter_handler(old);
 #endif
   }
-  ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
+  ret = g_rw_hooks.recv_fn(GET_SOCKET(fd), (char *)buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_rw_hooks.wsa_get_last_error_fn();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
-      if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+      if (g_rw_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) != 0) {
         return -1;
       }
-      ret = recv(GET_SOCKET(fd), buf, (int)count, 0);
-      if (ret != SOCKET_ERROR)
+      ret = g_rw_hooks.recv_fn(GET_SOCKET(fd), (char *)buf, (int)count, 0);
+      if (ret != SOCKET_ERROR) {
         return ret;
-      err = WSAGetLastError();
+      }
+      err = g_rw_hooks.wsa_get_last_error_fn();
     }
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
       DWORD bytes_read = 0;
-      if (ReadFile((HANDLE)(intptr_t)fd, buf, (DWORD)count, &bytes_read,
-                   NULL)) {
+      if (g_rw_hooks.read_file_fn((void *)fd, buf, (DWORD)count, &bytes_read,
+                                  NULL)) {
         return (int)bytes_read;
       }
       errno = EBADF;
       return -1;
     }
-    if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT)
-      errno = EWOULDBLOCK;
-    else if (err == WSAECONNRESET)
-      errno = ECONNRESET;
-    else if (err == WSAEINPROGRESS)
-      errno = EINPROGRESS;
-    else if (err == WSAEALREADY)
-      errno = EALREADY;
-    else if (err == WSAENOTSOCK)
-      errno = ENOTSOCK;
-    else if (err == WSAEMSGSIZE)
-      errno = EMSGSIZE;
-    else if (err == WSAEADDRINUSE)
-      errno = EADDRINUSE;
-    else if (err == WSAEADDRNOTAVAIL)
-      errno = EADDRNOTAVAIL;
-    else if (err == WSAECONNABORTED)
-      errno = ECONNABORTED;
-    else if (err == WSAECONNREFUSED)
-      errno = ECONNREFUSED;
-    else
-      errno = err;
+    errno = map_wsa_rw_error(err);
     return -1;
   }
   return ret;
 }
 
-extern int is_socket(intptr_t fd);
+/** @brief Write to file descriptor or socket with POSIX semantics. */
 ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
   int ret;
   if (fd < 0) {
@@ -1234,114 +1484,61 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _invalid_parameter_handler old =
         _set_invalid_parameter_handler(my_invalid_parameter_handler);
-    if (old) { /* unused */
-    }
 #endif
     intptr_t osfh = safe_get_osfhandle(fd);
-    if (osfh != -1 && osfh != -2) {
-      int wret = _write((int)fd, buf, (unsigned int)count);
+    if (osfh != -1) {
+      int wret = g_rw_hooks.write_fn((int)fd, buf, (unsigned int)count);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      if (_set_invalid_parameter_handler(old)) { /* Ignore */
-      }
+      (void)_set_invalid_parameter_handler(old);
 #endif
-      if (wret == -1 && errno == EINVAL)
+      if (wret == -1 && errno == EINVAL) {
         errno = EBADF;
+      }
       return wret;
     }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    if (_set_invalid_parameter_handler(old)) { /* Ignore */
-    }
+    (void)_set_invalid_parameter_handler(old);
 #endif
   }
-  ret = send(GET_SOCKET(fd), buf, (int)count, 0);
+  ret = g_rw_hooks.send_fn(GET_SOCKET(fd), (const char *)buf, (int)count, 0);
   if (ret == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_rw_hooks.wsa_get_last_error_fn();
     if (err == WSANOTINITIALISED) {
       WSADATA wsaData;
-      if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+      if (g_rw_hooks.wsa_startup_fn(MAKEWORD(2, 2), &wsaData) != 0) {
         return -1;
       }
-      ret = send(GET_SOCKET(fd), buf, (int)count, 0);
-      if (ret != SOCKET_ERROR)
+      ret =
+          g_rw_hooks.send_fn(GET_SOCKET(fd), (const char *)buf, (int)count, 0);
+      if (ret != SOCKET_ERROR) {
         return ret;
-      err = WSAGetLastError();
-    }
-    if (err != WSAEWOULDBLOCK) {
-      /* printf("DEBUG posix_write send failed: fd=%d, err=%d\n", fd, err); */
+      }
+      err = g_rw_hooks.wsa_get_last_error_fn();
     }
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
       DWORD written = 0;
-      OVERLAPPED ov = {0};
-      if (WriteFile((HANDLE)(intptr_t)fd, buf, (DWORD)count, &written, &ov)) {
-        /* If WriteFile completes synchronously, we get the result. */
+      OVERLAPPED ov;
+      memset(&ov, 0, sizeof(ov));
+      if (g_rw_hooks.write_file_fn((void *)fd, buf, (DWORD)count, &written,
+                                   &ov)) {
         return (int)written;
-      } else {
-        DWORD werr = GetLastError();
-        if (werr == ERROR_IO_PENDING) {
-          if (GetOverlappedResult((HANDLE)(intptr_t)fd, &ov, &written, TRUE)) {
-            return (int)written;
-          }
-          werr = GetLastError();
+      }
+      if (g_rw_hooks.get_last_error_fn() == ERROR_IO_PENDING) {
+        if (g_rw_hooks.get_overlapped_result_fn((void *)fd, &ov, &written, 1)) {
+          return (int)written;
         }
-        /* printf("DEBUG posix_write WriteFile failed: fd=%d, err=%lu\n", fd,
-         * werr); */
       }
       errno = EBADF;
       return -1;
     }
-    if (err == WSAEWOULDBLOCK || err == WSAETIMEDOUT)
-      errno = EWOULDBLOCK;
-    else if (err == WSAECONNRESET)
-      errno = ECONNRESET;
-    else if (err == WSAEINPROGRESS)
-      errno = EINPROGRESS;
-    else if (err == WSAEALREADY)
-      errno = EALREADY;
-    else if (err == WSAENOTSOCK)
-      errno = ENOTSOCK;
-    else if (err == WSAEMSGSIZE)
-      errno = EMSGSIZE;
-    else if (err == WSAEADDRINUSE)
-      errno = EADDRINUSE;
-    else if (err == WSAEADDRNOTAVAIL)
-      errno = EADDRNOTAVAIL;
-    else if (err == WSAECONNABORTED)
-      errno = ECONNABORTED;
-    else if (err == WSAECONNREFUSED)
-      errno = ECONNREFUSED;
-    else
-      errno = err;
+    errno = map_wsa_rw_error(err);
     return -1;
   }
   return ret;
 }
 
-#undef close
-
-#if defined(_MSC_VER)
-#pragma comment(linker,                                                        \
-                "/alternatename:posix_epoll_close=posix_epoll_close_stub")
-int posix_epoll_close_stub(intptr_t fd) {
-  if (fd < 0) {
-    errno = EBADF;
-    return -1;
-  }
-  return -1;
-}
-#elif defined(__GNUC__) || defined(__clang__)
-int __attribute__((weak)) posix_epoll_close(intptr_t fd) {
-  if (fd < 0) {
-    errno = EBADF;
-    return -1;
-  }
-  return -1;
-}
-#endif
-
-extern error_type_t clear_nonblock(SOCKET s);
-extern error_type_t clear_as_socket(intptr_t fd);
-extern int posix_epoll_close(intptr_t);
+/** @brief Close file descriptor or socket with POSIX semantics. */
 int posix_close(intptr_t fd) {
   SOCKET s;
   int ret;
@@ -1349,18 +1546,15 @@ int posix_close(intptr_t fd) {
     errno = EBADF;
     return -1;
   }
-  if (fd >= 100 && fd < 1024 && posix_get_dup_socket(fd) == 0 &&
-      posix_lookup_crt_socket(fd) == 0) {
-    if (posix_epoll_close((int)fd) == 0) {
+  if (fd >= 100 && fd < 1024 && posix_lookup_crt_socket(fd) == 0) {
+    if (g_rw_hooks.epoll_close_fn((int)fd) == 0) {
       return 0;
     }
   }
   s = GET_SOCKET(fd);
-  if (clear_nonblock(s) != ERR_NONE) { /* Ignore */
-  }
-  if (clear_as_socket(fd) != ERR_NONE) { /* Ignore */
-  }
-  if (fd >= 0 && fd < 65536 &&
+  (void)clear_nonblock(s);
+  (void)clear_as_socket(fd);
+  if (fd < 65536 &&
       (posix_get_dup_socket(fd) != 0 || posix_lookup_crt_socket(fd) != 0)) {
     intptr_t sock_h = posix_get_dup_socket(fd);
     int other_fd;
@@ -1378,33 +1572,29 @@ int posix_close(intptr_t fd) {
         break;
       }
     }
-    if (!shared && sock_h >= 0 && sock_h < 65536 &&
+    if (!shared && sock_h > 0 && sock_h < 65536 &&
         posix_lookup_crt_socket(sock_h) == sock_h) {
       shared = 1;
     }
     if (!shared) {
-      shutdown((SOCKET)sock_h, SD_BOTH);
-      closesocket((SOCKET)sock_h);
+      (void)g_rw_hooks.shutdown_fn((SOCKET)sock_h, SD_BOTH);
+      (void)g_rw_hooks.closesocket_fn((SOCKET)sock_h);
     }
     return 0;
   }
-  ret = closesocket(s);
+  ret = g_rw_hooks.closesocket_fn(s);
   if (ret == SOCKET_ERROR) {
-    int err = WSAGetLastError();
+    int err = g_rw_hooks.wsa_get_last_error_fn();
     if (err == WSAENOTSOCK || err == WSAEOPNOTSUPP ||
         err == WSANOTINITIALISED) {
+      int cret;
 #if defined(_MSC_VER) && _MSC_VER >= 1400
       _invalid_parameter_handler old =
           _set_invalid_parameter_handler(my_invalid_parameter_handler);
-      if (old) { /* unused */
-      }
 #endif
-      int cret = -1;
-      if (fd >= 0)
-        cret = _close((int)fd);
+      cret = g_rw_hooks.close_fn((int)fd);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-      if (_set_invalid_parameter_handler(old)) { /* Ignore */
-      }
+      (void)_set_invalid_parameter_handler(old);
 #endif
       return cret;
     }
@@ -1414,18 +1604,9 @@ int posix_close(intptr_t fd) {
   return ret;
 }
 
-extern int is_socket(intptr_t);
-extern error_type_t mark_as_socket(intptr_t);
-extern error_type_t clear_as_socket(intptr_t);
-
 /** @brief Reposition read/write file offset with POSIX ESPIPE semantics. */
-#if defined(_MSC_VER)
-__int64 posix_lseek(int fd, __int64 offset, int whence) {
-  __int64 res;
-#else
-off_t posix_lseek(int fd, off_t offset, int whence) {
-  off_t res;
-#endif
+posix_rw_off_t posix_lseek(int fd, posix_rw_off_t offset, int whence) {
+  posix_rw_off_t res;
   ptrdiff_t h;
   if (fd < 0) {
     errno = EBADF;
@@ -1433,20 +1614,18 @@ off_t posix_lseek(int fd, off_t offset, int whence) {
   }
   h = safe_get_osfhandle(fd);
   if (h != -1) {
-    DWORD ftype = GetFileType((HANDLE)h);
-    if (ftype == 3 /* FILE_TYPE_PIPE */ || ftype == 2 /* FILE_TYPE_CHAR */) {
+    DWORD ftype = g_rw_hooks.get_file_type_fn((void *)h);
+    if (ftype == 3UL /* FILE_TYPE_PIPE */ ||
+        ftype == 2UL /* FILE_TYPE_CHAR */) {
       errno = ESPIPE;
       return -1;
     }
   }
-#if defined(_MSC_VER)
-  res = _lseeki64(fd, offset, whence);
-#else
-  res = (off_t)_lseek(fd, (long)offset, whence);
-#endif
+  res = g_rw_hooks.lseek_fn(fd, offset, whence);
   if (res == -1 && errno == EINVAL &&
       (whence == SEEK_SET || whence == SEEK_CUR || whence == SEEK_END)) {
-    if (h != -1 && GetFileType((HANDLE)h) != 1 /* FILE_TYPE_DISK */) {
+    if (h != -1 &&
+        g_rw_hooks.get_file_type_fn((void *)h) != 1UL /* FILE_TYPE_DISK */) {
       errno = ESPIPE;
     }
   }
@@ -1460,10 +1639,9 @@ int posix_dup(int oldfd) {
     errno = EBADF;
     return -1;
   }
-  ret = _dup(oldfd);
+  ret = g_rw_hooks.dup_fn(oldfd);
   if (ret != -1 && is_socket(oldfd)) {
-    if (mark_as_socket(ret) != ERR_NONE) {
-    }
+    (void)mark_as_socket(ret);
   }
   return ret;
 }
@@ -1484,28 +1662,25 @@ int posix_dup2(int oldfd, int newfd) {
       sock = GET_SOCKET(oldfd);
     }
     posix_set_dup_socket(newfd, (intptr_t)sock);
-    if (mark_as_socket(newfd) != ERR_NONE) { /* Ignore */
-    }
+    (void)mark_as_socket(newfd);
     return newfd;
   }
   if (newfd < 64) {
     posix_set_dup_socket(newfd, 0);
   }
-  ret = _dup2(oldfd, newfd);
+  ret = g_rw_hooks.dup2_fn(oldfd, newfd);
   if (ret != -1) {
     if (is_socket(oldfd)) {
-      if (mark_as_socket(newfd) != ERR_NONE) { /* Ignore */
-      }
+      (void)mark_as_socket(newfd);
     } else {
-      if (clear_as_socket(newfd) != ERR_NONE) { /* Ignore */
-      }
-      if (newfd >= 0 && newfd <= 2) {
+      (void)clear_as_socket(newfd);
+      if (newfd <= 2) {
         ptrdiff_t h = safe_get_osfhandle(newfd);
-        if (h != -1 && h != -2) {
+        if (h != -1) {
           DWORD std_id = (newfd == 0)
                              ? (DWORD)-10
                              : ((newfd == 1) ? (DWORD)-11 : (DWORD)-12);
-          SetStdHandle(std_id, (HANDLE)h);
+          (void)g_rw_hooks.set_std_handle_fn(std_id, (void *)h);
         }
       }
     }
@@ -1519,135 +1694,46 @@ int posix_dup2(int oldfd, int newfd) {
 #undef fopen
 #undef open
 
-#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
-static FILE *open_virtual_proc_stream_posix(const char *pathname) {
-  const char *sub;
-  char buf[512];
-  FILE *tmp_f;
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
+static FILE *default_rw_posix_tmpfile(void) { return tmpfile(); }
 
-  if (pathname == NULL || strncmp(pathname, "/proc/", 6) != 0) {
-    return NULL;
-  }
-  sub = pathname + 6;
+static const struct posix_rw_posix_hooks k_default_rw_posix_hooks = {
+    default_rw_posix_tmpfile};
 
-  if (strcmp(sub, "meminfo") == 0) {
-    unsigned long total_kb = 16777216UL;
-    unsigned long avail_kb = 8388608UL;
-    tmp_f = tmpfile();
-    sprintf(buf,
-            "MemTotal: %lu kB\nMemFree: %lu kB\nMemAvailable: %lu kB\n"
-            "Buffers: 0 kB\nCached: 0 kB\nSwapCached: 0 kB\nSwapTotal: 0 kB\n"
-            "SwapFree: 0 kB\nShmem: 0 kB\nSReclaimable: 0 kB\n",
-            total_kb, avail_kb, avail_kb);
-    fputs(buf, tmp_f);
-    rewind(tmp_f);
-    return tmp_f;
-  }
+static struct posix_rw_posix_hooks g_rw_posix_hooks = {
+    default_rw_posix_tmpfile};
 
-  if (strcmp(sub, "uptime") == 0) {
-    unsigned long up = 1000UL;
-    tmp_f = tmpfile();
-    sprintf(buf, "%lu.00 %lu.00\n", up, up);
-    fputs(buf, tmp_f);
-    rewind(tmp_f);
-    return tmp_f;
-  }
-
-  {
-    unsigned long pid = strtoul(sub, NULL, 10);
-    const char *slash = strchr(sub, '/');
-    const char *leaf = slash + 1;
-    char comm[64];
-    unsigned long ppid = 1UL;
-    strcpy(comm, "busybox");
-    if (strcmp(leaf, "stat") == 0) {
-      tmp_f = tmpfile();
-      sprintf(buf,
-              "%lu (%s) R %lu %lu %lu 0 -1 4194304 100 0 0 0 10 5 0 0 "
-              "20 0 1 0 100 4096000 1000 18446744073709551615 0 0 0 0 0 0 "
-              "0 0 0 0 0 0 17 0 0 0 0 0 0\n",
-              pid, comm, ppid, pid, pid);
-      fputs(buf, tmp_f);
-      rewind(tmp_f);
-      return tmp_f;
-    }
-    tmp_f = tmpfile();
-    sprintf(buf, "%s\n", comm);
-    fputs(buf, tmp_f);
-    rewind(tmp_f);
-    return tmp_f;
+/** @brief Copies default POSIX hooks for posix_read_write into out_hooks. */
+void posix_rw_get_default_posix_hooks(struct posix_rw_posix_hooks *out_hooks) {
+  if (out_hooks != NULL) {
+    *out_hooks = k_default_rw_posix_hooks;
   }
 }
 
-FILE *posix_fopen(const char *pathname, const char *mode) {
-  FILE *vproc = open_virtual_proc_stream_posix(pathname);
-  if (vproc != NULL) {
-    return vproc;
+/** @brief Installs custom POSIX hooks for posix_read_write (NULL resets). */
+void posix_rw_set_posix_hooks(const struct posix_rw_posix_hooks *hooks) {
+  if (hooks != NULL) {
+    g_rw_posix_hooks = *hooks;
+  } else {
+    g_rw_posix_hooks = k_default_rw_posix_hooks;
   }
-  return fopen(pathname, mode);
 }
-
-int posix_open(const char *pathname, int flags, ...) {
-  va_list ap;
-  int mode = 0;
-  FILE *vproc = open_virtual_proc_stream_posix(pathname);
-  if (vproc != NULL) {
-    int vfd = dup(fileno(vproc));
-    fclose(vproc);
-    return vfd;
-  }
-  if (flags & O_CREAT) {
-    va_start(ap, flags);
-    mode = va_arg(ap, int);
-    va_end(ap);
-    return open(pathname, flags, mode);
-  }
-  return open(pathname, flags);
-}
-#else
-
-static int g_mock_fopen_count = 0;
-static FILE *mock_fopen(const char *pathname, const char *mode) {
-  if (strcmp(pathname, "/proc/meminfo") == 0) {
-    if (g_mock_fopen_count++ == 0) {
-      return NULL; /* first time fail */
-    }
-    return tmpfile(); /* second time succeed */
-  }
-  return fopen(pathname, mode);
-}
-#define fopen mock_fopen
 
 /**
  * @brief Generates a synthetic temporary FILE* if pathname matches a virtual
  * /proc file on non-Linux POSIX systems.
- * @param[in] pathname Path to check.
+ * @param[in] pathname Non-null path to check.
  * @return Temporary FILE* positioned at offset 0, or NULL if not a virtual
  * /proc file.
  */
 static FILE *open_virtual_proc_stream_posix(const char *pathname) {
-#if defined(__linux__) || defined(__CYGWIN__)
-  (void)pathname;
-  return NULL;
-#else
   const char *sub = pathname;
   char buf[512];
   FILE *tmp_f;
 
-  if (!pathname) {
-    return NULL;
-  }
   if (strncmp(pathname, "/proc/", 6) == 0) {
     sub = pathname + 6;
-  } else if (strcmp(pathname, "version") != 0 &&
-             strcmp(pathname, "uptime") != 0 &&
-             strcmp(pathname, "meminfo") != 0 &&
-             strcmp(pathname, "loadavg") != 0 &&
-             strcmp(pathname, "stat") != 0 && strcmp(pathname, "mounts") != 0 &&
-             strcmp(pathname, "filesystems") != 0 &&
-             strcmp(pathname, "swaps") != 0 &&
-             strcmp(pathname, "cpuinfo") != 0) {
-    return NULL;
   }
 
   if (strcmp(sub, "meminfo") == 0) {
@@ -1666,7 +1752,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
       }
     }
 #endif
-    tmp_f = tmpfile();
+    tmp_f = g_rw_posix_hooks.tmpfile_fn();
     if (!tmp_f) {
       return NULL;
     }
@@ -1690,7 +1776,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
       }
     }
 #endif
-    tmp_f = tmpfile();
+    tmp_f = g_rw_posix_hooks.tmpfile_fn();
     if (!tmp_f) {
       return NULL;
     }
@@ -1701,7 +1787,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
   }
 
   if (strcmp(sub, "version") == 0) {
-    tmp_f = tmpfile();
+    tmp_f = g_rw_posix_hooks.tmpfile_fn();
     if (!tmp_f) {
       return NULL;
     }
@@ -1737,7 +1823,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
       }
 #endif
       if (strcmp(leaf, "stat") == 0) {
-        tmp_f = tmpfile();
+        tmp_f = g_rw_posix_hooks.tmpfile_fn();
         if (!tmp_f) {
           return NULL;
         }
@@ -1751,7 +1837,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
         return tmp_f;
       }
       if (strcmp(leaf, "cmdline") == 0 || strcmp(leaf, "comm") == 0) {
-        tmp_f = tmpfile();
+        tmp_f = g_rw_posix_hooks.tmpfile_fn();
         if (!tmp_f) {
           return NULL;
         }
@@ -1763,7 +1849,7 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
       if (strcmp(leaf, "status") == 0) {
         unsigned int uid = (unsigned int)getuid();
         unsigned int gid = (unsigned int)getgid();
-        tmp_f = tmpfile();
+        tmp_f = g_rw_posix_hooks.tmpfile_fn();
         if (!tmp_f) {
           return NULL;
         }
@@ -1778,26 +1864,24 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
     }
   }
   return NULL;
-#endif
 }
+#endif
 
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
-  FILE *vproc;
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
   }
-  if (strcmp(pathname, "/proc/meminfo") == 0) {
-    FILE *f_test = fopen("/proc/meminfo", mode);
-    if (f_test) {
-      return f_test;
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
+  {
+    FILE *vproc = open_virtual_proc_stream_posix(pathname);
+    if (vproc != NULL) {
+      return vproc;
     }
   }
-  vproc = open_virtual_proc_stream_posix(pathname);
-  if (vproc != NULL) {
-    return vproc;
-  }
+#endif
   return fopen(pathname, mode);
 }
 
@@ -1893,19 +1977,23 @@ int posix_fileno(FILE *stream) {
 int posix_open(const char *pathname, int flags, ...) {
   va_list ap;
   int mode = 0;
-  FILE *vproc;
 
   if (!pathname) {
     errno = EINVAL;
     return -1;
   }
 
-  vproc = open_virtual_proc_stream_posix(pathname);
-  if (vproc != NULL) {
-    int vfd = dup(fileno(vproc));
-    fclose(vproc);
-    return vfd;
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
+  {
+    FILE *vproc = open_virtual_proc_stream_posix(pathname);
+    if (vproc != NULL) {
+      int vfd = dup(fileno(vproc));
+      fclose(vproc);
+      return vfd;
+    }
   }
+#endif
 
   if (flags & O_CREAT) {
     va_start(ap, flags);
@@ -1927,7 +2015,6 @@ ssize_t posix_read(intptr_t fd, void *buf, size_t count) {
     errno = EBADF;
     return -1;
   }
-  (void)buf;
   return (ssize_t)read((int)fd, buf, count);
 }
 
@@ -1937,7 +2024,6 @@ ssize_t posix_write(intptr_t fd, const void *buf, size_t count) {
     errno = EBADF;
     return -1;
   }
-  (void)buf;
   return (ssize_t)write((int)fd, buf, count);
 }
 
@@ -1977,7 +2063,6 @@ int posix_dup2(int oldfd, int newfd) {
   return dup2(oldfd, newfd);
 }
 
-#endif
 #endif
 
 typedef int make_iso_compilers_happy_posix_read_write;

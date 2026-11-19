@@ -1,60 +1,130 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
 /* clang-format off */
 #include "greatest.h"
 #include "netdb.h"
 #include "posix-netdb.h"
 #include "resolv.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 /* clang-format on */
 
+#if defined(_WIN32)
+extern void *(*g_posix_netdb_calloc)(size_t, size_t);
+extern void posix_netdb_reset_calloc_hook(void);
+
+static int g_mock_netdb_oom = 0;
+
+static void *mock_netdb_calloc(size_t nmemb, size_t size) {
+  if (g_mock_netdb_oom) {
+    return NULL;
+  }
+  return calloc(nmemb, size);
+}
+#endif
+
 TEST test_posix_netdb_get_info(void) {
-  auto_win_msvc_error_t rc;
-  int info;
+  int info = 0;
 
-  info = 0;
-  rc = posix_netdb_get_info(NULL);
-  if (rc != AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT) {
-    printf("Expected AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, got %d\n", (int)rc);
-    FAIL();
-  }
-
-  rc = posix_netdb_get_info(&info);
-  if (rc != AUTO_WIN_MSVC_SUCCESS) {
-    printf("posix_netdb_get_info failed with rc=%d\n", (int)rc);
-    FAIL();
-  }
+  ASSERT_EQ(AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT, posix_netdb_get_info(NULL));
+  ASSERT_EQ(AUTO_WIN_MSVC_SUCCESS, posix_netdb_get_info(&info));
   ASSERT_EQ(1, info);
 
   PASS();
 }
 
 TEST test_posix_netdb_addrinfo(void) {
-  struct addrinfo *ai;
+  struct addrinfo *ai = NULL;
+  struct addrinfo hints;
   int res;
 #if defined(_WIN32) || defined(_MSC_VER)
   WSADATA wsa;
   WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
 
-  ai = NULL;
-  res = posix_getaddrinfo("localhost", NULL, NULL, NULL);
-  ASSERT_EQ(-1, res);
-
+  ASSERT_EQ(-1, posix_getaddrinfo("localhost", NULL, NULL, NULL));
   posix_freeaddrinfo(NULL);
 
-  res = posix_getaddrinfo("127.0.0.1", NULL, NULL, &ai);
-  ASSERT_EQ(0, res);
+  /* Valid numeric IPv4 with NULL servname and NULL hints */
+  ai = NULL;
+  ASSERT_EQ(0, posix_getaddrinfo("127.0.0.1", NULL, NULL, &ai));
   ASSERT(ai != NULL);
-
   posix_freeaddrinfo(ai);
 
-  /* Macro test */
+  /* Valid numeric IPv4 with numeric servname & explicit hints.ai_socktype */
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_socktype = SOCK_DGRAM;
   ai = NULL;
-  res = getaddrinfo("127.0.0.1", NULL, NULL, &ai);
-  ASSERT_EQ(0, res);
+  ASSERT_EQ(0, posix_getaddrinfo("127.0.0.1", "8080", &hints, &ai));
   ASSERT(ai != NULL);
-  freeaddrinfo(ai);
+  posix_freeaddrinfo(ai);
+
+  /* Valid numeric IPv4 with hints.ai_socktype == 0 and non-digit servnames */
+  memset(&hints, 0, sizeof(hints));
+  ai = NULL;
+  if (posix_getaddrinfo("127.0.0.1", "http", &hints, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("127.0.0.1", "", &hints, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+
+  /* Exercise non-IPv4 and malformed IPv4 inputs + non-custom freeaddrinfo */
+  ai = NULL;
+  if (posix_getaddrinfo(NULL, "80", &hints, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("/invalid", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("localhost", "80", NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("999.1.1.1", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("1..1.1", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("1.2.3.4.5", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("127.0.0.1a", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("127.0.0./", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("1.2.3.", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  ai = NULL;
+  if (posix_getaddrinfo("127.1", NULL, NULL, &ai) == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+
+#if defined(_WIN32)
+  /* OOM in custom IPv4 calloc falls back to system getaddrinfo */
+  g_posix_netdb_calloc = mock_netdb_calloc;
+  g_mock_netdb_oom = 1;
+  ai = NULL;
+  res = posix_getaddrinfo("127.0.0.1", NULL, NULL, &ai);
+  if (res == 0 && ai != NULL) {
+    posix_freeaddrinfo(ai);
+  }
+  g_mock_netdb_oom = 0;
+  posix_netdb_reset_calloc_hook();
+#else
+  (void)res;
+#endif
 
 #if defined(_WIN32) || defined(_MSC_VER)
   WSACleanup();

@@ -44,6 +44,9 @@
 
 #endif
 #include <stddef.h>
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#endif
 /* clang-format on */
 
 #ifdef __cplusplus
@@ -81,8 +84,10 @@ typedef int mqd_t;
 #if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_) && !defined(__WATCOMC__)
 #define _SSIZE_T_DEFINED
 #define _SSIZE_T_
-#if defined(_WIN32)
-typedef SSIZE_T ssize_t;
+#if defined(_WIN64)
+typedef __int64 ssize_t;
+#elif defined(_WIN32)
+typedef int ssize_t;
 #else
 typedef long ssize_t;
 #endif
@@ -395,9 +400,7 @@ typedef int mqd_t;
 #endif
 #endif /* defined(_WIN32) && !defined(__CYGWIN__) */
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#include <stdint.h>
-#else
+#if defined(_MSC_VER) && _MSC_VER < 1600
 #ifndef _A_W_M_STDINT_TYPES_DEFINED
 #define _A_W_M_STDINT_TYPES_DEFINED
 typedef __int8 int8_t;

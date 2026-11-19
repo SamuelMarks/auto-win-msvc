@@ -1,6 +1,6 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__) ||          \
-    defined(__linux__) || defined(__CYGWIN__)
+    defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__)
 /**
  * @file bsd_string.c
  * @brief Implementation of BSD string and mode manipulation functions.
@@ -18,6 +18,15 @@
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
     !defined(__NetBSD__)
 
+#undef AWM_HAVE_GLIBC_STRLCPY
+#if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+#if __GLIBC_PREREQ(2, 38)
+#define AWM_HAVE_GLIBC_STRLCPY 1
+#endif
+#endif
+
+#if !defined(AWM_HAVE_GLIBC_STRLCPY)
+/** @brief Size-bounded string copy. */
 size_t strlcpy(char *dst, const char *src, size_t size) {
   size_t srclen;
   if (src == NULL) {
@@ -32,6 +41,7 @@ size_t strlcpy(char *dst, const char *src, size_t size) {
   return srclen;
 }
 
+/** @brief Size-bounded string concatenation. */
 size_t strlcat(char *dst, const char *src, size_t size) {
   size_t dstlen, srclen;
   if (dst == NULL || src == NULL) {
@@ -50,19 +60,27 @@ size_t strlcat(char *dst, const char *src, size_t size) {
   }
   return dstlen + srclen;
 }
+#endif /* !AWM_HAVE_GLIBC_STRLCPY */
 
+/** @brief Locate a substring in a length-bounded string. */
 char *strnstr(const char *big, const char *little, size_t len) {
   size_t little_len;
+  union {
+    const char *c;
+    char *m;
+  } u;
   if (big == NULL || little == NULL) {
     return NULL;
   }
   little_len = strlen(little);
   if (little_len == 0) {
-    return (char *)(uintptr_t)big;
+    u.c = big;
+    return u.m;
   }
   while (*big != '\0' && len >= little_len) {
     if (strncmp(big, little, little_len) == 0) {
-      return (char *)(uintptr_t)big;
+      u.c = big;
+      return u.m;
     }
     big++;
     len--;
@@ -70,6 +88,7 @@ char *strnstr(const char *big, const char *little, size_t len) {
   return NULL;
 }
 
+/** @brief Convert inode status mode bits into a symbolic mode string. */
 void strmode(int mode, char *p) {
   if (p == NULL) {
     return;
@@ -111,9 +130,6 @@ void strmode(int mode, char *p) {
   *p++ = (mode & 0400) ? 'r' : '-';
   *p++ = (mode & 0200) ? 'w' : '-';
   switch (mode & (0100 | 04000)) {
-  case 0:
-    *p++ = '-';
-    break;
   case 0100:
     *p++ = 'x';
     break;
@@ -123,13 +139,13 @@ void strmode(int mode, char *p) {
   case 0100 | 04000:
     *p++ = 's';
     break;
+  default:
+    *p++ = '-';
+    break;
   }
   *p++ = (mode & 0040) ? 'r' : '-';
   *p++ = (mode & 0020) ? 'w' : '-';
   switch (mode & (0010 | 02000)) {
-  case 0:
-    *p++ = '-';
-    break;
   case 0010:
     *p++ = 'x';
     break;
@@ -139,13 +155,13 @@ void strmode(int mode, char *p) {
   case 0010 | 02000:
     *p++ = 's';
     break;
+  default:
+    *p++ = '-';
+    break;
   }
   *p++ = (mode & 0004) ? 'r' : '-';
   *p++ = (mode & 0002) ? 'w' : '-';
   switch (mode & (0001 | 01000)) {
-  case 0:
-    *p++ = '-';
-    break;
   case 0001:
     *p++ = 'x';
     break;
@@ -155,11 +171,25 @@ void strmode(int mode, char *p) {
   case 0001 | 01000:
     *p++ = 't';
     break;
+  default:
+    *p++ = '-';
+    break;
   }
   *p++ = ' ';
   *p = '\0';
 }
 
+#endif /* !__APPLE__ split */
+
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+#undef AWM_HAVE_GLIBC_EXPLICIT_BZERO
+#if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+#if __GLIBC_PREREQ(2, 25)
+#define AWM_HAVE_GLIBC_EXPLICIT_BZERO 1
+#endif
+#endif
+#if !defined(AWM_HAVE_GLIBC_EXPLICIT_BZERO)
+/** @brief Zero a byte buffer without compiler dead-store elimination. */
 void explicit_bzero(void *buf, size_t len) {
   volatile unsigned char *p = (volatile unsigned char *)buf;
   if (buf == NULL) {
@@ -170,6 +200,10 @@ void explicit_bzero(void *buf, size_t len) {
   }
 }
 
+#endif /* !glibc 2.25 */
+
+#if !defined(__APPLE__)
+/** @brief Constant-time byte comparison returning zero iff equal. */
 int timingsafe_bcmp(const void *b1, const void *b2, size_t n) {
   const unsigned char *p1 = (const unsigned char *)b1;
   const unsigned char *p2 = (const unsigned char *)b2;
@@ -180,6 +214,9 @@ int timingsafe_bcmp(const void *b1, const void *b2, size_t n) {
   return (ret != 0);
 }
 
+#endif /* !__APPLE__ */
+
+/** @brief Constant-time lexicographical byte comparison. */
 int timingsafe_memcmp(const void *b1, const void *b2, size_t n) {
   const unsigned char *p1 = (const unsigned char *)b1;
   const unsigned char *p2 = (const unsigned char *)b2;
@@ -195,9 +232,15 @@ int timingsafe_memcmp(const void *b1, const void *b2, size_t n) {
   return res;
 }
 
+#endif /* !BSD explicit_bzero/timingsafe_memcmp */
+
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) &&   \
+    !defined(__NetBSD__)
 /** @brief Internal flag table entry for fflagstostr/strtofflags. */
 struct awm_fflag_entry {
+  /** @brief Canonical or alias flag name. */
   const char *name;
+  /** @brief Corresponding bitmask value. */
   unsigned long flag;
 };
 
@@ -212,11 +255,23 @@ static const struct awm_fflag_entry g_fflag_table[] = {
     {"sunlnk", 0x00100000UL},     {"sunlink", 0x00100000UL},
     {"snapshot", 0x00200000UL}};
 
+static void *default_bsd_string_malloc(size_t sz) { return malloc(sz); }
+
+/** @brief Overrideable malloc hook for OOM testing in bsd-string. */
+void *(*g_bsd_string_malloc)(size_t) = default_bsd_string_malloc;
+
+/** @brief Resets g_bsd_string_malloc back to the default allocator. */
+void bsd_string_reset_malloc_hook(void);
+void bsd_string_reset_malloc_hook(void) {
+  g_bsd_string_malloc = default_bsd_string_malloc;
+}
+
+/** @brief Format BSD file flags bitmask as comma-separated string. */
 char *fflagstostr(unsigned long flags) {
   char *buf;
   size_t i;
   unsigned long rem = flags;
-  buf = (char *)malloc(256);
+  buf = (char *)g_bsd_string_malloc(256);
   if (buf == NULL) {
     return NULL;
   }
@@ -233,6 +288,7 @@ char *fflagstostr(unsigned long flags) {
   return buf;
 }
 
+/** @brief Parse comma-separated BSD file flags into set/clear masks. */
 int strtofflags(char **stringp, unsigned long *setp, unsigned long *clrp) {
   char *str, *tok;
   unsigned long setf = 0, clrf = 0;
@@ -287,6 +343,7 @@ int strtofflags(char **stringp, unsigned long *setp, unsigned long *clrp) {
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) ||                \
     defined(__MSDOS__) || defined(__WATCOMC__)
 
+/** @brief Extract next delimited token from string pointer. */
 char *strsep(char **stringp, const char *delim) {
   char *begin, *end;
   if (stringp == NULL || delim == NULL) {
@@ -307,6 +364,7 @@ char *strsep(char **stringp, const char *delim) {
 }
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
+/** @brief Case-insensitive string comparison. */
 int strcasecmp(const char *s1, const char *s2) {
   if (s1 == NULL || s2 == NULL) {
     return (s1 == s2) ? 0 : (s1 ? 1 : -1);
@@ -314,6 +372,7 @@ int strcasecmp(const char *s1, const char *s2) {
   return _stricmp(s1, s2);
 }
 
+/** @brief Length-bounded case-insensitive string comparison. */
 int strncasecmp(const char *s1, const char *s2, size_t n) {
   if (s1 == NULL || s2 == NULL) {
     return (s1 == s2) ? 0 : (s1 ? 1 : -1);
@@ -322,6 +381,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 }
 #endif
 
+/** @brief Version-ordered string comparison. */
 int strverscmp(const char *s1, const char *s2) {
   if (s1 == NULL || s2 == NULL) {
     return (s1 == s2) ? 0 : (s1 ? 1 : -1);
@@ -329,6 +389,7 @@ int strverscmp(const char *s1, const char *s2) {
   return strcmp(s1, s2);
 }
 
+/** @brief Locate substring ignoring ASCII case. */
 char *strcasestr(const char *haystack, const char *needle) {
   size_t nlen;
   if (haystack == NULL || needle == NULL) {
@@ -355,9 +416,13 @@ char *strcasestr(const char *haystack, const char *needle) {
 
 #endif /* _MSC_VER || _WIN32 || __DOS__ || __MSDOS__ || __WATCOMC__ */
 
+/** @brief Dummy anchor symbol ensuring non-empty bsd-string archive on
+ * BSD/macOS. */
 int bsd_string_dummy_for_coverage(void) { return 0; }
 
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_bsd_string_c;
 
 #endif
+/** @brief Dummy typedef preventing empty mega translation unit warnings. */
 typedef int make_iso_compilers_happy_mega_batch2_4;

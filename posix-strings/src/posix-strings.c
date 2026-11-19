@@ -8,10 +8,12 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-
 #if defined(_MSC_VER)
 #include <intrin.h>
+#endif
 /* clang-format on */
+
+#if defined(_MSC_VER)
 
 #pragma intrinsic(_BitScanForward)
 
@@ -22,9 +24,6 @@
 /** @brief Finds the first (least significant) bit set in an integer. */
 int ffs(int i) {
   unsigned long index;
-  if (i == 0) {
-    return 0;
-  }
   if (_BitScanForward(&index, (unsigned long)i)) {
     return (int)index + 1;
   }
@@ -34,9 +33,6 @@ int ffs(int i) {
 /** @brief Finds the first (least significant) bit set in a long integer. */
 int ffsl(long i) {
   unsigned long index;
-  if (i == 0) {
-    return 0;
-  }
   if (_BitScanForward(&index, (unsigned long)i)) {
     return (int)index + 1;
   }
@@ -47,22 +43,16 @@ int ffsl(long i) {
  */
 int ffsll(posix_strings_llong i) {
   unsigned long index;
-  if (i == 0) {
-    return 0;
-  }
 #if defined(_WIN64)
   if (_BitScanForward64(&index, (unsigned __int64)i)) {
     return (int)index + 1;
   }
 #else
-  if ((unsigned long)i != 0) {
-    if (_BitScanForward(&index, (unsigned long)i)) {
-      return (int)index + 1;
-    }
-  } else {
-    if (_BitScanForward(&index, (unsigned long)(i >> 32))) {
-      return (int)index + 33;
-    }
+  if (_BitScanForward(&index, (unsigned long)i)) {
+    return (int)index + 1;
+  }
+  if (_BitScanForward(&index, (unsigned long)((unsigned __int64)i >> 32))) {
+    return (int)index + 33;
   }
 #endif
   return 0;
@@ -113,10 +103,13 @@ int ffsll(posix_strings_llong i) {
 
 #endif /* _MSC_VER */
 
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @brief Retrieves information on posix-strings polyfill availability.
+ * @param[out] out_available Pointer receiving 1 on success.
+ * @return AUTO_WIN_MSVC_SUCCESS on success, or
+ * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_available is NULL.
  */
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 auto_win_msvc_error_t posix_strings_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -241,9 +234,9 @@ char *posix_strsignal(int sig) {
     break;
   }
 #if defined(_MSC_VER)
-  sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
+  (void)sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
 #else
-  sprintf(unknown_buf, "Unknown signal %d", sig);
+  (void)sprintf(unknown_buf, "Unknown signal %d", sig);
 #endif
   return unknown_buf;
 #endif
@@ -251,28 +244,35 @@ char *posix_strsignal(int sig) {
 
 #if defined(_WIN32)
 #undef mempcpy
+/** @brief ABI wrapper for mempcpy on Windows. */
 void *mempcpy(void *dest, const void *src, size_t n) {
   return posix_mempcpy(dest, src, n);
 }
 
 #undef strchrnul
+/** @brief ABI wrapper for strchrnul on Windows. */
 char *strchrnul(const char *s, int c) { return posix_strchrnul(s, c); }
 
 #undef stpcpy
+/** @brief ABI wrapper for stpcpy on Windows. */
 char *stpcpy(char *dest, const char *src) { return posix_stpcpy(dest, src); }
 
 #undef stpncpy
+/** @brief ABI wrapper for stpncpy on Windows. */
 char *stpncpy(char *dest, const char *src, size_t n) {
   return posix_stpncpy(dest, src, n);
 }
 
 #undef memrchr
+/** @brief ABI wrapper for memrchr on Windows. */
 void *memrchr(const void *s, int c, size_t n) { return posix_memrchr(s, c, n); }
 
 #undef strsignal
+/** @brief ABI wrapper for strsignal on Windows. */
 char *strsignal(int sig) { return posix_strsignal(sig); }
 
 #undef strtok_r
+/** @brief ABI wrapper for strtok_r on Windows. */
 char *strtok_r(char *str, const char *delim, char **saveptr) {
   return strtok_s(str, delim, saveptr);
 }

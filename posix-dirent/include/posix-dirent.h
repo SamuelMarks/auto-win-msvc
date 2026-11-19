@@ -1,8 +1,11 @@
-#if defined(__GNUC__)
-#endif
 /* posix-dirent.h - Strict C89 Header */
 #ifndef POSIX_DIRENT_H
 #define POSIX_DIRENT_H
+
+/**
+ * @file posix-dirent.h
+ * @brief POSIX dirent.h implementation and /proc directory emulation.
+ */
 
 /* clang-format off */
 #include "auto-win-msvc-error.h"
@@ -85,10 +88,12 @@ void posix_rewinddir(DIR *dirp);
      !defined(__USE_XOPEN2K8)) ||                                              \
     (defined(__CYGWIN__) && defined(__STRICT_ANSI__)) ||                       \
     defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+/** @brief Scans a directory for entries. */
 extern int scandir(const char *dir, struct dirent ***namelist,
                    int (*filter)(const struct dirent *),
                    int (*compar)(const struct dirent **,
                                  const struct dirent **));
+/** @brief Compares two directory entries alphabetically. */
 extern int alphasort(const struct dirent **a, const struct dirent **b);
 #endif
 
@@ -113,12 +118,16 @@ extern int alphasort(const struct dirent **a, const struct dirent **b);
  * @brief Represents a directory entry.
  */
 struct dirent {
-  long d_ino;              /**< Inode number (always 0 on Windows) */
+  long d_ino;              /**< Inode number (non-zero active entry) */
   long d_off;              /**< Offset to the next dirent */
   unsigned short d_reclen; /**< Length of this record */
+  unsigned short d_namlen; /**< BSD length of filename string */
   unsigned char d_type;    /**< Type of file */
   char d_name[260];        /**< File name (Windows MAX_PATH is 260) */
 };
+#ifndef d_fileno
+#define d_fileno d_ino
+#endif
 
 /**
  * @struct DIR
@@ -194,6 +203,18 @@ long telldir(DIR *dirp);
 int scandir(const char *dirp, struct dirent ***namelist,
             int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **));
+
+/**
+ * @brief Scans an open directory descriptor for entries.
+ * @param dirfd Open directory file descriptor.
+ * @param namelist Pointer to an array of pointers to directory entries.
+ * @param filter Optional filter callback, or NULL.
+ * @param compar Optional comparison callback, or NULL.
+ * @return Number of entries selected, or -1 on error.
+ */
+int fdscandir(int dirfd, struct dirent ***namelist,
+              int (*filter)(const struct dirent *),
+              int (*compar)(const struct dirent **, const struct dirent **));
 
 /**
  * @brief Compares two directory entries for sorting alphabetically.

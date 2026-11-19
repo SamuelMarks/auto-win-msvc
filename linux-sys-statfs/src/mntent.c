@@ -1,3 +1,9 @@
+/**
+ * @file mntent.c
+ * @brief Polyfill implementation for Linux <mntent.h> mounted filesystem
+ * enumeration.
+ */
+
 /* clang-format off */
 #include "mntent.h"
 #include <stddef.h>
@@ -30,10 +36,8 @@ static char s_dir[16];
 static char s_type[16];
 static char s_opts[16];
 
-FILE *setmntent(const char *filename, const char *type) {
+static FILE *setmntent_win_impl(const char *filename, const char *type) {
   WIN_DWORD len;
-  (void)filename;
-  (void)type;
   if (filename == NULL || type == NULL) {
     return NULL;
   }
@@ -48,7 +52,7 @@ FILE *setmntent(const char *filename, const char *type) {
   return (FILE *)&s_drives;
 }
 
-struct mntent *getmntent(FILE *stream) {
+static struct mntent *getmntent_win_impl(FILE *stream) {
   size_t len;
   if (stream == NULL || s_drive_ptr == NULL || *s_drive_ptr == '\0') {
     return NULL;
@@ -85,7 +89,7 @@ struct mntent *getmntent(FILE *stream) {
   return &s_mnt;
 }
 
-int endmntent(FILE *stream) {
+static int endmntent_win_impl(FILE *stream) {
   if (stream == NULL) {
     return 1;
   }
@@ -93,11 +97,45 @@ int endmntent(FILE *stream) {
   return 1;
 }
 
-char *hasmntopt(const struct mntent *mnt, const char *opt) {
+static char *hasmntopt_win_impl(const struct mntent *mnt, const char *opt) {
   if (mnt == NULL || opt == NULL || mnt->mnt_opts == NULL) {
     return NULL;
   }
   return strstr(mnt->mnt_opts, opt);
+}
+
+/**
+ * @brief Opens the filesystem description table for enumeration.
+ * @param[in] filename Path to mount table file.
+ * @param[in] type Open mode string.
+ * @return Non-NULL opaque FILE pointer on success, or NULL on error.
+ */
+FILE *setmntent(const char *filename, const char *type) {
+  return setmntent_win_impl(filename, type);
+}
+
+/**
+ * @brief Reads the next entry from the mounted filesystem table.
+ * @param[in] stream Stream returned by setmntent().
+ * @return Pointer to static mntent structure, or NULL at EOF/error.
+ */
+struct mntent *getmntent(FILE *stream) { return getmntent_win_impl(stream); }
+
+/**
+ * @brief Closes the filesystem description table stream.
+ * @param[in] stream Stream returned by setmntent().
+ * @return Always 1.
+ */
+int endmntent(FILE *stream) { return endmntent_win_impl(stream); }
+
+/**
+ * @brief Scans mnt_opts for a matching substring option.
+ * @param[in] mnt Mount table entry.
+ * @param[in] opt Option substring to locate.
+ * @return Pointer to match within mnt_opts, or NULL if absent.
+ */
+char *hasmntopt(const struct mntent *mnt, const char *opt) {
+  return hasmntopt_win_impl(mnt, opt);
 }
 
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||    \
@@ -111,6 +149,12 @@ static char s_apple_dir[] = "/";
 static char s_apple_type[] = "apfs";
 static char s_apple_opts[] = "rw";
 
+/**
+ * @brief Opens the filesystem description table on BSD/macOS/DOS.
+ * @param[in] filename Path to mount table file.
+ * @param[in] type Open mode string.
+ * @return Non-NULL opaque FILE pointer on success, or NULL on error.
+ */
 FILE *setmntent(const char *filename, const char *type) {
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (filename == NULL || type == NULL) {
@@ -124,6 +168,12 @@ FILE *setmntent(const char *filename, const char *type) {
   return (FILE *)&s_apple_mnt_idx;
 }
 
+/**
+ * @brief Reads the next entry from the mounted filesystem table on
+ * BSD/macOS/DOS.
+ * @param[in] stream Stream returned by setmntent().
+ * @return Pointer to static mntent structure, or NULL at EOF/error.
+ */
 struct mntent *getmntent(FILE *stream) {
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
   if (stream == NULL || s_apple_mnt_idx > 0) {
@@ -145,6 +195,11 @@ struct mntent *getmntent(FILE *stream) {
   return &s_apple_mnt;
 }
 
+/**
+ * @brief Closes the filesystem description table stream on BSD/macOS/DOS.
+ * @param[in] stream Stream returned by setmntent().
+ * @return Always 1.
+ */
 int endmntent(FILE *stream) {
   (void)stream;
   s_apple_mnt_idx = 0;
@@ -152,6 +207,12 @@ int endmntent(FILE *stream) {
 }
 
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
+/**
+ * @brief Scans mnt_opts for a matching substring option on BSD/macOS/DOS.
+ * @param[in] mnt Mount table entry.
+ * @param[in] opt Option substring to locate.
+ * @return Pointer to match within mnt_opts, or NULL if absent.
+ */
 char *hasmntopt(const struct mntent *mnt, const char *opt) {
   if (mnt == NULL || opt == NULL || mnt->mnt_opts == NULL) {
     return NULL;
@@ -161,3 +222,5 @@ char *hasmntopt(const struct mntent *mnt, const char *opt) {
 #endif
 
 #endif
+
+typedef int make_iso_compilers_happy_tu_mntent;

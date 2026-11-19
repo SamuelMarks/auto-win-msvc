@@ -52,7 +52,7 @@ def check_file(filepath):
         elif in_string:
             if content[i] == '"':
                 in_string = False
-        elif in_char:
+        else:
             if content[i] == "'":
                 in_char = False
 

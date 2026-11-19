@@ -97,7 +97,11 @@ set_target_properties(bsd-pthread-np PROPERTIES DEFINE_SYMBOL "auto_win_msvc_exp
 target_include_directories(bsd-pthread-np PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
-    target_include_directories(bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+    target_include_directories(bsd-pthread-np PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-semaphore/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-types/include"
+    )
 endif()
 
 enable_testing()
@@ -107,7 +111,11 @@ add_executable(test_bsd-pthread-np ${TEST_SOURCES})
 target_include_directories(test_bsd-pthread-np PRIVATE ${greatest_SOURCE_DIR})
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
-    target_include_directories(test_bsd-pthread-np PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include")
+    target_include_directories(test_bsd-pthread-np PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-pthread/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-semaphore/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../posix-types/include"
+    )
 endif()
 
 target_link_libraries(test_bsd-pthread-np PRIVATE bsd-pthread-np)

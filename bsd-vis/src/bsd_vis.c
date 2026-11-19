@@ -15,6 +15,25 @@
 #include <string.h>
 /* clang-format on */
 
+static void *default_vis_malloc(size_t size) { return malloc(size); }
+
+/** @brief Overrideable malloc hook for OOM testing in bsd-vis. */
+void *(*g_bsd_vis_malloc)(size_t) = default_vis_malloc;
+
+/** @brief Resets g_bsd_vis_malloc back to the standard allocator. */
+void bsd_vis_reset_malloc_hook(void);
+void bsd_vis_reset_malloc_hook(void) { g_bsd_vis_malloc = default_vis_malloc; }
+
+/**
+ * @brief Encode a single character with extra characters into bounded buffer.
+ * @param[out] dst Destination buffer (must have room for at least 5 bytes).
+ * @param[in] dlen Size of destination buffer in bytes.
+ * @param[in] c Character to encode.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] nextc Lookahead next character.
+ * @param[in] extra Optional string of additional characters to escape.
+ * @return Pointer to NUL terminator in dst, or NULL if buffer too small.
+ */
 char *snvis(char *dst, size_t dlen, int c, int flag, int nextc,
             const char *extra) {
   unsigned char uc = (unsigned char)c;
@@ -23,9 +42,9 @@ char *snvis(char *dst, size_t dlen, int c, int flag, int nextc,
   if (dst == NULL || dlen < 5) {
     return NULL;
   }
-  if (extra != NULL && strchr(extra, c) != NULL) {
+  if (extra != NULL && uc != '\0' && strchr(extra, (int)uc) != NULL) {
     encode = 1;
-  } else if (!isascii(uc) || !isgraph(uc)) {
+  } else if (uc >= 0x80U || !isgraph(uc)) {
     if (uc == ' ' && (flag & VIS_SP) == 0) {
       encode = 0;
     } else if (uc == '\t' && (flag & VIS_TAB) == 0 && (flag & VIS_SAFE)) {
@@ -106,18 +125,55 @@ char *snvis(char *dst, size_t dlen, int c, int flag, int nextc,
   return dst;
 }
 
+/**
+ * @brief Encode a single character with extra characters.
+ * @param[out] dst Destination buffer (at least 5 bytes).
+ * @param[in] c Character to encode.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] nextc Lookahead next character.
+ * @param[in] extra Additional characters to escape.
+ * @return Pointer to NUL terminator in dst, or NULL on error.
+ */
 char *svis(char *dst, int c, int flag, int nextc, const char *extra) {
   return snvis(dst, 5, c, flag, nextc, extra);
 }
 
+/**
+ * @brief Encode a single character into a bounded buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] c Character to encode.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] nextc Lookahead next character.
+ * @return Pointer to NUL terminator in dst, or NULL on error.
+ */
 char *nvis(char *dst, size_t dlen, int c, int flag, int nextc) {
   return snvis(dst, dlen, c, flag, nextc, "");
 }
 
+/**
+ * @brief Encode a single character visually.
+ * @param[out] dst Destination buffer (at least 5 bytes).
+ * @param[in] c Character to encode.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] nextc Lookahead next character.
+ * @return Pointer to NUL terminator in dst, or NULL on error.
+ */
 char *vis(char *dst, int c, int flag, int nextc) {
   return snvis(dst, 5, c, flag, nextc, "");
 }
 
+/**
+ * @brief Visually encode a fixed-length buffer with extra chars into bounded
+ * dst.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes to encode.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] extra Optional string of extra characters to escape.
+ * @return Encoded string length, or -1 if destination buffer is too small.
+ */
 int strsnvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
               const char *extra) {
   char *start = dst;
@@ -144,15 +200,62 @@ int strsnvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
   return (int)(dst - start);
 }
 
+/**
+ * @brief Visually encode a fixed-length buffer with extra characters.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] extra Additional characters to escape.
+ * @return Encoded string length, or -1 on error.
+ */
 int strsvisx(char *dst, const char *src, size_t len, int flag,
              const char *extra) {
   return strsnvisx(dst, len * 4 + 1, src, len, flag, extra);
 }
 
+/**
+ * @brief Visually encode a fixed-length buffer into bounded destination.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes.
+ * @param[in] flag VIS_* encoding flags.
+ * @return Encoded string length, or -1 on error.
+ */
 int strnvisx(char *dst, size_t dlen, const char *src, size_t len, int flag) {
   return strsnvisx(dst, dlen, src, len, flag, "");
 }
 
+/**
+ * @brief Visually encode a fixed-length buffer with extra chars and error ptr.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] extra Additional characters to escape.
+ * @param[out] cerr_ptr Optional conversion error status output.
+ * @return Encoded string length, or -1 on error.
+ */
+int strsenvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
+               const char *extra, int *cerr_ptr) {
+  if (cerr_ptr != NULL) {
+    *cerr_ptr = 0;
+  }
+  return strsnvisx(dst, dlen, src, len, flag, extra);
+}
+
+/**
+ * @brief Visually encode a fixed-length buffer with error pointer.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[out] cerr_ptr Optional conversion error status output.
+ * @return Encoded string length, or -1 on error.
+ */
 int strenvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
               int *cerr_ptr) {
   if (cerr_ptr != NULL) {
@@ -161,29 +264,77 @@ int strenvisx(char *dst, size_t dlen, const char *src, size_t len, int flag,
   return strsnvisx(dst, dlen, src, len, flag, "");
 }
 
+/**
+ * @brief Visually encode a fixed-length buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source byte buffer.
+ * @param[in] len Number of source bytes.
+ * @param[in] flag VIS_* encoding flags.
+ * @return Encoded string length, or -1 on error.
+ */
 int strvisx(char *dst, const char *src, size_t len, int flag) {
   return strsnvisx(dst, len * 4 + 1, src, len, flag, "");
 }
 
+/**
+ * @brief Visually encode a NUL-terminated string with extra characters into
+ * bounded buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source NUL-terminated string.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] extra Additional characters to escape.
+ * @return Encoded string length, or -1 on error.
+ */
 int strsnvis(char *dst, size_t dlen, const char *src, int flag,
              const char *extra) {
   return strsnvisx(dst, dlen, src, src ? strlen(src) : 0, flag, extra);
 }
 
+/**
+ * @brief Visually encode a NUL-terminated string with extra characters.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source NUL-terminated string.
+ * @param[in] flag VIS_* encoding flags.
+ * @param[in] extra Additional characters to escape.
+ * @return Encoded string length, or -1 on error.
+ */
 int strsvis(char *dst, const char *src, int flag, const char *extra) {
   size_t len = src ? strlen(src) : 0;
   return strsnvisx(dst, len * 4 + 1, src, len, flag, extra);
 }
 
+/**
+ * @brief Visually encode a NUL-terminated string into bounded buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source NUL-terminated string.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] flag VIS_* encoding flags.
+ * @return Encoded string length, or -1 on error.
+ */
 int strnvis(char *dst, const char *src, size_t dlen, int flag) {
   return strsnvisx(dst, dlen, src, src ? strlen(src) : 0, flag, "");
 }
 
+/**
+ * @brief Visually encode a NUL-terminated string.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source NUL-terminated string.
+ * @param[in] flag VIS_* encoding flags.
+ * @return Encoded string length, or -1 on error.
+ */
 int strvis(char *dst, const char *src, int flag) {
   size_t len = src ? strlen(src) : 0;
   return strsnvisx(dst, len * 4 + 1, src, len, flag, "");
 }
 
+/**
+ * @brief Visually encode a string into a dynamically allocated buffer.
+ * @param[out] outp Pointer receiving allocated NUL-terminated buffer.
+ * @param[in] src Source NUL-terminated string.
+ * @param[in] flag VIS_* encoding flags.
+ * @return Encoded string length, or -1 on error.
+ */
 int stravis(char **outp, const char *src, int flag) {
   size_t len = src ? strlen(src) : 0;
   size_t cap = len * 4 + 1;
@@ -192,7 +343,7 @@ int stravis(char **outp, const char *src, int flag) {
     errno = EINVAL;
     return -1;
   }
-  buf = (char *)malloc(cap);
+  buf = (char *)g_bsd_vis_malloc(cap);
   if (buf == NULL) {
     *outp = NULL;
     return -1;
@@ -201,9 +352,23 @@ int stravis(char **outp, const char *src, int flag) {
   return strsnvisx(buf, cap, src, len, flag, "");
 }
 
+/**
+ * @brief Decode a visual representation of a character step-by-step.
+ * @param[out] cp Output decoded character.
+ * @param[in] c Next input byte.
+ * @param[in,out] astate Decoder state machine variable.
+ * @param[in] flag UNVIS_* / VIS_* decoding flags.
+ * @return UNVIS_VALID, UNVIS_NOCHAR, 0, or UNVIS_SYNBAD on syntax error.
+ */
 int unvis(char *cp, int c, int *astate, int flag) {
-  (void)flag;
-  if (cp == NULL || astate == NULL) {
+  if (cp == NULL || astate == NULL || flag < 0) {
+    return UNVIS_SYNBAD;
+  }
+  if (flag & UNVIS_END) {
+    if (*astate == 0) {
+      return UNVIS_NOCHAR;
+    }
+    *astate = 0;
     return UNVIS_SYNBAD;
   }
   if (*astate == 0) {
@@ -238,15 +403,23 @@ int unvis(char *cp, int c, int *astate, int flag) {
   return UNVIS_VALID;
 }
 
+/**
+ * @brief Decode a vis-encoded string with flags into a bounded buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] dlen Size of destination buffer.
+ * @param[in] src Source vis-encoded NUL-terminated string.
+ * @param[in] flag Decoding flags.
+ * @return Decoded byte length, or -1 on error/overflow.
+ */
 int strnunvisx(char *dst, size_t dlen, const char *src, int flag) {
   char *start = dst;
   int state = 0;
+  char outc = 0;
   char c;
   if (dst == NULL || src == NULL || dlen == 0) {
     return -1;
   }
   while ((c = *src++) != '\0') {
-    char outc = 0;
     int r = unvis(&outc, (unsigned char)c, &state, flag);
     if (r == UNVIS_VALID) {
       if ((size_t)(dst - start) + 1 >= dlen) {
@@ -258,22 +431,48 @@ int strnunvisx(char *dst, size_t dlen, const char *src, int flag) {
       return -1;
     }
   }
+  if (unvis(&outc, 0, &state, UNVIS_END) == UNVIS_SYNBAD) {
+    *dst = '\0';
+    return -1;
+  }
   *dst = '\0';
   return (int)(dst - start);
 }
 
+/**
+ * @brief Decode a vis-encoded string with flags.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source vis-encoded NUL-terminated string.
+ * @param[in] flag Decoding flags.
+ * @return Decoded byte length, or -1 on error.
+ */
 int strunvisx(char *dst, const char *src, int flag) {
   size_t len = src ? strlen(src) : 0;
   return strnunvisx(dst, len + 1, src, flag);
 }
 
+/**
+ * @brief Decode a vis-encoded string into a bounded buffer.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source vis-encoded NUL-terminated string.
+ * @param[in] dlen Size of destination buffer.
+ * @return Decoded byte length, or -1 on error.
+ */
 int strnunvis(char *dst, const char *src, size_t dlen) {
   return strnunvisx(dst, dlen, src, 0);
 }
 
+/**
+ * @brief Decode a vis-encoded string.
+ * @param[out] dst Destination buffer.
+ * @param[in] src Source vis-encoded NUL-terminated string.
+ * @return Decoded byte length, or -1 on error.
+ */
 int strunvis(char *dst, const char *src) { return strunvisx(dst, src, 0); }
 
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_tu_bsd_vis;
 
 #endif
+/** @brief Dummy typedef preventing empty mega translation unit warnings. */
 typedef int make_iso_compilers_happy_mega_bsd_vis;

@@ -32,7 +32,7 @@ static void ioctl_null_invalid_param_handler(const wchar_t *expression,
 static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   ptrdiff_t h = -1;
   int saved_err = errno;
-  if (fd < 0 || fd >= 2048) {
+  if (fd >= 2048) {
     return -1;
   }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -79,6 +79,55 @@ auto_win_msvc_error_t posix_sys_ioctl_get_info(int *out_available) {
 
 #if defined(_MSC_VER) || defined(_WIN32)
 
+static BOOL default_ioctl_csbi(HANDLE h, CONSOLE_SCREEN_BUFFER_INFO *csbi) {
+  return GetConsoleScreenBufferInfo(h, csbi);
+}
+static BOOL default_ioctl_peek_pipe(HANDLE h, DWORD *avail) {
+  return PeekNamedPipe(h, NULL, 0, NULL, avail, NULL);
+}
+static BOOL default_ioctl_fsize(HANDLE h, LARGE_INTEGER *sz) {
+  return GetFileSizeEx(h, sz);
+}
+static BOOL default_ioctl_fseek(HANDLE h, LARGE_INTEGER *pos) {
+  return SetFilePointerEx(h, *pos, pos, FILE_CURRENT);
+}
+static BOOL default_ioctl_pipe_state(HANDLE h, DWORD *mode) {
+  return SetNamedPipeHandleState(h, mode, NULL, NULL);
+}
+
+static BOOL (*g_ioctl_csbi)(HANDLE,
+                            CONSOLE_SCREEN_BUFFER_INFO *) = default_ioctl_csbi;
+static BOOL (*g_ioctl_peek_pipe)(HANDLE, DWORD *) = default_ioctl_peek_pipe;
+static BOOL (*g_ioctl_fsize)(HANDLE, LARGE_INTEGER *) = default_ioctl_fsize;
+static BOOL (*g_ioctl_fseek)(HANDLE, LARGE_INTEGER *) = default_ioctl_fseek;
+static BOOL (*g_ioctl_pipe_state)(HANDLE, DWORD *) = default_ioctl_pipe_state;
+
+/**
+ * @brief Overrides Win32 handle hooks for posix-sys-ioctl unit testing.
+ */
+void posix_sys_ioctl_set_hooks(int (*csbi_fn)(void *, void *),
+                               int (*peek_fn)(void *, unsigned long *),
+                               int (*fsize_fn)(void *, void *),
+                               int (*fseek_fn)(void *, void *),
+                               int (*pipe_state_fn)(void *, unsigned long *)) {
+  g_ioctl_csbi = (BOOL (*)(HANDLE, CONSOLE_SCREEN_BUFFER_INFO *))csbi_fn;
+  g_ioctl_peek_pipe = (BOOL (*)(HANDLE, DWORD *))peek_fn;
+  g_ioctl_fsize = (BOOL (*)(HANDLE, LARGE_INTEGER *))fsize_fn;
+  g_ioctl_fseek = (BOOL (*)(HANDLE, LARGE_INTEGER *))fseek_fn;
+  g_ioctl_pipe_state = (BOOL (*)(HANDLE, DWORD *))pipe_state_fn;
+}
+
+/**
+ * @brief Resets Win32 handle hooks to defaults.
+ */
+void posix_sys_ioctl_reset_hooks(void) {
+  g_ioctl_csbi = default_ioctl_csbi;
+  g_ioctl_peek_pipe = default_ioctl_peek_pipe;
+  g_ioctl_fsize = default_ioctl_fsize;
+  g_ioctl_fseek = default_ioctl_fseek;
+  g_ioctl_pipe_state = default_ioctl_pipe_state;
+}
+
 static int handle_console_ioctl(HANDLE h, unsigned long request, void *argp) {
   if (request == TIOCGWINSZ) {
     struct winsize *ws;
@@ -89,7 +138,7 @@ static int handle_console_ioctl(HANDLE h, unsigned long request, void *argp) {
       errno = EFAULT;
       return -1;
     }
-    if (GetConsoleScreenBufferInfo(h, &csbi)) {
+    if (g_ioctl_csbi(h, &csbi)) {
       ws->ws_row =
           (unsigned short)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
       ws->ws_col =
@@ -100,7 +149,8 @@ static int handle_console_ioctl(HANDLE h, unsigned long request, void *argp) {
     }
     errno = ENOTTY;
     return -1;
-  } else if (request == TIOCSWINSZ) {
+  } else {
+    /* TIOCSWINSZ */
     struct winsize *ws;
     SMALL_RECT rect;
     COORD size;
@@ -120,9 +170,6 @@ static int handle_console_ioctl(HANDLE h, unsigned long request, void *argp) {
     SetConsoleWindowInfo(h, TRUE, &rect);
     return 0;
   }
-
-  errno = EINVAL;
-  return -1;
 }
 
 static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
@@ -138,9 +185,8 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
     }
 
     if (file_type == FILE_TYPE_PIPE) {
-      DWORD bytes_avail;
-      bytes_avail = 0;
-      if (PeekNamedPipe(h, NULL, 0, NULL, &bytes_avail, NULL)) {
+      DWORD bytes_avail = 0;
+      if (g_ioctl_peek_pipe(h, &bytes_avail)) {
         *bytes_available = bytes_avail;
         return 0;
       }
@@ -148,8 +194,7 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
       LARGE_INTEGER file_size;
       LARGE_INTEGER file_pos;
       file_pos.QuadPart = 0;
-      if (GetFileSizeEx(h, &file_size) &&
-          SetFilePointerEx(h, file_pos, &file_pos, FILE_CURRENT)) {
+      if (g_ioctl_fsize(h, &file_size) && g_ioctl_fseek(h, &file_pos)) {
         if (file_size.QuadPart > file_pos.QuadPart) {
           *bytes_available = (DWORD)(file_size.QuadPart - file_pos.QuadPart);
         } else {
@@ -160,7 +205,8 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
     }
     errno = ENOTTY;
     return -1;
-  } else if (request == FIONBIO) {
+  } else {
+    /* FIONBIO */
     DWORD *non_blocking;
     DWORD file_type;
 
@@ -172,14 +218,13 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
     }
 
     if (file_type == FILE_TYPE_PIPE) {
-      DWORD mode;
-      mode = PIPE_READMODE_BYTE;
+      DWORD mode = PIPE_READMODE_BYTE;
       if (*non_blocking) {
         mode |= PIPE_NOWAIT;
       } else {
         mode |= PIPE_WAIT;
       }
-      if (SetNamedPipeHandleState(h, &mode, NULL, NULL)) {
+      if (g_ioctl_pipe_state(h, &mode)) {
         return 0;
       }
       errno = EINVAL;
@@ -188,55 +233,49 @@ static int handle_file_ioctl(HANDLE h, unsigned long request, void *argp) {
     errno = ENOTTY;
     return -1;
   }
-
-  errno = EINVAL;
-  return -1;
 }
 
 int posix_ioctl(intptr_t fd, unsigned long request, ...) {
-  int ret;
   va_list args;
   void *argp;
-  HANDLE h;
   intptr_t handle;
   SOCKET s;
+  int optval = 0;
+  int optlen = sizeof(optval);
 
   va_start(args, request);
   argp = va_arg(args, void *);
   va_end(args);
 
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
   handle = safe_get_osfhandle(fd);
   s = (handle == -1) ? (SOCKET)fd : (SOCKET)handle;
 
-  ret = ioctlsocket(s, (long)request, (u_long *)argp);
-  if (ret != SOCKET_ERROR) {
-    return 0;
-  } else {
-    int wsaErr;
-    wsaErr = WSAGetLastError();
-    if (wsaErr == WSAENOTSOCK || wsaErr == WSANOTINITIALISED) {
-      h = (HANDLE)s;
-      if (h == INVALID_HANDLE_VALUE) {
-        errno = EBADF;
-        return -1;
-      }
-
-      if (request == TIOCGWINSZ || request == TIOCSWINSZ) {
-        return handle_console_ioctl(h, request, argp);
-      } else if (request == FIONREAD || request == FIONBIO) {
-        return handle_file_ioctl(h, request, argp);
-      }
-
-      errno = ENOTTY;
-      return -1;
-    } else if (wsaErr == WSAEFAULT) {
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&optval, &optlen) == 0) {
+    if (ioctlsocket(s, (long)request, (u_long *)argp) != SOCKET_ERROR) {
+      return 0;
+    }
+    if (WSAGetLastError() == WSAEFAULT) {
       errno = EFAULT;
       return -1;
-    } else {
-      errno = EINVAL;
-      return -1;
     }
+    errno = EINVAL;
+    return -1;
   }
+
+  if (request == TIOCGWINSZ || request == TIOCSWINSZ) {
+    return handle_console_ioctl((HANDLE)s, request, argp);
+  }
+  if (request == FIONREAD || request == FIONBIO) {
+    return handle_file_ioctl((HANDLE)s, request, argp);
+  }
+
+  errno = ENOTTY;
+  return -1;
 }
 
 #else

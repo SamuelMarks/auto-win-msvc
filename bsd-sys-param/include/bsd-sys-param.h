@@ -18,6 +18,7 @@
 #endif
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__WATCOMC__) || \
     defined(__DOS__) || defined(__MSDOS__)
+#include <stdio.h>
 #include <stdlib.h>
 #else
 #include <sys/param.h>

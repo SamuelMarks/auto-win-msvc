@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.14)
 project(posix-sockets VERSION 0.1.0 LANGUAGES C)
 
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+endif()
+
+if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
+    find_program(_AWM_HOST_NM NAMES llvm-nm x86_64-w64-mingw32-nm nm PATHS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+    if(_AWM_HOST_NM)
+        set(CMAKE_NM "${_AWM_HOST_NM}" CACHE FILEPATH "Path to nm" FORCE)
+    endif()
+endif()
+
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -70,7 +83,12 @@ endif()
 
 # Warnings and ASan
 if(MSVC)
-    add_compile_options(/W4 )
+    if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
+        string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    endif()
+    add_compile_options(/WX)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -pedantic -Wformat=2 -Wshadow -Wcast-qual -Wvla -Wpointer-arith -Wundef)
 endif()
@@ -151,6 +169,11 @@ if(NOT TARGET posix-sys-uio)
     endif()
 endif()
 
+foreach(_sdep posix-sys-uio posix-sys-ioctl posix-poll)
+    if(TARGET ${_sdep})
+        set_target_properties(${_sdep} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
+endforeach()
 target_link_libraries(posix-sockets PUBLIC posix-sys-uio posix-sys-ioctl posix-poll)
 
 enable_testing()
