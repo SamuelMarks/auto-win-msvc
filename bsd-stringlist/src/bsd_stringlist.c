@@ -12,11 +12,31 @@
 #include <string.h>
 /* clang-format on */
 
+static void *default_sl_calloc(size_t nmemb, size_t size) {
+  return calloc(nmemb, size);
+}
+
+static void *default_sl_realloc(void *ptr, size_t size) {
+  return realloc(ptr, size);
+}
+
+/** @brief Overrideable calloc hook for OOM testing in bsd-stringlist. */
+void *(*g_bsd_sl_calloc)(size_t, size_t) = default_sl_calloc;
+/** @brief Overrideable realloc hook for OOM testing in bsd-stringlist. */
+void *(*g_bsd_sl_realloc)(void *, size_t) = default_sl_realloc;
+
+/** @brief Resets all bsd-stringlist allocator hooks to defaults. */
+void bsd_sl_reset_hooks(void);
+void bsd_sl_reset_hooks(void) {
+  g_bsd_sl_calloc = default_sl_calloc;
+  g_bsd_sl_realloc = default_sl_realloc;
+}
+
 #ifndef BSD_STRINGLIST_CALLOC
-#define BSD_STRINGLIST_CALLOC(nmemb, size) calloc((nmemb), (size))
+#define BSD_STRINGLIST_CALLOC(nmemb, size) g_bsd_sl_calloc((nmemb), (size))
 #endif
 #ifndef BSD_STRINGLIST_REALLOC
-#define BSD_STRINGLIST_REALLOC(ptr, size) realloc((ptr), (size))
+#define BSD_STRINGLIST_REALLOC(ptr, size) g_bsd_sl_realloc((ptr), (size))
 #endif
 #ifndef BSD_STRINGLIST_FREE
 #define BSD_STRINGLIST_FREE(ptr) free((ptr))
@@ -68,8 +88,6 @@ int sl_add(StringList *sl, char *name) {
 
 /**
  * @brief Free a StringList and optionally its elements.
- * @param sl Target StringList (may be NULL).
- * @param all Non-zero to free each element pointer.
  */
 void sl_free(StringList *sl, int all) {
   size_t i;
@@ -108,9 +126,6 @@ char *sl_find(StringList *sl, const char *name) {
 
 /**
  * @brief Delete a string from a StringList and optionally free it.
- * @param sl Target StringList.
- * @param name NUL-terminated string to remove.
- * @param all Non-zero to free the removed element pointer.
  * @return 0 if found and removed, or -1 if not found or invalid arguments.
  */
 int sl_delete(StringList *sl, const char *name, int all) {

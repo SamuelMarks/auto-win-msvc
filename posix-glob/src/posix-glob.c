@@ -180,7 +180,7 @@ int glob(const char *pattern, int flags,
   char dir_prefix[1024];
   const char *last_slash;
   size_t prefix_len = 0;
-  int initial_pathc;
+  size_t initial_pathc;
   int ret = 0;
   int match_found = 0;
 
@@ -202,7 +202,7 @@ int glob(const char *pattern, int flags,
     }
   }
 
-  initial_pathc = (int)pglob->gl_pathc;
+  initial_pathc = pglob->gl_pathc;
 
   last_slash = strrchr(pattern, '/');
   if (!last_slash) {
@@ -225,7 +225,40 @@ int glob(const char *pattern, int flags,
     dir_prefix[0] = '\0';
   }
 
-  handle = _findfirst(pattern, &fileinfo);
+  {
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+    char dos_pat[1032];
+    size_t plen = strlen(pattern);
+    size_t i_p;
+    const char *base_p;
+    if (plen > sizeof(dos_pat) - 4) {
+      plen = sizeof(dos_pat) - 4;
+    }
+    for (i_p = 0; i_p < plen; ++i_p) {
+      dos_pat[i_p] = (pattern[i_p] == '/') ? '\\' : pattern[i_p];
+    }
+    dos_pat[plen] = '\0';
+    base_p = strrchr(dos_pat, '\\');
+    base_p = base_p ? (base_p + 1) : dos_pat;
+    if (plen > 0 && dos_pat[plen - 1] == '*' && strchr(base_p, '.') == NULL) {
+      dos_pat[plen] = '.';
+      dos_pat[plen + 1] = '*';
+      dos_pat[plen + 2] = '\0';
+    }
+#if defined(__WATCOMC__)
+    if (_osmajor < 2) {
+      handle = -1;
+      errno = ENOENT;
+    } else {
+      handle = _findfirst(dos_pat, &fileinfo);
+    }
+#else
+    handle = _findfirst(dos_pat, &fileinfo);
+#endif
+#else
+    handle = _findfirst(pattern, &fileinfo);
+#endif
+  }
   if (handle == -1) {
     if (errfunc) {
       if (errfunc(pattern, errno))
@@ -263,14 +296,25 @@ int glob(const char *pattern, int flags,
     _findclose(handle);
   }
 
-  if (ret != 0)
+  if (ret != 0) {
+    if (!(flags & GLOB_APPEND)) {
+      globfree(pglob);
+    }
     return ret;
+  }
 
   if (!match_found) {
     int has_magic = (strpbrk(pattern, "*?[") != NULL);
     if ((flags & GLOB_NOCHECK) || ((flags & GLOB_NOMAGIC) && !has_magic)) {
       pglob->gl_flags |= GLOB_NOMAGIC;
-      return glob_append(pglob, pattern);
+      ret = glob_append(pglob, pattern);
+      if (ret != 0 && !(flags & GLOB_APPEND)) {
+        globfree(pglob);
+      }
+      return ret;
+    }
+    if (!(flags & GLOB_APPEND)) {
+      globfree(pglob);
     }
     return GLOB_NOMATCH;
   }
@@ -291,7 +335,7 @@ int glob(const char *pattern, int flags,
   char dir_prefix[1024];
   const char *last_slash;
   size_t prefix_len = 0;
-  int initial_pathc;
+  size_t initial_pathc;
   int ret = 0;
   int match_found = 0;
   char search_dir[1024];
@@ -315,7 +359,7 @@ int glob(const char *pattern, int flags,
     }
   }
 
-  initial_pathc = (int)pglob->gl_pathc;
+  initial_pathc = pglob->gl_pathc;
 
   last_slash = strrchr(pattern, '/');
   if (last_slash) {
@@ -390,14 +434,25 @@ int glob(const char *pattern, int flags,
     closedir(dir);
   }
 
-  if (ret != 0)
+  if (ret != 0) {
+    if (!(flags & GLOB_APPEND)) {
+      globfree(pglob);
+    }
     return ret;
+  }
 
   if (!match_found) {
     int has_magic = (strpbrk(pattern, "*?[") != NULL);
     if ((flags & GLOB_NOCHECK) || ((flags & GLOB_NOMAGIC) && !has_magic)) {
       pglob->gl_flags |= GLOB_NOMAGIC;
-      return glob_append(pglob, pattern);
+      ret = glob_append(pglob, pattern);
+      if (ret != 0 && !(flags & GLOB_APPEND)) {
+        globfree(pglob);
+      }
+      return ret;
+    }
+    if (!(flags & GLOB_APPEND)) {
+      globfree(pglob);
     }
     return GLOB_NOMATCH;
   }
@@ -536,6 +591,7 @@ auto_win_msvc_error_t posix_glob_get_info(int *out_available) {
 typedef int make_iso_compilers_happy_tu;
 
 /** @brief Dummy anchor symbol ensuring non-empty posix-glob archive. */
+int dummy_posix_glob(void);
 int dummy_posix_glob(void) { return 0; }
 
 /** @brief Internal qsort comparator exposed for unit testing. */

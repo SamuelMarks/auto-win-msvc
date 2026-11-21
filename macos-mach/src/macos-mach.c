@@ -46,8 +46,6 @@
 
 /**
  * @brief Initializes and validates the macos-mach module.
- * @param[out] out_status Pointer to an integer receiving the initialized
- * status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
 auto_win_msvc_error_t macos_mach_init(int *out_status) {

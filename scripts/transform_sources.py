@@ -3997,8 +3997,19 @@ def transform_source_content(content: str) -> str:
         'if (FLAG(V)) { puts("mcookie from toybox"); return; }',
     )
 
-    content = re.sub(r"=\s*\{\s*\}", "= {0}", content)
-    content = content.replace(",{}}", ",{0}}")
+    content = re.sub(
+        r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*)|(?<![=!<>])(=\s*)\{\s*\}|(,\s*)\{\s*\}(?=\s*[,}])',
+        lambda m: (
+            m.group(0)
+            if m.group(1) is not None
+            else (
+                f"{m.group(2)}{{0}}"
+                if m.group(2) is not None
+                else f"{m.group(3)}{{0}}"
+            )
+        ),
+        content,
+    )
 
     content = content.replace(
         "enum toktypes {"
@@ -4589,10 +4600,12 @@ def _transform_freebsd_c99_c11(content: str, rename_main: str = "") -> str:
 
     def _lower_clit_assign(match: re.Match[str]) -> str:
         """Lower compound-literal struct assignment statements."""
-        indent = match.group(1)
-        lhs = match.group(2).strip()
-        decl_type = match.group(3).strip()
-        body = re.sub(r"//[^\n]*", "", match.group(4))
+        if match.group(1) is not None:
+            return match.group(0)
+        indent = match.group(2)
+        lhs = match.group(3).strip()
+        decl_type = match.group(4).strip()
+        body = re.sub(r"//[^\n]*", "", match.group(5))
         body = re.sub(r"/\*.*?\*/", "", body, flags=re.DOTALL).strip()
         assigns: list[str] = []
         if not _collect_desig_assigns("_awm_cl", body, indent, assigns):
@@ -4607,7 +4620,7 @@ def _transform_freebsd_c99_c11(content: str, rename_main: str = "") -> str:
         )
 
     content = re.sub(
-        r"^([ \t]+)([^;=\n]+?)[ \t]*=[ \t]*\(((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*)\)[ \t\r\n]*\{((?:[^{}]|\{[^{}]*\})*\.[A-Za-z_][A-Za-z0-9_]*[ \t]*=(?:[^{}]|\{[^{}]*\})*)\}[ \t]*;",
+        r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*)|^([ \t]+)(?![ \t]*(?:/\*|//))((?:(?!/\*|//)[^;=\n"\'])+?)[ \t]*=[ \t]*\(((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*)\)[ \t\r\n]*\{((?:[^{}]|\{[^{}]*\})*\.[A-Za-z_][A-Za-z0-9_]*[ \t]*=(?:[^{}]|\{[^{}]*\})*)\}[ \t]*;',
         _lower_clit_assign,
         content,
         flags=re.MULTILINE,
@@ -4630,8 +4643,12 @@ def _transform_freebsd_c99_c11(content: str, rename_main: str = "") -> str:
 
     # 6.3o Lower empty/zero/NULL compound-literal struct assignments: *res = (struct foo){ NULL, 0 };
     content = re.sub(
-        r"^([ \t]+)([^;=\n]+?)[ \t]*=[ \t]*\((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*\)[ \t\r\n]*\{\s*(?:(?:0|NULL)\s*(?:,\s*(?:0|NULL)\s*)*)?\}[ \t]*;",
-        r"\1memset(&(\2), 0, sizeof(\2));",
+        r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*)|^([ \t]+)(?![ \t]*(?:/\*|//))((?:(?!/\*|//)[^;=\n"\'])+?)[ \t]*=[ \t]*\((?:struct[ \t]+)?[A-Za-z_][A-Za-z0-9_]*\)[ \t\r\n]*\{\s*(?:(?:0|NULL)\s*(?:,\s*(?:0|NULL)\s*)*)?\}[ \t]*;',
+        lambda m: (
+            m.group(0)
+            if m.group(1) is not None
+            else f"{m.group(2)}memset(&({m.group(3).strip()}), 0, sizeof({m.group(3).strip()}));"
+        ),
         content,
         flags=re.MULTILINE,
     )

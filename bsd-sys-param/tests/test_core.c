@@ -7,7 +7,7 @@
 /* clang-format on */
 
 TEST test_bsd_sys_param_get_maxpathlen(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   size_t maxlen = 0;
   (void)rc;
   rc = bsd_sys_param_get_maxpathlen(NULL);

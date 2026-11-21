@@ -41,7 +41,11 @@
 #include <inttypes.h>
 #endif
 #if defined(NAMESPACE_MINIMAL_WINDOWS_INCLUDES)
+#if defined(__MINGW32__)
+#include <basetsd.h>
+#else
 #include <BaseTsd.h>
+#endif
 #include <direct.h>
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #include <../ucrt/io.h>

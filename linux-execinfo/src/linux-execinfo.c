@@ -260,9 +260,6 @@ static error_type_t backtrace_symbols_fd_win_impl(void *const *buffer, int size,
 
 /**
  * @brief Captures a backtrace for the calling program.
- * @param[out] buffer Array of void pointers to populate with return addresses.
- * @param[in] size Maximum number of addresses to store.
- * @param[out] captured Number of addresses actually captured.
  * @return ERR_NONE on success, or -1 on error.
  */
 error_type_t backtrace(void **buffer, int size, int *captured) {
@@ -271,8 +268,6 @@ error_type_t backtrace(void **buffer, int size, int *captured) {
 
 /**
  * @brief Translates return addresses into an allocated array of symbol strings.
- * @param[in] buffer Array of addresses captured by backtrace().
- * @param[in] size Number of addresses in buffer.
  * @return Newly allocated array of strings (caller frees single block), or NULL
  * on failure.
  */
@@ -282,9 +277,6 @@ char **backtrace_symbols(void *const *buffer, int size) {
 
 /**
  * @brief Writes translated backtrace symbols directly to a file descriptor.
- * @param[in] buffer Array of addresses captured by backtrace().
- * @param[in] size Number of addresses in buffer.
- * @param[in] fd Target file descriptor (1 for stdout, 2 for stderr).
  * @return ERR_NONE on success, or -1 on error.
  */
 error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
@@ -295,9 +287,6 @@ error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 
 /**
  * @brief Captures a backtrace (non-Windows stub).
- * @param[out] buffer Array of void pointers.
- * @param[in] size Maximum number of addresses.
- * @param[out] captured Number of addresses captured.
  * @return ERR_NONE on success, or -1 on invalid arguments.
  */
 error_type_t backtrace(void **buffer, int size, int *captured) {
@@ -310,8 +299,6 @@ error_type_t backtrace(void **buffer, int size, int *captured) {
 
 /**
  * @brief Translates return addresses to symbol strings (non-Windows stub).
- * @param[in] buffer Array of addresses.
- * @param[in] size Number of addresses.
  * @return Always NULL on non-Windows stub.
  */
 char **backtrace_symbols(void *const *buffer, int size) {
@@ -323,9 +310,6 @@ char **backtrace_symbols(void *const *buffer, int size) {
 
 /**
  * @brief Writes translated backtrace symbols to fd (non-Windows stub).
- * @param[in] buffer Array of addresses.
- * @param[in] size Number of addresses.
- * @param[in] fd File descriptor.
  * @return ERR_NONE on success, or -1 on invalid arguments.
  */
 error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
@@ -339,7 +323,6 @@ error_type_t backtrace_symbols_fd(void *const *buffer, int size, int fd) {
 
 /**
  * @brief Initializes and validates the linux-execinfo module.
- * @param[out] out_status Pointer to an integer receiving 1 on success.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_status is NULL.
  */

@@ -8,7 +8,7 @@
 /* clang-format on */
 
 TEST test_linux_sys_syscall_init(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int status = 0;
   (void)rc;
   (void)status;
@@ -21,11 +21,10 @@ TEST test_linux_sys_syscall_init(void) {
 
 TEST test_syscall_functions(void) {
 #if defined(_MSC_VER) && !defined(__clang__)
-  error_type_t err;
+  error_type_t err = 0;
+  long tid = 0;
   (void)err;
-  long tid;
 
-  tid = 0;
   err = syscall(SYS_gettid, &tid);
 
   err = syscall(SYS_gettid, NULL);

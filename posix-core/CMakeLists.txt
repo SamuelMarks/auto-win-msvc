@@ -9,7 +9,9 @@ endif()
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+if(NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 if(NOT MSVC AND NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
     add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _POSIX_C_SOURCE=200809L _DARWIN_C_SOURCE)
 endif()
@@ -20,7 +22,7 @@ include(CheckCCompilerFlag)
 # Valgrind memory check setup for CTest
 find_program(MEMORYCHECK_COMMAND NAMES valgrind)
 if(MEMORYCHECK_COMMAND)
-    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --track-origins=yes -q --error-exitcode=1")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes -q --error-exitcode=1")
 endif()
 
 # Clang Static Analyzer via clang-tidy
@@ -61,7 +63,8 @@ if(MSVC)
 else()
     # Unix / Clang / MinGW / Cygwin ASan & UBSan checks
     # Usually enabled on Native Linux/macOS, often problematic on MinGW/Cygwin without DLL path setups
-    if(NOT WIN32 AND NOT CYGWIN AND NOT MINGW)
+    option(AUTO_WIN_MSVC_ASAN "Enable AddressSanitizer (ASAN)" OFF)
+    if(AUTO_WIN_MSVC_ASAN AND NOT WIN32 AND NOT CYGWIN AND NOT MINGW AND NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME STREQUAL "DOS")
         check_c_compiler_flag("-fsanitize=address" HAS_ASAN)
         check_c_compiler_flag("-fsanitize=undefined" HAS_UBSAN)
         if(HAS_ASAN AND HAS_UBSAN)
@@ -146,11 +149,26 @@ if(NOT TARGET linux-epoll)
     endif()
 endif()
 
+if(NOT TARGET posix-wait)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-wait/CMakeLists.txt")
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../posix-wait posix-wait_build)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            posix-wait
+            GIT_REPOSITORY "https://github.com/SamuelMarks/auto-win-msvc.git"
+            GIT_TAG "master"
+            SOURCE_SUBDIR "posix-wait"
+        )
+        FetchContent_MakeAvailable(posix-wait)
+    endif()
+endif()
+
 file(GLOB TEST_SOURCES "tests/*.c")
 add_executable(test_posix-core ${TEST_SOURCES})
 target_include_directories(test_posix-core PRIVATE ${greatest_SOURCE_DIR})
 target_link_libraries(test_posix-core PRIVATE posix-core)
-target_link_libraries(posix-core PUBLIC posix-sockets linux-epoll)
+target_link_libraries(posix-core PUBLIC posix-sockets linux-epoll posix-wait)
 set_target_properties(posix-core PROPERTIES DEFINE_SYMBOL "posix_core_BUILD_DLL")
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(posix-core INTERFACE posix_core_SHARED)

@@ -182,6 +182,8 @@ static posix_sighandler_t (*g_crt_signal_fn)(int, posix_sighandler_t) =
  * @param[in] fn Replacement signal function pointer.
  */
 void posix_signal_set_crt_signal_hook(
+    posix_sighandler_t (*fn)(int, posix_sighandler_t));
+void posix_signal_set_crt_signal_hook(
     posix_sighandler_t (*fn)(int, posix_sighandler_t)) {
   g_crt_signal_fn = fn;
 }
@@ -189,6 +191,7 @@ void posix_signal_set_crt_signal_hook(
 /**
  * @brief Resets the internal CRT signal hook to default.
  */
+void posix_signal_reset_crt_signal_hook(void);
 void posix_signal_reset_crt_signal_hook(void) {
   g_crt_signal_fn = default_crt_signal;
 }
@@ -364,7 +367,7 @@ int posix_signal_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   unblocked = (int)(old_blocked & ~new_blocked & g_pending_signals);
   if (unblocked) {
     for (i = 1; i <= 31; i++) {
-      if (unblocked & (1UL << i)) {
+      if ((unsigned long)unblocked & (1UL << i)) {
         g_pending_signals &= ~(1UL << i);
         if (g_signal_flags[i] & SA_SIGINFO) {
           if (g_sigaction_handlers[i]) {

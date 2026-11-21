@@ -65,11 +65,6 @@ static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
 
 /**
  * @brief Get CPU affinity mask on Windows.
- * @param level CPU level selector.
- * @param which CPU target kind.
- * @param id Target identifier.
- * @param setsize Size of mask in bytes.
- * @param[out] mask Destination cpuset_t.
  * @return ERR_NONE on success, or -1 on failure with errno set.
  */
 error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
@@ -170,11 +165,6 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
 /**
  * @brief Set CPU affinity mask on Windows.
- * @param level CPU level selector.
- * @param which CPU target kind.
- * @param id Target identifier.
- * @param setsize Size of mask in bytes.
- * @param mask Source cpuset_t.
  * @return ERR_NONE on success, or -1 on failure with errno set.
  */
 error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
@@ -278,11 +268,6 @@ static unsigned long convert_cpuset_to_mask(const cpuset_t *set) {
 
 /**
  * @brief Fallback cpuset_getaffinity for non-Windows platforms.
- * @param level CPU level selector.
- * @param which CPU target kind.
- * @param id Target identifier.
- * @param setsize Size of mask in bytes.
- * @param[out] mask Destination cpuset_t.
  * @return ERR_NONE on success, or -1 on failure with errno set.
  */
 error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
@@ -307,11 +292,6 @@ error_type_t cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
 
 /**
  * @brief Fallback cpuset_setaffinity for non-Windows platforms.
- * @param level CPU level selector.
- * @param which CPU target kind.
- * @param id Target identifier.
- * @param setsize Size of mask in bytes.
- * @param mask Source cpuset_t.
  * @return ERR_NONE on success, or -1 on failure with errno set.
  */
 error_type_t cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,

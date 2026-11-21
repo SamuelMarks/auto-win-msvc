@@ -6,7 +6,12 @@
  */
 
 /* clang-format off */
+#if defined(__EMSCRIPTEN__)
+#pragma GCC system_header
+#include_next <stdint.h>
+#else
 #include "posix-stdint.h"
+#endif
 /* clang-format on */
 
 #ifndef STDINT_WRAPPER_H

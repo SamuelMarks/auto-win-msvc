@@ -7,7 +7,7 @@
 /* clang-format on */
 
 TEST test_linux_sys_user_init(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int status = 0;
   (void)rc;
   (void)status;

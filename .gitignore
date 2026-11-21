@@ -187,6 +187,7 @@ html/
 latex/
 
 # Additional common ignores
+.dos_watcom_matrix/
 .vagrant/
 **/vagrant/**/.vagrant/
 **/vagrant/**/.watcom/

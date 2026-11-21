@@ -64,6 +64,7 @@ int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents,
  * @brief Compilation unit anchor symbol for sys_epoll coverage.
  * @return Always 0.
  */
+int sys_epoll_dummy_for_coverage(void);
 int sys_epoll_dummy_for_coverage(void) { return 0; }
 
 /* Prevent empty translation unit */

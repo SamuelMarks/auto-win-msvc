@@ -103,9 +103,6 @@ typedef int(__stdcall *GetProcessMemoryInfo_t)(WIN_HANDLE,
 
 /**
  * @brief jemalloc stats print polyfill function.
- * @param write_cb Callback function to write output strings.
- * @param cbopaque Opaque context pointer passed to callback.
- * @param opts Formatting options string (unused).
  * @return ERR_NONE on success.
  */
 error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
@@ -199,9 +196,6 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
 #else
 /**
  * @brief jemalloc stats print fallback function for non-Windows platforms.
- * @param write_cb Callback function to write output strings.
- * @param cbopaque Opaque context pointer passed to callback.
- * @param opts Formatting options string (unused).
  * @return ERR_NONE on success.
  */
 error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
@@ -221,7 +215,6 @@ error_type_t je_malloc_stats_print(void (*write_cb)(void *, const char *),
 
 /**
  * @brief Validates or initializes the bsd-malloc-np module.
- * @param[out] out_status Pointer to an integer receiving status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
 auto_win_msvc_error_t bsd_malloc_np_init(int *out_status) {

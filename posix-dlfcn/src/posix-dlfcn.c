@@ -139,6 +139,15 @@ void posix_dlfcn_set_win32_hooks(
     WIN_DWORD (*mod_fname_fn)(WIN_HMODULE, WIN_LPSTR, WIN_DWORD),
     WIN_DWORD (*fmt_msg_fn)(WIN_DWORD, const void *, WIN_DWORD, WIN_DWORD,
                             WIN_LPSTR, WIN_DWORD, void *),
+    size_t (*vquery_fn)(const void *, WIN_MEMORY_BASIC_INFORMATION *, size_t));
+void posix_dlfcn_set_win32_hooks(
+    WIN_HMODULE (*load_lib_fn)(WIN_LPCSTR),
+    WIN_HMODULE (*get_mod_fn)(WIN_LPCSTR), int (*free_lib_fn)(WIN_HMODULE),
+    WIN_FARPROC (*get_proc_fn)(WIN_HMODULE, WIN_LPCSTR),
+    WIN_DWORD (*last_err_fn)(void),
+    WIN_DWORD (*mod_fname_fn)(WIN_HMODULE, WIN_LPSTR, WIN_DWORD),
+    WIN_DWORD (*fmt_msg_fn)(WIN_DWORD, const void *, WIN_DWORD, WIN_DWORD,
+                            WIN_LPSTR, WIN_DWORD, void *),
     size_t (*vquery_fn)(const void *, WIN_MEMORY_BASIC_INFORMATION *, size_t)) {
   g_dlfcn_load_lib = load_lib_fn;
   g_dlfcn_get_mod = get_mod_fn;
@@ -153,6 +162,7 @@ void posix_dlfcn_set_win32_hooks(
 /**
  * @brief Resets Win32 API hooks for posix-dlfcn to defaults.
  */
+void posix_dlfcn_reset_win32_hooks(void);
 void posix_dlfcn_reset_win32_hooks(void) {
   g_dlfcn_load_lib = default_dlfcn_load_lib;
   g_dlfcn_get_mod = default_dlfcn_get_mod;
@@ -386,16 +396,23 @@ int dladdr(const void *addr, Dl_info *info) {
     !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) &&  \
     !defined(__sun) && !defined(__QNX__)
 
+static int g_fallback_dl_err = 0;
+static int g_fallback_main_handle = 1;
+static char g_fallback_dl_msg[] =
+    "Dynamic linking not supported on this platform";
+
 /**
  * @brief Fallback dlopen when dynamic linking is unsupported.
  */
 void *dlopen(const char *file, int mode) {
-  if (!file) {
-    return NULL;
-  }
   if (mode < 0) {
+    g_fallback_dl_err = 1;
     return NULL;
   }
+  if (!file) {
+    return (void *)&g_fallback_main_handle;
+  }
+  g_fallback_dl_err = 1;
   return NULL;
 }
 
@@ -403,9 +420,10 @@ void *dlopen(const char *file, int mode) {
  * @brief Fallback dlclose when dynamic linking is unsupported.
  */
 int dlclose(void *handle) {
-  if (!handle) {
-    return -1;
+  if (handle == (void *)&g_fallback_main_handle) {
+    return 0;
   }
+  g_fallback_dl_err = 1;
   return -1;
 }
 
@@ -413,19 +431,22 @@ int dlclose(void *handle) {
  * @brief Fallback dlsym when dynamic linking is unsupported.
  */
 void *dlsym(void *handle, const char *name) {
-  if (!handle) {
-    return NULL;
-  }
-  if (!name) {
-    return NULL;
-  }
+  (void)handle;
+  (void)name;
+  g_fallback_dl_err = 1;
   return NULL;
 }
 
 /**
  * @brief Fallback dlerror when dynamic linking is unsupported.
  */
-char *dlerror(void) { return "Dynamic linking not supported on this platform"; }
+char *dlerror(void) {
+  if (g_fallback_dl_err) {
+    g_fallback_dl_err = 0;
+    return g_fallback_dl_msg;
+  }
+  return NULL;
+}
 
 /**
  * @brief Fallback dladdr when dynamic linking is unsupported.

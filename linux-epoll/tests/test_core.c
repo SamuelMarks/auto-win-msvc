@@ -28,6 +28,20 @@ TEST test_epoll_lifecycle(void) {
   epfd = epoll_create(1);
   (void)epfd;
 
+  memset(&ev, 0, sizeof(ev));
+#if defined(__linux__)
+  ret = epoll_ctl(epfd, 1, -1, &ev);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_ctl(-1, 1, 0, &ev);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_ctl(2000, 1, 0, &ev);
+  ASSERT_EQ(-1, ret);
+
+  ret = epoll_ctl(500, 1, 0, &ev);
+  ASSERT_EQ(-1, ret);
+#else
   ret = epoll_ctl(epfd, 1, -1, NULL);
   ASSERT_EQ(-1, ret);
 
@@ -39,6 +53,7 @@ TEST test_epoll_lifecycle(void) {
 
   ret = epoll_ctl(500, 1, 0, NULL);
   ASSERT_EQ(-1, ret);
+#endif
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLONESHOT | EPOLLET);
   ev.data.fd = 0;
@@ -218,6 +233,13 @@ static int mock_wepoll_close(void *h) {
 #define LINUX_EPOLL_MOCK_wepoll_wait mock_wepoll_wait
 #define LINUX_EPOLL_MOCK_wepoll_close mock_wepoll_close
 
+int mocked_posix_epoll_create(int size);
+int mocked_posix_epoll_create1(int flags);
+int mocked_posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int mocked_posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
+                            int timeout);
+int mocked_posix_epoll_close(int epfd);
+auto_win_msvc_error_t mocked_linux_epoll_init(int *out_status);
 #define posix_epoll_create mocked_posix_epoll_create
 #define posix_epoll_create1 mocked_posix_epoll_create1
 #define posix_epoll_ctl mocked_posix_epoll_ctl

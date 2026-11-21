@@ -42,6 +42,33 @@ char *catgets(nl_catd catd, int set_id, int msg_id, const char *s);
 /** @brief Close a message catalog. */
 int catclose(nl_catd catd);
 
+#elif defined(__linux__) && !defined(__GLIBC__) &&                             \
+    (defined(__GNUC__) || defined(__clang__))
+
+/**
+ * @brief Safe wrapper around musl catgets handling invalid descriptors per
+ * POSIX.
+ * @param catd Catalog descriptor.
+ * @param set_id Message set identifier.
+ * @param msg_id Message identifier.
+ * @param s Fallback default string.
+ * @return Catalog message or fallback string s.
+ */
+static __inline__ char *awm_musl_catgets(nl_catd catd, int set_id, int msg_id,
+                                         const char *s) {
+  if (catd == (nl_catd)-1 || catd == (nl_catd)0) {
+    union {
+      const char *in;
+      char *out;
+    } u;
+    u.in = s;
+    return u.out;
+  }
+  return (catgets)(catd, set_id, msg_id, s);
+}
+#undef catgets
+#define catgets awm_musl_catgets
+
 #endif /* !AWM_HAS_HOST_NL_TYPES */
 
 #ifdef __cplusplus

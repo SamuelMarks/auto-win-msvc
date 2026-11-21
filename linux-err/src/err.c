@@ -29,13 +29,15 @@
 
 static void default_err_terminate(int eval) { ERR_DEFAULT_EXIT(eval); }
 
-static void (*g_err_terminate)(int) = default_err_terminate;
+static linux_err_terminate_fn_t g_err_terminate = default_err_terminate;
 
 /**
  * @brief Overrides the low-level termination handler used by err*() functions.
  * @param[in] fn Replacement termination callback.
  */
-void linux_err_set_terminate_for_test(void (*fn)(int)) { g_err_terminate = fn; }
+void linux_err_set_terminate_for_test(linux_err_terminate_fn_t fn) {
+  g_err_terminate = fn;
+}
 
 /**
  * @brief Restores the default termination handler used by err*() functions.
@@ -58,13 +60,11 @@ static FILE *get_err_stream(void) {
 
 /**
  * @brief Override output FILE* stream used by err*() and warn*().
- * @param[in] vfp FILE* stream pointer, or NULL to reset to stderr.
  */
 void err_set_file(void *vfp) { g_err_file = (FILE *)vfp; }
 
 /**
  * @brief Set exit callback invoked before process termination in err*().
- * @param[in] ef Callback function taking exit code.
  */
 void err_set_exit(void (*ef)(int)) { g_err_exit = ef; }
 

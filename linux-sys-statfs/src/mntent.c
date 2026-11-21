@@ -49,7 +49,10 @@ static FILE *setmntent_win_impl(const char *filename, const char *type) {
   s_drives[len] = '\0';
   s_drives[len + 1] = '\0';
   s_drive_ptr = s_drives;
-  return (FILE *)&s_drives;
+  {
+    static void *s_win_mnt_sentinel = NULL;
+    return (FILE *)(void *)&s_win_mnt_sentinel;
+  }
 }
 
 static struct mntent *getmntent_win_impl(FILE *stream) {
@@ -144,6 +147,7 @@ char *hasmntopt(const struct mntent *mnt, const char *opt) {
 
 static int s_apple_mnt_idx = 0;
 static struct mntent s_apple_mnt;
+static void *s_apple_mnt_sentinel = NULL;
 static char s_apple_fsname[] = "/dev/disk0";
 static char s_apple_dir[] = "/";
 static char s_apple_type[] = "apfs";
@@ -165,7 +169,7 @@ FILE *setmntent(const char *filename, const char *type) {
   (void)type;
 #endif
   s_apple_mnt_idx = 0;
-  return (FILE *)&s_apple_mnt_idx;
+  return (FILE *)(void *)&s_apple_mnt_sentinel;
 }
 
 /**

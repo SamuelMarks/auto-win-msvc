@@ -112,10 +112,12 @@ TEST test_regexec_startend_and_errors(void) {
   regex_t preg;
   regmatch_t pmatch[2];
 
+  memset(&preg, 0, sizeof(preg));
+  memset(pmatch, 0, sizeof(pmatch));
+
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
   ASSERT_EQ(REG_INVARG, regexec(NULL, "abc", 0, NULL, 0));
 
-  memset(&preg, 0, sizeof(preg));
   ASSERT_EQ(REG_INVARG, regexec(&preg, NULL, 0, NULL, 0));
   ASSERT_EQ(REG_INVARG, regexec(&preg, "abc", 0, NULL, 0));
 #else

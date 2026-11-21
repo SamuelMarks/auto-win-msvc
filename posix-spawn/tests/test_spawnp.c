@@ -8,10 +8,11 @@
 
 TEST test_posix_spawnp(void) {
   pid_t pid;
+  char cmd[] = "nonexistent_command_xyz_12345";
   char *argv[2];
   int rc;
 
-  argv[0] = "nonexistent_command_xyz_12345";
+  argv[0] = cmd;
   argv[1] = NULL;
 
   rc = posix_spawnp(&pid, argv[0], NULL, NULL, argv, NULL);

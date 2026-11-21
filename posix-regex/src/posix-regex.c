@@ -77,8 +77,16 @@ static int dos16_in_class(const char *cls, size_t cls_len, char ch, int icase) {
   return neg ? !matched : matched;
 }
 
+struct dos16_match_state {
+  int cflags;
+  int eflags;
+  const char *grp_start[10];
+  const char *grp_end[10];
+  int next_grp;
+};
+
 static const char *dos16_match_here(const char *pat, const char *str,
-                                    int cflags);
+                                    struct dos16_match_state *st);
 
 static int dos16_atom_matches(const char *pat, size_t atom_len, char ch,
                               int cflags) {
@@ -98,15 +106,52 @@ static int dos16_atom_matches(const char *pat, size_t atom_len, char ch,
 }
 
 static const char *dos16_match_here(const char *pat, const char *str,
-                                    int cflags) {
+                                    struct dos16_match_state *st) {
   size_t atom_len = 1;
   char quant = '\0';
   const char *rest;
+  int cflags = st->cflags;
 
   if (pat[0] == '\0') {
     return str;
   }
+  if (pat[0] == '(') {
+    int g = st->next_grp;
+    const char *m;
+    if (g < 10) {
+      st->grp_start[g] = str;
+      st->next_grp = g + 1;
+    }
+    m = dos16_match_here(pat + 1, str, st);
+    if (m == NULL && g < 10) {
+      st->grp_start[g] = NULL;
+      st->grp_end[g] = NULL;
+      st->next_grp = g;
+    }
+    return m;
+  }
+  if (pat[0] == ')') {
+    int g;
+    for (g = st->next_grp - 1; g >= 1; --g) {
+      if (st->grp_start[g] != NULL && st->grp_end[g] == NULL) {
+        const char *m;
+        st->grp_end[g] = str;
+        m = dos16_match_here(pat + 1, str, st);
+        if (m == NULL) {
+          st->grp_end[g] = NULL;
+        }
+        return m;
+      }
+    }
+    return dos16_match_here(pat + 1, str, st);
+  }
   if (pat[0] == '$' && pat[1] == '\0') {
+    if (st->eflags & REG_NOTEOL) {
+      return ((cflags & REG_NEWLINE) && *str == '\n') ? str : NULL;
+    }
+    if ((cflags & REG_NEWLINE) && *str == '\n') {
+      return str;
+    }
     return (*str == '\0') ? str : NULL;
   }
   if (pat[0] == '\\' && pat[1] != '\0') {
@@ -132,7 +177,7 @@ static const char *dos16_match_here(const char *pat, const char *str,
       s++;
     }
     while (s >= str) {
-      const char *m = dos16_match_here(rest, s, cflags);
+      const char *m = dos16_match_here(rest, s, st);
       if (m != NULL) {
         return m;
       }
@@ -152,7 +197,7 @@ static const char *dos16_match_here(const char *pat, const char *str,
       s++;
     }
     while (s > str) {
-      const char *m = dos16_match_here(rest, s, cflags);
+      const char *m = dos16_match_here(rest, s, st);
       if (m != NULL) {
         return m;
       }
@@ -162,16 +207,16 @@ static const char *dos16_match_here(const char *pat, const char *str,
   }
   if (quant == '?') {
     if (dos16_atom_matches(pat, atom_len, *str, cflags)) {
-      const char *m = dos16_match_here(rest, str + 1, cflags);
+      const char *m = dos16_match_here(rest, str + 1, st);
       if (m != NULL) {
         return m;
       }
     }
-    return dos16_match_here(rest, str, cflags);
+    return dos16_match_here(rest, str, st);
   }
 
   if (dos16_atom_matches(pat, atom_len, *str, cflags)) {
-    return dos16_match_here(rest, str + 1, cflags);
+    return dos16_match_here(rest, str + 1, st);
   }
   return NULL;
 }
@@ -183,6 +228,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
   const char *p;
   int open_brackets = 0;
   int open_parens = 0;
+  size_t nsub = 0;
 
   if (preg == NULL || pattern == NULL) {
     return REG_INVARG;
@@ -201,6 +247,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
       }
     } else if (*p == '(') {
       open_parens++;
+      nsub++;
     } else if (*p == ')') {
       if (open_parens == 0) {
         return REG_EPAREN;
@@ -225,7 +272,7 @@ int regcomp(regex_t *preg, const char *pattern, int cflags) {
   memcpy(re->pattern, pattern, len + 1);
   re->cflags = cflags;
   preg->re_magic = 0xD016;
-  preg->re_nsub = 0;
+  preg->re_nsub = nsub;
   preg->re_endp = pattern + len;
   preg->re_guts = (void *)re;
   return 0;
@@ -242,6 +289,7 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   const char *sub_str = string;
   char *temp_sub = NULL;
   regoff_t base_off = 0;
+  struct dos16_match_state st;
   size_t i;
 
   if (preg == NULL || string == NULL || preg->re_guts == NULL) {
@@ -260,15 +308,38 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   }
   re = (const dos16_regex_t *)preg->re_guts;
   pat = re->pattern;
+  memset(&st, 0, sizeof(st));
+  st.cflags = re->cflags;
+  st.eflags = eflags;
+  st.next_grp = 1;
+
   if (pat[0] == '^') {
-    end_ptr = dos16_match_here(pat + 1, sub_str, re->cflags);
-    if (end_ptr != NULL) {
-      start_ptr = sub_str;
+    if (!(eflags & REG_NOTBOL)) {
+      end_ptr = dos16_match_here(pat + 1, sub_str, &st);
+      if (end_ptr != NULL) {
+        start_ptr = sub_str;
+      }
+    } else if (re->cflags & REG_NEWLINE) {
+      for (s = sub_str; *s != '\0'; ++s) {
+        if (*s == '\n') {
+          memset(st.grp_start, 0, sizeof(st.grp_start));
+          memset(st.grp_end, 0, sizeof(st.grp_end));
+          st.next_grp = 1;
+          end_ptr = dos16_match_here(pat + 1, s + 1, &st);
+          if (end_ptr != NULL) {
+            start_ptr = s + 1;
+            break;
+          }
+        }
+      }
     }
   } else {
     s = sub_str;
     do {
-      end_ptr = dos16_match_here(pat, s, re->cflags);
+      memset(st.grp_start, 0, sizeof(st.grp_start));
+      memset(st.grp_end, 0, sizeof(st.grp_end));
+      st.next_grp = 1;
+      end_ptr = dos16_match_here(pat, s, &st);
       if (end_ptr != NULL) {
         start_ptr = s;
         break;
@@ -284,12 +355,17 @@ int regexec(const regex_t *preg, const char *string, size_t nmatch,
   if (pmatch != NULL && nmatch > 0) {
     pmatch[0].rm_so = base_off + (regoff_t)(start_ptr - sub_str);
     pmatch[0].rm_eo = base_off + (regoff_t)(end_ptr - sub_str);
+    for (i = 1; i < nmatch; i++) {
+      if (i < 10 && st.grp_start[i] != NULL && st.grp_end[i] != NULL) {
+        pmatch[i].rm_so = base_off + (regoff_t)(st.grp_start[i] - sub_str);
+        pmatch[i].rm_eo = base_off + (regoff_t)(st.grp_end[i] - sub_str);
+      } else {
+        pmatch[i].rm_so = -1;
+        pmatch[i].rm_eo = -1;
+      }
+    }
     if (temp_sub != NULL)
       free(temp_sub);
-    for (i = 1; i < nmatch; i++) {
-      pmatch[i].rm_so = -1;
-      pmatch[i].rm_eo = -1;
-    }
   } else if (temp_sub != NULL) {
     free(temp_sub);
   }
@@ -387,6 +463,12 @@ POSIX_REGEX_EXPORT void posix_regex_set_pcre2_hooks(
     int (*info_fn)(void *, unsigned int *), void *(*md_create_fn)(void *),
     void (*md_free_fn)(void *),
     int (*match_fn)(void *, const char *, size_t, size_t, unsigned int,
+                    void *));
+POSIX_REGEX_EXPORT void posix_regex_set_pcre2_hooks(
+    void *(*compile_fn)(const char *, unsigned int, int *, size_t *),
+    int (*info_fn)(void *, unsigned int *), void *(*md_create_fn)(void *),
+    void (*md_free_fn)(void *),
+    int (*match_fn)(void *, const char *, size_t, size_t, unsigned int,
                     void *)) {
   g_regex_compile = compile_fn;
   g_regex_pattern_info = info_fn;
@@ -398,6 +480,7 @@ POSIX_REGEX_EXPORT void posix_regex_set_pcre2_hooks(
 /**
  * @brief Resets PCRE2 hooks to defaults.
  */
+POSIX_REGEX_EXPORT void posix_regex_reset_pcre2_hooks(void);
 POSIX_REGEX_EXPORT void posix_regex_reset_pcre2_hooks(void) {
   g_regex_compile = default_regex_compile;
   g_regex_pattern_info = default_regex_pattern_info;

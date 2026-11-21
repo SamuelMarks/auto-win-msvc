@@ -432,6 +432,30 @@ void f(void) {
                 out_text = f.read()
             self.assertIn("int app_entry(", out_text)
 
+    def test_busybox_sed_and_diff_comment_string_preservation(self):
+        """Ensure ={} inside string literals and compound literals inside comments are preserved."""
+        src = (
+            'static const char cmd_letters[] = "saicrw:btTydDgGhHnNpPqx={}";\n'
+            "void stone(void) {\n"
+            "  struct cand { int x; } clist[2], c1;\n"
+            "  struct wrap { int a; struct cand b; } w = {0,{}};\n"
+            "  struct cand empty_c = {};\n"
+            "  /*clist[0] = (struct cand){0}; - xzalloc did it */\n"
+            "  /*c1 = (struct cand){ .x = 1 }; - commented desig */\n"
+            "  clist[1] = (struct cand){0};\n"
+            "  (void)w; (void)empty_c; (void)c1;\n"
+            "}\n"
+        )
+        res = transform_sources._transform_freebsd_c99_c11(
+            transform_sources.transform_source_content(src)
+        )
+        self.assertIn('"saicrw:btTydDgGhHnNpPqx={}"', res)
+        self.assertIn("= {0,{0}};", res)
+        self.assertIn("empty_c = {0};", res)
+        self.assertIn("/*clist[0] = (struct cand){0}; - xzalloc did it */", res)
+        self.assertIn("/*c1 = (struct cand){ .x = 1 }; - commented desig */", res)
+        self.assertIn("memset(&(clist[1]), 0, sizeof(clist[1]));", res)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

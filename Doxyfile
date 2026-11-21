@@ -984,7 +984,7 @@ WARN_LAYOUT_FILE       = YES
 # Possible values are: NO, YES, FAIL_ON_WARNINGS and FAIL_ON_WARNINGS_PRINT.
 # The default value is: NO.
 
-WARN_AS_ERROR          = NO
+WARN_AS_ERROR          = FAIL_ON_WARNINGS_PRINT
 
 # The WARN_FORMAT tag determines the format of the warning messages that Doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -1111,6 +1111,8 @@ EXCLUDE_PATTERNS       = */build/* \
                          */test/* \
                          */rewritten_src/* \
                          */downstream_test/* \
+                         */.dos_watcom_matrix/* \
+                         */.vagrant/* \
                          */build_*/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names

@@ -23,7 +23,7 @@
 /* clang-format on */
 
 TEST test_timerfd(void) {
-  int rc;
+  int rc = 0;
   struct itimerspec ts;
   (void)rc;
 

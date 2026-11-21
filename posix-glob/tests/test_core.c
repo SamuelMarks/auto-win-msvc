@@ -25,12 +25,12 @@ static int g_malloc_count = 0;
 static int g_realloc_fail_at = -1;
 static int g_realloc_count = 0;
 
-void *posix_glob_mock_malloc(size_t size) {
+static void *posix_glob_mock_malloc(size_t size) {
   if (g_malloc_count++ == g_malloc_fail_at)
     return NULL;
   return malloc(size);
 }
-void *posix_glob_mock_realloc(void *ptr, size_t size) {
+static void *posix_glob_mock_realloc(void *ptr, size_t size) {
   if (g_realloc_count++ == g_realloc_fail_at)
     return NULL;
   return realloc(ptr, size);
@@ -133,37 +133,42 @@ TEST test_glob_basic(void) {
   int rc;
   FILE *f;
 
-  MKDIR("glob_test_dir");
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    SKIP();
+  }
+#endif
+  MKDIR("globdir");
 #if defined(_MSC_VER)
-  fopen_s(&f, "glob_test_dir/file1.txt", "w");
+  fopen_s(&f, "globdir/file1.txt", "w");
 #else
-  f = fopen("glob_test_dir/file1.txt", "w");
+  f = fopen("globdir/file1.txt", "w");
 #endif
   if (f) {
     fclose(f);
   }
 #if defined(_MSC_VER)
-  fopen_s(&f, "glob_test_dir/file2.txt", "w");
+  fopen_s(&f, "globdir/file2.txt", "w");
 #else
-  f = fopen("glob_test_dir/file2.txt", "w");
+  f = fopen("globdir/file2.txt", "w");
 #endif
   if (f) {
     fclose(f);
   }
 
-  rc = glob("glob_test_dir/*.txt", 0, NULL, &g);
+  rc = glob("globdir/*.txt", 0, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(2, g.gl_pathc);
   ASSERT(g.gl_pathv != NULL);
   globfree(&g);
 
-  rc = glob("glob_test_dir/*", 0, NULL, &g);
+  rc = glob("globdir/*", 0, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT(g.gl_pathc >= 2);
   globfree(&g);
 
 #if defined(_WIN32) || defined(_MSC_VER)
-  rc = glob("glob_test_dir\\*.txt", 0, NULL, &g);
+  rc = glob("globdir\\*.txt", 0, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(2, g.gl_pathc);
   globfree(&g);
@@ -196,16 +201,16 @@ TEST test_glob_basic(void) {
   }
 
   /* GLOB_APPEND */
-  rc = glob("glob_test_dir/file1.txt", 0, NULL, &g);
+  rc = glob("globdir/file1.txt", 0, NULL, &g);
   ASSERT_EQ(0, rc);
-  rc = glob("glob_test_dir/file2.txt", GLOB_APPEND, NULL, &g);
+  rc = glob("globdir/file2.txt", GLOB_APPEND, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(2, g.gl_pathc);
   globfree(&g);
 
   /* GLOB_DOOFFS */
   g.gl_offs = 2;
-  rc = glob("glob_test_dir/*.txt", GLOB_DOOFFS, NULL, &g);
+  rc = glob("globdir/*.txt", GLOB_DOOFFS, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(2, g.gl_pathc);
   ASSERT_EQ(NULL, g.gl_pathv[0]);
@@ -214,40 +219,44 @@ TEST test_glob_basic(void) {
   globfree(&g);
 
   /* GLOB_NOCHECK */
-  rc = glob("glob_test_dir/nonexistent*.txt", GLOB_NOCHECK, NULL, &g);
+  rc = glob("globdir/nonexistent*.txt", GLOB_NOCHECK, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(1, g.gl_pathc);
-  ASSERT_STR_EQ("glob_test_dir/nonexistent*.txt", g.gl_pathv[0]);
+  ASSERT_STR_EQ("globdir/nonexistent*.txt", g.gl_pathv[0]);
   globfree(&g);
 
   /* GLOB_MARK */
-  MKDIR("glob_test_dir/subdir");
-  rc = glob("glob_test_dir/subdir", GLOB_MARK, NULL, &g);
+  MKDIR("globdir/subdir");
+  rc = glob("globdir/subdir", GLOB_MARK, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(1, g.gl_pathc);
-  ASSERT(strstr(g.gl_pathv[0], "glob_test_dir/subdir") != NULL);
+  ASSERT(strstr(g.gl_pathv[0], "globdir/subdir") != NULL ||
+         strstr(g.gl_pathv[0], "globdir/SUBDIR") != NULL ||
+         strstr(g.gl_pathv[0], "GLOBDIR/SUBDIR") != NULL ||
+         strstr(g.gl_pathv[0], "SUBDIR/") != NULL ||
+         strstr(g.gl_pathv[0], "subdir/") != NULL);
   globfree(&g);
 
-  rc = glob("glob_test_dir/*.txt", GLOB_NOSORT, NULL, &g);
+  rc = glob("globdir/*.txt", GLOB_NOSORT, NULL, &g);
   ASSERT_EQ(0, rc);
   globfree(&g);
 
   /* GLOB_NOMAGIC with magic chars and no match */
-  rc = glob("glob_test_dir/nonexistent*.txt", GLOB_NOMAGIC, NULL, &g);
+  rc = glob("globdir/nonexistent*.txt", GLOB_NOMAGIC, NULL, &g);
   ASSERT_EQ(GLOB_NOMATCH, rc);
 
   /* GLOB_NOMAGIC with no magic chars and no match */
-  rc = glob("glob_test_dir/nonexistent.txt", GLOB_NOMAGIC, NULL, &g);
+  rc = glob("globdir/nonexistent.txt", GLOB_NOMAGIC, NULL, &g);
   ASSERT_EQ(0, rc);
   ASSERT_EQ(1, g.gl_pathc);
-  ASSERT_STR_EQ("glob_test_dir/nonexistent.txt", g.gl_pathv[0]);
+  ASSERT_STR_EQ("globdir/nonexistent.txt", g.gl_pathv[0]);
   globfree(&g);
 
   /* Invalid args */
   ASSERT_EQ(GLOB_ABORTED, glob(NULL, 0, NULL, &g));
   ASSERT_EQ(GLOB_ABORTED, glob("*.txt", 0, NULL, NULL));
 
-  rc = glob("glob_test_dir/file1.txt", GLOB_NOMAGIC, NULL, &g);
+  rc = glob("globdir/file1.txt", GLOB_NOMAGIC, NULL, &g);
   ASSERT_EQ(0, rc);
   globfree(&g);
   globfree(NULL);
@@ -256,10 +265,10 @@ TEST test_glob_basic(void) {
   globfree(&g); /* test gl_pathv == NULL */
 
   /* Cleanup */
-  remove("glob_test_dir/file1.txt");
-  remove("glob_test_dir/file2.txt");
-  RMDIR("glob_test_dir/subdir");
-  RMDIR("glob_test_dir");
+  remove("globdir/file1.txt");
+  remove("globdir/file2.txt");
+  RMDIR("globdir/subdir");
+  RMDIR("globdir");
 
   PASS();
 }
@@ -351,15 +360,20 @@ TEST test_glob_oom(void) {
   char fname[64];
   FILE *f;
 
-  MKDIR("glob_test_oom");
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    SKIP();
+  }
+#endif
+  MKDIR("globoom");
   for (i = 0; i < 15; i++) {
 #if defined(_MSC_VER)
-    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+    sprintf_s(fname, sizeof(fname), "globoom/file%d.txt", i);
 #else
 #if defined(_MSC_VER)
-    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+    sprintf_s(fname, sizeof(fname), "globoom/file%d.txt", i);
 #else
-    sprintf(fname, "glob_test_oom/file%d.txt", i);
+    sprintf(fname, "globoom/file%d.txt", i);
 #endif
 #endif
 #if defined(_MSC_VER)
@@ -376,26 +390,52 @@ TEST test_glob_oom(void) {
 
   g_malloc_count = 0;
   g_malloc_fail_at = 0;
-  rc = glob("glob_test_oom/*.txt", 0, NULL, &g);
+  rc = glob("globoom/*.txt", 0, NULL, &g);
   ASSERT_EQ(GLOB_NOSPACE, rc);
   g_malloc_fail_at = -1;
 
   g_malloc_count = 0;
   g_malloc_fail_at = 1;
-  rc = glob("glob_test_oom/*.txt", 0, NULL, &g);
+  rc = glob("globoom/*.txt", 0, NULL, &g);
   ASSERT_EQ(GLOB_NOSPACE, rc);
   g_malloc_fail_at = -1;
 
   g_realloc_count = 0;
   g_realloc_fail_at = 0;
-  rc = glob("glob_test_oom/*.txt", 0, NULL, &g);
+  rc = glob("globoom/*.txt", 0, NULL, &g);
   ASSERT_EQ(GLOB_NOSPACE, rc);
   g_realloc_fail_at = -1;
 
   g.gl_offs = 2;
   g_malloc_count = 0;
   g_malloc_fail_at = 0;
-  rc = glob("glob_test_oom/*.txt", GLOB_DOOFFS, NULL, &g);
+  rc = glob("globoom/*.txt", GLOB_DOOFFS, NULL, &g);
+  ASSERT_EQ(GLOB_NOSPACE, rc);
+  g_malloc_fail_at = -1;
+
+  /* Cover GLOB_APPEND on match-loop OOM, GLOB_NOCHECK OOM (with & without
+   * GLOB_APPEND), and GLOB_APPEND on GLOB_NOMATCH */
+  memset(&g, 0, sizeof(g));
+  rc = glob("globoom/file0.txt", 0, NULL, &g);
+  ASSERT_EQ(0, rc);
+  rc = glob("globoom/*.nonexistent", GLOB_APPEND, NULL, &g);
+  ASSERT_EQ(GLOB_NOMATCH, rc);
+  g_malloc_count = 0;
+  g_malloc_fail_at = 0;
+  rc = glob("globoom/*.txt", GLOB_APPEND, NULL, &g);
+  ASSERT_EQ(GLOB_NOSPACE, rc);
+  g_malloc_fail_at = -1;
+  g_malloc_count = 0;
+  g_malloc_fail_at = 0;
+  rc = glob("nomagic_oom_append", GLOB_NOCHECK | GLOB_APPEND, NULL, &g);
+  ASSERT_EQ(GLOB_NOSPACE, rc);
+  g_malloc_fail_at = -1;
+  globfree(&g);
+
+  memset(&g, 0, sizeof(g));
+  g_malloc_count = 0;
+  g_malloc_fail_at = 0;
+  rc = glob("nomagic_oom_fresh", GLOB_NOCHECK, NULL, &g);
   ASSERT_EQ(GLOB_NOSPACE, rc);
   g_malloc_fail_at = -1;
 
@@ -426,17 +466,17 @@ TEST test_glob_oom(void) {
 
   for (i = 0; i < 15; i++) {
 #if defined(_MSC_VER)
-    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+    sprintf_s(fname, sizeof(fname), "globoom/file%d.txt", i);
 #else
 #if defined(_MSC_VER)
-    sprintf_s(fname, sizeof(fname), "glob_test_oom/file%d.txt", i);
+    sprintf_s(fname, sizeof(fname), "globoom/file%d.txt", i);
 #else
-    sprintf(fname, "glob_test_oom/file%d.txt", i);
+    sprintf(fname, "globoom/file%d.txt", i);
 #endif
 #endif
     remove(fname);
   }
-  RMDIR("glob_test_oom");
+  RMDIR("globoom");
 
   posix_glob_mock_malloc_ptr = NULL;
   posix_glob_mock_realloc_ptr = NULL;

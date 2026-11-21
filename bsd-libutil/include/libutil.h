@@ -57,12 +57,23 @@ int login_tty(int fd);
 #define HD_COLUMN_MASK 0xff
 /** @brief Bitmask extracting ASCII delimiter byte in hexdump flags. */
 #define HD_DELIM_MASK 0xff00
+#if defined(__I86__)
+typedef long awm_hexdump_flags_t;
+/** @brief Omit offset column in hexdump output. */
+#define HD_OMIT_COUNT (1L << 16)
+/** @brief Omit hexadecimal byte columns in hexdump output. */
+#define HD_OMIT_HEX (1L << 17)
+/** @brief Omit ASCII character representation in hexdump output. */
+#define HD_OMIT_CHARS (1L << 18)
+#else
+typedef int awm_hexdump_flags_t;
 /** @brief Omit offset column in hexdump output. */
 #define HD_OMIT_COUNT (1 << 16)
 /** @brief Omit hexadecimal byte columns in hexdump output. */
 #define HD_OMIT_HEX (1 << 17)
 /** @brief Omit ASCII character representation in hexdump output. */
 #define HD_OMIT_CHARS (1 << 18)
+#endif
 
 /** @brief UUCP lock already held by another live process. */
 #define UU_LOCK_INUSE 1
@@ -133,7 +144,8 @@ int expand_number(const char *buf, uint64_t *num);
  * @param[in] hdr Optional line prefix string.
  * @param[in] flags HD_* formatting flags.
  */
-void hexdump(const void *ptr, int length, const char *hdr, int flags);
+void hexdump(const void *ptr, int length, const char *hdr,
+             awm_hexdump_flags_t flags);
 
 /**
  * @brief Open and lock a PID file.

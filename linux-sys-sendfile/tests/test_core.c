@@ -27,18 +27,21 @@ static int mock_write_ret[10] = {0};
 static long mock_lseek_ret[10] = {0};
 
 /* Provide exactly the signatures expected */
+int mock_read(int fd, void *buf, unsigned int count);
 int mock_read(int fd, void *buf, unsigned int count) {
     int ret = mock_read_ret[mock_read_calls++];
     (void)fd; (void)buf; (void)count;
     return ret;
 }
 
+int mock_write(int fd, const void *buf, unsigned int count);
 int mock_write(int fd, const void *buf, unsigned int count) {
     int ret = mock_write_ret[mock_write_calls++];
     (void)fd; (void)buf; (void)count;
     return ret;
 }
 
+long mock_lseek(int fd, long offset, int origin);
 long mock_lseek(int fd, long offset, int origin) {
     long ret = mock_lseek_ret[mock_lseek_calls++];
     (void)fd; (void)offset; (void)origin;

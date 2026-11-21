@@ -37,12 +37,12 @@ typedef long intptr_t;
 /* clang-format on */
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) ||                 \
-    !defined(__linux__)
+    (!defined(__linux__) && !defined(__CYGWIN__))
 static void *default_dirent_malloc(size_t sz) { return malloc(sz); }
 static void *(*g_dirent_malloc)(size_t) = default_dirent_malloc;
 #endif
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) &&              \
-    !defined(__linux__)
+    !defined(__linux__) && !defined(__CYGWIN__)
 static void *default_dirent_calloc(size_t n, size_t sz) {
   return calloc(n, sz);
 }
@@ -63,15 +63,18 @@ static void *(*g_dirent_realloc)(void *, size_t) = default_dirent_realloc;
  */
 void posix_dirent_set_alloc_hooks(void *(*malloc_fn)(size_t),
                                   void *(*calloc_fn)(size_t, size_t),
+                                  void *(*realloc_fn)(void *, size_t));
+void posix_dirent_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                                  void *(*calloc_fn)(size_t, size_t),
                                   void *(*realloc_fn)(void *, size_t)) {
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) ||                 \
-    !defined(__linux__)
+    (!defined(__linux__) && !defined(__CYGWIN__))
   g_dirent_malloc = (malloc_fn != NULL) ? malloc_fn : default_dirent_malloc;
 #else
   (void)malloc_fn;
 #endif
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) &&              \
-    !defined(__linux__)
+    !defined(__linux__) && !defined(__CYGWIN__)
   g_dirent_calloc = (calloc_fn != NULL) ? calloc_fn : default_dirent_calloc;
 #else
   (void)calloc_fn;
@@ -201,6 +204,11 @@ void posix_dirent_set_win32_hooks(
     dir_snap_fn snap_fn, dir_p32_fn first_fn, dir_p32_fn next_fn,
     dir_close_h_fn close_h_fn, dir_get_mod_fn mod_fn, dir_get_proc_fn proc_fn,
     dir_create_file_fn cf_fn, dir_get_osfh_fn get_osfh_fn,
+    dir_open_osfh_fn open_osfh_fn, dir_crt_close_fn crt_close_fn);
+void posix_dirent_set_win32_hooks(
+    dir_snap_fn snap_fn, dir_p32_fn first_fn, dir_p32_fn next_fn,
+    dir_close_h_fn close_h_fn, dir_get_mod_fn mod_fn, dir_get_proc_fn proc_fn,
+    dir_create_file_fn cf_fn, dir_get_osfh_fn get_osfh_fn,
     dir_open_osfh_fn open_osfh_fn, dir_crt_close_fn crt_close_fn) {
   g_dir_snap = (snap_fn != NULL) ? snap_fn : default_dir_snap;
   g_dir_p32first = (first_fn != NULL) ? first_fn : default_dir_p32first;
@@ -228,6 +236,7 @@ void posix_dirent_set_win32_hooks(
 /**
  * @brief Resets all posix-dirent allocator and Win32 hooks to defaults.
  */
+void posix_dirent_reset_hooks(void);
 void posix_dirent_reset_hooks(void) {
   g_dirent_malloc = default_dirent_malloc;
   g_dirent_realloc = default_dirent_realloc;
@@ -718,6 +727,7 @@ static dirent_sysctl_fn g_dirent_sysctl = sysctl;
  * @brief Overrides the sysctl hook on macOS for deterministic /proc testing.
  * @param[in] sysctl_fn Replacement sysctl function, or NULL for default.
  */
+void posix_dirent_set_sysctl_hook(dirent_sysctl_fn sysctl_fn);
 void posix_dirent_set_sysctl_hook(dirent_sysctl_fn sysctl_fn) {
   g_dirent_sysctl = (sysctl_fn != NULL) ? sysctl_fn : sysctl;
 }
@@ -726,8 +736,9 @@ void posix_dirent_set_sysctl_hook(dirent_sysctl_fn sysctl_fn) {
 /**
  * @brief Resets all posix-dirent allocator and platform hooks to defaults.
  */
+void posix_dirent_reset_hooks(void);
 void posix_dirent_reset_hooks(void) {
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   g_dirent_malloc = default_dirent_malloc;
   g_dirent_calloc = default_dirent_calloc;
 #endif
@@ -736,7 +747,7 @@ void posix_dirent_reset_hooks(void) {
 #endif
 }
 
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
 #define POSIX_PROC_MAGIC 0x50524F43UL
 
 struct posix_proc_dir {
@@ -771,7 +782,7 @@ DIR *posix_opendir(const char *name) {
     return NULL;
   }
 #endif
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
 #if defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
   if (strcmp(name, "/proc") == 0) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)g_dirent_calloc(
@@ -842,10 +853,45 @@ DIR *posix_opendir(const char *name) {
         return (DIR *)pd;
       }
     }
+    errno = ENOMEM;
+    return NULL;
   }
 #endif
 #endif /* !__linux__ */
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    errno = ENOSYS;
+    return NULL;
+  }
+  {
+    DIR *d_res = opendir(name);
+    if (d_res == NULL && strcmp(name, ".") == 0) {
+      int slot = -1;
+      int i;
+      for (i = 0; i < 16; i++) {
+        if (g_active_proc_dirs[i] == NULL) {
+          slot = i;
+          break;
+        }
+      }
+      if (slot >= 0) {
+        struct posix_proc_dir *pd = (struct posix_proc_dir *)g_dirent_calloc(
+            1, sizeof(struct posix_proc_dir));
+        if (pd != NULL) {
+          pd->magic = POSIX_PROC_MAGIC;
+          pd->index = 0;
+          pd->count = 0;
+          pd->pids = NULL;
+          g_active_proc_dirs[slot] = pd;
+          return (DIR *)pd;
+        }
+      }
+    }
+    return d_res;
+  }
+#else
   return opendir(name);
+#endif
 }
 
 struct dirent *posix_readdir(DIR *dirp) {
@@ -855,7 +901,7 @@ struct dirent *posix_readdir(DIR *dirp) {
     return NULL;
   }
 #endif
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   if (find_proc_dir_slot(dirp) >= 0) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)dirp;
     if (pd->index == 0) {
@@ -887,7 +933,7 @@ struct dirent *posix_readdir(DIR *dirp) {
 }
 
 int posix_closedir(DIR *dirp) {
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   int slot;
 #endif
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
@@ -896,7 +942,7 @@ int posix_closedir(DIR *dirp) {
     return -1;
   }
 #endif
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   slot = find_proc_dir_slot(dirp);
   if (slot >= 0) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)dirp;
@@ -916,7 +962,7 @@ void posix_rewinddir(DIR *dirp) {
   if (!dirp) {
     return;
   }
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   if (find_proc_dir_slot(dirp) >= 0) {
     struct posix_proc_dir *pd = (struct posix_proc_dir *)dirp;
     pd->index = 0;
@@ -1021,7 +1067,6 @@ int dirfd(DIR *dirp) {
 #ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 /**
  * @brief Retrieves information on posix-dirent module availability.
- * @param[out] out_available Pointer to integer receiving availability status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */

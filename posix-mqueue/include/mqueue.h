@@ -9,8 +9,16 @@
 
 /* clang-format off */
 #if (defined(__linux__) || defined(__FreeBSD__)) && (defined(__GNUC__) || defined(__clang__))
+#if defined(__linux__) && defined(__unused)
+#define _AWM_RESTORE_UNUSED 1
+#undef __unused
+#endif
 #pragma GCC system_header
 #include_next <mqueue.h>
+#ifdef _AWM_RESTORE_UNUSED
+#undef _AWM_RESTORE_UNUSED
+#define __unused __attribute__((__unused__))
+#endif
 #else
 #include <sys/types.h>
 #include <fcntl.h>

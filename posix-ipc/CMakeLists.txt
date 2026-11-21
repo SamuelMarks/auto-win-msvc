@@ -4,7 +4,9 @@ project(posix-ipc VERSION 0.1.0 LANGUAGES C)
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+if(NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 if(NOT MSVC AND NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
     add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _POSIX_C_SOURCE=200809L _DARWIN_C_SOURCE)
 endif()
@@ -15,7 +17,7 @@ include(CheckCCompilerFlag)
 # Valgrind memory check setup for CTest
 find_program(MEMORYCHECK_COMMAND NAMES valgrind)
 if(MEMORYCHECK_COMMAND)
-    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --track-origins=yes -q --error-exitcode=1")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes -q --error-exitcode=1")
 endif()
 
 # Clang Static Analyzer via clang-tidy
@@ -56,7 +58,8 @@ if(MSVC)
 else()
     # Unix / Clang / MinGW / Cygwin ASan & UBSan checks
     # Usually enabled on Native Linux/macOS, often problematic on MinGW/Cygwin without DLL path setups
-    if(NOT WIN32 AND NOT CYGWIN AND NOT MINGW)
+    option(AUTO_WIN_MSVC_ASAN "Enable AddressSanitizer (ASAN)" OFF)
+    if(AUTO_WIN_MSVC_ASAN AND NOT WIN32 AND NOT CYGWIN AND NOT MINGW AND NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME STREQUAL "DOS")
         check_c_compiler_flag("-fsanitize=address" HAS_ASAN)
         check_c_compiler_flag("-fsanitize=undefined" HAS_UBSAN)
         if(HAS_ASAN AND HAS_UBSAN)

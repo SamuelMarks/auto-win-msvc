@@ -22,7 +22,7 @@
 /* clang-format on */
 
 TEST test_eventfd(void) {
-  int rc;
+  int rc = 0;
   (void)rc;
 
   errno = 0;

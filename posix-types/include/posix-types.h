@@ -191,7 +191,12 @@ POSIX_TYPES_EXTENSION typedef unsigned long long u_quad_t;
  */
 #ifndef _USECONDS_T_DEFINED
 #define _USECONDS_T_DEFINED
+#if defined(__I86__) || defined(__DOS__) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
+typedef unsigned long useconds_t;
+#else
 typedef unsigned int useconds_t;
+#endif
 #endif
 
 /**
@@ -369,13 +374,18 @@ typedef long blkcnt_t;
 #define _USECONDS_T
 #define __useconds_t_defined
 #define _DEFINED_useconds_t
+#if defined(__I86__) || defined(__DOS__) || defined(__MSDOS__) ||              \
+    defined(__WATCOMC__)
+typedef unsigned long useconds_t;
+#else
 typedef unsigned int useconds_t;
+#endif
 #endif
 
 #if !defined(__suseconds_t_defined) && !defined(_SUSECONDS_T_DEFINED) &&       \
     !defined(_SUSECONDS_T) && !defined(_SUSECONDS_T_DECLARED) &&               \
     !defined(_DEFINED_suseconds_t) && !defined(__linux__) &&                   \
-    !defined(__CYGWIN__)
+    !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
 #define _SUSECONDS_T_DEFINED
 #define _SUSECONDS_T
 #define __suseconds_t_defined
@@ -386,7 +396,7 @@ typedef long suseconds_t;
 #if !defined(__blksize_t_defined) && !defined(_BLKSIZE_T_DEFINED) &&           \
     !defined(_BLKSIZE_T) && !defined(_BLKSIZE_T_DECLARED) &&                   \
     !defined(_DEFINED_blksize_t) && !defined(__linux__) &&                     \
-    !defined(__CYGWIN__)
+    !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
 #define _BLKSIZE_T_DEFINED
 #define _BLKSIZE_T
 #define __blksize_t_defined
@@ -537,7 +547,11 @@ typedef unsigned long fd_mask;
 
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 
-#if !defined(__APPLE__) && !(defined(__linux__) && defined(__USE_MISC))
+#if !defined(__APPLE__) &&                                                     \
+    !(defined(__linux__) && (defined(__USE_MISC) ||                            \
+                             (!defined(__GLIBC__) &&                           \
+                              (defined(_GNU_SOURCE) || defined(_BSD_SOURCE) || \
+                               defined(_DEFAULT_SOURCE)))))
 #ifndef _QUAD_T_DEFINED
 #define _QUAD_T_DEFINED
 typedef int64_t quad_t;

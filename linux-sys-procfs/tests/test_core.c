@@ -39,6 +39,8 @@ static BOOL mock_procfs_GlobalMemoryStatusEx(MEMORYSTATUSEX *st) {
 #define LINUX_SYS_PROCFS_MOCK_GetTickCount mock_procfs_GetTickCount
 #define LINUX_SYS_PROCFS_MOCK_GlobalMemoryStatusEx                             \
   mock_procfs_GlobalMemoryStatusEx
+int mocked_sysinfo(struct sysinfo *info);
+auto_win_msvc_error_t mocked_linux_sys_procfs_init(int *out_status);
 #define sysinfo(x) mocked_sysinfo(x)
 #define linux_sys_procfs_init mocked_linux_sys_procfs_init
 #include "../src/linux-sys-procfs.c"

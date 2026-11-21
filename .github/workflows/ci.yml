@@ -7,33 +7,17 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build-and-test:
-    runs-on: windows-latest
-    timeout-minutes: 20
-
-    strategy:
-      matrix:
-        build_type: [Release, Debug]
-
+  check-patches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-    - uses: actions/checkout@master
+      - uses: actions/checkout@master
+      - name: Verify PATCH_COMMAND files exist and are tracked
+        run: python3 scripts/check_patches.py
 
-    - name: Verify PATCH_COMMAND files exist and are tracked
-      run: python scripts/check_patches.py
-
-    - name: Setup MSVC Environment
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Configure CMake
-      # Build the entire monorepo (all 18 subprojects)
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-
-    - name: Build
-      # The CMakeLists.txt mandates strict C89 and MSVC warning level 4 as errors (/W4 /WX).
-      # If any project violates strict C89 or emits a warning, the build will fail here.
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute every test.c file across the 18 subprojects.
-      run: ctest -C ${{matrix.build_type}} --output-on-failure
+  ci:
+    uses: SamuelMarks/c-ci/.github/workflows/c-cmake-ci.yml@master
+    with:
+      cmake_configure_flags: '-DBUILD_TESTING=ON'
+      extra_cygwin_packages: 'git'
+      msdos_testing: true

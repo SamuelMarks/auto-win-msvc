@@ -82,7 +82,11 @@ TEST test_ffs(void) {
   ASSERT_EQ(1, ffs(3));
   ASSERT_EQ(3, ffs(4));
   ASSERT_EQ(5, ffs(16));
-  ASSERT_EQ(32, ffs((int)0x80000000));
+#if defined(__I86__)
+  ASSERT_EQ(16, ffs((int)0x8000U));
+#else
+  ASSERT_EQ(32, ffs((int)0x80000000U));
+#endif
   PASS();
 }
 

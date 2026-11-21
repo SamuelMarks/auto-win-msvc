@@ -20,8 +20,15 @@ elseif(DEFINED FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC AND NOT DEFINED FETCHCONTEN
     set(FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC "${FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC}" CACHE PATH "" FORCE)
 endif()
 
+if((CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "DOS") AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_OSX_ARCHITECTURES "")
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+endif()
+
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE)
+    if(MSVC AND NOT CMAKE_TOOLCHAIN_FILE AND (NOT DEFINED CDD_DEPS OR CDD_DEPS STREQUAL "VCPKG"))
         if(EXISTS "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
             set(CMAKE_TOOLCHAIN_FILE "C:/Users/samue/repos/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE PATH "" FORCE)
         elseif(DEFINED ENV{HOME} AND EXISTS "$ENV{HOME}/repos/vcpkg/scripts/buildsystems/vcpkg.cmake")
@@ -30,6 +37,45 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     endif()
 endif()
 project(auto-win-msvc VERSION 0.1.0 LANGUAGES C)
+
+set(_awm_unused_ci_vars
+    "${CDD_CHARSET}"
+    "${CDD_THREADING}"
+    "${CDD_DEPS}"
+    "${CDD_CRT_LINKAGE}"
+    "${CDD_MSVC_RTC}"
+    "${AUTO_WIN_MSVC_TESTING}"
+    "${auto_win_msvc_TESTING}"
+    "${BUILD_TESTING_AUTO_WIN_MSVC}"
+)
+unset(_awm_unused_ci_vars)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "DOS")
+    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib" CACHE PATH "Object code libraries")
+    endif()
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Watcom")
+    get_filename_component(_awm_ow_cc_name "${CMAKE_C_COMPILER}" NAME)
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "I86" OR CMAKE_SIZEOF_VOID_P EQUAL 2 OR _awm_ow_cc_name MATCHES "^wcl(\\.exe)?$")
+        string(REGEX REPLACE "(^| )-m[smchf]( |$)" "\\1-ml\\2" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+        string(REGEX REPLACE "(^| )-zt=[0-9]+( |$)" "\\1\\2" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+        if(NOT CMAKE_C_FLAGS MATCHES "(^| )-ml( |$)")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ml")
+        endif()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -zm -zc -zt=32 -os -d0 -d__inline__=__inline")
+        string(REPLACE "-d2" "-d0" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+        string(REPLACE "-od" "-os" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+        string(REPLACE "debug all" "" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+        if(NOT CMAKE_EXE_LINKER_FLAGS MATCHES "stack=")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} option stack=6144")
+        endif()
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -zm -zc -d__inline__=__inline")
+    endif()
+    unset(_awm_ow_cc_name)
+endif()
 
 if(MSVC AND NOT CMAKE_HOST_WIN32 AND NOT CMAKE_NM)
     find_program(_AWM_HOST_NM
@@ -52,16 +98,19 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 # Enable strict compilation warnings
 if(MSVC)
-    if(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT STREQUAL "Embedded" OR CMAKE_CROSSCOMPILING)
+    if(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT STREQUAL "Embedded" OR CMAKE_CROSSCOMPILING OR NOT CMAKE_HOST_WIN32)
+        set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "Embedded")
         add_compile_options(/W4 /WX)
         string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
         string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
         string(REPLACE "/Fd<TARGET_COMPILE_PDB>" "" CMAKE_C_COMPILE_OBJECT "${CMAKE_C_COMPILE_OBJECT}")
         string(REPLACE "/FS" "" CMAKE_C_COMPILE_OBJECT "${CMAKE_C_COMPILE_OBJECT}")
-        if(CMAKE_CROSSCOMPILING)
+        if(CMAKE_CROSSCOMPILING OR NOT CMAKE_HOST_WIN32)
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO /INCREMENTAL:NO")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /MANIFEST:NO /INCREMENTAL:NO")
+            string(REPLACE "/INCREMENTAL:NO" "/INCREMENTAL" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
             string(REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+            string(REPLACE "/INCREMENTAL:NO" "/INCREMENTAL" CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
             string(REPLACE "/INCREMENTAL" "/INCREMENTAL:NO" CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
             file(WRITE "${CMAKE_BINARY_DIR}/wine_retry.sh"
 "#!/bin/sh
@@ -69,9 +118,14 @@ case \"\$PWD\" in
   *CMakeTmp*) exec \"\$@\" ;;
 esac
 out=\"\"
+is_pe=0
 for arg in \"\$@\"; do
   case \"\$arg\" in
     [-/]Fo*) out=\"\${arg#???}\" ;;
+    [-/]OUT:*.dll|[-/]OUT:*.exe|[-/]out:*.dll|[-/]out:*.exe)
+      out=\"\${arg#?????}\"
+      is_pe=1
+      ;;
   esac
 done
 attempt=0
@@ -79,8 +133,13 @@ while [ \$attempt -lt 5 ]; do
   \"\$@\"
   rc=\$?
   if [ \$rc -eq 0 ]; then
-    if [ -z \"\$out\" ] || [ -s \"\$out\" ]; then
+    if [ -z \"\$out\" ]; then
       exit 0
+    fi
+    if [ -s \"\$out\" ]; then
+      if [ \$is_pe -eq 0 ] || file \"\$out\" | grep -q \"PE32\"; then
+        exit 0
+      fi
     fi
     rm -f \"\$out\"
     rc=1
@@ -99,13 +158,37 @@ exit \$rc
     else()
         add_compile_options(/W4 /WX /FS)
     endif()
+    if(MSVC_VERSION GREATER_EQUAL 1910)
+        add_compile_options(/permissive-)
+    endif()
 elseif(CMAKE_C_COMPILER_ID MATCHES "Watcom")
-    add_compile_options(-w4 -wx)
+    add_compile_options(-w4 -wx -we)
     if(CMAKE_SYSTEM_NAME STREQUAL "DOS")
         add_compile_definitions(_SINGLE_THREAD)
     endif()
 else()
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_options(
+        -Werror
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wshadow
+        -Wformat=2
+        -Wconversion
+        -Wsign-conversion
+        -Wcast-align
+        -Wstrict-prototypes
+        -Wold-style-definition
+        -Wmissing-prototypes
+        -Wmissing-declarations
+        -Wdeclaration-after-statement
+        -Wundef
+        -Wpointer-arith
+        -Wcast-qual
+        -Wwrite-strings
+        -Wvla
+        -fno-common
+    )
     add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _DARWIN_C_SOURCE)
 endif()
 
@@ -121,10 +204,15 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 if(BUILD_SHARED_LIBS)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    if(MINGW)
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-all-symbols")
+    endif()
 endif()
 
 if(DEFINED CDD_CHARSET AND CDD_CHARSET STREQUAL "UNICODE")
     set(AUTO_WIN_MSVC_UNICODE ON CACHE BOOL "Build with UNICODE and _UNICODE defined" FORCE)
+elseif(DEFINED CDD_CHARSET AND CDD_CHARSET STREQUAL "ANSI")
+    set(AUTO_WIN_MSVC_UNICODE OFF CACHE BOOL "Build with UNICODE and _UNICODE defined" FORCE)
 endif()
 option(AUTO_WIN_MSVC_UNICODE "Build with UNICODE and _UNICODE defined" OFF)
 if(AUTO_WIN_MSVC_UNICODE)
@@ -142,7 +230,7 @@ if(AUTO_WIN_MSVC_LTO)
     endif()
 endif()
 
-if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY AND NOT CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "")
     if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL")
         set(AUTO_WIN_MSVC_CRT_DEFAULT "Shared")
     else()
@@ -159,35 +247,28 @@ if(NOT DEFINED AUTO_WIN_MSVC_CRT)
 endif()
 set_property(CACHE AUTO_WIN_MSVC_CRT PROPERTY STRINGS "Static" "Shared")
 
-# For older CMake, modify CMAKE_C_FLAGS manually to handle CRT options
+# Configure MSVC CRT linkage cleanly via CMP0091 NEW without duplicate /MD vs /MT flags
 if(MSVC)
-    if(AUTO_WIN_MSVC_CRT STREQUAL "Static")
-        # Multi-threaded static (/MT or /MTd)
-        if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    foreach(_crt_flag_var CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "[/-]M[TD]d?" "" ${_crt_flag_var} "${${_crt_flag_var}}")
+    endforeach()
+    if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY OR CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "")
+        if(AUTO_WIN_MSVC_CRT STREQUAL "Static")
             set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        endif()
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-        string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-    else()
-        # Multi-threaded shared (/MD or /MDd)
-        if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        else()
             set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
         endif()
-        string(REPLACE "/MT" "/MD" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-        string(REPLACE "/MTd" "/MDd" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-        string(REPLACE "/MT" "/MD" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
     endif()
 endif()
 
-if(DEFINED CDD_MSVC_RTC AND NOT CDD_MSVC_RTC STREQUAL "OFF")
-    set(AUTO_WIN_MSVC_RTC "${CDD_MSVC_RTC}" CACHE STRING "Runtime Checks (Default, RTC1, RTCs, RTCu)" FORCE)
+if(DEFINED CDD_MSVC_RTC AND NOT CDD_MSVC_RTC STREQUAL "")
+    set(AUTO_WIN_MSVC_RTC "${CDD_MSVC_RTC}" CACHE STRING "Runtime Checks (Default, OFF, RTC1, RTCs, RTCu)" FORCE)
 endif()
-set(AUTO_WIN_MSVC_RTC "Default" CACHE STRING "Runtime Checks (Default, RTC1, RTCs, RTCu)")
-set_property(CACHE AUTO_WIN_MSVC_RTC PROPERTY STRINGS "Default" "RTC1" "RTCs" "RTCu")
+set(AUTO_WIN_MSVC_RTC "Default" CACHE STRING "Runtime Checks (Default, OFF, RTC1, RTCs, RTCu)")
+set_property(CACHE AUTO_WIN_MSVC_RTC PROPERTY STRINGS "Default" "OFF" "RTC1" "RTCs" "RTCu")
 if(MSVC AND NOT AUTO_WIN_MSVC_RTC STREQUAL "Default")
     # RTC options are only valid in Debug mode or without optimizations
-    string(REGEX REPLACE "/RTC[1su]+" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    string(REGEX REPLACE "[/-]RTC[1suc]+" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
     if(AUTO_WIN_MSVC_RTC STREQUAL "RTC1")
         set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /RTC1")
     elseif(AUTO_WIN_MSVC_RTC STREQUAL "RTCs")
@@ -200,12 +281,11 @@ endif()
 # Threading option
 if(DEFINED CDD_THREADING AND NOT CDD_THREADING)
     set(AUTO_WIN_MSVC_SINGLE_THREADED ON CACHE BOOL "Build single-threaded (no thread safety/CRT threading)" FORCE)
+elseif(DEFINED CDD_THREADING AND CDD_THREADING)
+    set(AUTO_WIN_MSVC_SINGLE_THREADED OFF CACHE BOOL "Build single-threaded (no thread safety/CRT threading)" FORCE)
 endif()
 option(AUTO_WIN_MSVC_SINGLE_THREADED "Build single-threaded (no thread safety/CRT threading)" OFF)
-if(MSVC AND AUTO_WIN_MSVC_SINGLE_THREADED)
-    # Note: Modern MSVC no longer supports the /ML (single-threaded) CRT natively.
-    # It only provides /MT and /MD which are multithreaded.
-    # We define _SINGLE_THREAD just in case it's used elsewhere.
+if(AUTO_WIN_MSVC_SINGLE_THREADED)
     add_compile_definitions(_SINGLE_THREAD)
 endif()
 # -------------------------------------
@@ -238,7 +318,7 @@ if(AUTO_WIN_MSVC_COVERAGE)
         add_link_options(--coverage)
     endif()
 endif()
-if(WIN32 OR MSVC OR MINGW)
+if((WIN32 OR MSVC OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "DOS" AND NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
     if(NOT TARGET linux-epoll)
         if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/linux-epoll)
         add_subdirectory(linux-epoll)
@@ -617,7 +697,7 @@ include(CheckCCompilerFlag)
 # Valgrind memory check setup for CTest
 find_program(MEMORYCHECK_COMMAND NAMES valgrind)
 if(MEMORYCHECK_COMMAND)
-    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --track-origins=yes -q --error-exitcode=1")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes -q --error-exitcode=1")
 endif()
 
 # Clang Static Analyzer via clang-tidy
@@ -645,6 +725,7 @@ if(MSVC)
         endif()
         check_c_compiler_flag("/guard:cf" HAS_GUARD_CF)
         if(HAS_GUARD_CF)
+            add_compile_options(/guard:cf)
             add_link_options(/GUARD:CF)
         endif()
         check_c_compiler_flag("/sdl" HAS_SDL)

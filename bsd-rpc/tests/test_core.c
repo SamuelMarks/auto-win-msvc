@@ -150,7 +150,7 @@ TEST test_bsd_rpc_base_sunrpc_and_yp(void) {
                                          (xdrproc_t)0, NULL, (resultproc_t)0));
 
   ASSERT(getrpcbyname("rpcbind") == NULL);
-  ASSERT(getrpcbynumber(100000) == NULL);
+  ASSERT(getrpcbynumber(111) == NULL);
   ASSERT(getrpcent() == NULL);
   setrpcent(1);
   endrpcent();

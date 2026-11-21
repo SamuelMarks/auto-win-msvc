@@ -17,10 +17,12 @@
 
 #if defined(_WIN32)
 #ifdef POSIX_POLL_STANDALONE_TEST
+intptr_t posix_get_dup_socket(intptr_t fd);
 intptr_t posix_get_dup_socket(intptr_t fd) {
   (void)fd;
   return 0;
 }
+intptr_t posix_lookup_crt_socket(intptr_t fd);
 intptr_t posix_lookup_crt_socket(intptr_t fd) {
   (void)fd;
   return 0;

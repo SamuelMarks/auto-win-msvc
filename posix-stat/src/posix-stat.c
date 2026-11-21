@@ -448,9 +448,9 @@ int fchmod(int fd, mode_t mode) {
   }
 
   if (!(mode & _S_IWRITE)) {
-    attrs |= FILE_ATTRIBUTE_READONLY;
+    attrs |= (DWORD)FILE_ATTRIBUTE_READONLY;
   } else {
-    attrs &= ~FILE_ATTRIBUTE_READONLY;
+    attrs &= ~(DWORD)FILE_ATTRIBUTE_READONLY;
   }
 
   if (!g_stat_set_attrs(path, (unsigned long)attrs)) {
@@ -539,7 +539,8 @@ static int is_virtual_proc_stat(const char *pathname,
       is_dir = 1;
     }
     if (!is_dir &&
-        ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0)) {
+        ((unsigned int)((unsigned char)sub[0] - (unsigned char)'0') <= 9U ||
+         strncmp(sub, "self", 4) == 0)) {
       const char *slash = strchr(sub, '/');
       if (!slash) {
         slash = strchr(sub, '\\');
@@ -976,7 +977,8 @@ static int is_virtual_proc_stat_posix(const char *pathname,
       is_dir = 1;
     }
     if (!is_dir &&
-        ((sub[0] >= '0' && sub[0] <= '9') || strncmp(sub, "self", 4) == 0)) {
+        ((unsigned int)((unsigned char)sub[0] - (unsigned char)'0') <= 9U ||
+         strncmp(sub, "self", 4) == 0)) {
       const char *slash = strchr(sub, '/');
       if (!slash || slash[1] == '\0') {
         is_dir = 1;
@@ -1003,6 +1005,79 @@ static int is_virtual_proc_stat_posix(const char *pathname,
 }
 #endif /* !__linux__ */
 
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+static int dos_is_root_or_dot_dir(const char *p) {
+  if (!p || p[0] == '\0') {
+    return 0;
+  }
+  if (strcmp(p, ".") == 0 || strcmp(p, "..") == 0 || strcmp(p, "/") == 0 ||
+      strcmp(p, "\\") == 0) {
+    return 1;
+  }
+  if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) &&
+      p[1] == ':') {
+    p += 2;
+    if (p[0] == '\0' || ((p[0] == '/' || p[0] == '\\') && p[1] == '\0')) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static int dos_native_stat(const char *pathname, struct stat *st) {
+  if (dos_is_root_or_dot_dir(pathname)) {
+    memset(st, 0, sizeof(*st));
+    st->st_mode = S_IFDIR | 0777;
+    st->st_nlink = 1;
+    return 0;
+  }
+#if defined(__WATCOMC__)
+  if (_osmajor < 2) {
+    const char *p = pathname;
+    FILE *fp;
+    if (p == NULL || p[0] == '\0') {
+      errno = ENOENT;
+      return -1;
+    }
+    if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) &&
+        p[1] == ':') {
+      p += 2;
+    }
+    while (p[0] == '/' || p[0] == '\\') {
+      p++;
+    }
+    if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) {
+      p += 2;
+      while (p[0] == '/' || p[0] == '\\') {
+        p++;
+      }
+    }
+    if (p[0] == '\0' || strchr(p, '/') != NULL || strchr(p, '\\') != NULL) {
+      errno = ENOENT;
+      return -1;
+    }
+    fp = fopen(p, "rb");
+    if (!fp) {
+      errno = ENOENT;
+      return -1;
+    }
+    memset(st, 0, sizeof(*st));
+    if (fseek(fp, 0L, SEEK_END) == 0) {
+      long sz = ftell(fp);
+      if (sz > 0L) {
+        st->st_size = (off_t)sz;
+      }
+    }
+    fclose(fp);
+    st->st_mode = S_IFREG | 0666;
+    st->st_nlink = 1;
+    return 0;
+  }
+#endif
+  return (stat)(pathname, st);
+}
+#endif
+
 /**
  * @brief Obtains file status, supporting virtual /proc paths on non-Linux
  * POSIX systems.
@@ -1024,7 +1099,15 @@ int posix_stat(const char *pathname, void *statbuf) {
     return 0;
   }
 #endif
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+  if (pathname == NULL || st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  return dos_native_stat(pathname, st);
+#else
   return stat(pathname, st);
+#endif
 }
 
 /**
@@ -1049,13 +1132,37 @@ int posix_lstat(const char *pathname, void *statbuf) {
 #endif
 #endif
 #if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
-  return stat(pathname, st);
+  if (pathname == NULL || st == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  return dos_native_stat(pathname, st);
 #else
   return lstat(pathname, st);
 #endif
 }
 
 #if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+
+/** @brief DOS-1.x/2.x-safe chmod wrapper. */
+int posix_dos_chmod(const char *pathname, mode_t mode) {
+  if (!pathname) {
+    errno = EINVAL;
+    return -1;
+  }
+#if defined(__WATCOMC__)
+  if (_osmajor < 2) {
+    struct stat st;
+    if (dos_native_stat(pathname, &st) != 0) {
+      return -1;
+    }
+    (void)mode;
+    return 0;
+  }
+#endif
+#undef chmod
+  return chmod(pathname, mode);
+}
 
 /** @brief Change permissions of a file descriptor on DOS. */
 int fchmod(int fd, mode_t mode) {
@@ -1074,7 +1181,7 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     errno = EBADF;
     return -1;
   }
-  return chmod(pathname, mode);
+  return posix_dos_chmod(pathname, mode);
 }
 
 /** @brief Obtain file status relative to a directory fd on DOS. */
@@ -1108,7 +1215,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2],
     errno = EBADF;
     return -1;
   }
-  if (stat(pathname, &st) != 0) {
+  if (posix_stat(pathname, &st) != 0) {
     return -1;
   }
   return 0;

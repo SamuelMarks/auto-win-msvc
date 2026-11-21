@@ -30,9 +30,17 @@ typedef enum hid_kind {
 } hid_kind_t;
 
 #define NO_REPORT_ID 0
-#define HID_PAGE(u) (((u) >> 16) & 0xffff)
-#define HID_USAGE(u) ((u) & 0xffff)
+#define HID_PAGE(u) ((((uint32_t)(u)) >> 16) & 0xffffU)
+#define HID_USAGE(u) ((u) & 0xffffU)
 #define HID_HAS_GET_SET_REPORT 1
+
+#if defined(__I86__)
+typedef unsigned long awm_hid_usage_t;
+typedef long awm_hid_susage_t;
+#else
+typedef unsigned int awm_hid_usage_t;
+typedef int awm_hid_susage_t;
+#endif
 
 typedef struct hid_item {
   uint32_t _usage_page;
@@ -87,11 +95,11 @@ int hid_locate(report_desc_t d, unsigned int usage, enum hid_kind k,
 /** @brief Format a USB HID usage page number as a human-readable string. */
 const char *hid_usage_page(int i);
 /** @brief Format a combined USB HID usage code as a human-readable string. */
-const char *hid_usage_in_page(unsigned int u);
+const char *hid_usage_in_page(awm_hid_usage_t u);
 /** @brief Initialize USB HID usage table from an optional table path. */
 void hid_init(const char *file);
 /** @brief Parse a symbolic usage-in-page name into a 32-bit usage value. */
-int hid_parse_usage_in_page(const char *name);
+awm_hid_susage_t hid_parse_usage_in_page(const char *name);
 /** @brief Parse a symbolic usage page name into a usage page number. */
 int hid_parse_usage_page(const char *name);
 /** @brief Extract an integer field value from a raw USB HID report buffer. */

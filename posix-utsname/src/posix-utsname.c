@@ -278,13 +278,12 @@ int uname(struct utsname *name) {
 
 #endif
 
+#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 /**
  * @brief Retrieves information on posix-utsname availability.
- * @param[out] out_available Pointer receiving 1 on success.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_available is NULL.
  */
-#ifndef AUTO_WIN_MSVC_MEGA_LIBRARY
 auto_win_msvc_error_t posix_utsname_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;

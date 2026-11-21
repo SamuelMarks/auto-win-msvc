@@ -13,6 +13,9 @@
 #elif defined(__WATCOMC__)
 #include <../h/stdint.h>
 #include <sys/types.h>
+#elif defined(__EMSCRIPTEN__)
+#include <stdint.h>
+#include <sys/types.h>
 #elif !defined(_WIN32)
 #include <sys/types.h>
 #endif
@@ -33,7 +36,7 @@ extern "C" {
 #define _STDINT
 #endif
 
-#if !defined(_STDINT_H_INCLUDED)
+#if !defined(_STDINT_H_INCLUDED) && !defined(__EMSCRIPTEN__)
 #if !defined(__int8_t_defined) && !defined(_INT8_T_DEFINED) &&                 \
     !defined(_EXACT_WIDTH_INTS)
 #define _INT8_T_DEFINED

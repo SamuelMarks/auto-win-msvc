@@ -21,7 +21,15 @@ static void *default_fts_calloc(size_t nmemb, size_t size) {
 
 static void *default_fts_malloc(size_t size) { return malloc(size); }
 
-static DIR *default_fts_opendir(const char *name) { return opendir(name); }
+static DIR *default_fts_opendir(const char *name) {
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    errno = ENOSYS;
+    return NULL;
+  }
+#endif
+  return opendir(name);
+}
 
 /** @brief Overrideable calloc hook for OOM testing in bsd-fts. */
 void *(*g_bsd_fts_calloc)(size_t, size_t) = default_fts_calloc;
@@ -38,6 +46,21 @@ void bsd_fts_reset_hooks(void) {
   g_bsd_fts_opendir = default_fts_opendir;
 }
 
+static void fts_strip_trailing_sep(char *buf, size_t cap, const char *path) {
+  size_t len = strlen(path);
+  if (len >= cap) {
+    len = cap - 1;
+  }
+  memcpy(buf, path, len);
+  buf[len] = '\0';
+  while (len > 1 && (buf[len - 1] == '/' || buf[len - 1] == '\\')) {
+    if (len == 3 && buf[1] == ':') {
+      break;
+    }
+    buf[--len] = '\0';
+  }
+}
+
 /**
  * @brief Allocate and populate a single FTSENT traversal node.
  * @param[in] sp Owning FTS stream.
@@ -51,6 +74,7 @@ static FTSENT *fts_alloc_ent(FTS *sp, const char *path, const char *name,
                              long level, FTSENT *parent) {
   FTSENT *e;
   size_t plen;
+  char clean_path[512];
 
   e = (FTSENT *)g_bsd_fts_calloc(1, sizeof(*e));
   if (e == NULL) {
@@ -79,9 +103,10 @@ static FTSENT *fts_alloc_ent(FTS *sp, const char *path, const char *name,
   e->fts_accpath = e->fts_path;
   e->fts_pathlen = plen;
 
+  fts_strip_trailing_sep(clean_path, sizeof(clean_path), e->fts_path);
   if ((sp->fts_options & FTS_NOSTAT) != 0) {
     e->fts_info = FTS_NSOK;
-  } else if (stat(e->fts_path, &e->fts_statbuf) == 0) {
+  } else if (stat(clean_path, &e->fts_statbuf) == 0) {
     e->fts_ino = e->fts_statbuf.st_ino;
     e->fts_dev = e->fts_statbuf.st_dev;
     e->fts_nlink = e->fts_statbuf.st_nlink;
@@ -119,8 +144,10 @@ static void fts_expand_dir(FTS *sp, FTSENT *dir_ent, FTSENT **tail_next) {
   FTSENT *first = NULL;
   FTSENT *last = NULL;
   size_t count = 0;
+  char clean_dir[512];
 
-  dp = g_bsd_fts_opendir(dir_ent->fts_path);
+  fts_strip_trailing_sep(clean_dir, sizeof(clean_dir), dir_ent->fts_path);
+  dp = g_bsd_fts_opendir(clean_dir);
   if (dp == NULL) {
     dir_ent->fts_errno = errno;
     dir_ent->fts_info = FTS_DNR;
@@ -217,9 +244,6 @@ static void fts_expand_dir(FTS *sp, FTSENT *dir_ent, FTSENT **tail_next) {
 
 /**
  * @brief Open a file hierarchy for traversal.
- * @param[in] path_argv Null-terminated array of root paths.
- * @param[in] options Bitmask of FTS_* flags.
- * @param[in] compar Optional entry comparison callback.
  * @return Allocated FTS stream, or NULL on error.
  */
 FTS *fts_open(char *const *path_argv, int options,
@@ -310,8 +334,6 @@ FTSENT *fts_read(FTS *sp) {
 
 /**
  * @brief Return linked list of queued children of the current stream.
- * @param[in,out] sp FTS stream.
- * @param[in] instr Optional FTS_NAMEONLY flag.
  * @return Linked list of FTSENT nodes, or NULL.
  */
 FTSENT *fts_children(FTS *sp, int instr) {
@@ -325,9 +347,6 @@ FTSENT *fts_children(FTS *sp, int instr) {
 
 /**
  * @brief Set traversal instruction on an FTSENT node.
- * @param[in,out] sp FTS stream.
- * @param[in,out] p FTSENT node.
- * @param[in] instr FTS_AGAIN, FTS_FOLLOW, or FTS_SKIP.
  * @return 0 on success, or -1 on error.
  */
 int fts_set(FTS *sp, FTSENT *p, int instr) {
@@ -342,7 +361,6 @@ int fts_set(FTS *sp, FTSENT *p, int instr) {
 
 /**
  * @brief Close an FTS stream and release all associated memory.
- * @param[in,out] sp FTS stream.
  * @return 0 on success, or -1 on error.
  */
 int fts_close(FTS *sp) {
@@ -366,7 +384,6 @@ int fts_close(FTS *sp) {
 
 /**
  * @brief Get client pointer associated with an FTS stream.
- * @param[in] sp FTS stream.
  * @return Client pointer, or NULL if sp is NULL.
  */
 void *fts_get_clientptr(FTS *sp) {
@@ -375,15 +392,12 @@ void *fts_get_clientptr(FTS *sp) {
 
 /**
  * @brief Get parent FTS stream associated with an FTSENT node.
- * @param[in] p FTSENT node.
  * @return Owning FTS pointer, or NULL if p is NULL.
  */
 FTS *fts_get_stream(FTSENT *p) { return (p != NULL) ? p->fts_fts : NULL; }
 
 /**
  * @brief Associate a client pointer with an FTS stream.
- * @param[in,out] sp FTS stream.
- * @param[in] clientptr Client pointer value.
  */
 void fts_set_clientptr(FTS *sp, void *clientptr) {
   if (sp != NULL) {

@@ -23,6 +23,8 @@ static int __stdcall mock_times_GetProcessTimes(void *hProc, void *cTime,
 }
 
 #define POSIX_TIMES_MOCK_GetProcessTimes mock_times_GetProcessTimes
+clock_t mocked_posix_times(struct tms *buffer);
+auto_win_msvc_error_t mocked_posix_times_get_info(int *out_available);
 #define posix_times mocked_posix_times
 #define posix_times_get_info mocked_posix_times_get_info
 #include "../src/posix-times.c"

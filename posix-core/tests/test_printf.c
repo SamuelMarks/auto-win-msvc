@@ -8,6 +8,7 @@
 #include <string.h>
 /* clang-format on */
 
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 static int g_mock_asprintf_oom = 0;
 static int g_mock_vsclen_fail = 0;
 
@@ -46,10 +47,14 @@ int mocked_asprintf(char **strp, const char *fmt, ...)
 
 #undef vasprintf
 #undef asprintf
+#endif
 
 TEST test_asprintf_and_vasprintf(void) {
-  int (*fn_asprintf)(char **, const char *, ...) = asprintf;
-  int (*fn_mocked_asprintf)(char **, const char *, ...) = mocked_asprintf;
+  int (*volatile fn_asprintf)(char **, const char *, ...) = asprintf;
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+  int (*volatile fn_mocked_asprintf)(char **, const char *, ...) =
+      mocked_asprintf;
+#endif
   char *out = NULL;
   int len;
 
@@ -64,6 +69,7 @@ TEST test_asprintf_and_vasprintf(void) {
   free(out);
   out = NULL;
 
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
   /* Mocked vasprintf & asprintf (including OOM and negative format length) */
   ASSERT_EQ(-1, fn_mocked_asprintf(NULL, "abc"));
   ASSERT_EQ(-1, fn_mocked_asprintf(&out, NULL));
@@ -85,12 +91,13 @@ TEST test_asprintf_and_vasprintf(void) {
   ASSERT(out != NULL);
   ASSERT_STR_EQ("ok 123", out);
   free(out);
+#endif
 
   PASS();
 }
 
 TEST test_dprintf(void) {
-  int (*fn_dprintf)(int, const char *, ...) = dprintf;
+  int (*volatile fn_dprintf)(int, const char *, ...) = dprintf;
   FILE *fp = NULL;
   int fd;
   int n;
@@ -118,7 +125,7 @@ TEST test_dprintf(void) {
   fflush(fp);
   fseek(fp, 0, SEEK_SET);
   memset(read_buf, 0, sizeof(read_buf));
-  (void)fread(read_buf, 1, sizeof(read_buf) - 1, fp);
+  ASSERT_EQ((size_t)13, fread(read_buf, 1, sizeof(read_buf) - 1, fp));
   fclose(fp);
   remove("test_posix_dprintf_tmp.txt");
   ASSERT_STR_EQ("dprintf 99 ok", read_buf);

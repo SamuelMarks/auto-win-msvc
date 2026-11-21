@@ -121,18 +121,18 @@ jobs:
           cd /d "%VCPKG_INSTALLATION_ROOT%" && git fetch --all || true
           cd /d "%GITHUB_WORKSPACE%"
           cd rsync
-          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake"
-          cmake --build build --config Release
+          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake" || exit /b 1
+          cmake --build build --config Release || exit /b 1
 
       - name: Build memcached
         if: matrix.project == 'memcached'
         shell: cmd
         run: |
           cd memcached
-          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC=../auto-win-msvc
-          cmake --build build --config Release
-          build\Release\memcached.exe -h
-          build\Release\sizes.exe
+          cmake -B build -S . -DFETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC=../auto-win-msvc || exit /b 1
+          cmake --build build --config Release || exit /b 1
+          build\Release\memcached.exe -h || exit /b 1
+          build\Release\sizes.exe || exit /b 1
 
       - name: Build dash
         if: matrix.project == 'dash'
@@ -140,15 +140,15 @@ jobs:
         run: |
           cd dash-windows
           git -C dash apply --ignore-whitespace patches/0001-Windows-native-builds.patch 2>nul || cd .
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DDASH_SOURCE_DIR=dash
-          cmake --build build --config Release
-          ctest --test-dir build -C Release --output-on-failure
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DDASH_SOURCE_DIR=dash || exit /b 1
+          cmake --build build --config Release || exit /b 1
+          ctest --test-dir build -C Release --output-on-failure || exit /b 1
           if exist build\dash_build\Release\dash.exe (
-              build\dash_build\Release\dash.exe -c "echo DASH native Windows build successful"
+              build\dash_build\Release\dash.exe -c "echo DASH native Windows build successful" || exit /b 1
           ) else if exist build\Release\dash.exe (
-              build\Release\dash.exe -c "echo DASH native Windows build successful"
+              build\Release\dash.exe -c "echo DASH native Windows build successful" || exit /b 1
           ) else (
-              build\dash.exe -c "echo DASH native Windows build successful"
+              build\dash.exe -c "echo DASH native Windows build successful" || exit /b 1
           )
 
       - name: Build busybox
@@ -156,19 +156,19 @@ jobs:
         shell: cmd
         run: |
           cd busybox-windows
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DBUSYBOX_SOURCE_DIR=busybox
-          cmake --build build --config Release
-          ctest --test-dir build -C Release --output-on-failure
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=../auto-win-msvc -DBUSYBOX_SOURCE_DIR=busybox || exit /b 1
+          cmake --build build --config Release || exit /b 1
+          ctest --test-dir build -C Release --output-on-failure || exit /b 1
           if exist build\Release\busybox.exe (
-              build\Release\busybox.exe sh -c "echo BusyBox native Windows build successful"
+              build\Release\busybox.exe sh -c "echo BusyBox native Windows build successful" || exit /b 1
           ) else (
-              build\busybox.exe sh -c "echo BusyBox native Windows build successful"
+              build\busybox.exe sh -c "echo BusyBox native Windows build successful" || exit /b 1
           )
 
       - name: Build jq
         if: matrix.project == 'jq'
         shell: cmd
         run: |
-          cmake -B build_jq -S auto-win-msvc/cmake/jq-port -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=auto-win-msvc
-          cmake --build build_jq --config Release
-          ctest --test-dir build_jq -C Release --output-on-failure
+          cmake -B build_jq -S auto-win-msvc/cmake/jq-port -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC=auto-win-msvc || exit /b 1
+          cmake --build build_jq --config Release || exit /b 1
+          ctest --test-dir build_jq -C Release --output-on-failure || exit /b 1

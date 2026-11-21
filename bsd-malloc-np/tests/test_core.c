@@ -84,6 +84,10 @@ static int __stdcall mock_GlobalMemoryStatusEx(void *buf) {
 #define BSD_MALLOC_NP_MOCK_LoadLibraryA mock_LoadLibraryA
 #define BSD_MALLOC_NP_MOCK_GetProcAddress mock_GetProcAddress
 
+error_type_t mocked_je_malloc_stats_print(void (*write_cb)(void *,
+                                                           const char *),
+                                          void *cbopaque, const char *opts);
+auto_win_msvc_error_t mocked_bsd_malloc_np_init(int *out_status);
 #define je_malloc_stats_print mocked_je_malloc_stats_print
 #define bsd_malloc_np_init mocked_bsd_malloc_np_init
 #include "../src/bsd-malloc-np.c"

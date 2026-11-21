@@ -109,6 +109,11 @@ void posix_sys_ioctl_set_hooks(int (*csbi_fn)(void *, void *),
                                int (*peek_fn)(void *, unsigned long *),
                                int (*fsize_fn)(void *, void *),
                                int (*fseek_fn)(void *, void *),
+                               int (*pipe_state_fn)(void *, unsigned long *));
+void posix_sys_ioctl_set_hooks(int (*csbi_fn)(void *, void *),
+                               int (*peek_fn)(void *, unsigned long *),
+                               int (*fsize_fn)(void *, void *),
+                               int (*fseek_fn)(void *, void *),
                                int (*pipe_state_fn)(void *, unsigned long *)) {
   g_ioctl_csbi = (BOOL (*)(HANDLE, CONSOLE_SCREEN_BUFFER_INFO *))csbi_fn;
   g_ioctl_peek_pipe = (BOOL (*)(HANDLE, DWORD *))peek_fn;
@@ -120,6 +125,7 @@ void posix_sys_ioctl_set_hooks(int (*csbi_fn)(void *, void *),
 /**
  * @brief Resets Win32 handle hooks to defaults.
  */
+void posix_sys_ioctl_reset_hooks(void);
 void posix_sys_ioctl_reset_hooks(void) {
   g_ioctl_csbi = default_ioctl_csbi;
   g_ioctl_peek_pipe = default_ioctl_peek_pipe;
@@ -303,7 +309,8 @@ int posix_ioctl(intptr_t fd, unsigned long request, ...) {
   }
 #endif
 
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || (defined(__linux__) && !defined(__GLIBC__)) ||      \
+    defined(__EMSCRIPTEN__)
   return ioctl((int)fd, (int)request, argp);
 #elif defined(__APPLE__) || defined(__linux__) || defined(__unix__)
   return ioctl((int)fd, request, argp);

@@ -75,6 +75,11 @@ static FARPROC WINAPI mock_statfs_GetProcAddress(HMODULE hMod, LPCSTR proc) {
 #define STATFS_MOCK_GetModuleHandleA mock_statfs_GetModuleHandleA
 #define STATFS_MOCK_GetProcAddress mock_statfs_GetProcAddress
 
+int mocked_win_statfs(const char *path, struct statfs *buf);
+int mocked_win_fstatfs(int fd, struct statfs *buf);
+int mocked_win_statvfs(const char *path, struct statvfs *buf);
+int mocked_win_fstatvfs(int fd, struct statvfs *buf);
+auto_win_msvc_error_t mocked_linux_sys_statfs_init(int *out_status);
 #define statfs(path, buf) mocked_win_statfs(path, buf)
 #define fstatfs(fd, buf) mocked_win_fstatfs(fd, buf)
 #define statvfs(path, buf) mocked_win_statvfs(path, buf)
@@ -113,7 +118,7 @@ TEST test_linux_sys_statfs_init(void) {
 
 TEST test_statfs_fstatfs(void) {
   struct statfs buf;
-  FILE *tmp;
+  FILE *tmp = NULL;
 
   (void)statfs("/", &buf);
   (void)fstatfs(0, &buf);
@@ -185,7 +190,7 @@ TEST test_statfs_fstatfs(void) {
 
 TEST test_statvfs_fstatvfs(void) {
   struct statvfs buf;
-  FILE *tmp;
+  FILE *tmp = NULL;
 
   (void)statvfs("/", &buf);
   (void)fstatvfs(0, &buf);
@@ -264,6 +269,10 @@ SUITE(suite_linux_sys_statfs_core) {
 #define _WIN32 1
 #endif
 
+FILE *mock_setmntent(const char *filename, const char *type);
+struct mntent *mock_getmntent(FILE *stream);
+int mock_endmntent(FILE *streamp);
+char *mock_hasmntopt(const struct mntent *mnt, const char *opt);
 #define setmntent mock_setmntent
 #define getmntent mock_getmntent
 #define endmntent mock_endmntent
@@ -333,9 +342,12 @@ TEST test_mntent_branches(void) {
   s_mnt.mnt_opts = NULL;
   ASSERT(hasmntopt(&s_mnt, "rw") == NULL);
 
-  s_mnt.mnt_opts = "rw";
-  opt = hasmntopt(&s_mnt, "rw");
-  ASSERT(opt != NULL);
+  {
+    char rw_opts[] = "rw";
+    s_mnt.mnt_opts = rw_opts;
+    opt = hasmntopt(&s_mnt, "rw");
+    ASSERT(opt != NULL);
+  }
 
   /* setmntent fail cases */
   mock_GetLogicalDriveStringsA_ret = 0;

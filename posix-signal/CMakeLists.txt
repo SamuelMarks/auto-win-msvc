@@ -4,7 +4,9 @@ project(posix-signal VERSION 0.1.0 LANGUAGES C)
 # Strict C89 Standard
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+if(NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 
 # --- Advanced Tooling & Strictest Compile Options ---
 include(CheckCCompilerFlag)

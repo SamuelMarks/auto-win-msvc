@@ -37,9 +37,6 @@ auto_win_msvc_error_t bsd_pthread_np_init(int *out_status) {
 #if defined(_MSC_VER) || defined(_WIN32)
 /**
  * @brief Sets CPU affinity mask for a thread on Windows.
- * @param thread Thread handle cast as pthread_t.
- * @param cpusetsize Size of cpuset in bytes.
- * @param cpuset Pointer to CPU affinity mask bytes.
  * @return 0 on success, or -1 on failure with errno set.
  */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
@@ -79,9 +76,6 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
 #else
 /**
  * @brief Sets CPU affinity mask fallback for non-Windows platforms.
- * @param thread Thread handle.
- * @param cpusetsize Size of cpuset in bytes.
- * @param cpuset Pointer to CPU affinity mask bytes.
  * @return 0 on success, or -1 on failure with errno set.
  */
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,

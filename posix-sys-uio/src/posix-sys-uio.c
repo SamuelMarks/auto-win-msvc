@@ -27,6 +27,9 @@
 #endif
 #include <stdlib.h>
 #include <winsock2.h>
+#elif defined(__MSDOS__) || defined(__DOS__) || defined(__WATCOMC__)
+#include <io.h>
+#include <stddef.h>
 #else
 #include <stddef.h>
 #include <unistd.h>
@@ -85,6 +88,7 @@ static uio_lseeki64_fn g_uio_lseeki64 = default_uio_lseeki64;
  * @brief Overrides the allocator hook used by posix-sys-uio for OOM testing.
  * @param[in] malloc_fn Replacement malloc function, or NULL to restore default.
  */
+void posix_sys_uio_set_alloc_hook(void *(*malloc_fn)(size_t));
 void posix_sys_uio_set_alloc_hook(void *(*malloc_fn)(size_t)) {
   g_uio_malloc = (malloc_fn != NULL) ? malloc_fn : default_uio_malloc;
 }
@@ -102,6 +106,11 @@ void posix_sys_uio_set_win32_hooks(uio_wsasend_fn send_fn,
                                    uio_wsarecv_fn recv_fn,
                                    uio_wsagetlasterror_fn err_fn,
                                    uio_write_fn write_fn, uio_read_fn read_fn,
+                                   uio_lseeki64_fn seek_fn);
+void posix_sys_uio_set_win32_hooks(uio_wsasend_fn send_fn,
+                                   uio_wsarecv_fn recv_fn,
+                                   uio_wsagetlasterror_fn err_fn,
+                                   uio_write_fn write_fn, uio_read_fn read_fn,
                                    uio_lseeki64_fn seek_fn) {
   g_uio_wsasend = (send_fn != NULL) ? send_fn : default_uio_wsasend;
   g_uio_wsarecv = (recv_fn != NULL) ? recv_fn : default_uio_wsarecv;
@@ -115,6 +124,7 @@ void posix_sys_uio_set_win32_hooks(uio_wsasend_fn send_fn,
 /**
  * @brief Resets all posix-sys-uio allocator and Win32/CRT hooks to defaults.
  */
+void posix_sys_uio_reset_hooks(void);
 void posix_sys_uio_reset_hooks(void) {
   g_uio_malloc = default_uio_malloc;
   g_uio_wsasend = default_uio_wsasend;
@@ -397,51 +407,129 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
   return res;
 }
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__DOS__) || defined(__WATCOMC__)
 
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
-  (void)fd;
-  (void)iov;
-  (void)iovcnt;
-  errno = EINVAL;
-  return -1;
+  long total = 0;
+  int i;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  if (iovcnt < 0 || iovcnt > 1024 || (iovcnt > 0 && iov == NULL)) {
+    errno = EINVAL;
+    return -1;
+  }
+  for (i = 0; i < iovcnt; ++i) {
+    if (iov[i].iov_len == 0) {
+      continue;
+    }
+    if (iov[i].iov_base == NULL) {
+      errno = EINVAL;
+      return (total > 0) ? total : -1;
+    }
+    {
+      int r = read(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+      if (r < 0) {
+        return (total > 0) ? total : -1;
+      }
+      total += (long)r;
+      if ((size_t)r < iov[i].iov_len) {
+        break;
+      }
+    }
+  }
+  return total;
 }
 
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
-  (void)fd;
-  (void)iov;
-  (void)iovcnt;
-  errno = EINVAL;
-  return -1;
+  long total = 0;
+  int i;
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
+  if (iovcnt < 0 || iovcnt > 1024 || (iovcnt > 0 && iov == NULL)) {
+    errno = EINVAL;
+    return -1;
+  }
+  for (i = 0; i < iovcnt; ++i) {
+    if (iov[i].iov_len == 0) {
+      continue;
+    }
+    if (iov[i].iov_base == NULL) {
+      errno = EINVAL;
+      return (total > 0) ? total : -1;
+    }
+    {
+      int w = write(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+      if (w < 0) {
+        return (total > 0) ? total : -1;
+      }
+      total += (long)w;
+      if ((size_t)w < iov[i].iov_len) {
+        break;
+      }
+    }
+  }
+  return total;
 }
 
 long posix_preadv(int fd, const struct iovec *iov, int iovcnt,
                   posix_uio_off_t offset) {
-  (void)fd;
-  (void)iov;
-  (void)iovcnt;
-  (void)offset;
-  errno = EINVAL;
-  return -1;
+  long old_pos;
+  long res;
+  if (offset < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  old_pos = lseek(fd, 0L, 1);
+  if (old_pos < 0L) {
+    return -1;
+  }
+  if (lseek(fd, (long)offset, 0) < 0L) {
+    return -1;
+  }
+  res = posix_readv(fd, iov, iovcnt);
+  (void)lseek(fd, old_pos, 0);
+  return res;
 }
 
 long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
                    posix_uio_off_t offset) {
-  (void)fd;
-  (void)iov;
-  (void)iovcnt;
-  (void)offset;
-  errno = EINVAL;
-  return -1;
+  long old_pos;
+  long res;
+  if (offset < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  old_pos = lseek(fd, 0L, 1);
+  if (old_pos < 0L) {
+    return -1;
+  }
+  if (lseek(fd, (long)offset, 0) < 0L) {
+    return -1;
+  }
+  res = posix_writev(fd, iov, iovcnt);
+  (void)lseek(fd, old_pos, 0);
+  return res;
 }
 
 #else
 
 long posix_readv(int fd, const struct iovec *iov, int iovcnt) {
+  if (iovcnt < 0 || iovcnt > 1024 || iov == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   return (long)readv(fd, iov, iovcnt);
 }
 
 long posix_writev(int fd, const struct iovec *iov, int iovcnt) {
+  if (iovcnt < 0 || iovcnt > 1024 || iov == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
   return (long)writev(fd, iov, iovcnt);
 }
 
@@ -479,7 +567,6 @@ long posix_pwritev(int fd, const struct iovec *iov, int iovcnt,
 
 /**
  * @brief Retrieves information on posix-sys-uio module availability.
- * @param[out] out_available Pointer to integer receiving availability status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
@@ -495,6 +582,7 @@ auto_win_msvc_error_t posix_sys_uio_get_info(int *out_available) {
  * @brief Dummy symbol ensuring non-empty translation unit across linkers.
  * @return Always returns 0.
  */
+int dummy_posix_sys_uio(void);
 int dummy_posix_sys_uio(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sys_uio;

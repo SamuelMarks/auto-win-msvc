@@ -100,7 +100,8 @@ void strmode(int mode, char *p) {
   case S_IFCHR:
     *p++ = 'c';
     break;
-#ifdef S_IFBLK
+#if defined(S_IFBLK) && (S_IFBLK != 0) && (S_IFBLK != S_IFCHR) &&              \
+    (S_IFBLK != S_IFDIR) && (S_IFBLK != S_IFREG)
   case S_IFBLK:
     *p++ = 'b';
     break;
@@ -108,17 +109,20 @@ void strmode(int mode, char *p) {
   case S_IFREG:
     *p++ = '-';
     break;
-#ifdef S_IFLNK
+#if defined(S_IFLNK) && (S_IFLNK != 0) && (S_IFLNK != S_IFREG)
   case S_IFLNK:
     *p++ = 'l';
     break;
 #endif
-#ifdef S_IFSOCK
+#if defined(S_IFSOCK) && (S_IFSOCK != 0) &&                                    \
+    (!defined(S_IFLNK) || S_IFSOCK != S_IFLNK)
   case S_IFSOCK:
     *p++ = 's';
     break;
 #endif
-#ifdef S_IFIFO
+#if defined(S_IFIFO) && (S_IFIFO != 0) &&                                      \
+    (!defined(S_IFLNK) || S_IFIFO != S_IFLNK) &&                               \
+    (!defined(S_IFSOCK) || S_IFIFO != S_IFSOCK)
   case S_IFIFO:
     *p++ = 'p';
     break;
@@ -302,10 +306,18 @@ int strtofflags(char **stringp, unsigned long *setp, unsigned long *clrp) {
     return 0;
   }
   str = *stringp;
-  while ((tok = strsep(&str, "\t ,")) != NULL) {
+  while (str != NULL) {
     int is_clear = 0;
     size_t i;
     int found = 0;
+    char *end = str + strcspn(str, "\t ,");
+    tok = str;
+    if (*end != '\0') {
+      *end++ = '\0';
+      str = end;
+    } else {
+      str = NULL;
+    }
     if (*tok == '\0') {
       continue;
     }

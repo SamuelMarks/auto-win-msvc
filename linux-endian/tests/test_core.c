@@ -7,7 +7,7 @@
 /* clang-format on */
 
 TEST test_linux_endian_byte_order(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int order = 0;
   (void)rc;
   rc = linux_endian_get_byte_order(NULL);

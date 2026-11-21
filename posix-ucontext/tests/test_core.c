@@ -119,7 +119,7 @@ TEST test_ucontext_null_and_invalid_args(void) {
 TEST test_ucontext_switching(void) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ucontext_t fctx;
-  int i;
+  volatile int i;
   void *hthread;
 
   g_arg_sum = 0;

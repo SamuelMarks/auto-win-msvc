@@ -627,7 +627,7 @@ static struct servent *mock_getservbyname(const char *name, const char *proto) {
   g_serv_calls++;
   g_fake_servent.s_name = g_fake_sname;
   g_fake_servent.s_aliases = g_fake_aliases;
-  g_fake_servent.s_port = htons(8080);
+  g_fake_servent.s_port = (short)htons(8080);
   g_fake_servent.s_proto = g_fake_sproto;
   if (g_serv_mode == 0) {
     return &g_fake_servent;
@@ -648,7 +648,7 @@ static struct servent *mock_getservbyport(int port, const char *proto) {
   g_serv_calls++;
   g_fake_servent.s_name = g_fake_sname;
   g_fake_servent.s_aliases = g_fake_aliases;
-  g_fake_servent.s_port = htons(8080);
+  g_fake_servent.s_port = (short)htons(8080);
   g_fake_servent.s_proto = g_fake_sproto;
   if (g_serv_mode == 0) {
     return &g_fake_servent;
@@ -861,7 +861,8 @@ TEST test_win32_default_hooks_and_real_io(void) {
   tcp_s = posix_accept(tcp_l, NULL, NULL);
   ASSERT(tcp_s >= 0);
 
-  ASSERT_EQ(0, g_def_hooks.ioctlsocket_fn((SOCKET)tcp_c, FIONBIO, &nb_mode));
+  ASSERT_EQ(0,
+            g_def_hooks.ioctlsocket_fn((SOCKET)tcp_c, (long)FIONBIO, &nb_mode));
   ASSERT_EQ(0, g_def_hooks.setsockopt_fn((SOCKET)tcp_c, SOL_SOCKET,
                                          SO_KEEPALIVE, (const char *)&opt_val,
                                          (int)sizeof(opt_val)));

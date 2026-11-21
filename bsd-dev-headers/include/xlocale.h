@@ -43,6 +43,10 @@ typedef void *locale_t;
 /** @brief Messages locale category bitmask. */
 #define LC_MESSAGES_MASK 0x20
 #endif
+#ifndef LC_GLOBAL_LOCALE
+/** @brief Sentinel handle representing the process-wide global locale. */
+#define LC_GLOBAL_LOCALE ((locale_t)(size_t)-1)
+#endif
 
 /** @brief Create or modify a locale object. */
 static __inline locale_t newlocale(int mask, const char *loc, locale_t base) {

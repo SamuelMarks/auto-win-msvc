@@ -604,12 +604,21 @@ TEST test_pwdgrp(void) {
   endgrent();
 
   ASSERT(user_from_uid((uid_t)0, 0) != NULL);
+#if defined(__I86__) || defined(__WATCOMC__)
+  ASSERT(user_from_uid((uid_t)29999, 1) == NULL);
+  ASSERT_STR_EQ("29999", user_from_uid((uid_t)29999, 0));
+
+  ASSERT(group_from_gid((gid_t)0, 0) != NULL);
+  ASSERT(group_from_gid((gid_t)29999, 1) == NULL);
+  ASSERT_STR_EQ("29999", group_from_gid((gid_t)29999, 0));
+#else
   ASSERT(user_from_uid((uid_t)99999999U, 1) == NULL);
   ASSERT_STR_EQ("99999999", user_from_uid((uid_t)99999999U, 0));
 
   ASSERT(group_from_gid((gid_t)0, 0) != NULL);
   ASSERT(group_from_gid((gid_t)99999999U, 1) == NULL);
   ASSERT_STR_EQ("99999999", group_from_gid((gid_t)99999999U, 0));
+#endif
 #endif
 
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)

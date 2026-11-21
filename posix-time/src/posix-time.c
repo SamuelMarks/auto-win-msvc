@@ -382,6 +382,12 @@ void posix_time_set_win32_hooks(
     time_get_sys_time_fn sys_fn, time_get_tz_fn tz_fn,
     time_create_file_fn cf_fn, time_set_file_time_fn sft_fn,
     time_close_handle_fn ch_fn, time_create_tqt_fn ctqt_fn,
+    time_delete_tqt_fn dtqt_fn, time_raise_fn raise_fn);
+void posix_time_set_win32_hooks(
+    time_get_mod_fn mod_fn, time_get_proc_fn proc_fn,
+    time_get_sys_time_fn sys_fn, time_get_tz_fn tz_fn,
+    time_create_file_fn cf_fn, time_set_file_time_fn sft_fn,
+    time_close_handle_fn ch_fn, time_create_tqt_fn ctqt_fn,
     time_delete_tqt_fn dtqt_fn, time_raise_fn raise_fn) {
   g_time_precise_fn = NULL;
   g_time_precise_init = 0;
@@ -402,6 +408,8 @@ void posix_time_set_win32_hooks(
  * @brief Overrides CRT localtime/gmtime hooks on non-MSVC Windows toolchains.
  */
 void posix_time_set_crt_tm_hooks(struct tm *(*lt_fn)(const time_t *),
+                                 struct tm *(*gm_fn)(const time_t *));
+void posix_time_set_crt_tm_hooks(struct tm *(*lt_fn)(const time_t *),
                                  struct tm *(*gm_fn)(const time_t *)) {
   g_time_localtime = (lt_fn != NULL) ? lt_fn : default_time_localtime;
   g_time_gmtime = (gm_fn != NULL) ? gm_fn : default_time_gmtime;
@@ -411,6 +419,7 @@ void posix_time_set_crt_tm_hooks(struct tm *(*lt_fn)(const time_t *),
 /**
  * @brief Resets all posix-time hooks and cached precise-clock pointers.
  */
+void posix_time_reset_hooks(void);
 void posix_time_reset_hooks(void) {
   g_time_precise_fn = NULL;
   g_time_precise_init = 0;
@@ -844,7 +853,6 @@ int posix_cygwin_clock_settime(clockid_t clk_id, const struct timespec *tp) {
 
 /**
  * @brief Retrieves information on posix-time module availability.
- * @param[out] out_available Pointer to integer receiving availability status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT on NULL pointer.
  */
@@ -860,6 +868,7 @@ auto_win_msvc_error_t posix_time_get_info(int *out_available) {
  * @brief Dummy symbol ensuring non-empty translation unit across linkers.
  * @return Always returns 0.
  */
+int dummy_posix_time(void);
 int dummy_posix_time(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_time;

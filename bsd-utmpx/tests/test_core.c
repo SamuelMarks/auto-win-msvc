@@ -45,17 +45,32 @@ static int mock_utmpx_getenv_s(size_t *pReturnValue, char *buffer,
 #define BSD_UTMPX_MOCK_getenv_s mock_utmpx_getenv_s
 #else
 static char *mock_utmpx_getenv(const char *name) {
+  static char s_bob[] = "bob";
+  static char s_eve[] = "eve";
   if (strcmp(name, "USERNAME") == 0) {
-    return (g_mock_utmpx_env_mode == 1) ? "bob" : NULL;
+    return (g_mock_utmpx_env_mode == 1) ? s_bob : NULL;
   }
   if (strcmp(name, "USER") == 0) {
-    return (g_mock_utmpx_env_mode == 2) ? "eve" : NULL;
+    return (g_mock_utmpx_env_mode == 2) ? s_eve : NULL;
   }
   return NULL;
 }
 #define BSD_UTMPX_MOCK_getenv mock_utmpx_getenv
 #endif
 
+void mocked_setutxent(void);
+void mocked_endutxent(void);
+struct utmpx *mocked_getutxent(void);
+struct utmpx *mocked_getutxid(const struct utmpx *id);
+struct utmpx *mocked_getutxline(const struct utmpx *line);
+struct utmpx *mocked_pututxline(const struct utmpx *utmpx);
+int mocked_setutxdb(int db, const char *file);
+struct utmpx *mocked_getutxuser(const char *user);
+struct ttyent *mocked_getttyent(void);
+struct ttyent *mocked_getttynam(const char *tty);
+int mocked_setttyent(void);
+int mocked_endttyent(void);
+int mocked_isnettty(const char *tty);
 #define setutxent mocked_setutxent
 #define endutxent mocked_endutxent
 #define getutxent mocked_getutxent

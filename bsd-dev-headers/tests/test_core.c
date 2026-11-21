@@ -110,14 +110,14 @@ TEST test_bsd_dev_headers_ioctl(void) {
   ASSERT_EQ(0, hid_set_immed(-1, 1));
   ASSERT_STR_EQ("Generic_Desktop", hid_usage_page(1));
   ASSERT_STR_EQ("Vendor", hid_usage_page(2));
-  ASSERT_STR_EQ("Pointer", hid_usage_in_page(0x00010001U));
-  ASSERT_STR_EQ("Usage", hid_usage_in_page(0x00010002U));
+  ASSERT_STR_EQ("Pointer", hid_usage_in_page((awm_hid_usage_t)0x00010001UL));
+  ASSERT_STR_EQ("Usage", hid_usage_in_page((awm_hid_usage_t)0x00010002UL));
   ASSERT_EQ(-1, hid_parse_usage_page(NULL));
   ASSERT_EQ(-1, hid_parse_usage_page("Vendor"));
   ASSERT_EQ(1, hid_parse_usage_page("Generic_Desktop"));
-  ASSERT_EQ(-1, hid_parse_usage_in_page(NULL));
-  ASSERT_EQ(-1, hid_parse_usage_in_page("Other"));
-  ASSERT_EQ(0x00010001, hid_parse_usage_in_page("Pointer"));
+  ASSERT_EQ((awm_hid_susage_t)-1, hid_parse_usage_in_page(NULL));
+  ASSERT_EQ((awm_hid_susage_t)-1, hid_parse_usage_in_page("Other"));
+  ASSERT_EQ((awm_hid_susage_t)0x00010001UL, hid_parse_usage_in_page("Pointer"));
 
   memset(&item, 0, sizeof(item));
   ASSERT_EQ(0, hid_get_data(NULL, &item));

@@ -11,7 +11,13 @@
 
 /* clang-format off */
 #if !defined(_WIN32)
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GLIBC__) || defined(__linux__)) && defined(__unused)
+#pragma push_macro("__unused")
+#undef __unused
+#pragma GCC system_header
+#include_next <sys/types.h>
+#pragma pop_macro("__unused")
+#elif defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <sys/types.h>
 #elif defined(__WATCOMC__)

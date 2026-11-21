@@ -208,6 +208,26 @@
         "posix": "S_IRWXO",
         "source_header": "<sys/stat.h>",
         "requires_polyfill": true
+      },
+      {
+        "posix": "S_TYPEISMQ",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_TYPEISSEM",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_TYPEISSHM",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
+      },
+      {
+        "posix": "S_TYPEISTMO",
+        "source_header": "<sys/stat.h>",
+        "requires_polyfill": true
       }
     ]
   }

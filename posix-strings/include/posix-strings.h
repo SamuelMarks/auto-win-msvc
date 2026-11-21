@@ -67,7 +67,12 @@ auto_win_msvc_error_t posix_strings_get_info(int *out_available);
 
 #endif /* _MSC_VER */
 
-#if !defined(__WATCOMC__)
+#if defined(__WATCOMC__)
+#undef bzero
+#undef bcopy
+#undef bcmp
+#endif
+
 #ifndef bzero
 /** @brief Sets first len bytes of the area starting at b to zero. */
 #define bzero(b, len) (memset((b), '\0', (len)), (void)0)
@@ -81,7 +86,6 @@ auto_win_msvc_error_t posix_strings_get_info(int *out_available);
 #ifndef bcmp
 /** @brief Compares byte string b1 against byte string b2. */
 #define bcmp(b1, b2, len) memcmp((b1), (b2), (len))
-#endif
 #endif
 
 #if defined(_MSC_VER) || defined(_WIN32)

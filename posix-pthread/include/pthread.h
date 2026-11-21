@@ -10,11 +10,21 @@
 
 /* clang-format off */
 #if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GLIBC__) || defined(__linux__)) && defined(__unused)
+#pragma push_macro("__unused")
+#undef __unused
+#pragma GCC system_header
+#include_next <pthread.h>
+#pragma pop_macro("__unused")
+#elif defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <pthread.h>
 #else
 #include <pthread.h>
+#endif
+#if defined(__CYGWIN__) && !defined(__cplusplus) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L)
+#undef pthread_cleanup_push
+#define pthread_cleanup_push(_fn, _arg) do { __pthread_cleanup_handler __cleanup_handler; __cleanup_handler.function = (_fn); __cleanup_handler.arg = (_arg); __cleanup_handler.next = NULL; _pthread_cleanup_push(&__cleanup_handler)
 #endif
 #else
 #include "posix-pthread.h"

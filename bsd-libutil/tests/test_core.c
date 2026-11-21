@@ -157,7 +157,7 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
 
   /* length == 0, default cols/delim, custom cols/delim/hdr, omit flags */
   hexdump(data, 0, NULL, 0);
-  hexdump(data, 6, "PFX: ", 4 | ('[' << 8));
+  hexdump(data, 6, "PFX: ", 4 | ((awm_hexdump_flags_t)'[' << 8));
   hexdump(data, 4, NULL, HD_OMIT_COUNT | HD_OMIT_HEX | HD_OMIT_CHARS);
 
   /* pidfile error and OOM branches */
@@ -186,12 +186,12 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   ASSERT_EQ(0, pidfile_remove(pfh));
 
   /* pidfile_close with valid fd and with negative fd */
-  pfh = pidfile_open("test_libutil_custom.pid", 0600, &pid);
+  pfh = pidfile_open("lu_cst.pid", 0600, &pid);
   ASSERT(pfh != NULL);
   ASSERT_EQ(0, pidfile_close(pfh));
-  (void)remove("test_libutil_custom.pid");
+  (void)remove("lu_cst.pid");
 
-  pfh = pidfile_open("test_libutil_negfd.pid", 0600, NULL);
+  pfh = pidfile_open("lu_nf1.pid", 0600, NULL);
   ASSERT(pfh != NULL);
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(pfh->pf_fd);
@@ -201,9 +201,9 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   pfh->pf_fd = -1;
   ASSERT_EQ(-1, pidfile_write(pfh));
   ASSERT_EQ(0, pidfile_close(pfh));
-  (void)remove("test_libutil_negfd.pid");
+  (void)remove("lu_nf1.pid");
 
-  pfh = pidfile_open("test_libutil_negfd2.pid", 0600, NULL);
+  pfh = pidfile_open("lu_nf2.pid", 0600, NULL);
   ASSERT(pfh != NULL);
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(pfh->pf_fd);
@@ -217,7 +217,7 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   ASSERT_EQ(-1, flopen(NULL, O_RDONLY));
   ASSERT_EQ(-1, flopen("/nonexistent_dir_awm_99999/flopen.tmp", O_RDONLY));
 
-  fd = flopen("test_libutil_flopen.tmp", O_RDWR | O_CREAT | O_TRUNC, 0600);
+  fd = flopen("flop1.tmp", O_RDWR | O_CREAT | O_TRUNC, 0600);
   ASSERT(fd >= 0);
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(fd);
@@ -225,7 +225,7 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   close(fd);
 #endif
 
-  fd = flopenat(-1, "test_libutil_flopen.tmp", O_RDONLY);
+  fd = flopenat(-1, "flop1.tmp", O_RDONLY);
   ASSERT(fd >= 0);
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(fd);
@@ -233,8 +233,7 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   close(fd);
 #endif
 
-  fd = flopenat(-1, "test_libutil_flopen2.tmp", O_RDWR | O_CREAT | O_TRUNC,
-                0600);
+  fd = flopenat(-1, "flop2.tmp", O_RDWR | O_CREAT | O_TRUNC, 0600);
   ASSERT(fd >= 0);
 #if defined(_MSC_VER) || defined(_WIN32)
   _close(fd);
@@ -242,8 +241,8 @@ TEST test_bsd_libutil_hexdump_and_pidfile(void) {
   close(fd);
 #endif
 
-  (void)remove("test_libutil_flopen.tmp");
-  (void)remove("test_libutil_flopen2.tmp");
+  (void)remove("flop1.tmp");
+  (void)remove("flop2.tmp");
 
   PASS();
 }
@@ -341,6 +340,12 @@ TEST test_bsd_libutil_login_pw_and_misc(void) {
   (void)_putenv("LOCALBASE=C:\134custom\134local");
   ASSERT_STR_EQ("C:\134custom\134local", getlocalbase());
   (void)_putenv("LOCALBASE=");
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+  (void)putenv("LOCALBASE=");
+  ASSERT_STR_EQ("C:\134usr\134local", getlocalbase());
+  (void)putenv("LOCALBASE=C:\134custom\134local");
+  ASSERT_STR_EQ("C:\134custom\134local", getlocalbase());
+  (void)putenv("LOCALBASE=");
 #else
   (void)unsetenv("LOCALBASE");
   ASSERT_STR_EQ("/usr/local", getlocalbase());

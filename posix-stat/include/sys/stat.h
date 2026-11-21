@@ -11,7 +11,13 @@
 
 /* clang-format off */
 #if !defined(_WIN32)
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GLIBC__) || defined(__linux__)) && defined(__unused)
+#pragma push_macro("__unused")
+#undef __unused
+#pragma GCC system_header
+#include_next <sys/stat.h>
+#pragma pop_macro("__unused")
+#elif defined(__GNUC__) || defined(__clang__)
 #pragma GCC system_header
 #include_next <sys/stat.h>
 #elif defined(__WATCOMC__)
@@ -132,6 +138,35 @@ extern "C" {
 #endif
 
 #endif /* defined(_WIN32) || defined(_MSC_VER) */
+
+#ifndef S_TYPEISMQ
+/**
+ * @brief Test whether a stat buffer represents a message queue.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISMQ(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISSEM
+/**
+ * @brief Test whether a stat buffer represents a semaphore.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISSEM(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISSHM
+/**
+ * @brief Test whether a stat buffer represents a shared memory object.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISSHM(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISTMO
+/**
+ * @brief Test whether a stat buffer represents a typed memory object.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISTMO(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
 
 #ifdef __cplusplus
 }

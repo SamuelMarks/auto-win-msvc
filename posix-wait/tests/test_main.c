@@ -6,6 +6,15 @@
 
 SUITE_EXTERN(suite_posix_wait_core);
 
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+int awm_vfork_try_reap(int pid, int *stat_loc);
+int awm_vfork_try_reap(int pid, int *stat_loc) {
+  (void)pid;
+  (void)stat_loc;
+  return 0;
+}
+#endif
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {

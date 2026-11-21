@@ -29,6 +29,8 @@ __declspec(dllimport) UINT __stdcall GetACP(void);
  * @brief Return language information for a specified item.
  */
 char *posix_langinfo(nl_item item) {
+  static char lang_buf[64];
+  const char *s = "";
 #if defined(_WIN32) || defined(_WIN64)
   static char codeset_buf[32] = {0};
 #endif
@@ -41,128 +43,179 @@ char *posix_langinfo(nl_item item) {
 #if defined(_MSC_VER)
       sprintf_s(codeset_buf, sizeof(codeset_buf), "CP%u", acp);
 #else
-#if defined(_MSC_VER)
-      sprintf_s(codeset_buf, sizeof(codeset_buf), "CP%u", acp);
-#else
       sprintf(codeset_buf, "CP%u", acp);
-#endif
 #endif
     }
     return codeset_buf;
 #else
-    return "UTF-8";
+    s = "UTF-8";
+    break;
 #endif
   case D_T_FMT:
-    return "%a %b %e %H:%M:%S %Y";
+    s = "%a %b %e %H:%M:%S %Y";
+    break;
   case D_FMT:
-    return "%m/%d/%y";
+    s = "%m/%d/%y";
+    break;
   case T_FMT:
-    return "%H:%M:%S";
+    s = "%H:%M:%S";
+    break;
   case T_FMT_AMPM:
-    return "%I:%M:%S %p";
+    s = "%I:%M:%S %p";
+    break;
   case AM_STR:
-    return "AM";
+    s = "AM";
+    break;
   case PM_STR:
-    return "PM";
+    s = "PM";
+    break;
   case DAY_1:
-    return "Sunday";
+    s = "Sunday";
+    break;
   case DAY_2:
-    return "Monday";
+    s = "Monday";
+    break;
   case DAY_3:
-    return "Tuesday";
+    s = "Tuesday";
+    break;
   case DAY_4:
-    return "Wednesday";
+    s = "Wednesday";
+    break;
   case DAY_5:
-    return "Thursday";
+    s = "Thursday";
+    break;
   case DAY_6:
-    return "Friday";
+    s = "Friday";
+    break;
   case DAY_7:
-    return "Saturday";
+    s = "Saturday";
+    break;
   case ABDAY_1:
-    return "Sun";
+    s = "Sun";
+    break;
   case ABDAY_2:
-    return "Mon";
+    s = "Mon";
+    break;
   case ABDAY_3:
-    return "Tue";
+    s = "Tue";
+    break;
   case ABDAY_4:
-    return "Wed";
+    s = "Wed";
+    break;
   case ABDAY_5:
-    return "Thu";
+    s = "Thu";
+    break;
   case ABDAY_6:
-    return "Fri";
+    s = "Fri";
+    break;
   case ABDAY_7:
-    return "Sat";
+    s = "Sat";
+    break;
   case MON_1:
-    return "January";
+    s = "January";
+    break;
   case MON_2:
-    return "February";
+    s = "February";
+    break;
   case MON_3:
-    return "March";
+    s = "March";
+    break;
   case MON_4:
-    return "April";
+    s = "April";
+    break;
   case MON_5:
-    return "May";
+    s = "May";
+    break;
   case MON_6:
-    return "June";
+    s = "June";
+    break;
   case MON_7:
-    return "July";
+    s = "July";
+    break;
   case MON_8:
-    return "August";
+    s = "August";
+    break;
   case MON_9:
-    return "September";
+    s = "September";
+    break;
   case MON_10:
-    return "October";
+    s = "October";
+    break;
   case MON_11:
-    return "November";
+    s = "November";
+    break;
   case MON_12:
-    return "December";
+    s = "December";
+    break;
   case ABMON_1:
-    return "Jan";
+    s = "Jan";
+    break;
   case ABMON_2:
-    return "Feb";
+    s = "Feb";
+    break;
   case ABMON_3:
-    return "Mar";
+    s = "Mar";
+    break;
   case ABMON_4:
-    return "Apr";
+    s = "Apr";
+    break;
   case ABMON_5:
-    return "May";
+    s = "May";
+    break;
   case ABMON_6:
-    return "Jun";
+    s = "Jun";
+    break;
   case ABMON_7:
-    return "Jul";
+    s = "Jul";
+    break;
   case ABMON_8:
-    return "Aug";
+    s = "Aug";
+    break;
   case ABMON_9:
-    return "Sep";
+    s = "Sep";
+    break;
   case ABMON_10:
-    return "Oct";
+    s = "Oct";
+    break;
   case ABMON_11:
-    return "Nov";
+    s = "Nov";
+    break;
   case ABMON_12:
-    return "Dec";
+    s = "Dec";
+    break;
   case ERA:
-    return "";
   case ERA_D_FMT:
-    return "";
   case ERA_D_T_FMT:
-    return "";
   case ERA_T_FMT:
-    return "";
   case ALT_DIGITS:
-    return "";
-  case RADIXCHAR:
-    return ".";
   case THOUSEP:
-    return "";
+    s = "";
+    break;
+  case RADIXCHAR:
+    s = ".";
+    break;
   case YESEXPR:
-    return "^[yY]";
+    s = "^[yY]";
+    break;
   case NOEXPR:
-    return "^[nN]";
+    s = "^[nN]";
+    break;
   case CRNCYSTR:
-    return "-";
+    s = "-";
+    break;
   default:
-    return "";
+    s = "";
+    break;
   }
+  {
+    size_t i = 0;
+    while (s[i] != '\0' && i + 1 < sizeof(lang_buf)) {
+      lang_buf[i] = s[i];
+      i++;
+    }
+    lang_buf[i] = '\0';
+  }
+  return lang_buf;
 }
 
 /**

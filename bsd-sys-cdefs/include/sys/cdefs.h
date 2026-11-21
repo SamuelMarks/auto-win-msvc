@@ -290,19 +290,28 @@
 #undef __DEQUALIFY
 #endif
 
+#if defined(__I86__)
+#define __awm_dequal_uintptr_t unsigned long
+#else
+#define __awm_dequal_uintptr_t size_t
+#endif
+
 #ifndef __DECONST
 /** @brief Cast away const qualifier safely. */
-#define __DECONST(type, var) ((type)(size_t)(const void *)(var))
+#define __DECONST(type, var)                                                   \
+  ((type)(__awm_dequal_uintptr_t)(const void *)(var))
 #endif
 
 #ifndef __DEVOLATILE
 /** @brief Cast away volatile qualifier safely. */
-#define __DEVOLATILE(type, var) ((type)(size_t)(volatile void *)(var))
+#define __DEVOLATILE(type, var)                                                \
+  ((type)(__awm_dequal_uintptr_t)(volatile void *)(var))
 #endif
 
 #ifndef __DEQUALIFY
 /** @brief Cast away const and volatile qualifiers safely. */
-#define __DEQUALIFY(type, var) ((type)(size_t)(const volatile void *)(var))
+#define __DEQUALIFY(type, var)                                                 \
+  ((type)(__awm_dequal_uintptr_t)(const volatile void *)(var))
 #endif
 
 #ifndef __offsetof
@@ -317,7 +326,8 @@
 
 #ifndef __containerof
 /** @brief Obtain pointer to enclosing structure from member pointer. */
-#define __containerof(x, s, m) ((s *)((char *)__DEQUALIFY(void *, (x)) - __offsetof(s, m)))
+#define __containerof(x, s, m)                                                 \
+  ((s *)(void *)((char *)__DEQUALIFY(void *, (x)) - __offsetof(s, m)))
 #endif
 
 #ifndef __predict_true
@@ -386,22 +396,22 @@ static __inline int __awm_bitcount16(unsigned short _x) {
 
 #ifndef __bitcount32
 /** @brief Count set bits in a 32-bit integer. */
-static __inline int __awm_bitcount32(unsigned int _x) {
-  _x = (_x & 0x55555555U) + ((_x & 0xaaaaaaaaU) >> 1);
-  _x = (_x & 0x33333333U) + ((_x & 0xccccccccU) >> 2);
-  _x = (_x + (_x >> 4)) & 0x0f0f0f0fU;
+static __inline int __awm_bitcount32(unsigned long _x) {
+  _x = (_x & 0x55555555UL) + ((_x & 0xaaaaaaaaUL) >> 1);
+  _x = (_x & 0x33333333UL) + ((_x & 0xccccccccUL) >> 2);
+  _x = (_x + (_x >> 4)) & 0x0f0f0f0fUL;
   _x = (_x + (_x >> 8));
-  _x = (_x + (_x >> 16)) & 0x000000ffU;
+  _x = (_x + (_x >> 16)) & 0x000000ffUL;
   return (int)_x;
 }
-#define __bitcount32(x) __awm_bitcount32((unsigned int)(x))
+#define __bitcount32(x) __awm_bitcount32((unsigned long)(x))
 #endif
 
 #ifndef __bitcount64
 /** @brief Count set bits in a 64-bit integer. */
 #define __bitcount64(x)                                                        \
-  (__awm_bitcount32((unsigned int)(((x) >> 16) >> 16)) +                       \
-   __awm_bitcount32((unsigned int)((x) & 0xffffffffUL)))
+  (__awm_bitcount32((unsigned long)(((x) >> 16) >> 16)) +                      \
+   __awm_bitcount32((unsigned long)((x) & 0xffffffffUL)))
 #endif
 
 #ifndef __bitcount

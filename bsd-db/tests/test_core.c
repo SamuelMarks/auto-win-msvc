@@ -91,41 +91,54 @@ TEST test_bsd_db_methods_and_cursor(void) {
 
   /* Zero-length key and zero-length value + overwrite with 0-length & non-zero
    */
-  k.data = "";
-  k.size = 0;
-  v.data = "";
-  v.size = 0;
-  ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
-  ASSERT_EQ(RET_SPECIAL, db->put(db, &k, &v, R_NOOVERWRITE));
-  ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
-  v.data = "nonempty";
-  v.size = 9;
-  ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
-  ASSERT_EQ(RET_SUCCESS, db->get(db, &k, &outv, 0));
-  ASSERT_STR_EQ("nonempty", (const char *)outv.data);
+  {
+    static char s_empty[] = "";
+    static char s_nonempty[] = "nonempty";
+    static char s_ab[] = "ab";
+    static char s_v_ab[] = "v_ab";
+    static char s_abc[] = "abc";
+    static char s_v_abc[] = "v_abc";
+    static char s_a[] = "a";
+    static char s_abcd[] = "abcd";
+    static char s_ax[] = "ax";
 
-  /* Prefix key comparisons (shorter vs longer, longer vs shorter, mismatch) */
-  k.data = "ab";
-  k.size = 2;
-  v.data = "v_ab";
-  v.size = 5;
-  ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+    k.data = s_empty;
+    k.size = 0;
+    v.data = s_empty;
+    v.size = 0;
+    ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+    ASSERT_EQ(RET_SPECIAL, db->put(db, &k, &v, R_NOOVERWRITE));
+    ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+    v.data = s_nonempty;
+    v.size = 9;
+    ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+    ASSERT_EQ(RET_SUCCESS, db->get(db, &k, &outv, 0));
+    ASSERT_STR_EQ("nonempty", (const char *)outv.data);
 
-  k.data = "abc";
-  k.size = 3;
-  v.data = "v_abc";
-  v.size = 6;
-  ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+    /* Prefix key comparisons (shorter vs longer, longer vs shorter, mismatch)
+     */
+    k.data = s_ab;
+    k.size = 2;
+    v.data = s_v_ab;
+    v.size = 5;
+    ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
 
-  k.data = "a";
-  k.size = 1;
-  ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
-  k.data = "abcd";
-  k.size = 4;
-  ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
-  k.data = "ax";
-  k.size = 2;
-  ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
+    k.data = s_abc;
+    k.size = 3;
+    v.data = s_v_abc;
+    v.size = 6;
+    ASSERT_EQ(RET_SUCCESS, db->put(db, &k, &v, 0));
+
+    k.data = s_a;
+    k.size = 1;
+    ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
+    k.data = s_abcd;
+    k.size = 4;
+    ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
+    k.data = s_ax;
+    k.size = 2;
+    ASSERT_EQ(RET_SPECIAL, db->get(db, &k, &outv, 0));
+  }
 
   /* Grow capacity past initial 16 -> 32 */
   for (i = 0; i < 20; i++) {
@@ -161,21 +174,25 @@ TEST test_bsd_db_methods_and_cursor(void) {
 
   /* Delete last item by key so count shrinks to seq_idx, then del(R_CURSOR)
    * hits seq_idx >= count -> RET_SPECIAL */
-  k.data = "k_19";
-  k.size = 5;
-  ASSERT_EQ(RET_SUCCESS, db->del(db, &k, 0));
-  ASSERT_EQ(RET_SPECIAL, db->del(db, NULL, R_CURSOR));
+  {
+    static char s_k19[] = "k_19";
+    static char s_ab2[] = "ab";
+    k.data = s_k19;
+    k.size = 5;
+    ASSERT_EQ(RET_SUCCESS, db->del(db, &k, 0));
+    ASSERT_EQ(RET_SPECIAL, db->del(db, NULL, R_CURSOR));
 
-  /* Reposition to R_LAST (seq_idx > 0) and del(R_CURSOR) -> decrements seq_idx
-   */
-  ASSERT_EQ(RET_SUCCESS, db->seq(db, &outk, &outv, R_LAST));
-  ASSERT_EQ(RET_SUCCESS, db->del(db, NULL, R_CURSOR));
+    /* Reposition to R_LAST (seq_idx > 0) and del(R_CURSOR) -> decrements
+     * seq_idx */
+    ASSERT_EQ(RET_SUCCESS, db->seq(db, &outk, &outv, R_LAST));
+    ASSERT_EQ(RET_SUCCESS, db->del(db, NULL, R_CURSOR));
 
-  /* Delete middle item by key (shifts elements) + missing key */
-  k.data = "ab";
-  k.size = 2;
-  ASSERT_EQ(RET_SUCCESS, db->del(db, &k, 0));
-  ASSERT_EQ(RET_SPECIAL, db->del(db, &k, 0));
+    /* Delete middle item by key (shifts elements) + missing key */
+    k.data = s_ab2;
+    k.size = 2;
+    ASSERT_EQ(RET_SUCCESS, db->del(db, &k, 0));
+    ASSERT_EQ(RET_SPECIAL, db->del(db, &k, 0));
+  }
 
   ASSERT_EQ(RET_SUCCESS, db->close(db));
   PASS();
@@ -264,10 +281,14 @@ TEST test_bsd_ndbm_and_oom(void) {
 
   db = dbopen(NULL, 0, 0600, DB_HASH, NULL);
   ASSERT(db != NULL);
-  dk.data = "k";
-  dk.size = 2;
-  dv.data = "v";
-  dv.size = 2;
+  {
+    static char s_dk[] = "k";
+    static char s_dv[] = "v";
+    dk.data = s_dk;
+    dk.size = 2;
+    dv.data = s_dv;
+    dv.size = 2;
+  }
 
   /* put: realloc fails when growing from 0 -> 16 */
   g_db_realloc_fail = 1;

@@ -6,6 +6,7 @@
 #endif /* _MSC_VER || _WIN32 */
 /* clang-format on */
 
+int sys_param_dummy_for_coverage(void);
 int sys_param_dummy_for_coverage(void) { return 0; }
 
 /* Prevent empty translation unit */

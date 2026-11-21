@@ -43,7 +43,6 @@
 
 /**
  * @brief Retrieves information on posix-sys-resource availability.
- * @param[out] out_available Pointer receiving availability status (1).
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on NULL pointer.
  */
 auto_win_msvc_error_t posix_sys_resource_get_info(int *out_available) {
@@ -58,8 +57,6 @@ auto_win_msvc_error_t posix_sys_resource_get_info(int *out_available) {
 
 /**
  * @brief Retrieves resource usage metrics for the calling process on Windows.
- * @param who Target selector (must be RUSAGE_SELF).
- * @param[out] usage Destination rusage structure.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_getrusage(int who, struct rusage *usage) {
@@ -109,8 +106,6 @@ int posix_getrusage(int who, struct rusage *usage) {
 
 /**
  * @brief Queries soft and hard resource limits on Windows.
- * @param resource Resource identifier (e.g., RLIMIT_NOFILE).
- * @param[out] rlp Destination rlimit structure.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_getrlimit(int resource, struct rlimit *rlp) {
@@ -132,8 +127,6 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
 
 /**
  * @brief Configures soft and hard resource limits on Windows.
- * @param resource Resource identifier (e.g., RLIMIT_NOFILE).
- * @param rlp New resource limit values.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_setrlimit(int resource, const struct rlimit *rlp) {
@@ -158,8 +151,6 @@ int posix_setrlimit(int resource, const struct rlimit *rlp) {
 
 /**
  * @brief Retrieves resource usage metrics on POSIX hosts.
- * @param who Target selector.
- * @param[out] usage Destination rusage structure.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_getrusage(int who, struct rusage *usage) {
@@ -182,8 +173,6 @@ int posix_getrusage(int who, struct rusage *usage) {
 
 /**
  * @brief Queries soft and hard resource limits on POSIX hosts.
- * @param resource Resource identifier.
- * @param[out] rlp Destination rlimit structure.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_getrlimit(int resource, struct rlimit *rlp) {
@@ -207,8 +196,6 @@ int posix_getrlimit(int resource, struct rlimit *rlp) {
 
 /**
  * @brief Configures soft and hard resource limits on POSIX hosts.
- * @param resource Resource identifier.
- * @param rlp New resource limit values.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_setrlimit(int resource, const struct rlimit *rlp) {

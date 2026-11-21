@@ -30,6 +30,9 @@
 #else
 #include <poll.h>
 #include <signal.h>
+#if defined(__GLIBC__) && !defined(__sigset_t_defined)
+#include <bits/types/sigset_t.h>
+#endif
 #endif
 #include <stddef.h>
 /* clang-format on */
@@ -89,6 +92,23 @@ typedef unsigned long sigset_t;
 #define POLLHUP 0x10
 /** @brief Invalid request: fd not open. */
 #define POLLNVAL 0x20
+#endif
+
+#ifndef POLLRDNORM
+/** @brief Normal data may be read without blocking. */
+#define POLLRDNORM 0x040
+#endif
+#ifndef POLLRDBAND
+/** @brief Priority data may be read without blocking. */
+#define POLLRDBAND 0x080
+#endif
+#ifndef POLLWRNORM
+/** @brief Normal data may be written without blocking. */
+#define POLLWRNORM 0x100
+#endif
+#ifndef POLLWRBAND
+/** @brief Priority data may be written without blocking. */
+#define POLLWRBAND 0x200
 #endif
 
 /**

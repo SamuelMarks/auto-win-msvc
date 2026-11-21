@@ -728,6 +728,29 @@ int posix_stat(const char *pathname, void *statbuf);
  */
 int posix_lstat(const char *pathname, void *statbuf);
 
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+/** @brief DOS-1.x/2.x-safe chmod wrapper. */
+int posix_dos_chmod(const char *pathname, mode_t mode);
+#if !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
+#ifndef stat
+static __inline int auto_win_msvc_dos_stat_wrap(const char *p, struct stat *b) {
+  return posix_stat(p, b);
+}
+#define stat(p, b) auto_win_msvc_dos_stat_wrap((p), (b))
+#endif
+#ifndef lstat
+static __inline int auto_win_msvc_dos_lstat_wrap(const char *p,
+                                                 struct stat *b) {
+  return posix_lstat(p, b);
+}
+#define lstat(p, b) auto_win_msvc_dos_lstat_wrap((p), (b))
+#endif
+#ifndef chmod
+#define chmod posix_dos_chmod
+#endif
+#endif
+#endif
+
 #if (defined(__APPLE__) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)) &&           \
     !defined(AUTO_WIN_MSVC_NO_FUNCTION_MACROS)
 #if defined(BB_VER) || defined(AUTO_WIN_MSVC_EMULATE_PROCFS)
@@ -749,6 +772,35 @@ static __inline int auto_win_msvc_lstat_wrap(const char *p, struct stat *b) {
 #endif
 
 #endif /* _WIN32 */
+
+#ifndef S_TYPEISMQ
+/**
+ * @brief Test whether a stat buffer represents a message queue.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISMQ(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISSEM
+/**
+ * @brief Test whether a stat buffer represents a semaphore.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISSEM(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISSHM
+/**
+ * @brief Test whether a stat buffer represents a shared memory object.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISSHM(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
+#ifndef S_TYPEISTMO
+/**
+ * @brief Test whether a stat buffer represents a typed memory object.
+ * @param[in] buf Pointer to a stat structure.
+ */
+#define S_TYPEISTMO(buf) ((int)((buf)->st_mode - (buf)->st_mode))
+#endif
 
 #ifdef __cplusplus
 }

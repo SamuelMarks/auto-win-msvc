@@ -283,7 +283,11 @@ extern "C" {
   (CAP_FCNTL_GETFL | CAP_FCNTL_SETFL | CAP_FCNTL_GETOWN | CAP_FCNTL_SETOWN)
 
 /** @brief Sentinel indicating all ioctl commands are permitted. */
+#if defined(__I86__)
+#define CAP_IOCTLS_ALL 32767
+#else
 #define CAP_IOCTLS_ALL 2147483647L
+#endif
 
 /**
  * @brief Enter Capsicum capability mode (no-op on Windows/DOS).

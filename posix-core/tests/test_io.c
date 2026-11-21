@@ -69,8 +69,8 @@ TEST test_pipe(void) {
   int fds[2];
   char write_buf[16];
   char read_buf[16];
-  int written;
-  int nread;
+  int written = 0;
+  int nread = 0;
   (void)written;
   (void)nread;
 
@@ -94,7 +94,9 @@ TEST test_pipe(void) {
 TEST test_pipe2(void) {
   int fds[2];
 
+#if !defined(__linux__)
   pipe2(NULL, 0);
+#endif
   pipe2(fds, -1);
 
 #if defined(__APPLE__) && defined(__clang__)
@@ -122,7 +124,7 @@ TEST test_pipe2(void) {
 TEST test_pread(void) {
   int fd;
   char buf[16];
-  ssize_t n;
+  ssize_t n = 0;
   (void)n;
 
   fd = open("test_pread_unit.tmp", O_RDWR | O_CREAT, 0666);
@@ -139,7 +141,7 @@ TEST test_pread(void) {
 
 TEST test_pwrite(void) {
   int fd;
-  ssize_t n;
+  ssize_t n = 0;
   (void)n;
 
   fd = open("test_pwrite_unit.tmp", O_RDWR | O_CREAT, 0666);
@@ -222,8 +224,10 @@ TEST test_posix_fopen(void) {
       fclose(f);
     }
   }
-#elif !defined(__linux__) && !defined(__CYGWIN__)
-  {
+#else
+#if !defined(__linux__) && !defined(__CYGWIN__) && !defined(__DOS__) &&        \
+    !defined(__MSDOS__) && !defined(__WATCOMC__)
+  if (f != (FILE *)1) {
     const char *vpaths[] = {"/proc/uptime",    "/proc/version",
                             "/proc/1/stat",    "/proc/1/cmdline",
                             "/proc/1/comm",    "/proc/1/status",
@@ -236,6 +240,7 @@ TEST test_posix_fopen(void) {
       fclose(f);
     }
   }
+#endif
 #endif
   PASS();
 }
@@ -260,7 +265,8 @@ TEST test_posix_open(void) {
   fd = open("version", O_RDONLY);
   ASSERT(fd >= 0);
   close(fd);
-#elif !defined(__linux__) && !defined(__CYGWIN__)
+#elif !defined(__linux__) && !defined(__CYGWIN__) && !defined(__DOS__) &&      \
+    !defined(__MSDOS__) && !defined(__WATCOMC__)
   fd = posix_open("/proc/uptime", O_RDONLY);
   ASSERT(fd >= 0);
   close(fd);
@@ -308,7 +314,7 @@ TEST test_posix_creat(void) {
 TEST test_posix_read_write_close(void) {
   int fd;
   char buf[16];
-  ssize_t n;
+  ssize_t n = 0;
   (void)n;
 
   posix_close(-1);
@@ -337,16 +343,16 @@ TEST test_posix_dup2(void) {
   posix_dup2(-1, 0);
   posix_dup2(0, -1);
 
-  fd1 = posix_open("test_posix_dup2.tmp", O_RDWR | O_CREAT, 0666);
-  fd2 = posix_open("test_posix_dup2_2.tmp", O_RDWR | O_CREAT, 0666);
+  fd1 = posix_open("dup2a.tmp", O_RDWR | O_CREAT, 0666);
+  fd2 = posix_open("dup2b.tmp", O_RDWR | O_CREAT, 0666);
 
   if (posix_dup2(fd1, fd2) >= 0) {
     /* now fd2 is a copy of fd1 */
   }
   posix_close(fd1);
   posix_close(fd2);
-  remove("test_posix_dup2_2.tmp");
-  remove("test_posix_dup2.tmp");
+  remove("dup2b.tmp");
+  remove("dup2a.tmp");
 
   PASS();
 }

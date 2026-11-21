@@ -20,7 +20,7 @@ TEST test_recvmsg_scatter_gather(void) {
   struct msghdr msg;
   char buf1[8];
   char buf2[16];
-  posix_ssize_t recvd;
+  posix_ssize_t recvd = 0;
   const char *payload = "ScatterGatherTest";
   (void)recvd;
   (void)payload;
@@ -53,7 +53,7 @@ TEST test_recvmsg_native(void) {
   struct iovec iov[1];
   struct msghdr msg;
   char buf[32];
-  posix_ssize_t recvd;
+  posix_ssize_t recvd = 0;
   const char *payload = "RecvmsgNative";
   (void)recvd;
   (void)payload;

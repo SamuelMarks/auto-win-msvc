@@ -465,6 +465,7 @@ static SOCKET nb_sockets[8192] = {0};
  * @param[in] s Winsock SOCKET handle.
  * @param[in] nb Non-zero to mark non-blocking, 0 to clear.
  */
+void set_nonblock(SOCKET s, int nb);
 void set_nonblock(SOCKET s, int nb) {
   int i;
   for (i = 0; i < 8192; i++) {
@@ -490,6 +491,7 @@ void set_nonblock(SOCKET s, int nb) {
  * @param[in] s Winsock SOCKET handle.
  * @return O_NONBLOCK when tracked as non-blocking, or 0 otherwise.
  */
+int get_nonblock(SOCKET s);
 int get_nonblock(SOCKET s) {
   int i;
   for (i = 0; i < 8192; i++) {
@@ -505,6 +507,7 @@ int get_nonblock(SOCKET s) {
  * @param[in] s Winsock SOCKET handle.
  * @return ERR_NONE.
  */
+error_type_t clear_nonblock(SOCKET s);
 error_type_t clear_nonblock(SOCKET s) {
   set_nonblock(s, 0);
   return ERR_NONE;
@@ -515,6 +518,7 @@ error_type_t clear_nonblock(SOCKET s) {
  * @param[in] src Source SOCKET handle.
  * @param[in] dst Destination SOCKET handle.
  */
+void copy_nonblock(SOCKET src, SOCKET dst);
 void copy_nonblock(SOCKET src, SOCKET dst) {
   if (get_nonblock(src)) {
     set_nonblock(dst, 1);
@@ -576,6 +580,7 @@ void posix_register_crt_socket(intptr_t fd, intptr_t s) {
  * @param[in] fd Descriptor index.
  * @return ERR_NONE.
  */
+error_type_t mark_as_socket(intptr_t fd);
 error_type_t mark_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 65536) {
     g_is_socket[fd] = 1;
@@ -588,6 +593,7 @@ error_type_t mark_as_socket(intptr_t fd) {
  * @param[in] fd Descriptor index.
  * @return ERR_NONE.
  */
+error_type_t clear_as_socket(intptr_t fd);
 error_type_t clear_as_socket(intptr_t fd) {
   if (fd >= 0 && fd < 65536) {
     g_is_socket[fd] = 0;
@@ -642,7 +648,6 @@ void posix_freeaddrinfo(struct addrinfo *ai) {
 
 /**
  * @brief Translates a getaddrinfo error code into a human-readable string.
- * @param[in] ecode Error code.
  * @return Static descriptive string.
  */
 const char *posix_gai_strerror(int ecode) {
@@ -661,10 +666,6 @@ const char *posix_gai_strerror(int ecode) {
 
 /**
  * @brief Resolves host and service names to socket addresses.
- * @param[in] nodename Host name or IPv4 literal.
- * @param[in] servname Service name or port string.
- * @param[in] hints Optional addrinfo hints.
- * @param[out] res Output addrinfo list pointer.
  * @return 0 on success, or non-zero error code.
  */
 int posix_getaddrinfo(const char *nodename, const char *servname,
@@ -890,7 +891,7 @@ struct servent *posix_getservbyname(const char *name, const char *proto) {
 #endif
       s_se.s_name = s_name_buf;
       s_se.s_aliases = s_aliases;
-      s_se.s_port = htons(p);
+      s_se.s_port = (short)htons(p);
       s_se.s_proto = s_proto_buf;
       return &s_se;
     }
@@ -1390,8 +1391,8 @@ int posix_getsockopt(intptr_t socket, int level, int option_name,
                                        (char *)&ms, &ms_len);
       if (ret == 0) {
         struct timeval *tv = (struct timeval *)option_value;
-        tv->tv_sec = ms / 1000;
-        tv->tv_usec = (ms % 1000) * 1000;
+        tv->tv_sec = (long)(ms / 1000U);
+        tv->tv_usec = (long)((ms % 1000U) * 1000U);
       }
     } else {
       ret = g_sock_hooks.getsockopt_fn(GET_SOCKET(socket), level, option_name,
@@ -1462,8 +1463,15 @@ posix_ssize_t posix_recv(intptr_t socket, void *buffer, size_t length,
     return -1;
   }
   return ret;
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  (void)socket;
+  (void)buffer;
+  (void)length;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
 #else
-  return recv((int)socket, buffer, length, flags);
+  return (posix_ssize_t)recv((int)socket, buffer, length, flags);
 #endif
 }
 
@@ -1616,8 +1624,15 @@ posix_ssize_t posix_send(intptr_t socket, const void *message, size_t length,
     return -1;
   }
   return ret;
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  (void)socket;
+  (void)message;
+  (void)length;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
 #else
-  return send((int)socket, message, length, flags);
+  return (posix_ssize_t)send((int)socket, message, length, flags);
 #endif
 }
 
@@ -2058,7 +2073,7 @@ int posix_socket(int domain, int type, int protocol) {
   }
   if (is_icmp_dgram) {
     unsigned long nb = 1;
-    g_sock_hooks.ioctlsocket_fn(s, FIONBIO, &nb);
+    g_sock_hooks.ioctlsocket_fn(s, (long)FIONBIO, &nb);
     set_nonblock(s, 1);
   }
   posix_register_crt_socket((intptr_t)s, (intptr_t)s);
@@ -2216,6 +2231,7 @@ auto_win_msvc_error_t posix_sockets_get_info(int *out_available) {
  * @param[out] ifap Output pointer set to NULL.
  * @return Always -1 with errno set to EINVAL or ENOSYS.
  */
+int posix_getifaddrs(struct ifaddrs **ifap);
 int posix_getifaddrs(struct ifaddrs **ifap) {
   if (ifap == NULL) {
     errno = EINVAL;
@@ -2230,12 +2246,14 @@ int posix_getifaddrs(struct ifaddrs **ifap) {
  * @brief Frees interface address list returned by posix_getifaddrs.
  * @param[in] ifa Head of interface list (may be NULL).
  */
+void posix_freeifaddrs(struct ifaddrs *ifa);
 void posix_freeifaddrs(struct ifaddrs *ifa) { (void)ifa; }
 
 /**
  * @brief No-op helper preventing empty translation unit warnings.
  * @return Always 0.
  */
+int dummy_posix_sockets(void);
 int dummy_posix_sockets(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_sockets;

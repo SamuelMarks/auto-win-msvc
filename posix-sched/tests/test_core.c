@@ -67,6 +67,11 @@ static BOOL WINAPI mock_sched_CloseHandle(HANDLE h) {
   mock_sched_GetProcessAffinityMask
 #define POSIX_SCHED_MOCK_CloseHandle mock_sched_CloseHandle
 
+auto_win_msvc_error_t mocked_posix_sched_get_info(int *out_available);
+int mocked_posix_sched_yield(void);
+int mocked_posix_sched_setaffinity(int pid, size_t cpusetsize,
+                                   const cpu_set_t *mask);
+int mocked_posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask);
 #define posix_sched_get_info mocked_posix_sched_get_info
 #define posix_sched_yield mocked_posix_sched_yield
 #define posix_sched_setaffinity mocked_posix_sched_setaffinity

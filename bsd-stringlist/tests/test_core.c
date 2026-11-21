@@ -5,6 +5,10 @@
 #include <string.h>
 /* clang-format on */
 
+extern void *(*g_bsd_sl_calloc)(size_t, size_t);
+extern void *(*g_bsd_sl_realloc)(void *, size_t);
+extern void bsd_sl_reset_hooks(void);
+
 static int g_sl_fail_after = -1;
 
 static void *mock_sl_calloc(size_t nmemb, size_t size) {
@@ -26,20 +30,6 @@ static void *mock_sl_realloc(void *ptr, size_t size) {
   }
   return realloc(ptr, size);
 }
-
-#define BSD_STRINGLIST_CALLOC mock_sl_calloc
-#define BSD_STRINGLIST_REALLOC mock_sl_realloc
-#define sl_init mocked_sl_init
-#define sl_add mocked_sl_add
-#define sl_free mocked_sl_free
-#define sl_find mocked_sl_find
-#define sl_delete mocked_sl_delete
-#include "../src/bsd_stringlist.c"
-#undef sl_init
-#undef sl_add
-#undef sl_free
-#undef sl_find
-#undef sl_delete
 
 static char *dup_c89(const char *s) {
   size_t len = strlen(s) + 1;
@@ -129,9 +119,8 @@ exercise_stringlist_api(StringList *(*fn_init)(void),
 }
 
 TEST test_bsd_stringlist_ops(void) {
+  bsd_sl_reset_hooks();
   exercise_stringlist_api(sl_init, sl_add, sl_free, sl_find, sl_delete);
-  exercise_stringlist_api(mocked_sl_init, mocked_sl_add, mocked_sl_free,
-                          mocked_sl_find, mocked_sl_delete);
   PASS();
 }
 
@@ -141,25 +130,30 @@ TEST test_bsd_stringlist_oom(void) {
   char s_ovf[] = "overflow";
   int i;
 
+  g_bsd_sl_calloc = mock_sl_calloc;
+  g_bsd_sl_realloc = mock_sl_realloc;
+
   /* 1. First calloc in sl_init fails */
   g_sl_fail_after = 0;
-  ASSERT(mocked_sl_init() == NULL);
+  ASSERT(sl_init() == NULL);
 
   /* 2. Second calloc in sl_init fails */
   g_sl_fail_after = 1;
-  ASSERT(mocked_sl_init() == NULL);
+  ASSERT(sl_init() == NULL);
 
   /* 3. realloc in sl_add fails when growing at item 19 */
   g_sl_fail_after = -1;
-  sl = mocked_sl_init();
+  sl = sl_init();
   ASSERT(sl != NULL);
   for (i = 0; i < 19; i++) {
-    ASSERT_EQ(0, mocked_sl_add(sl, s_x));
+    ASSERT_EQ(0, sl_add(sl, s_x));
   }
   g_sl_fail_after = 0;
-  ASSERT_EQ(-1, mocked_sl_add(sl, s_ovf));
+  ASSERT_EQ(-1, sl_add(sl, s_ovf));
   g_sl_fail_after = -1;
-  mocked_sl_free(sl, 0);
+  sl_free(sl, 0);
+
+  bsd_sl_reset_hooks();
 
   PASS();
 }

@@ -69,6 +69,21 @@ intptr_t poll_crt_socket_stub(intptr_t fd) {
   (void)fd;
   return 0;
 }
+#elif defined(__GNUC__) || defined(__clang__)
+/** @brief Weak fallback stub for posix_get_dup_socket when posix-sockets is
+ * absent. */
+intptr_t posix_get_dup_socket(intptr_t fd);
+intptr_t __attribute__((weak)) posix_get_dup_socket(intptr_t fd) {
+  (void)fd;
+  return 0;
+}
+/** @brief Weak fallback stub for posix_lookup_crt_socket when posix-sockets is
+ * absent. */
+intptr_t posix_lookup_crt_socket(intptr_t fd);
+intptr_t __attribute__((weak)) posix_lookup_crt_socket(intptr_t fd) {
+  (void)fd;
+  return 0;
+}
 #endif
 
 extern intptr_t posix_get_dup_socket(intptr_t fd);
@@ -131,6 +146,12 @@ void posix_poll_set_hooks(
     intptr_t (*crt_sock_fn)(intptr_t),
     int (*getsockopt_fn)(uintptr_t, char *, int *),
     unsigned long (*ftype_fn)(void *), int (*peek_fn)(void *, unsigned long *),
+    int (*select_fn)(int, void *, void *, void *, void *));
+void posix_poll_set_hooks(
+    intptr_t (*raw_osf_fn)(int), intptr_t (*dup_sock_fn)(intptr_t),
+    intptr_t (*crt_sock_fn)(intptr_t),
+    int (*getsockopt_fn)(uintptr_t, char *, int *),
+    unsigned long (*ftype_fn)(void *), int (*peek_fn)(void *, unsigned long *),
     int (*select_fn)(int, void *, void *, void *, void *)) {
   g_poll_raw_osfhandle = raw_osf_fn;
   g_poll_dup_sock = dup_sock_fn;
@@ -145,6 +166,7 @@ void posix_poll_set_hooks(
 /**
  * @brief Resets Win32/Winsock hooks used by posix-poll to defaults.
  */
+void posix_poll_reset_hooks(void);
 void posix_poll_reset_hooks(void) {
   g_poll_raw_osfhandle = default_poll_raw_osfhandle;
   g_poll_dup_sock = default_poll_dup_sock;

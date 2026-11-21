@@ -111,7 +111,7 @@ TEST test_bsd_stdlib_alloc_and_closefrom(void) {
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
   void *p;
   void *p2;
-  size_t huge = ((size_t)-1) / 2 + 2;
+  size_t huge_sz = ((size_t)-1) / 2 + 2;
 
 #if !defined(TEST_HAVE_GLIBC_CLOSEFROM)
   /* Default closefrom with high lowfd (closes non-open high fds safely) */
@@ -145,7 +145,7 @@ TEST test_bsd_stdlib_alloc_and_closefrom(void) {
 
 #if !defined(TEST_HAVE_GLIBC_REALLOCARRAY)
   errno = 0;
-  ASSERT(reallocarray(NULL, huge, 4) == NULL);
+  ASSERT(reallocarray(NULL, huge_sz, 4) == NULL);
   ASSERT_EQ(ENOMEM, errno);
 
   p = reallocarray(NULL, 0, 0);
@@ -164,11 +164,11 @@ TEST test_bsd_stdlib_alloc_and_closefrom(void) {
   /* recallocarray overflow & size == 0 & NULL ptr & shrink & same & grow & OOM
    */
   errno = 0;
-  ASSERT(recallocarray(NULL, huge, 1, 4) == NULL);
+  ASSERT(recallocarray(NULL, huge_sz, 1, 4) == NULL);
   ASSERT_EQ(ENOMEM, errno);
 
   errno = 0;
-  ASSERT(recallocarray(NULL, 1, huge, 4) == NULL);
+  ASSERT(recallocarray(NULL, 1, huge_sz, 4) == NULL);
   ASSERT_EQ(ENOMEM, errno);
 
   p = recallocarray(NULL, 0, 0, 0);

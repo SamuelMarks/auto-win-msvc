@@ -88,6 +88,14 @@ static HANDLE mock_OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle,
 #define MACOS_MACH_MOCK_GetProcessTimes mock_GetProcessTimes
 #define MACOS_MACH_MOCK_OpenProcess mock_OpenProcess
 
+auto_win_msvc_error_t my_macos_mach_init(int *out_status);
+uint64_t my_mach_absolute_time(void);
+kern_return_t my_task_info(task_t target_task, task_flavor_t flavor,
+                           task_info_t task_info_out,
+                           mach_msg_type_number_t *task_info_outCnt);
+mach_port_t my_mach_task_self(void);
+kern_return_t my_task_for_pid(mach_port_t target_tport, int pid,
+                              mach_port_t *t);
 #define macos_mach_init my_macos_mach_init
 #define mach_absolute_time my_mach_absolute_time
 #define task_info my_task_info
@@ -129,7 +137,7 @@ TEST test_macos_mach_init(void) {
 }
 
 TEST test_task_info(void) {
-  kern_return_t ret;
+  kern_return_t ret = 0;
   mach_msg_type_number_t outCnt =
       (mach_msg_type_number_t)(sizeof(struct task_basic_info) / sizeof(int));
   mach_msg_type_number_t smallCnt = 0;
@@ -187,7 +195,7 @@ TEST test_task_info(void) {
 }
 
 TEST test_task_for_pid(void) {
-  kern_return_t ret;
+  kern_return_t ret = 0;
   mach_port_t t = 0;
 
 #if defined(_WIN32)

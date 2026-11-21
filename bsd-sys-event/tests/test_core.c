@@ -11,7 +11,7 @@
 /* clang-format on */
 
 TEST test_bsd_sys_event_get_support(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int supported = 0;
   (void)rc;
   (void)supported;
@@ -27,10 +27,10 @@ TEST test_bsd_sys_event_get_support(void) {
 }
 
 TEST test_kqueue_and_kevent(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int supported = 0;
-  int kq;
-  int ret;
+  int kq = -1;
+  int ret = 0;
   (void)rc;
   (void)supported;
   (void)kq;

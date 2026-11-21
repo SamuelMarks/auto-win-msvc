@@ -238,7 +238,7 @@ LINUX_SYS_BITOPS_INLINE int posix_fls(int x) {
 #if defined(__GNUC__) || defined(__clang__)
   if (!x)
     return 0;
-  return 32 - __builtin_clz(x);
+  return 32 - __builtin_clz((unsigned int)x);
 #else
   int i;
   if (!x)
@@ -303,8 +303,9 @@ LINUX_SYS_BITOPS_INLINE error_type_t posix_ffz(unsigned long word,
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix_set_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_or(p, mask);
   (void)old;
@@ -316,8 +317,9 @@ posix_set_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix_clear_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = ~(1UL << (nr % (sizeof(unsigned long) * 8)));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = ~(1UL << (bit_idx % (sizeof(unsigned long) * 8U)));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_and(p, mask);
   (void)old;
@@ -329,8 +331,9 @@ posix_clear_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix_change_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_xor(p, mask);
   (void)old;
@@ -342,8 +345,9 @@ posix_change_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int
 posix_test_and_set_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_or(p, mask);
   return (old & mask) != 0;
@@ -356,8 +360,9 @@ posix_test_and_set_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int
 posix_test_and_clear_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_and(p, ~mask);
   return (old & mask) != 0;
@@ -370,8 +375,9 @@ posix_test_and_clear_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int
 posix_test_and_change_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
 #if defined(__GNUC__) || defined(__clang__)
   unsigned long old = __sync_fetch_and_xor(p, mask);
   return (old & mask) != 0;
@@ -384,32 +390,36 @@ posix_test_and_change_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___set_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   *p |= mask;
   return ERR_NONE;
 }
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___clear_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = ~(1UL << (nr % (sizeof(unsigned long) * 8)));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = ~(1UL << (bit_idx % (sizeof(unsigned long) * 8U)));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   *p &= mask;
   return ERR_NONE;
 }
 
 LINUX_SYS_BITOPS_INLINE error_type_t
 posix___change_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   *p ^= mask;
   return ERR_NONE;
 }
 
 LINUX_SYS_BITOPS_INLINE int
 posix___test_and_set_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   unsigned long old = *p;
   *p |= mask;
   return (old & mask) != 0;
@@ -417,8 +427,9 @@ posix___test_and_set_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int
 posix___test_and_clear_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   unsigned long old = *p;
   *p &= ~mask;
   return (old & mask) != 0;
@@ -426,8 +437,9 @@ posix___test_and_clear_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int
 posix___test_and_change_bit(int nr, volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  volatile unsigned long *p = addr + (bit_idx / (sizeof(unsigned long) * 8U));
   unsigned long old = *p;
   *p ^= mask;
   return (old & mask) != 0;
@@ -435,8 +447,10 @@ posix___test_and_change_bit(int nr, volatile unsigned long *addr) {
 
 LINUX_SYS_BITOPS_INLINE int posix_test_bit(int nr,
                                            const volatile unsigned long *addr) {
-  unsigned long mask = 1UL << (nr % (sizeof(unsigned long) * 8));
-  const volatile unsigned long *p = addr + (nr / (sizeof(unsigned long) * 8));
+  unsigned long bit_idx = (unsigned long)nr;
+  unsigned long mask = 1UL << (bit_idx % (sizeof(unsigned long) * 8U));
+  const volatile unsigned long *p =
+      addr + (bit_idx / (sizeof(unsigned long) * 8U));
   return (*p & mask) != 0;
 }
 

@@ -11,6 +11,8 @@ SUITE_EXTERN(suite_posix_core_ugid);
 SUITE_EXTERN(suite_posix_core_printf);
 SUITE_EXTERN(suite_posix_rw_coverage);
 SUITE_EXTERN(suite_posix_core_coverage);
+SUITE_EXTERN(suite_posix_core_win32_cov1);
+SUITE_EXTERN(suite_posix_core_win32_cov2);
 
 GREATEST_MAIN_DEFS();
 
@@ -25,5 +27,7 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_posix_core_printf);
   RUN_SUITE(suite_posix_rw_coverage);
   RUN_SUITE(suite_posix_core_coverage);
+  RUN_SUITE(suite_posix_core_win32_cov1);
+  RUN_SUITE(suite_posix_core_win32_cov2);
   GREATEST_MAIN_END();
 }

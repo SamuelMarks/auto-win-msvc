@@ -40,7 +40,11 @@ struct awm_bsd_statfs {
   unsigned long f_files;
   unsigned long f_ffree;
   uid_t f_owner;
+#if defined(__GLIBC__) && !defined(__USE_MISC)
+  __fsid_t f_fsid;
+#else
   fsid_t f_fsid;
+#endif
   long f_namelen;
   long f_frsize;
   unsigned long f_flags;

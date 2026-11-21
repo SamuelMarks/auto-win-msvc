@@ -82,6 +82,11 @@ void my_errc(int eval, int code, const char *fmt, ...) LINUX_ERR_PRINTF(3, 4);
 #define verrc my_verrc
 #define warnc my_warnc
 #define errc my_errc
+void my_err_set_file(void *vfp);
+void my_err_set_exit(void (*ef)(int));
+int my_linux_err_dummy_for_coverage(void);
+void my_linux_err_set_terminate_for_test(linux_err_terminate_fn_t fn);
+void my_linux_err_reset_terminate_for_test(void);
 #define err_set_file my_err_set_file
 #define err_set_exit my_err_set_exit
 #define linux_err_dummy_for_coverage my_linux_err_dummy_for_coverage

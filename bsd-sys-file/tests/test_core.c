@@ -8,7 +8,7 @@
 /* clang-format on */
 
 TEST test_bsd_sys_file_init(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int status = 0;
   (void)rc;
   (void)status;
@@ -21,8 +21,8 @@ TEST test_bsd_sys_file_init(void) {
 
 TEST test_posix_flock(void) {
   FILE *tf = NULL;
-  int fd;
-  int rc;
+  int fd = -1;
+  int rc = 0;
   (void)fd;
   (void)tf;
   (void)rc;

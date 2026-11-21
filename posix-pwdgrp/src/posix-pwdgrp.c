@@ -1046,6 +1046,7 @@ int pwcache_groupdb(int (*a_setgroupent)(int), void (*a_endgrent)(void),
  * @brief No-op helper preventing empty translation unit warnings.
  * @return Always 0.
  */
+int dummy_posix_pwdgrp(void);
 int dummy_posix_pwdgrp(void) { return 0; }
 typedef int make_iso_compilers_happy_tu_posix_pwdgrp;
 

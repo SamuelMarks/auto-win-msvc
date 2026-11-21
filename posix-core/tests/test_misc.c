@@ -59,7 +59,7 @@ TEST test_fcntl(void) {
 }
 
 TEST test_alarm(void) {
-  unsigned int rem;
+  unsigned int rem = 0;
   (void)rem;
   rem = alarm(5);
 
@@ -70,7 +70,7 @@ TEST test_alarm(void) {
 
 TEST test_confstr(void) {
   char cbuf[256];
-  size_t n;
+  size_t n = 0;
   (void)n;
 
   n = confstr(1, cbuf, sizeof(cbuf));
@@ -115,7 +115,7 @@ TEST test_fpathconf(void) {
 
 TEST test_getgroups(void) {
   gid_t grps[64];
-  int rc;
+  int rc = 0;
   (void)rc;
   rc = getgroups(0, NULL);
   if (rc >= 0 && rc <= 64) {
@@ -138,6 +138,10 @@ TEST test_setgroups(void) {
 }
 
 TEST test_getsubopt(void) {
+  static char t0[] = "ro";
+  static char t1[] = "size";
+  static char t2[] = "name";
+  static char t3[] = "rw";
   char str[64];
   char *opt = NULL;
   char *val = NULL;
@@ -152,10 +156,10 @@ TEST test_getsubopt(void) {
   strcpy(str, "ro,size=1024,name=foo,rw");
 #endif
   opt = str;
-  tokens[0] = "ro";
-  tokens[1] = "size";
-  tokens[2] = "name";
-  tokens[3] = "rw";
+  tokens[0] = t0;
+  tokens[1] = t1;
+  tokens[2] = t2;
+  tokens[3] = t3;
   tokens[4] = NULL;
   (void)tokens;
   ASSERT_EQ(0, getsubopt(&opt, tokens, &val));
@@ -165,15 +169,13 @@ TEST test_getsubopt(void) {
 
 TEST test_getline(void) {
   FILE *f;
-  char *line;
-  size_t n;
-  ssize_t nread;
+  char *line = NULL;
+  size_t n = 0;
+  ssize_t nread = 0;
   (void)n;
 
   (void)nread;
 
-  line = NULL;
-  n = 0;
   f = fopen("test_getline_tmp.txt", "w");
 
   fputs("hello world\nsecond line\n", f);
@@ -217,7 +219,7 @@ TEST test_getlogin(void) {
 
 TEST test_getlogin_r(void) {
   char lbuf[256];
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -230,14 +232,18 @@ TEST test_getlogin_r(void) {
 }
 
 TEST test_getopt(void) {
+  static char a0[] = "prog";
+  static char a1[] = "-a";
+  static char a2[] = "-b";
+  static char a3[] = "val";
   char *argv[5];
-  int opt;
+  int opt = 0;
   (void)opt;
 
-  argv[0] = "prog";
-  argv[1] = "-a";
-  argv[2] = "-b";
-  argv[3] = "val";
+  argv[0] = a0;
+  argv[1] = a1;
+  argv[2] = a2;
+  argv[3] = a3;
   argv[4] = NULL;
 
   optind = 1;
@@ -277,7 +283,7 @@ TEST test_lockf(void) {
 }
 
 TEST test_pathconf(void) {
-  long pc;
+  long pc = 0;
   (void)pc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -305,7 +311,7 @@ TEST test_setsid(void) {
 }
 
 TEST test_sysconf(void) {
-  long sc;
+  long sc = 0;
   (void)sc;
 
   sc = sysconf(1);
@@ -361,7 +367,7 @@ TEST test_ttyname_r(void) {
 }
 
 TEST test_ualarm(void) {
-  useconds_t rem;
+  useconds_t rem = 0;
   (void)rem;
   rem = ualarm(500000, 0);
 
@@ -379,10 +385,17 @@ TEST test_posix_isatty(void) {
 }
 
 TEST test_posix_mkdtemp(void) {
-  char tmpl[] = "test_posix_mkdtemp_XXXXXX";
-  char *res = posix_mkdtemp(tmpl);
-
-  rmdir(res);
+  char tmpl[] = "mdXXXXXX";
+  char *res;
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    SKIP();
+  }
+#endif
+  res = posix_mkdtemp(tmpl);
+  if (res != NULL) {
+    rmdir(res);
+  }
   PASS();
 }
 

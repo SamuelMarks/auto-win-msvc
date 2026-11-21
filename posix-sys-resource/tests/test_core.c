@@ -55,6 +55,10 @@ static BOOL mock_res_GetProcessMemoryInfo(HANDLE hProcess,
 #define POSIX_SYS_RESOURCE_MOCK_GetProcessTimes mock_res_GetProcessTimes
 #define POSIX_SYS_RESOURCE_MOCK_GetProcessMemoryInfo                           \
   mock_res_GetProcessMemoryInfo
+auto_win_msvc_error_t mocked_posix_sys_resource_get_info(int *out_available);
+int mocked_posix_getrusage(int who, struct rusage *usage);
+int mocked_posix_getrlimit(int resource, struct rlimit *rlp);
+int mocked_posix_setrlimit(int resource, const struct rlimit *rlp);
 #define posix_sys_resource_get_info mocked_posix_sys_resource_get_info
 #define posix_getrusage mocked_posix_getrusage
 #define posix_getrlimit mocked_posix_getrlimit

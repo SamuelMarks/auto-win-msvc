@@ -26,6 +26,9 @@
 #include <ws2tcpip.h>
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 #include <errno.h>
+#include <io.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #endif
 /* clang-format on */
@@ -279,10 +282,53 @@ int fstatvfs(int fd, struct statvfs *buf) { return fstatvfs_win_impl(fd, buf); }
 
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 
+static int dos_statfs_path_exists(const char *path) {
+  const char *p = path;
+  if (!path || path[0] == '\0') {
+    return 0;
+  }
+  if (strcmp(p, ".") == 0 || strcmp(p, "..") == 0 || strcmp(p, "/") == 0 ||
+      strcmp(p, "\\") == 0) {
+    return 1;
+  }
+  if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) &&
+      p[1] == ':') {
+    p += 2;
+    if (p[0] == '\0' || ((p[0] == '/' || p[0] == '\\') && p[1] == '\0')) {
+      return 1;
+    }
+  }
+#if defined(__WATCOMC__)
+  if (_osmajor < 2) {
+    FILE *fp;
+    if (p[0] == '/' || p[0] == '\\') {
+      p++;
+    }
+    if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) {
+      p += 2;
+    }
+    if (strchr(p, '/') != NULL || strchr(p, '\\') != NULL) {
+      return 0;
+    }
+    fp = fopen(p, "rb");
+    if (!fp) {
+      return 0;
+    }
+    fclose(fp);
+    return 1;
+  }
+#endif
+  return access(path, 0) == 0;
+}
+
 /** @brief statfs function for DOS. */
 int statfs(const char *path, struct statfs *buf) {
   if (!buf || !path) {
     errno = EFAULT;
+    return -1;
+  }
+  if (!dos_statfs_path_exists(path)) {
+    errno = ENOENT;
     return -1;
   }
   memset(buf, 0, sizeof(*buf));
@@ -309,6 +355,10 @@ int fstatfs(int fd, struct statfs *buf) {
 int statvfs(const char *path, struct statvfs *buf) {
   if (!buf || !path) {
     errno = EFAULT;
+    return -1;
+  }
+  if (!dos_statfs_path_exists(path)) {
+    errno = ENOENT;
     return -1;
   }
   memset(buf, 0, sizeof(*buf));

@@ -86,7 +86,18 @@ static int mock_spawn_close_handle(void *h) {
 
 TEST test_posix_spawn_win32_comprehensive(void) {
   pid_t pid = 0;
-  char *argv_complex[9];
+  static char s_prog[] = "prog";
+  static char s_empty[] = "";
+  static char s_space[] = "has space\\";
+  static char s_tab[] = "tab\there\\\"q";
+  static char s_nl[] = "nl\nhere\\x";
+  static char s_vt[] = "vt\vhere";
+  static char s_quote[] = "plain\"quote";
+  static char s_plain[] = "plain_arg";
+  static char s_arg[] = "arg";
+  static char s_env0[] = "FOO=bar";
+  static char s_env1[] = "BAZ=1";
+  char *argv_complex[10];
   char *argv_empty[2];
   char *argv_many[66];
   char *envp[3];
@@ -96,7 +107,7 @@ TEST test_posix_spawn_win32_comprehensive(void) {
   int i;
 
   /* Invalid arguments */
-  argv_complex[0] = "prog";
+  argv_complex[0] = s_prog;
   argv_complex[1] = NULL;
   ASSERT_EQ(EINVAL, posix_spawn(&pid, NULL, NULL, NULL, argv_complex, NULL));
   ASSERT_EQ(EINVAL, posix_spawn(&pid, "prog", NULL, NULL, NULL, NULL));
@@ -105,11 +116,15 @@ TEST test_posix_spawn_win32_comprehensive(void) {
 
   /* Real CreateProcessA success via cmd.exe /c exit 0 */
   {
+    static char c0[] = "cmd.exe";
+    static char c1[] = "/c";
+    static char c2[] = "exit";
+    static char c3[] = "0";
     char *cmd_argv[5];
-    cmd_argv[0] = "cmd.exe";
-    cmd_argv[1] = "/c";
-    cmd_argv[2] = "exit";
-    cmd_argv[3] = "0";
+    cmd_argv[0] = c0;
+    cmd_argv[1] = c1;
+    cmd_argv[2] = c2;
+    cmd_argv[3] = c3;
     cmd_argv[4] = NULL;
     ASSERT_EQ(0, posix_spawnp(&pid, "cmd.exe", NULL, NULL, cmd_argv, NULL));
   }
@@ -149,18 +164,18 @@ TEST test_posix_spawn_win32_comprehensive(void) {
 
   /* Command-line quoting: empty, simple, space, tab, newline, vtab, quote,
    * backslashes */
-  argv_complex[0] = "prog";
-  argv_complex[1] = "";
-  argv_complex[2] = "has space\\";
-  argv_complex[3] = "tab\there\\\"q";
-  argv_complex[4] = "nl\nhere\\x";
-  argv_complex[5] = "vt\vhere";
-  argv_complex[6] = "plain\"quote";
-  argv_complex[7] = "plain_arg";
+  argv_complex[0] = s_prog;
+  argv_complex[1] = s_empty;
+  argv_complex[2] = s_space;
+  argv_complex[3] = s_tab;
+  argv_complex[4] = s_nl;
+  argv_complex[5] = s_vt;
+  argv_complex[6] = s_quote;
+  argv_complex[7] = s_plain;
   argv_complex[8] = NULL;
 
-  envp[0] = "FOO=bar";
-  envp[1] = "BAZ=1";
+  envp[0] = s_env0;
+  envp[1] = s_env1;
   envp[2] = NULL;
 
   /* OOM in create_cmdline and create_envblock */
@@ -286,7 +301,7 @@ TEST test_posix_spawn_win32_comprehensive(void) {
 
   /* 6. busybox (lowercase) with > 62 args -> hits k < 62 cap! */
   for (i = 0; i < 65; i++) {
-    argv_many[i] = "arg";
+    argv_many[i] = s_arg;
   }
   argv_many[65] = NULL;
   g_mock_mod_str = "C:\\tools\\busybox.exe";
@@ -322,10 +337,11 @@ TEST test_posix_spawn_init(void) {
 
 TEST test_spawn(void) {
   pid_t pid;
+  char empty_arg[] = "";
   char *argv[2];
   int rc;
 
-  argv[0] = "";
+  argv[0] = empty_arg;
   argv[1] = NULL;
   rc = posix_spawn(&pid, "", NULL, NULL, argv, NULL);
   ASSERT(rc != 0);
@@ -334,10 +350,11 @@ TEST test_spawn(void) {
 
 TEST test_posix_spawn(void) {
   pid_t pid;
+  char missing_exe[] = "nonexistent_executable_12345.exe";
   char *argv[2];
   int rc;
 
-  argv[0] = "nonexistent_executable_12345.exe";
+  argv[0] = missing_exe;
   argv[1] = NULL;
 
   rc = posix_spawn(&pid, argv[0], NULL, NULL, argv, NULL);

@@ -110,7 +110,7 @@ TEST test_sem_getvalue(void) {
 
 TEST test_sem_open(void) {
   sem_t *s1;
-  sem_t *s2;
+  sem_t *s2 = NULL;
 
   (void)sem_unlink("/awm_test_sem");
   s1 = sem_open("/awm_test_sem", O_CREAT, 0600, 1U);

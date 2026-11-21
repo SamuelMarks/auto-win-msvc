@@ -65,6 +65,7 @@ int catclose(nl_catd catd) {
  * @brief Compilation unit anchor symbol for posix-nl-types coverage.
  * @return Always 0.
  */
+int posix_nl_types_dummy_for_coverage(void);
 int posix_nl_types_dummy_for_coverage(void) { return 0; }
 
 typedef int make_iso_compilers_happy_tu_posix_nl_types;

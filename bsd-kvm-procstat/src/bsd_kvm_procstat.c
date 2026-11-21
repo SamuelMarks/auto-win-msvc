@@ -139,8 +139,7 @@ static int default_kvm_proc_step(void *snap, int first, unsigned long *pid,
 #elif defined(_MSC_VER)
   strncpy_s(comm, comm_sz, pe.szExeFile, _TRUNCATE);
 #else
-  strncpy(comm, pe.szExeFile, comm_sz - 1);
-  comm[comm_sz - 1] = '\0';
+  sprintf(comm, "%.*s", (int)(comm_sz - 1), pe.szExeFile);
 #endif
   *pid = (unsigned long)pe.th32ProcessID;
   *ppid = (unsigned long)pe.th32ParentProcessID;
@@ -228,10 +227,8 @@ static void fill_single_kinfo_proc(struct kinfo_proc *kp, pid_t pid,
   strncpy_s(kp->ki_comm, sizeof(kp->ki_comm), comm, _TRUNCATE);
   strncpy_s(kp->ki_login, sizeof(kp->ki_login), "root", _TRUNCATE);
 #else
-  strncpy(kp->ki_comm, comm, sizeof(kp->ki_comm) - 1);
-  kp->ki_comm[sizeof(kp->ki_comm) - 1] = '\0';
-  strncpy(kp->ki_login, "root", sizeof(kp->ki_login) - 1);
-  kp->ki_login[sizeof(kp->ki_login) - 1] = '\0';
+  sprintf(kp->ki_comm, "%.*s", (int)(sizeof(kp->ki_comm) - 1), comm);
+  memcpy(kp->ki_login, "root", 5);
 #endif
 }
 
@@ -356,8 +353,7 @@ char **kvm_getargv(kvm_t *kd, const struct kinfo_proc *p, int nchr) {
 #if defined(_MSC_VER)
   strncpy_s(kd->comm_buf, sizeof(kd->comm_buf), p->ki_comm, _TRUNCATE);
 #else
-  strncpy(kd->comm_buf, p->ki_comm, sizeof(kd->comm_buf) - 1);
-  kd->comm_buf[sizeof(kd->comm_buf) - 1] = '\0';
+  sprintf(kd->comm_buf, "%.*s", (int)(sizeof(kd->comm_buf) - 1), p->ki_comm);
 #endif
   kd->argv_buf[0] = kd->comm_buf;
   kd->argv_buf[1] = NULL;
@@ -435,7 +431,10 @@ ssize_t kvm_write(kvm_t *kd, unsigned long addr, const void *buf,
   return -1;
 }
 
-char *kvm_geterr(kvm_t *kd) { return (kd != NULL) ? kd->errbuf : "kvm error"; }
+char *kvm_geterr(kvm_t *kd) {
+  static char s_kvm_null_err[] = "kvm error";
+  return (kd != NULL) ? kd->errbuf : s_kvm_null_err;
+}
 
 int kvm_getcptime(kvm_t *kd, long *cp_time) {
   (void)kd;
@@ -605,8 +604,7 @@ int procstat_getpathname(struct procstat *prstat, struct kinfo_proc *kp,
 #if defined(_MSC_VER)
   strncpy_s(pathname, maxlen, kp->ki_comm, _TRUNCATE);
 #else
-  strncpy(pathname, kp->ki_comm, maxlen - 1);
-  pathname[maxlen - 1] = '\0';
+  sprintf(pathname, "%.*s", (int)(maxlen - 1), kp->ki_comm);
 #endif
   return 0;
 }
@@ -650,7 +648,11 @@ int procstat_getosrel(struct procstat *prstat, struct kinfo_proc *kp,
   (void)prstat;
   (void)kp;
   if (osrelp != NULL) {
+#if defined(__I86__)
+    *osrelp = 15000;
+#else
     *osrelp = 1500000;
+#endif
   }
   return 0;
 }
@@ -1282,7 +1284,7 @@ static uint64_t awm_query_phys_avail_bytes(void) {
   if (g_kvm_mem_status(&ms)) {
     return (uint64_t)ms.ullAvailPhys;
   }
-  return 64U * 1024U * 1024U;
+  return (uint64_t)(64UL * 1024UL * 1024UL);
 #elif (defined(__DOS__) || defined(__MSDOS__)) && defined(__WATCOMC__) &&      \
     defined(__386__)
   /* Query 32-bit DPMI free memory information via Int 31h AX=0500h */
@@ -1299,9 +1301,11 @@ static uint64_t awm_query_phys_avail_bytes(void) {
   if (!regs.x.cflag && dpmi_info[0] > 0UL) {
     return (uint64_t)dpmi_info[0];
   }
-  return 16U * 1024U * 1024U;
+  return (uint64_t)(16UL * 1024UL * 1024UL);
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__I86__)
+  return (uint64_t)(640UL * 1024UL);
 #else
-  return 64U * 1024U * 1024U;
+  return (uint64_t)(64UL * 1024UL * 1024UL);
 #endif
 }
 

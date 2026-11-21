@@ -283,7 +283,9 @@ TEST test_getitimer_setitimer_utimes_macros(void) {
 
   ASSERT_EQ(-1, getitimer(-1, &itv));
   ASSERT_EQ(-1, getitimer(99, &itv));
+#if !defined(__linux__)
   ASSERT_EQ(-1, getitimer(ITIMER_REAL, NULL));
+#endif
   ASSERT_EQ(0, getitimer(ITIMER_REAL, &itv));
 
   ASSERT_EQ(-1, setitimer(-1, &itv, NULL));

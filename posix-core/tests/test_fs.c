@@ -16,7 +16,7 @@
 
 TEST test_chown(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -38,7 +38,7 @@ TEST test_chown(void) {
 
 TEST test_faccessat(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -59,7 +59,7 @@ TEST test_faccessat(void) {
 TEST test_fchown(void) {
   FILE *f;
   int fd;
-  int rc;
+  int rc = 0;
   (void)rc;
 
   f = fopen("test_fchown.tmp", "w");
@@ -79,7 +79,7 @@ TEST test_fchown(void) {
 
 TEST test_fchownat(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -101,7 +101,7 @@ TEST test_fchownat(void) {
 
 TEST test_lchown(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -121,7 +121,7 @@ TEST test_lchown(void) {
 
 TEST test_link(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
@@ -133,9 +133,9 @@ TEST test_link(void) {
   fputs("data", f);
   fclose(f);
 
-  rc = link("test_link1.tmp", "test_link2.tmp");
+  rc = link("test_link1.tmp", "lnk2.tmp");
   if (rc == 0) {
-    remove("test_link2.tmp");
+    remove("lnk2.tmp");
   }
   remove("test_link1.tmp");
   PASS();
@@ -143,23 +143,23 @@ TEST test_link(void) {
 
 TEST test_linkat(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
 
 #endif
   ASSERT_EQ(-1, linkat(AT_FDCWD, "nonexistent_linkat_src.tmp", AT_FDCWD,
-                       "test_linkat_dst.tmp", 0));
+                       "lnkad.tmp", 0));
 
   f = fopen("test_linkat1.tmp", "w");
 
   fputs("data", f);
   fclose(f);
 
-  rc = linkat(AT_FDCWD, "test_linkat1.tmp", AT_FDCWD, "test_linkat2.tmp", 0);
+  rc = linkat(AT_FDCWD, "test_linkat1.tmp", AT_FDCWD, "lnka2.tmp", 0);
   if (rc == 0) {
-    remove("test_linkat2.tmp");
+    remove("lnka2.tmp");
   }
   remove("test_linkat1.tmp");
   PASS();
@@ -167,28 +167,28 @@ TEST test_linkat(void) {
 
 TEST test_symlink(void) {
   FILE *f;
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)
 
 #endif
 
-  f = fopen("test_symlink_tgt.tmp", "w");
+  f = fopen("symt.tmp", "w");
 
   fputs("target", f);
   fclose(f);
 
-  rc = symlink("test_symlink_tgt.tmp", "test_symlink_lnk.tmp");
+  rc = symlink("symt.tmp", "test_symlink_lnk.tmp");
   if (rc == 0) {
     remove("test_symlink_lnk.tmp");
   }
-  remove("test_symlink_tgt.tmp");
+  remove("symt.tmp");
   PASS();
 }
 
 TEST test_symlinkat(void) {
-  int rc;
+  int rc = 0;
   (void)rc;
 
 #if defined(_WIN32) || defined(_MSC_VER)

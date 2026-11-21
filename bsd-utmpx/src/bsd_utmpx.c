@@ -137,9 +137,13 @@ struct utmpx *getutxuser(const char *user) {
 }
 
 static int g_tty_idx = 0;
+static char g_tty_name[] = "console";
+static char g_tty_getty[] = "none";
+static char g_tty_type[] = "vt100";
+static char g_tty_comment[] = "System Console";
 static struct ttyent g_tty_entry = {
-    "console", "none",           "vt100", TTY_ON | TTY_SECURE,
-    NULL,      "System Console", "none"};
+    g_tty_name, g_tty_getty,   g_tty_type, TTY_ON | TTY_SECURE,
+    NULL,       g_tty_comment, g_tty_getty};
 
 /** @brief Reads the next entry from the ttys database. */
 struct ttyent *getttyent(void) {

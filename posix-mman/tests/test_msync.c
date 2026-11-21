@@ -10,7 +10,11 @@ TEST test_msync(void) {
   int rc;
 
   /* Invalid address failure */
+#if defined(__linux__)
+  rc = msync((void *)(size_t)1, 4096, MS_SYNC);
+#else
   rc = msync(NULL, 4096, MS_SYNC);
+#endif
   ASSERT_EQ(-1, rc);
 
   ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,

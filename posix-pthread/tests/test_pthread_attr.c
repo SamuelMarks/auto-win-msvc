@@ -252,8 +252,14 @@ TEST test_pthread_attr_getstack(void) {
   pthread_attr_t attr;
   void *addr = NULL;
   size_t sz = 0;
+  int rc;
   ASSERT_EQ(0, pthread_attr_init(&attr));
-  ASSERT_EQ(0, pthread_attr_getstack(&attr, &addr, &sz));
+  rc = pthread_attr_getstack(&attr, &addr, &sz);
+#if defined(__linux__) && !defined(__GLIBC__)
+  ASSERT(rc == 0 || rc == EINVAL);
+#else
+  ASSERT_EQ(0, rc);
+#endif
   ASSERT_EQ(0, pthread_attr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(EINVAL, pthread_attr_getstack(NULL, &addr, &sz));

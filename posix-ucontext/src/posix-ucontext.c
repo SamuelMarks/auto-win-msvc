@@ -77,6 +77,8 @@ static void *(*g_ucontext_get_fiber)(void) = win_get_current_fiber_raw;
  * @brief Sets custom allocator and fiber-probe hooks for unit testing.
  */
 void posix_ucontext_set_hooks(void *(*malloc_fn)(size_t),
+                              void *(*get_fiber_fn)(void));
+void posix_ucontext_set_hooks(void *(*malloc_fn)(size_t),
                               void *(*get_fiber_fn)(void)) {
   g_ucontext_malloc = malloc_fn;
   g_ucontext_get_fiber = get_fiber_fn;
@@ -85,6 +87,7 @@ void posix_ucontext_set_hooks(void *(*malloc_fn)(size_t),
 /**
  * @brief Resets allocator and fiber-probe hooks to defaults.
  */
+void posix_ucontext_reset_hooks(void);
 void posix_ucontext_reset_hooks(void) {
   g_ucontext_malloc = default_ucontext_malloc;
   g_ucontext_get_fiber = win_get_current_fiber_raw;

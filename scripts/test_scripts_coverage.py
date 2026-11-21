@@ -5,6 +5,7 @@ import io
 import json
 import os
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -597,6 +598,109 @@ class TestStandalonePythonScripts(unittest.TestCase):
                     with self.assertRaises(SystemExit) as ctx:
                         runpy.run_path(abs_path, run_name="__main__")
                     self.assertEqual(ctx.exception.code, 1)
+            finally:
+                os.chdir(orig_cwd)
+
+    def test_downstream_script(self):
+        mod, abs_path = _load_module("test_downstream_mod", "scripts/test_downstream.py")
+
+        class Res:
+            def __init__(self, rc):
+                self.returncode = rc
+
+        with mock.patch("subprocess.run", return_value=Res(0)) as m_run:
+            mod.run_cmd(["echo", "ok"], env={"GIT_DIR": ".git", "KEEP": "1"})
+            called_env = m_run.call_args[1]["env"]
+            self.assertNotIn("GIT_DIR", called_env)
+            self.assertEqual("1", called_env["KEEP"])
+
+        with mock.patch("subprocess.run", return_value=Res(5)):
+            with self.assertRaises(SystemExit) as ctx:
+                mod.run_cmd(["false"])
+            self.assertEqual(ctx.exception.code, 5)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            orig_cwd = os.getcwd()
+            try:
+                awm_dir = os.path.join(tmp, "auto-win-msvc")
+                os.makedirs(os.path.join(awm_dir, "cmake", "jq-port"), exist_ok=True)
+                os.chdir(awm_dir)
+
+                with mock.patch("subprocess.run", return_value=Res(0)):
+                    cloned_no_branch, is_tmp = mod.setup_repo(
+                        "missing-repo", "https://example.com/r.git", branch=None
+                    )
+                    self.assertTrue(is_tmp)
+                    shutil.rmtree(os.path.dirname(cloned_no_branch), ignore_errors=True)
+
+                    cloned_branch, is_tmp2 = mod.setup_repo(
+                        "missing-repo2", "https://example.com/r2.git", branch="master"
+                    )
+                    self.assertTrue(is_tmp2)
+                    shutil.rmtree(os.path.dirname(cloned_branch), ignore_errors=True)
+
+                bb_win = os.path.join(tmp, "busybox-windows")
+                bb_src = os.path.join(tmp, "busybox")
+                os.makedirs(os.path.join(bb_win, "build_downstream"), exist_ok=True)
+                os.makedirs(bb_src, exist_ok=True)
+
+                with mock.patch("subprocess.run", return_value=Res(0)), mock.patch.dict(
+                    os.environ, {"GIT_FAKE": "1"}, clear=False
+                ), mock.patch.object(mod.os, "name", "posix"), mock.patch.object(
+                    tempfile, "gettempdir", return_value=tmp
+                ):
+                    mod.main()
+                    self.assertFalse(
+                        os.path.exists(os.path.join(bb_win, "build_downstream"))
+                    )
+
+                vcpkg_dir = os.path.join(tmp, "vcpkg")
+                os.makedirs(vcpkg_dir, exist_ok=True)
+                rsync_sib = os.path.join(tmp, "rsync")
+                os.makedirs(rsync_sib, exist_ok=True)
+                with open(os.path.join(rsync_sib, "CMakeLists.txt"), "w") as f:
+                    f.write("cmake_minimum_required(VERSION 3.14)\n")
+
+                shutil.rmtree(os.path.join(awm_dir, "cmake"))
+
+                with mock.patch("subprocess.run", return_value=Res(0)), mock.patch.dict(
+                    os.environ, {"VCPKG_ROOT": vcpkg_dir}, clear=False
+                ), mock.patch.object(mod.os, "name", "nt"), mock.patch.object(
+                    tempfile, "gettempdir", return_value=tmp
+                ):
+                    mod.main()
+                    with open(os.path.join(rsync_sib, "CMakeLists.txt"), "r") as rf:
+                        self.assertIn("RSYNC_GITOBJ", rf.read())
+
+                shutil.rmtree(rsync_sib)
+                ext_parent = os.path.join(tmp, "ext_rsync_parent")
+                ext_rsync = os.path.join(ext_parent, "rsync")
+                ext_awm = os.path.join(ext_parent, "auto-win-msvc")
+                os.makedirs(ext_rsync, exist_ok=True)
+                os.makedirs(ext_awm, exist_ok=True)
+                with open(os.path.join(ext_rsync, "CMakeLists.txt"), "w") as f:
+                    f.write("# RSYNC_GITOBJ already present\n")
+
+                orig_setup = mod.setup_repo
+
+                def fake_setup(name, url, branch=None):
+                    if name == "rsync":
+                        return ext_rsync, True
+                    return orig_setup(name, url, branch=branch)
+
+                with mock.patch("subprocess.run", return_value=Res(0)), mock.patch.dict(
+                    os.environ, {"VCPKG_ROOT": vcpkg_dir}, clear=False
+                ), mock.patch.object(mod.os, "name", "nt"), mock.patch.object(
+                    mod, "setup_repo", side_effect=fake_setup
+                ), mock.patch.object(tempfile, "gettempdir", return_value=tmp):
+                    mod.main()
+                    shutil.rmtree(ext_awm)
+                    mod.main()
+
+                with mock.patch("subprocess.run", return_value=Res(0)), mock.patch(
+                    "os.name", "posix"
+                ), mock.patch.object(tempfile, "gettempdir", return_value=tmp):
+                    runpy.run_path(abs_path, run_name="__main__")
             finally:
                 os.chdir(orig_cwd)
 

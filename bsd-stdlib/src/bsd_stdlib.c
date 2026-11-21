@@ -489,9 +489,9 @@ mode_t getmode(const void *bbox, mode_t omode) {
     return omode;
   }
   if (st->is_octal) {
-    return (omode & ~07777) | st->octal_mode;
+    return (mode_t)((omode & (mode_t) ~(mode_t)07777U) | st->octal_mode);
   }
-  return (omode & ~st->clr_bits) | st->set_bits;
+  return (mode_t)((omode & (mode_t)~st->clr_bits) | st->set_bits);
 }
 
 static char *g_fgetln_buf = NULL;

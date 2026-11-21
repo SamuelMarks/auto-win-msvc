@@ -114,6 +114,10 @@ static void *mock_execinfo_malloc(size_t sz) {
 #define EXECINFO_MOCK_malloc mock_execinfo_malloc
 #define EXECINFO_MOCK_free free
 
+error_type_t mocked_backtrace(void **buffer, int size, int *captured);
+char **mocked_backtrace_symbols(void *const *buffer, int size);
+error_type_t mocked_backtrace_symbols_fd(void *const *buffer, int size, int fd);
+auto_win_msvc_error_t mocked_linux_execinfo_init(int *out_status);
 #define backtrace mocked_backtrace
 #define backtrace_symbols mocked_backtrace_symbols
 #define backtrace_symbols_fd mocked_backtrace_symbols_fd

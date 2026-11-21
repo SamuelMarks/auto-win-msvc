@@ -249,10 +249,11 @@ int expand_number(const char *buf, uint64_t *num) {
   return 0;
 }
 
-void hexdump(const void *ptr, int length, const char *hdr, int flags) {
+void hexdump(const void *ptr, int length, const char *hdr,
+             awm_hexdump_flags_t flags) {
   const unsigned char *cp = (const unsigned char *)ptr;
-  int cols = flags & HD_COLUMN_MASK;
-  int delim = (flags & HD_DELIM_MASK) >> 8;
+  int cols = (int)(flags & HD_COLUMN_MASK);
+  int delim = (int)((flags & HD_DELIM_MASK) >> 8);
   int i;
   int j;
 
@@ -291,12 +292,38 @@ void hexdump(const void *ptr, int length, const char *hdr, int flags) {
   }
 }
 
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+static int libutil_dos1_has_subdir(const char *path) {
+  const char *p = path;
+  if (_osmajor >= 2 || p == NULL) {
+    return 0;
+  }
+  if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) &&
+      p[1] == ':') {
+    p += 2;
+  }
+  if (p[0] == '/' || p[0] == '\\') {
+    p++;
+  }
+  if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) {
+    p += 2;
+  }
+  return (strchr(p, '/') != NULL || strchr(p, '\\') != NULL) ? 1 : 0;
+}
+#endif
+
 struct pidfh *pidfile_open(const char *path, mode_t mode, pid_t *pidptr) {
   struct pidfh *pfh;
   const char *p = (path != NULL) ? path : "pidfile.pid";
   if (pidptr != NULL) {
     *pidptr = 0;
   }
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (libutil_dos1_has_subdir(p)) {
+    errno = ENOENT;
+    return NULL;
+  }
+#endif
   pfh = (struct pidfh *)g_libutil_calloc(1, sizeof(*pfh));
   if (pfh == NULL) {
     return NULL;
@@ -381,6 +408,12 @@ int flopen(const char *path, int flags, ...) {
     errno = EINVAL;
     return -1;
   }
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (libutil_dos1_has_subdir(path)) {
+    errno = ENOENT;
+    return -1;
+  }
+#endif
   if (flags & O_CREAT) {
     va_start(ap, flags);
     mode = (mode_t)va_arg(ap, int);

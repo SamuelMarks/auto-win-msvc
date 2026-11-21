@@ -18,6 +18,7 @@ int posix_isastream(int fildes) {
   return 0;
 }
 
+int dummy_posix_stropts(void);
 int dummy_posix_stropts(void) { return 0; }
 
 #endif

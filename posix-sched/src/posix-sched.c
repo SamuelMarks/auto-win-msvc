@@ -24,7 +24,6 @@
 
 /**
  * @brief Retrieves information on posix-sched availability.
- * @param[out] out_available Pointer receiving 1 on success.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_available is NULL.
  */
@@ -150,9 +149,6 @@ static int posix_sched_getaffinity_win_impl(int pid, size_t cpusetsize,
 
 /**
  * @brief Sets CPU affinity mask for a process on Windows.
- * @param[in] pid Target process ID (0 for calling process).
- * @param[in] cpusetsize Size of cpu_set_t in bytes.
- * @param[in] mask CPU affinity mask to apply.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
@@ -161,9 +157,6 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
 
 /**
  * @brief Gets CPU affinity mask for a process on Windows.
- * @param[in] pid Target process ID (0 for calling process).
- * @param[in] cpusetsize Size of cpu_set_t in bytes.
- * @param[out] mask Output CPU affinity mask.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
@@ -187,9 +180,6 @@ int posix_sched_yield(void) {
 
 /**
  * @brief Sets CPU affinity mask on non-Windows platforms.
- * @param[in] pid Target process ID.
- * @param[in] cpusetsize Size of cpu_set_t in bytes.
- * @param[in] mask CPU affinity mask.
  * @return 0 on success, or -1 on invalid arguments.
  */
 int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
@@ -202,9 +192,6 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
 
 /**
  * @brief Gets CPU affinity mask on non-Windows platforms.
- * @param[in] pid Target process ID.
- * @param[in] cpusetsize Size of cpu_set_t in bytes.
- * @param[out] mask Output CPU affinity mask.
  * @return 0 on success, or -1 on invalid arguments.
  */
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {

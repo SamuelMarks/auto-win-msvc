@@ -106,7 +106,6 @@ int ffsll(posix_strings_llong i) {
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 /**
  * @brief Retrieves information on posix-strings polyfill availability.
- * @param[out] out_available Pointer receiving 1 on success.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or
  * AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT if out_available is NULL.
  */
@@ -173,12 +172,17 @@ void *posix_mempcpy(void *dest, const void *src, size_t n) {
 void *posix_memrchr(const void *s, int c, size_t n) {
   const unsigned char *p;
   unsigned char uc;
+  union {
+    const unsigned char *in;
+    void *out;
+  } u;
   p = (const unsigned char *)s;
   uc = (unsigned char)c;
   while (n > 0) {
     n--;
     if (p[n] == uc) {
-      return (void *)((size_t)s + n);
+      u.in = p + n;
+      return u.out;
     }
   }
   return NULL;
@@ -186,60 +190,83 @@ void *posix_memrchr(const void *s, int c, size_t n) {
 
 /** @brief Returns description string for signal number. */
 char *posix_strsignal(int sig) {
-#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY) && !defined(_WIN32)
-  if (sig == 15) {
-    return "Terminated";
-  }
-  return "Segmentation fault";
-#else
   static char unknown_buf[32];
+  const char *msg = NULL;
+#if defined(AUTO_WIN_MSVC_MEGA_LIBRARY) && !defined(_WIN32)
+  msg = (sig == 15) ? "Terminated" : "Segmentation fault";
+#else
   switch (sig) {
   case 1:
-    return "Hangup";
+    msg = "Hangup";
+    break;
   case 2:
-    return "Interrupt";
+    msg = "Interrupt";
+    break;
   case 3:
-    return "Quit";
+    msg = "Quit";
+    break;
   case 4:
-    return "Illegal instruction";
+    msg = "Illegal instruction";
+    break;
   case 6:
-    return "Aborted";
+    msg = "Aborted";
+    break;
   case 8:
-    return "Floating point exception";
+    msg = "Floating point exception";
+    break;
   case 9:
-    return "Killed";
+    msg = "Killed";
+    break;
   case 11:
-    return "Segmentation fault";
+    msg = "Segmentation fault";
+    break;
   case 13:
-    return "Broken pipe";
+    msg = "Broken pipe";
+    break;
   case 14:
-    return "Alarm clock";
+    msg = "Alarm clock";
+    break;
   case 15:
-    return "Terminated";
+    msg = "Terminated";
+    break;
   case 17:
-    return "Child exited";
+    msg = "Child exited";
+    break;
   case 18:
-    return "Continued";
+    msg = "Continued";
+    break;
   case 19:
-    return "Stopped (signal)";
+    msg = "Stopped (signal)";
+    break;
   case 20:
-    return "Stopped";
+    msg = "Stopped";
+    break;
   case 21:
-    return "Stopped (tty input)";
+    msg = "Stopped (tty input)";
+    break;
   case 22:
-    return "Stopped (tty output)";
+    msg = "Stopped (tty output)";
+    break;
   case 28:
-    return "Window changed";
+    msg = "Window changed";
+    break;
   default:
     break;
   }
+  if (msg == NULL) {
 #if defined(_MSC_VER)
-  (void)sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
+    (void)sprintf_s(unknown_buf, sizeof(unknown_buf), "Unknown signal %d", sig);
 #else
-  (void)sprintf(unknown_buf, "Unknown signal %d", sig);
+    (void)sprintf(unknown_buf, "Unknown signal %d", sig);
 #endif
+    return unknown_buf;
+  }
+#endif
+  {
+    size_t len = strlen(msg);
+    memcpy(unknown_buf, msg, len + 1);
+  }
   return unknown_buf;
-#endif
 }
 
 #if defined(_WIN32)
@@ -251,24 +278,29 @@ void *mempcpy(void *dest, const void *src, size_t n) {
 
 #undef strchrnul
 /** @brief ABI wrapper for strchrnul on Windows. */
+char *strchrnul(const char *s, int c);
 char *strchrnul(const char *s, int c) { return posix_strchrnul(s, c); }
 
 #undef stpcpy
 /** @brief ABI wrapper for stpcpy on Windows. */
+char *stpcpy(char *dest, const char *src);
 char *stpcpy(char *dest, const char *src) { return posix_stpcpy(dest, src); }
 
 #undef stpncpy
 /** @brief ABI wrapper for stpncpy on Windows. */
+char *stpncpy(char *dest, const char *src, size_t n);
 char *stpncpy(char *dest, const char *src, size_t n) {
   return posix_stpncpy(dest, src, n);
 }
 
 #undef memrchr
 /** @brief ABI wrapper for memrchr on Windows. */
+void *memrchr(const void *s, int c, size_t n);
 void *memrchr(const void *s, int c, size_t n) { return posix_memrchr(s, c, n); }
 
 #undef strsignal
 /** @brief ABI wrapper for strsignal on Windows. */
+char *strsignal(int sig);
 char *strsignal(int sig) { return posix_strsignal(sig); }
 
 #undef strtok_r

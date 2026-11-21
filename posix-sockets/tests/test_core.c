@@ -56,7 +56,7 @@ TEST test_sockets(void) {
     PASS();
   }
 #if defined(_WIN32)
-  closesocket(s);
+  closesocket((SOCKET)s);
 #else
   close(s);
 #endif
@@ -403,9 +403,10 @@ TEST test_posix_sockets_macos_stubs(void) {
   posix_getsockname(0, NULL, NULL);
   posix_getsockopt(0, 0, 0, NULL, NULL);
   posix_listen(0, 0);
+  posix_recv(-1, NULL, 0, 0);
   posix_recvfrom(0, NULL, 0, 0, NULL, NULL);
   posix_recvmsg(0, NULL, 0);
-  posix_send(0, NULL, 0, 0);
+  posix_send(-1, NULL, 0, 0);
   posix_sendmsg(0, NULL, 0);
   posix_sendto(0, NULL, 0, 0, NULL, 0);
   posix_connect_retry(0, NULL, 0, 0, 0);

@@ -138,7 +138,6 @@ static int next_epoll_fd = 100;
 
 /**
  * @brief Creates a new epoll instance backed by wepoll.
- * @param size Ignored size hint (must be positive in legacy API).
  * @return Non-negative epoll descriptor on success, or -1 on error.
  */
 int posix_epoll_create(int size) {
@@ -154,7 +153,6 @@ int posix_epoll_create(int size) {
 
 /**
  * @brief Creates a new epoll instance with flags backed by wepoll.
- * @param flags Creation flags.
  * @return Non-negative epoll descriptor on success, or -1 on error.
  */
 int posix_epoll_create1(int flags) {
@@ -170,10 +168,6 @@ int posix_epoll_create1(int flags) {
 
 /**
  * @brief Controls an epoll descriptor registration on Windows.
- * @param epfd Epoll descriptor.
- * @param op Operation code (ADD=1, DEL=2, MOD=3).
- * @param fd Target socket or file descriptor.
- * @param event Event configuration structure.
  * @return 0 on success, or -1 on error with errno set.
  */
 int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
@@ -214,10 +208,6 @@ int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
 
 /**
  * @brief Waits for events on a Windows epoll descriptor.
- * @param epfd Epoll descriptor.
- * @param[out] events Output array of ready events.
- * @param maxevents Maximum number of events to return.
- * @param timeout Timeout in milliseconds.
  * @return Number of ready descriptors, or -1 on error.
  */
 int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
@@ -234,7 +224,6 @@ int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
 
 /**
  * @brief Closes a Windows epoll descriptor.
- * @param epfd Epoll descriptor.
  * @return 0 on success, or negative error code on invalid descriptor.
  */
 int posix_epoll_close(int epfd) {
@@ -256,7 +245,6 @@ int posix_epoll_close(int epfd) {
      !defined(__MINGW64__))
 /**
  * @brief Fallback epoll_create returning ENOSYS/EINVAL.
- * @param size Size hint.
  * @return Always -1.
  */
 int posix_epoll_create(int size) {
@@ -270,7 +258,6 @@ int posix_epoll_create(int size) {
 
 /**
  * @brief Fallback epoll_create1 returning ENOSYS/EINVAL.
- * @param flags Creation flags.
  * @return Always -1.
  */
 int posix_epoll_create1(int flags) {
@@ -284,10 +271,6 @@ int posix_epoll_create1(int flags) {
 
 /**
  * @brief Fallback epoll_ctl returning ENOSYS/EINVAL.
- * @param epfd Epoll descriptor.
- * @param op Control operation.
- * @param fd Target file descriptor.
- * @param event Event pointer.
  * @return Always -1.
  */
 int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
@@ -305,10 +288,6 @@ int posix_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) {
 
 /**
  * @brief Fallback epoll_wait returning ENOSYS/EINVAL.
- * @param epfd Epoll descriptor.
- * @param[out] events Output events array.
- * @param maxevents Maximum events count.
- * @param timeout Timeout in milliseconds.
  * @return Always -1.
  */
 int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
@@ -327,7 +306,6 @@ int posix_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
 
 /**
  * @brief Fallback epoll_close returning ENOSYS/EBADF.
- * @param epfd Epoll descriptor.
  * @return Always -1.
  */
 int posix_epoll_close(int epfd) {
@@ -346,6 +324,7 @@ int posix_epoll_close(int epfd) {
  * status.
  * @return AUTO_WIN_MSVC_SUCCESS on success, or an error code on failure.
  */
+auto_win_msvc_error_t linux_epoll_init(int *out_status);
 auto_win_msvc_error_t linux_epoll_init(int *out_status) {
   if (out_status == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;

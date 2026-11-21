@@ -24,6 +24,8 @@
 #else
 #include <io.h>
 #endif
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <io.h>
 #else
 #include <signal.h>
 #include <sys/wait.h>
@@ -398,7 +400,7 @@ char *fileargs_realpath(fileargs_t *fa, const char *pathname,
     return NULL;
   }
 #if defined(_WIN32)
-  return _fullpath(reserved_path, pathname, 1024);
+  return _fullpath(reserved_path, pathname, _MAX_PATH);
 #elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
   if (reserved_path != NULL) {
     strcpy(reserved_path, pathname);

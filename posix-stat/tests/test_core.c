@@ -183,6 +183,7 @@ TEST test_posix_stat_internal_helpers(void) {
 #endif
 
 TEST test_stat_macros(void) {
+  struct stat st_type;
   mode_t mode;
   long lval;
 
@@ -250,8 +251,22 @@ TEST test_stat_macros(void) {
   lval = (long)AT_SYMLINK_NOFOLLOW;
   ASSERT(lval != 0);
 
+#if defined(__GNUC__) || defined(__clang__)
+  ASSERT_EQ(8u, (unsigned int)(__extension__ major(makedev(8, 3))));
+  ASSERT_EQ(3u, (unsigned int)(__extension__ minor(makedev(8, 3))));
+#else
   ASSERT_EQ(8u, (unsigned int)major(makedev(8, 3)));
   ASSERT_EQ(3u, (unsigned int)minor(makedev(8, 3)));
+#endif
+
+  memset(&st_type, 0, sizeof(st_type));
+  st_type.st_mode = (mode_t)S_IFREG;
+  ASSERT_EQ(0, S_TYPEISMQ(&st_type));
+  ASSERT_EQ(0, S_TYPEISSEM(&st_type));
+  ASSERT_EQ(0, S_TYPEISSHM(&st_type));
+  ASSERT_EQ(0, S_TYPEISTMO(&st_type));
+  ASSERT_EQ(0, (S_TYPEISMQ(&st_type) || S_TYPEISSEM(&st_type) ||
+                S_TYPEISSHM(&st_type) || S_TYPEISTMO(&st_type)));
 
   PASS();
 }
@@ -387,21 +402,26 @@ TEST test_mkdir_rmdir(void) {
   struct stat st;
   int res;
 
-  rmdir("test_stat_subdir");
+  rmdir("tstatdir");
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    SKIP();
+  }
+#endif
 
-  res = mkdir("test_stat_subdir", 0755);
+  res = mkdir("tstatdir", 0755);
   ASSERT_EQ(0, res);
 
   memset(&st, 0, sizeof(st));
-  res = stat("test_stat_subdir", &st);
+  res = stat("tstatdir", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISDIR(st.st_mode));
 
   /* Creating again should fail */
-  res = mkdir("test_stat_subdir", 0755);
+  res = mkdir("tstatdir", 0755);
   ASSERT_EQ(-1, res);
 
-  res = rmdir("test_stat_subdir");
+  res = rmdir("tstatdir");
   ASSERT_EQ(0, res);
 
   PASS();
@@ -414,23 +434,23 @@ TEST test_fstat_and_fchmod(void) {
   int res;
 
 #if defined(_MSC_VER)
-  if (fopen_s(&fp, "test_stat_file.txt", "w") != 0) {
+  if (fopen_s(&fp, "tstatf.txt", "w") != 0) {
     fp = NULL;
   }
 #else
-  fp = fopen("test_stat_file.txt", "w");
+  fp = fopen("tstatf.txt", "w");
 #endif
   ASSERT(fp != NULL);
   fputs("test content for posix-stat coverage\n", fp);
   fclose(fp);
 
 #if defined(_MSC_VER)
-  if (_sopen_s(&fd, "test_stat_file.txt", _O_RDWR, _SH_DENYNO,
-               _S_IREAD | _S_IWRITE) != 0) {
+  if (_sopen_s(&fd, "tstatf.txt", _O_RDWR, _SH_DENYNO, _S_IREAD | _S_IWRITE) !=
+      0) {
     fd = -1;
   }
 #else
-  fd = open("test_stat_file.txt", O_RDWR, 0644);
+  fd = open("tstatf.txt", O_RDWR, 0644);
 #endif
   ASSERT(fd >= 0);
 
@@ -451,7 +471,7 @@ TEST test_fstat_and_fchmod(void) {
     ASSERT(pst.st_mtim.tv_sec > 0);
     ASSERT(pst.st_ctim.tv_sec > 0);
     memset(&pst, 0, sizeof(pst));
-    res = posix_stat("test_stat_file.txt", &pst);
+    res = posix_stat("tstatf.txt", &pst);
     ASSERT_EQ(0, res);
     ASSERT_EQ(4096, pst.st_blksize);
     ASSERT(pst.st_blocks > 0);
@@ -481,13 +501,13 @@ TEST test_fstat_and_fchmod(void) {
 TEST test_fchmodat(void) {
   int res;
 
-  res = fchmodat(AT_FDCWD, "test_stat_file.txt", 0644, 0);
+  res = fchmodat(AT_FDCWD, "tstatf.txt", 0644, 0);
   ASSERT_EQ(0, res);
 
-  res = fchmodat(AT_FDCWD, "test_stat_file.txt", 0644, AT_SYMLINK_NOFOLLOW);
+  res = fchmodat(AT_FDCWD, "tstatf.txt", 0644, AT_SYMLINK_NOFOLLOW);
   ASSERT_EQ(0, res);
 
-  res = fchmodat(-1, "test_stat_file.txt", 0644, 0);
+  res = fchmodat(-1, "tstatf.txt", 0644, 0);
   ASSERT_EQ(-1, res);
 
   res = fchmodat(AT_FDCWD, "nonexistent_fchmodat_xyz.tmp", 0644, 0);
@@ -497,7 +517,7 @@ TEST test_fchmodat(void) {
   res = fchmodat(AT_FDCWD, NULL, 0644, 0);
   ASSERT_EQ(-1, res);
 
-  res = fchmodat(9999, "test_stat_file.txt", 0644, 0);
+  res = fchmodat(9999, "tstatf.txt", 0644, 0);
   ASSERT_EQ(-1, res);
 #endif
 
@@ -509,11 +529,11 @@ TEST test_fstatat(void) {
   int res;
 
   memset(&st, 0, sizeof(st));
-  res = fstatat(AT_FDCWD, "test_stat_file.txt", &st, 0);
+  res = fstatat(AT_FDCWD, "tstatf.txt", &st, 0);
   ASSERT_EQ(0, res);
   ASSERT(S_ISREG(st.st_mode));
 
-  res = fstatat(AT_FDCWD, "test_stat_file.txt", &st, AT_SYMLINK_NOFOLLOW);
+  res = fstatat(AT_FDCWD, "tstatf.txt", &st, AT_SYMLINK_NOFOLLOW);
   ASSERT_EQ(0, res);
 
   res = fstatat(AT_FDCWD, "nonexistent_fstatat_xyz.tmp", &st, 0);
@@ -523,7 +543,7 @@ TEST test_fstatat(void) {
   res = fstatat(AT_FDCWD, NULL, &st, 0);
   ASSERT_EQ(-1, res);
 
-  res = fstatat(9999, "test_stat_file.txt", &st, 0);
+  res = fstatat(9999, "tstatf.txt", &st, 0);
   ASSERT_EQ(-1, res);
 #endif
 
@@ -536,12 +556,12 @@ TEST test_futimens(void) {
   int res;
 
 #if defined(_MSC_VER)
-  if (_sopen_s(&fd, "test_stat_file.txt", _O_RDWR, _SH_DENYNO,
-               _S_IREAD | _S_IWRITE) != 0) {
+  if (_sopen_s(&fd, "tstatf.txt", _O_RDWR, _SH_DENYNO, _S_IREAD | _S_IWRITE) !=
+      0) {
     fd = -1;
   }
 #else
-  fd = open("test_stat_file.txt", O_RDWR, 0644);
+  fd = open("tstatf.txt", O_RDWR, 0644);
 #endif
   ASSERT(fd >= 0);
 
@@ -590,47 +610,47 @@ TEST test_utimensat(void) {
   struct timespec ts[2];
   int res;
 
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", NULL, 0);
+  res = utimensat(AT_FDCWD, "tstatf.txt", NULL, 0);
   ASSERT_EQ(0, res);
 
   ts[0].tv_sec = 1600000000;
   ts[0].tv_nsec = 0;
   ts[1].tv_sec = 1600000000;
   ts[1].tv_nsec = 0;
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", ts, 0);
+  res = utimensat(AT_FDCWD, "tstatf.txt", ts, 0);
   ASSERT_EQ(0, res);
 
   ts[0].tv_nsec = UTIME_OMIT;
   ts[1].tv_nsec = UTIME_NOW;
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", ts, AT_SYMLINK_NOFOLLOW);
+  res = utimensat(AT_FDCWD, "tstatf.txt", ts, AT_SYMLINK_NOFOLLOW);
   ASSERT_EQ(0, res);
 
   ts[0].tv_nsec = UTIME_NOW;
   ts[1].tv_nsec = UTIME_OMIT;
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", ts, 0);
+  res = utimensat(AT_FDCWD, "tstatf.txt", ts, 0);
   ASSERT_EQ(0, res);
 
   ts[0].tv_nsec = UTIME_OMIT;
   ts[1].tv_nsec = UTIME_OMIT;
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", ts, 0);
+  res = utimensat(AT_FDCWD, "tstatf.txt", ts, 0);
   ASSERT_EQ(0, res);
 
   ts[0].tv_nsec = UTIME_NOW;
   ts[1].tv_nsec = UTIME_NOW;
-  res = utimensat(AT_FDCWD, "test_stat_file.txt", ts, 0);
+  res = utimensat(AT_FDCWD, "tstatf.txt", ts, 0);
   ASSERT_EQ(0, res);
 
   res = utimensat(AT_FDCWD, "nonexistent_utimensat_xyz.tmp", NULL, 0);
   ASSERT_EQ(-1, res);
 
-  res = utimensat(-1, "test_stat_file.txt", NULL, 0);
+  res = utimensat(-1, "tstatf.txt", NULL, 0);
   ASSERT_EQ(-1, res);
 
 #if defined(_WIN32)
   res = utimensat(AT_FDCWD, NULL, NULL, 0);
   ASSERT_EQ(-1, res);
 
-  res = utimensat(9999, "test_stat_file.txt", NULL, 0);
+  res = utimensat(9999, "tstatf.txt", NULL, 0);
   ASSERT_EQ(-1, res);
 #endif
 
@@ -641,22 +661,22 @@ TEST test_mknod(void) {
   struct stat st;
   int res;
 
-  remove("test_stat_mknod.tmp");
+  remove("tmknod1.tmp");
 
 #if defined(_WIN32)
-  res = mknod("test_stat_mknod.tmp", S_IFREG | 0644, 0);
+  res = mknod("tmknod1.tmp", S_IFREG | 0644, 0);
   ASSERT_EQ(0, res);
 
   memset(&st, 0, sizeof(st));
-  res = stat("test_stat_mknod.tmp", &st);
+  res = stat("tmknod1.tmp", &st);
   ASSERT_EQ(0, res);
   ASSERT(S_ISREG(st.st_mode));
 
   /* Trying to create already existing file */
-  res = mknod("test_stat_mknod.tmp", S_IFREG | 0644, 0);
+  res = mknod("tmknod1.tmp", S_IFREG | 0644, 0);
   ASSERT_EQ(-1, res);
 
-  remove("test_stat_mknod.tmp");
+  remove("tmknod1.tmp");
 
   /* Attempt create under nonexistent subdirectory */
   res = mknod("nonexistent_subdir_xyz/test_stat_mknod.tmp", S_IFREG | 0644, 0);
@@ -684,13 +704,13 @@ TEST test_mknod(void) {
   ASSERT_EQ(-1, res);
 #else
   /* On POSIX, mknod for non-FIFO by non-root returns -1 (EPERM/EINVAL) */
-  res = mknod("test_stat_mknod.tmp", S_IFREG | 0644, 0);
+  res = mknod("tmknod1.tmp", S_IFREG | 0644, 0);
   if (res == 0) {
     memset(&st, 0, sizeof(st));
-    res = stat("test_stat_mknod.tmp", &st);
+    res = stat("tmknod1.tmp", &st);
     ASSERT_EQ(0, res);
     ASSERT(S_ISREG(st.st_mode));
-    remove("test_stat_mknod.tmp");
+    remove("tmknod1.tmp");
   } else {
     ASSERT(errno == EPERM || errno == EINVAL || errno == EACCES);
   }
@@ -703,21 +723,21 @@ TEST test_mknodat(void) {
   struct stat st;
   int res;
 
-  remove("test_stat_mknodat.tmp");
+  remove("tmknod2.tmp");
 
-  res = mknodat(AT_FDCWD, "test_stat_mknodat.tmp", S_IFREG | 0644, 0);
+  res = mknodat(AT_FDCWD, "tmknod2.tmp", S_IFREG | 0644, 0);
   if (res == 0) {
     memset(&st, 0, sizeof(st));
-    res = stat("test_stat_mknodat.tmp", &st);
+    res = stat("tmknod2.tmp", &st);
     ASSERT_EQ(0, res);
-    remove("test_stat_mknodat.tmp");
+    remove("tmknod2.tmp");
   }
 
 #if defined(_WIN32)
   res = mknodat(AT_FDCWD, NULL, S_IFREG | 0644, 0);
   ASSERT_EQ(-1, res);
 
-  res = mknodat(9999, "test_stat_mknodat.tmp", S_IFREG | 0644, 0);
+  res = mknodat(9999, "tmknod2.tmp", S_IFREG | 0644, 0);
   ASSERT_EQ(-1, res);
 #endif
 
@@ -752,20 +772,20 @@ TEST test_at_directory_fd(void) {
       if (hDir != (HANDLE)(size_t)-1) {
         dfd = _open_osfhandle((intptr_t)hDir, 0);
         if (dfd >= 0) {
-          res = fstatat(dfd, "test_stat_file.txt", &st, 0);
+          res = fstatat(dfd, "tstatf.txt", &st, 0);
           ASSERT_EQ(0, res);
           ASSERT(S_ISREG(st.st_mode));
 
-          res = fchmodat(dfd, "test_stat_file.txt", 0644, 0);
+          res = fchmodat(dfd, "tstatf.txt", 0644, 0);
           ASSERT_EQ(0, res);
 
-          res = utimensat(dfd, "test_stat_file.txt", NULL, 0);
+          res = utimensat(dfd, "tstatf.txt", NULL, 0);
           ASSERT_EQ(0, res);
 
-          remove("test_stat_mknodat_dfd.tmp");
-          res = mknodat(dfd, "test_stat_mknodat_dfd.tmp", S_IFREG | 0644, 0);
+          remove("tmknod3.tmp");
+          res = mknodat(dfd, "tmknod3.tmp", S_IFREG | 0644, 0);
           if (res == 0) {
-            remove("test_stat_mknodat_dfd.tmp");
+            remove("tmknod3.tmp");
           }
 
           close(dfd);
@@ -776,7 +796,7 @@ TEST test_at_directory_fd(void) {
 #else
   dfd = open(".", O_RDONLY);
   if (dfd >= 0) {
-    res = fstatat(dfd, "test_stat_file.txt", &st, 0);
+    res = fstatat(dfd, "tstatf.txt", &st, 0);
     ASSERT_EQ(0, res);
     close(dfd);
   }
@@ -786,14 +806,35 @@ TEST test_at_directory_fd(void) {
 }
 
 TEST test_at_absolute_paths(void) {
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  char fullpath[260];
+#else
   char fullpath[4096];
+#endif
   struct stat st;
   int res;
 
+  memset(fullpath, 0, sizeof(fullpath));
   memset(&st, 0, sizeof(st));
-#if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \
+#if defined(__WATCOMC__) && (defined(__MSDOS__) || defined(__DOS__))
+  if (_osmajor < 2) {
+    memcpy(fullpath, "C:\\tstatf.txt", 14);
+  }
+  if (fullpath[0] != '\0' ||
+      _fullpath(fullpath, "tstatf.txt", sizeof(fullpath)) != NULL) {
+    res = fstatat(AT_FDCWD, fullpath, &st, 0);
+    ASSERT_EQ(0, res);
+    ASSERT(S_ISREG(st.st_mode));
+
+    res = fchmodat(AT_FDCWD, fullpath, 0644, 0);
+    ASSERT_EQ(0, res);
+
+    res = utimensat(AT_FDCWD, fullpath, NULL, 0);
+    ASSERT_EQ(0, res);
+  }
+#elif defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||         \
     defined(__DOS__)
-  if (_fullpath(fullpath, "test_stat_file.txt", sizeof(fullpath)) != NULL) {
+  if (_fullpath(fullpath, "tstatf.txt", sizeof(fullpath)) != NULL) {
     res = fstatat(AT_FDCWD, fullpath, &st, 0);
     ASSERT_EQ(0, res);
     ASSERT(S_ISREG(st.st_mode));
@@ -805,7 +846,7 @@ TEST test_at_absolute_paths(void) {
     ASSERT_EQ(0, res);
   }
 #else
-  if (realpath("test_stat_file.txt", fullpath) != NULL) {
+  if (realpath("tstatf.txt", fullpath) != NULL) {
     res = fstatat(AT_FDCWD, fullpath, &st, 0);
     ASSERT_EQ(0, res);
     ASSERT(S_ISREG(st.st_mode));
@@ -836,28 +877,25 @@ TEST test_reparse_point_symlink(void) {
     pCreateSymbolicLinkA = (CreateSymbolicLinkA_t)(size_t)GetProcAddress(
         hK32, "CreateSymbolicLinkA");
     if (pCreateSymbolicLinkA) {
-      remove("test_stat_symlink.tmp");
+      remove("stsym.tmp");
       if (pCreateSymbolicLinkA(
-              "test_stat_symlink.tmp", "test_stat_file.txt",
+              "stsym.tmp", "tstatf.txt",
               0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */) ||
-          pCreateSymbolicLinkA("test_stat_symlink.tmp", "test_stat_file.txt",
-                               0)) {
+          pCreateSymbolicLinkA("stsym.tmp", "tstatf.txt", 0)) {
         memset(&st, 0, sizeof(st));
-        res = lstat("test_stat_symlink.tmp", &st);
+        res = lstat("stsym.tmp", &st);
         ASSERT_EQ(0, res);
         ASSERT(S_ISLNK(st.st_mode));
 
         memset(&st, 0, sizeof(st));
-        res = fstatat(AT_FDCWD, "test_stat_symlink.tmp", &st,
-                      AT_SYMLINK_NOFOLLOW);
+        res = fstatat(AT_FDCWD, "stsym.tmp", &st, AT_SYMLINK_NOFOLLOW);
         ASSERT_EQ(0, res);
         ASSERT(S_ISLNK(st.st_mode));
 
-        res = utimensat(AT_FDCWD, "test_stat_symlink.tmp", NULL,
-                        AT_SYMLINK_NOFOLLOW);
+        res = utimensat(AT_FDCWD, "stsym.tmp", NULL, AT_SYMLINK_NOFOLLOW);
         ASSERT_EQ(0, res);
 
-        remove("test_stat_symlink.tmp");
+        remove("stsym.tmp");
       }
     }
   }
@@ -902,13 +940,13 @@ TEST test_umask(void) {
 TEST test_chmod(void) {
   int res;
 
-  res = chmod("test_stat_file.txt", 0644);
+  res = chmod("tstatf.txt", 0644);
   ASSERT_EQ(0, res);
 
   res = chmod("nonexistent_chmod_xyz.tmp", 0644);
   ASSERT_EQ(-1, res);
 
-  remove("test_stat_file.txt");
+  remove("tstatf.txt");
 
   PASS();
 }
@@ -1076,22 +1114,22 @@ TEST test_posix_stat_extra_coverage(void) {
 
     /* Create temporary file & open fd for tests */
 #if defined(_MSC_VER)
-    if (fopen_s(&fp, "test_stat_extra.txt", "w") != 0) {
+    if (fopen_s(&fp, "st_ext.txt", "w") != 0) {
       fp = NULL;
     }
 #else
-    fp = fopen("test_stat_extra.txt", "w");
+    fp = fopen("st_ext.txt", "w");
 #endif
     ASSERT(fp != NULL);
     fputs("extra\n", fp);
     fclose(fp);
 #if defined(_MSC_VER)
-    if (_sopen_s(&fd, "test_stat_extra.txt", _O_RDWR, _SH_DENYNO,
+    if (_sopen_s(&fd, "st_ext.txt", _O_RDWR, _SH_DENYNO,
                  _S_IREAD | _S_IWRITE) != 0) {
       fd = -1;
     }
 #else
-    fd = open("test_stat_extra.txt", O_RDWR, 0644);
+    fd = open("st_ext.txt", O_RDWR, 0644);
 #endif
     ASSERT(fd >= 0);
 
@@ -1167,7 +1205,7 @@ TEST test_posix_stat_extra_coverage(void) {
     g_mock_final_ret = 0;
     ASSERT_EQ(-1, fchmod(fd, 0644));
 
-    g_mock_final_path = "test_stat_extra.txt";
+    g_mock_final_path = "st_ext.txt";
     g_mock_final_ret = (unsigned long)strlen(g_mock_final_path);
     posix_stat_set_win32_hooks(NULL, mock_get_proc_final, mock_get_attrs_fail,
                                NULL, NULL, NULL, NULL, NULL);
@@ -1191,7 +1229,7 @@ TEST test_posix_stat_extra_coverage(void) {
 
     posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                mock_create_file_fail);
-    ASSERT_EQ(0, posix_stat("test_stat_extra.txt", &pst));
+    ASSERT_EQ(0, posix_stat("st_ext.txt", &pst));
     posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
     /* posix_fstat NULL & bad fd */
@@ -1218,17 +1256,17 @@ TEST test_posix_stat_extra_coverage(void) {
     bad_ts[1].tv_sec = 0;
     bad_ts[1].tv_nsec = 0;
     ASSERT_EQ(-1, futimens(fd, bad_ts));
-    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", bad_ts, 0));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "st_ext.txt", bad_ts, 0));
 
     bad_ts[0].tv_nsec = 0;
     bad_ts[1].tv_nsec = 1000000000L;
     ASSERT_EQ(-1, futimens(fd, bad_ts));
-    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", bad_ts, 0));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "st_ext.txt", bad_ts, 0));
 
     posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL,
                                mock_set_time_fail, NULL);
     ASSERT_EQ(-1, futimens(fd, NULL));
-    ASSERT_EQ(-1, utimensat(AT_FDCWD, "test_stat_extra.txt", NULL, 0));
+    ASSERT_EQ(-1, utimensat(AT_FDCWD, "st_ext.txt", NULL, 0));
     posix_stat_set_win32_hooks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
     /* mkdirat, mkfifo, mkfifoat */
@@ -1240,7 +1278,7 @@ TEST test_posix_stat_extra_coverage(void) {
     ASSERT_EQ(-1, mkfifoat(AT_FDCWD, "test_fifo", 0644));
 
     close(fd);
-    remove("test_stat_extra.txt");
+    remove("st_ext.txt");
   }
 #endif
   PASS();

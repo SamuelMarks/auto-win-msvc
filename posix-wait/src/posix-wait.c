@@ -11,6 +11,9 @@
 #endif
 
 /* clang-format off */
+#if defined(__MSDOS__) || defined(__DOS__) || defined(__WATCOMC__)
+#include <process.h>
+#endif
 #include "posix-wait.h"
 #include <errno.h>
 #include <stddef.h>
@@ -79,6 +82,7 @@ int awm_vfork_try_reap_stub(int pid, int *stat_loc) {
 }
 #elif defined(__GNUC__) || defined(__clang__)
 /** @brief Weak fallback stub when posix-core is not linked. */
+int awm_vfork_try_reap(int pid, int *stat_loc);
 int __attribute__((weak)) awm_vfork_try_reap(int pid, int *stat_loc) {
   (void)pid;
   (void)stat_loc;
@@ -118,6 +122,10 @@ static int (*g_wait_reap)(int, int *) = default_wait_reap;
 void posix_wait_set_open_wait_hooks(void *(*open_fn)(unsigned long, int,
                                                      unsigned long),
                                     unsigned long (*single_fn)(void *,
+                                                               unsigned long));
+void posix_wait_set_open_wait_hooks(void *(*open_fn)(unsigned long, int,
+                                                     unsigned long),
+                                    unsigned long (*single_fn)(void *,
                                                                unsigned long)) {
   g_wait_open = (HANDLE (*)(DWORD, BOOL, DWORD))open_fn;
   g_wait_single = (DWORD (*)(HANDLE, DWORD))single_fn;
@@ -126,6 +134,10 @@ void posix_wait_set_open_wait_hooks(void *(*open_fn)(unsigned long, int,
 /**
  * @brief Overrides process status, termination, close, and vfork hooks.
  */
+void posix_wait_set_proc_hooks(int (*exit_code_fn)(void *, unsigned long *),
+                               int (*terminate_fn)(void *, unsigned int),
+                               int (*close_fn)(void *),
+                               int (*reap_fn)(int, int *));
 void posix_wait_set_proc_hooks(int (*exit_code_fn)(void *, unsigned long *),
                                int (*terminate_fn)(void *, unsigned int),
                                int (*close_fn)(void *),
@@ -139,6 +151,7 @@ void posix_wait_set_proc_hooks(int (*exit_code_fn)(void *, unsigned long *),
 /**
  * @brief Resets all posix-wait Win32 hooks to defaults.
  */
+void posix_wait_reset_hooks(void);
 void posix_wait_reset_hooks(void) {
   g_wait_open = default_wait_open;
   g_wait_single = default_wait_single;
@@ -151,6 +164,7 @@ void posix_wait_reset_hooks(void) {
 /**
  * @brief Populates or clears child tracking table entries for unit testing.
  */
+void posix_wait_test_set_children(int count, void *h0, unsigned long pid0);
 void posix_wait_test_set_children(int count, void *h0, unsigned long pid0) {
   g_posix_child_count = count;
   if (count > 0) {
@@ -282,31 +296,31 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options) {
 
 /** @brief waitid function. */
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
-  pid_t res;
   int status = 0;
-  int pid_to_wait = -1;
+  pid_t res;
+  pid_t pid_to_wait = -1;
 
   if (infop != NULL) {
-    infop->si_signo = 0;
-    infop->si_code = 0;
     infop->si_pid = 0;
     infop->si_status = 0;
+    infop->si_signo = 17; /* SIGCHLD */
+    infop->si_code = 0;
     infop->si_uid = 0;
   }
 
   if (idtype == P_PID) {
-    pid_to_wait = (int)id;
+    pid_to_wait = (pid_t)id;
   } else if (idtype == P_ALL) {
-    pid_to_wait = -1;
+    pid_to_wait = (pid_t)-1;
   } else {
     errno = EINVAL;
     return -1;
   }
 
-  res = waitpid((pid_t)pid_to_wait, &status, options);
+  res = waitpid(pid_to_wait, &status, options);
   if (res > 0) {
     if (infop != NULL) {
-      infop->si_pid = res;
+      infop->si_pid = (int)res;
       infop->si_status = WEXITSTATUS(status);
       infop->si_code = 1; /* CLD_EXITED */
     }
@@ -397,6 +411,9 @@ int posix_wait_kill(pid_t pid, int sig) {
   if (pid <= 0 || sig < 0) {
     errno = EINVAL;
     return -1;
+  }
+  if (sig == 0 && pid == (pid_t)getpid()) {
+    return 0;
   }
   errno = ESRCH;
   return -1;

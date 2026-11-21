@@ -35,19 +35,22 @@ TEST test_posix_core_init(void) {
 }
 
 TEST test_posix_close(void) {
-  int fd;
+  int fd = -1;
   (void)fd;
 
   fd = open("test_pclose.tmp", O_RDWR | O_CREAT, 0666);
+  if (fd >= 0) {
+    posix_close(fd);
+  }
 
   remove("test_pclose.tmp");
   PASS();
 }
 
 TEST test_posix_read(void) {
-  int fd;
+  int fd = -1;
   char buf[16];
-  ssize_t bytes_read;
+  ssize_t bytes_read = 0;
   (void)fd;
   (void)bytes_read;
 
@@ -68,8 +71,8 @@ TEST test_posix_read(void) {
 }
 
 TEST test_posix_write(void) {
-  int fd;
-  ssize_t written;
+  int fd = -1;
+  ssize_t written = 0;
   (void)fd;
   (void)written;
 
@@ -104,7 +107,7 @@ TEST test_posix_fopen(void) {
 }
 
 TEST test_posix_fadvise(void) {
-  int fd;
+  int fd = -1;
   (void)fd;
 
   fd = open("test_pfadv.tmp", O_RDWR | O_CREAT, 0666);
@@ -124,7 +127,7 @@ TEST test_posix_fadvise(void) {
 }
 
 TEST test_posix_fallocate(void) {
-  int fd;
+  int fd = -1;
   (void)fd;
 
   fd = open("test_pfalloc.tmp", O_RDWR | O_CREAT, 0666);
@@ -146,29 +149,29 @@ TEST test_posix_rename(void) {
   FILE *f;
   int rc;
 
-  f = fopen("test_pren1.tmp", "w");
+  f = fopen("pren1.tmp", "w");
   if (f) {
     fputs("data", f);
     fclose(f);
   }
 
-  rc = posix_rename("test_pren1.tmp", "test_pren2.tmp");
+  rc = posix_rename("pren1.tmp", "pren2.tmp");
   ASSERT_EQ(0, rc);
 
-  remove("test_pren1.tmp");
-  remove("test_pren2.tmp");
+  remove("pren1.tmp");
+  remove("pren2.tmp");
   PASS();
 }
 
 TEST test_posix_mkstemp(void) {
   char tmpl[32];
-  int fd;
+  int fd = -1;
   (void)fd;
 
 #if defined(_MSC_VER)
-  strcpy_s(tmpl, sizeof(tmpl), "test_pmk_XXXXXX");
+  strcpy_s(tmpl, sizeof(tmpl), "pmXXXXXX");
 #else
-  strcpy(tmpl, "test_pmk_XXXXXX");
+  strcpy(tmpl, "pmXXXXXX");
 #endif
 
   fd = posix_mkstemp(tmpl);
@@ -192,9 +195,9 @@ TEST test_posix_mkostemp_and_dos83(void) {
 #endif
   ASSERT_EQ(-1, posix_mkostemp(tmpl, 0));
 #if defined(_MSC_VER)
-  strcpy_s(tmpl, sizeof(tmpl), "test_pmko_XXXXXX");
+  strcpy_s(tmpl, sizeof(tmpl), "poXXXXXX");
 #else
-  strcpy(tmpl, "test_pmko_XXXXXX");
+  strcpy(tmpl, "poXXXXXX");
 #endif
   fd = posix_mkostemp(tmpl, 0);
   ASSERT(fd >= 0);
@@ -263,6 +266,7 @@ TEST test_awm_scratch_popen_and_fwriting(void) {
   ASSERT(awm_popen_scratch("echo hi", "rzz") == NULL);
   ASSERT_EQ(-1, awm_pclose_scratch(NULL));
 
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
   fp = awm_popen_scratch("echo sed_pipe_ok", "r");
   ASSERT(fp != NULL);
   memset(buf, 0, sizeof(buf));
@@ -303,6 +307,9 @@ TEST test_awm_scratch_popen_and_fwriting(void) {
       (void)awm_pclose_scratch(slots[idx]);
     }
   }
+#else
+  (void)buf;
+#endif
 
   PASS();
 }

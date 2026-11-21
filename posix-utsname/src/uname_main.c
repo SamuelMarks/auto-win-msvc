@@ -20,11 +20,9 @@ int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  if (uname(&u) == 0) {
-    printf("%s\n", u.sysname);
-  } else {
-    printf("Windows\n");
-  }
+  u.sysname[0] = '\0';
+  (void)uname(&u);
+  printf("%s\n", u.sysname);
   return 0;
 }
 

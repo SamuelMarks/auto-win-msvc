@@ -394,7 +394,11 @@ TEST test_bsd_procstat_and_memstat(void) {
 
   ASSERT_EQ(0, procstat_getosrel(ps, kp, NULL));
   ASSERT_EQ(0, procstat_getosrel(ps, kp, &osrel));
+#if defined(__I86__)
+  ASSERT_EQ(15000, osrel);
+#else
   ASSERT_EQ(1500000, osrel);
+#endif
 
   ASSERT(procstat_getkstack(ps, kp, NULL) == NULL);
   ASSERT(procstat_getkstack(ps, kp, &cnt) == NULL);

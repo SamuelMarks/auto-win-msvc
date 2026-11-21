@@ -93,6 +93,8 @@ TEST test_syslog_macros(void) {
 static int mock_register_fail = 0;
 
 void *RegisterEventSourceA(const char *lpUNCServerName,
+                           const char *lpSourceName);
+void *RegisterEventSourceA(const char *lpUNCServerName,
                            const char *lpSourceName) {
   (void)lpUNCServerName;
   (void)lpSourceName;
@@ -100,10 +102,16 @@ void *RegisterEventSourceA(const char *lpUNCServerName,
     return NULL;
   return (void *)1;
 }
+int DeregisterEventSource(void *hEventLog);
 int DeregisterEventSource(void *hEventLog) {
   (void)hEventLog;
   return 1;
 }
+int ReportEventA(void *hEventLog, unsigned short wType,
+                 unsigned short wCategory, unsigned long dwEventID,
+                 void *lpUserSid, unsigned short wNumStrings,
+                 unsigned long dwDataSize, const char **lpStrings,
+                 void *lpRawData);
 int ReportEventA(void *hEventLog, unsigned short wType,
                  unsigned short wCategory, unsigned long dwEventID,
                  void *lpUserSid, unsigned short wNumStrings,

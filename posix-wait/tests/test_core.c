@@ -129,7 +129,11 @@ TEST test_wait_basic_calls(void) {
 
   memset(&info, 0, sizeof(info));
   ASSERT_EQ(-1, waitid(P_ALL, 0, &info, WEXITED | WNOHANG));
+#if defined(__linux__)
+  ASSERT_EQ(-1, waitid((idtype_t)999, 0, &info, WEXITED));
+#else
   ASSERT_EQ(-1, waitid((idtype_t)999, 0, NULL, WEXITED));
+#endif
 
 #if defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
   {

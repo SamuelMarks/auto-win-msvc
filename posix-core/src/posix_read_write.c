@@ -90,6 +90,13 @@ int posix_epoll_close_stub(int epfd) {
 #pragma comment(linker,                                                        \
                 "/alternatename:posix_epoll_close=posix_epoll_close_stub")
 #endif
+#elif defined(__GNUC__) || defined(__clang__)
+/** @brief Weak fallback stub for posix_epoll_close when linux-epoll is absent.
+ */
+int __attribute__((weak)) posix_epoll_close(int epfd) {
+  (void)epfd;
+  return -1;
+}
 #endif
 
 static void *default_rw_malloc(size_t size) { return malloc(size); }
@@ -820,17 +827,26 @@ FILE *posix_fopen(const char *pathname, const char *mode) {
     return NULL;
   }
 
-  for (mp = mode; *mp && mi < 6; mp++) {
-    if (*mp == 'r' || *mp == 'w' || *mp == 'a' || *mp == '+') {
-      clean_mode[mi++] = *mp;
+  {
+    char base_m = '\0';
+    int has_plus = 0;
+    for (mp = mode; *mp; mp++) {
+      if (*mp == 'r' || *mp == 'w' || *mp == 'a') {
+        if (base_m == '\0') {
+          base_m = *mp;
+        }
+      } else if (*mp == '+') {
+        has_plus = 1;
+      }
     }
+    clean_mode[mi++] = (base_m != '\0') ? base_m : 'r';
+    if (has_plus) {
+      clean_mode[mi++] = '+';
+    }
+    clean_mode[mi++] = 'b';
+    clean_mode[mi] = '\0';
+    mode = clean_mode;
   }
-  if (mi == 0) {
-    clean_mode[mi++] = 'r';
-  }
-  clean_mode[mi++] = 'b';
-  clean_mode[mi] = '\0';
-  mode = clean_mode;
 
   f = open_virtual_proc_stream(pathname);
   if (f != NULL) {
@@ -1869,17 +1885,19 @@ static FILE *open_virtual_proc_stream_posix(const char *pathname) {
 
 /** @brief Open stream with POSIX semantics. */
 FILE *posix_fopen(const char *pathname, const char *mode) {
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
+  FILE *vproc;
+#endif
   if (!pathname || !mode) {
     errno = EINVAL;
     return NULL;
   }
 #if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
     !defined(__linux__) && !defined(__CYGWIN__)
-  {
-    FILE *vproc = open_virtual_proc_stream_posix(pathname);
-    if (vproc != NULL) {
-      return vproc;
-    }
+  vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    return vproc;
   }
 #endif
   return fopen(pathname, mode);
@@ -1977,6 +1995,11 @@ int posix_fileno(FILE *stream) {
 int posix_open(const char *pathname, int flags, ...) {
   va_list ap;
   int mode = 0;
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__linux__) && !defined(__CYGWIN__)
+  FILE *vproc;
+  int vfd;
+#endif
 
   if (!pathname) {
     errno = EINVAL;
@@ -1985,13 +2008,11 @@ int posix_open(const char *pathname, int flags, ...) {
 
 #if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
     !defined(__linux__) && !defined(__CYGWIN__)
-  {
-    FILE *vproc = open_virtual_proc_stream_posix(pathname);
-    if (vproc != NULL) {
-      int vfd = dup(fileno(vproc));
-      fclose(vproc);
-      return vfd;
-    }
+  vproc = open_virtual_proc_stream_posix(pathname);
+  if (vproc != NULL) {
+    vfd = dup(fileno(vproc));
+    fclose(vproc);
+    return vfd;
   }
 #endif
 
@@ -2060,7 +2081,14 @@ int posix_dup2(int oldfd, int newfd) {
     errno = EBADF;
     return -1;
   }
+#if defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+  if (oldfd == newfd) {
+    return newfd;
+  }
+  return (dup2(oldfd, newfd) == 0) ? newfd : -1;
+#else
   return dup2(oldfd, newfd);
+#endif
 }
 
 #endif

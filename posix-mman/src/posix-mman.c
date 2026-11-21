@@ -334,6 +334,10 @@ static int (*g_mman_open_file)(const char *, int) = default_mman_open_file;
 void posix_mman_set_lock_hooks(int (*vlock_fn)(WIN_LPVOID, size_t),
                                int (*vunlock_fn)(WIN_LPVOID, size_t),
                                int (*flush_fn)(WIN_LPCVOID, size_t),
+                               int (*unmap_fn)(WIN_LPCVOID));
+void posix_mman_set_lock_hooks(int (*vlock_fn)(WIN_LPVOID, size_t),
+                               int (*vunlock_fn)(WIN_LPVOID, size_t),
+                               int (*flush_fn)(WIN_LPCVOID, size_t),
                                int (*unmap_fn)(WIN_LPCVOID)) {
   g_mman_vlock = vlock_fn;
   g_mman_vunlock = vunlock_fn;
@@ -344,6 +348,19 @@ void posix_mman_set_lock_hooks(int (*vlock_fn)(WIN_LPVOID, size_t),
 /**
  * @brief Overrides Win32/CRT hooks used by posix-mman for unit testing.
  */
+void posix_mman_set_win32_hooks(
+    void (*sysinfo_fn)(WIN_SYSTEM_INFO *),
+    size_t (*vquery_fn)(WIN_LPCVOID, WIN_MEMORY_BASIC_INFORMATION *, size_t),
+    WIN_DWORD (*temp_path_fn)(WIN_DWORD, char *),
+    WIN_DWORD (*temp_file_fn)(const char *, const char *, WIN_UINT, char *),
+    WIN_HANDLE (*create_map_fn)(WIN_HANDLE, WIN_LPVOID, WIN_DWORD, WIN_DWORD,
+                                WIN_DWORD, const char *),
+    WIN_LPVOID (*map_view_fn)(WIN_HANDLE, WIN_DWORD, WIN_DWORD, WIN_DWORD,
+                              size_t, WIN_LPVOID),
+    int (*vprotect_fn)(WIN_LPVOID, size_t, WIN_DWORD, WIN_DWORD *),
+    void *(*get_mod_fn)(const char *),
+    void *(*get_proc_fn)(void *, const char *),
+    int (*open_file_fn)(const char *, int));
 void posix_mman_set_win32_hooks(
     void (*sysinfo_fn)(WIN_SYSTEM_INFO *),
     size_t (*vquery_fn)(WIN_LPCVOID, WIN_MEMORY_BASIC_INFORMATION *, size_t),
@@ -372,6 +389,7 @@ void posix_mman_set_win32_hooks(
 /**
  * @brief Resets Win32/CRT hooks used by posix-mman to defaults.
  */
+void posix_mman_reset_win32_hooks(void);
 void posix_mman_reset_win32_hooks(void) {
   g_mman_sysinfo = default_mman_sysinfo;
   g_mman_vquery = default_mman_vquery;
@@ -1106,6 +1124,10 @@ int munlockall(void) { return 0; }
 #if !defined(_WIN32) && !defined(_WIN64)
 #if defined(__linux__)
 int posix_memfd_create(const char *name, unsigned int flags) {
+  if (name == NULL) {
+    errno = EFAULT;
+    return -1;
+  }
 #if defined(SYS_memfd_create)
   return (int)syscall(SYS_memfd_create, name, flags);
 #else
@@ -1115,22 +1137,19 @@ int posix_memfd_create(const char *name, unsigned int flags) {
 }
 #elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 int posix_memfd_create(const char *name, unsigned int flags) {
-  char temp_file[32];
-  int fd;
-  unsigned int rnd_val;
+  static unsigned int s_dos_mfd_seq = 0;
+  char temp_file[16];
 
   if (name == NULL) {
-    errno = 14; /* EFAULT */
+    errno = EFAULT;
     return -1;
   }
   if (flags & ~(MFD_CLOEXEC | MFD_ALLOW_SEALING | MFD_HUGETLB)) {
     errno = EINVAL;
     return -1;
   }
-  rnd_val = (unsigned int)rand() % 10000U;
-  sprintf(temp_file, "mfd%04u.tmp", rnd_val);
-  fd = open(temp_file, O_RDWR | O_CREAT | O_EXCL, S_IREAD | S_IWRITE);
-  return fd;
+  sprintf(temp_file, "mfd%u.tmp", (s_dos_mfd_seq++) & 3U);
+  return open(temp_file, O_RDWR | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
 }
 #else
 int posix_memfd_create(const char *name, unsigned int flags) {

@@ -6,6 +6,18 @@
 #include <stddef.h>
 /* clang-format on */
 
+struct detach_ctx {
+  volatile int done;
+};
+
+static void *detach_thread_fn(void *arg) {
+  struct detach_ctx *ctx = (struct detach_ctx *)arg;
+  if (ctx) {
+    ctx->done = 1;
+  }
+  return NULL;
+}
+
 static void *noop_thread_fn(void *arg) { return arg; }
 
 static int g_exit_cleanup_count = 0;
@@ -157,12 +169,19 @@ TEST test_pthread_create(void) {
 
 TEST test_pthread_detach(void) {
   pthread_t th;
-  ASSERT_EQ(0, pthread_create(&th, NULL, noop_thread_fn, NULL));
+  struct detach_ctx ctx;
+  int i;
+  ctx.done = 0;
+  ASSERT_EQ(0, pthread_create(&th, NULL, detach_thread_fn, &ctx));
   ASSERT_EQ(0, pthread_detach(th));
+  while (!ctx.done) {
+    sched_yield();
+  }
+  for (i = 0; i < 1000; ++i) {
+    sched_yield();
+  }
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(EINVAL, pthread_detach(NULL));
-  /* Give detached noop worker a moment to finish cleanly */
-  sched_yield();
 #endif
   PASS();
 }
@@ -430,7 +449,8 @@ TEST test_pthread_setname_np(void) {
 TEST test_pthread_sigmask(void) {
   sigset_t s;
   sigset_t os;
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__WATCOMC__) ||       \
+    defined(__MSDOS__) || defined(__DOS__)
   s = 0;
   os = 1;
   ASSERT_EQ(-1, pthread_sigmask(0, NULL, NULL));

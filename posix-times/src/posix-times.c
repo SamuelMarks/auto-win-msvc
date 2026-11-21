@@ -94,7 +94,6 @@ clock_t posix_times(struct tms *buf) {
 
 /**
  * @brief Retrieves information on posix-times availability.
- * @param[out] out_available Pointer receiving availability status (1).
  * @return AUTO_WIN_MSVC_SUCCESS on success, or error code on NULL pointer.
  */
 auto_win_msvc_error_t posix_times_get_info(int *out_available) {

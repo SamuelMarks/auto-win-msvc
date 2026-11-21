@@ -133,6 +133,14 @@ TEST test_posix_socketpair(void) {
   int rc;
   char sbuf[4];
 
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+  rc = posix_socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+  ASSERT_EQ(-1, rc);
+  ASSERT_EQ(-1, (int)posix_send(0, "hi", 2, 0));
+  memset(sbuf, 0, sizeof(sbuf));
+  ASSERT_EQ(-1, (int)posix_recv(0, sbuf, 2, 0));
+  PASS();
+#else
   /* Valid AF_UNIX call + posix_send / posix_recv */
   rc = posix_socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
   ASSERT_EQ(0, rc);
@@ -184,6 +192,7 @@ TEST test_posix_socketpair(void) {
 #endif
 
   PASS();
+#endif
 }
 
 TEST test_posix_listen(void) {

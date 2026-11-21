@@ -252,6 +252,7 @@ TEST test_posix_uio_readv_writev_file(void) {
   close(fd);
   unlink(test_filename);
 
+#if !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__)
   /* Non-seekable pipe fallback for posix_preadv and posix_pwritev */
   {
     int pfd[2];
@@ -268,6 +269,7 @@ TEST test_posix_uio_readv_writev_file(void) {
     close(pfd[0]);
     close(pfd[1]);
   }
+#endif
 #endif
 
   PASS();

@@ -134,6 +134,13 @@ void posix_termios_set_win32_hooks(ptrdiff_t (*osfhandle_fn)(intptr_t),
                                    BOOL (*get_mode_fn)(HANDLE, DWORD *),
                                    BOOL (*set_mode_fn)(HANDLE, DWORD),
                                    DWORD (*file_type_fn)(HANDLE),
+                                   BOOL (*set_break_fn)(HANDLE));
+void posix_termios_set_win32_hooks(ptrdiff_t (*osfhandle_fn)(intptr_t),
+                                   HANDLE (*std_handle_fn)(DWORD),
+                                   BOOL (*flush_file_fn)(HANDLE),
+                                   BOOL (*get_mode_fn)(HANDLE, DWORD *),
+                                   BOOL (*set_mode_fn)(HANDLE, DWORD),
+                                   DWORD (*file_type_fn)(HANDLE),
                                    BOOL (*set_break_fn)(HANDLE)) {
   g_termios_osfhandle = osfhandle_fn;
   g_termios_std_handle = std_handle_fn;
@@ -147,6 +154,7 @@ void posix_termios_set_win32_hooks(ptrdiff_t (*osfhandle_fn)(intptr_t),
 /**
  * @brief Resets Win32 hooks used by posix-termios to defaults.
  */
+void posix_termios_reset_win32_hooks(void);
 void posix_termios_reset_win32_hooks(void) {
   g_termios_osfhandle = default_termios_osfhandle;
   g_termios_std_handle = default_termios_std_handle;
@@ -381,24 +389,24 @@ int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
   if (get_handle_from_fd_helper(fd, &h) == 0 && g_termios_get_mode(h, &mode)) {
     if (fd == 0) {
       if (termios_p->c_lflag & ECHO)
-        mode |= ENABLE_ECHO_INPUT;
+        mode |= (DWORD)ENABLE_ECHO_INPUT;
       else
-        mode &= ~ENABLE_ECHO_INPUT;
+        mode &= ~(DWORD)ENABLE_ECHO_INPUT;
 
       if (termios_p->c_lflag & ICANON)
-        mode |= ENABLE_LINE_INPUT;
+        mode |= (DWORD)ENABLE_LINE_INPUT;
       else
-        mode &= ~ENABLE_LINE_INPUT;
+        mode &= ~(DWORD)ENABLE_LINE_INPUT;
 
       if (termios_p->c_lflag & ISIG)
-        mode |= ENABLE_PROCESSED_INPUT;
+        mode |= (DWORD)ENABLE_PROCESSED_INPUT;
       else
-        mode &= ~ENABLE_PROCESSED_INPUT;
+        mode &= ~(DWORD)ENABLE_PROCESSED_INPUT;
     } else {
       if (termios_p->c_oflag & OPOST)
-        mode |= ENABLE_PROCESSED_OUTPUT;
+        mode |= (DWORD)ENABLE_PROCESSED_OUTPUT;
       else
-        mode &= ~ENABLE_PROCESSED_OUTPUT;
+        mode &= ~(DWORD)ENABLE_PROCESSED_OUTPUT;
     }
     if (g_termios_set_mode(h, mode)) {
       return 0;
@@ -446,6 +454,7 @@ auto_win_msvc_error_t posix_termios_get_info(int *out_available) {
 typedef int make_iso_compilers_happy_tu;
 
 /* Dummy function to prevent empty translation unit */
+int dummy_posix_termios(void);
 int dummy_posix_termios(void) { return 0; }
 
 #endif

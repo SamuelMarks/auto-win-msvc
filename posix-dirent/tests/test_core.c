@@ -26,7 +26,7 @@ extern void posix_dirent_set_alloc_hooks(void *(*malloc_fn)(size_t),
 extern void posix_dirent_reset_hooks(void);
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) ||                 \
-    !defined(__linux__)
+    (!defined(__linux__) && !defined(__CYGWIN__))
 static int g_malloc_calls = 0;
 static int g_malloc_fail_at = 0;
 static int g_malloc_fail_from = 0;
@@ -555,6 +555,7 @@ TEST test_posix_dirent_comprehensive(void) {
   DIR *d;
   struct dirent *entry;
   int count = 0;
+  int can_opendir_cwd = 1;
 
   posix_dirent_set_alloc_hooks(NULL, NULL, NULL);
   posix_dirent_reset_hooks();
@@ -564,12 +565,19 @@ TEST test_posix_dirent_comprehensive(void) {
   ASSERT_EQ(-1, posix_closedir(NULL));
   posix_rewinddir(NULL);
 
-  d = posix_opendir(".");
-  ASSERT(d != NULL);
-  entry = posix_readdir(d);
-  ASSERT(entry != NULL);
-  posix_rewinddir(d);
-  ASSERT_EQ(0, posix_closedir(d));
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2) {
+    can_opendir_cwd = 0;
+  }
+#endif
+  if (can_opendir_cwd) {
+    d = posix_opendir(".");
+    ASSERT(d != NULL);
+    entry = posix_readdir(d);
+    ASSERT(entry != NULL);
+    posix_rewinddir(d);
+    ASSERT_EQ(0, posix_closedir(d));
+  }
 
   d = posix_opendir("/proc");
   ASSERT(d != NULL);
@@ -582,7 +590,7 @@ TEST test_posix_dirent_comprehensive(void) {
   ASSERT(posix_readdir(d) != NULL);
   ASSERT_EQ(0, posix_closedir(d));
 
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
   {
     DIR *handles[16];
     int i;

@@ -3,7 +3,9 @@ project(posix-netdb VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+if(NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 if(NOT MSVC AND NOT (CMAKE_C_COMPILER_ID MATCHES "Watcom"))
     add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _POSIX_C_SOURCE=200809L _DARWIN_C_SOURCE)
 endif()
@@ -26,6 +28,7 @@ target_include_directories(posix-netdb PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-netinet/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sockets/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-select/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-poll/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-ioctl/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../posix-sys-uio/include>

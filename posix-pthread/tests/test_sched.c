@@ -33,16 +33,28 @@ TEST test_sched_get_priority_min(void) {
 TEST test_sched_getparam(void) {
 #if !defined(__APPLE__)
   struct sched_param sp;
-  ASSERT_EQ(0, sched_getparam(0, &sp));
+  int rc = sched_getparam(0, &sp);
+#if defined(__linux__) && !defined(__GLIBC__)
+  ASSERT(rc == 0 || (rc == -1 && errno == ENOSYS));
+#else
+  ASSERT_EQ(0, rc);
+#endif
   ASSERT_EQ(-1, sched_getparam(-1, &sp));
+#if !defined(__linux__)
   ASSERT_EQ(-1, sched_getparam(0, NULL));
+#endif
 #endif
   PASS();
 }
 
 TEST test_sched_getscheduler(void) {
 #if !defined(__APPLE__)
-  ASSERT(sched_getscheduler(0) >= 0);
+  int rc = sched_getscheduler(0);
+#if defined(__linux__) && !defined(__GLIBC__)
+  ASSERT(rc >= 0 || (rc == -1 && errno == ENOSYS));
+#else
+  ASSERT(rc >= 0);
+#endif
   ASSERT_EQ(-1, sched_getscheduler(-1));
 #endif
   PASS();
@@ -53,7 +65,9 @@ TEST test_sched_rr_get_interval(void) {
   struct timespec ts;
   ASSERT_EQ(0, sched_rr_get_interval(0, &ts));
   ASSERT_EQ(-1, sched_rr_get_interval(-1, &ts));
+#if !defined(__linux__)
   ASSERT_EQ(-1, sched_rr_get_interval(0, NULL));
+#endif
 #endif
   PASS();
 }
@@ -61,10 +75,19 @@ TEST test_sched_rr_get_interval(void) {
 TEST test_sched_setparam(void) {
 #if !defined(__APPLE__)
   struct sched_param sp;
-  ASSERT_EQ(0, sched_getparam(0, &sp));
+  int rc;
+  sp.sched_priority = 0;
+  rc = sched_getparam(0, &sp);
+#if defined(__linux__) && !defined(__GLIBC__)
+  ASSERT(rc == 0 || (rc == -1 && errno == ENOSYS));
+#else
+  ASSERT_EQ(0, rc);
+#endif
   (void)sched_setparam(0, &sp);
   ASSERT_EQ(-1, sched_setparam(-1, &sp));
+#if !defined(__linux__)
   ASSERT_EQ(-1, sched_setparam(0, NULL));
+#endif
 #endif
   PASS();
 }
@@ -72,11 +95,20 @@ TEST test_sched_setparam(void) {
 TEST test_sched_setscheduler(void) {
 #if !defined(__APPLE__)
   struct sched_param sp;
-  ASSERT_EQ(0, sched_getparam(0, &sp));
+  int rc;
+  sp.sched_priority = 0;
+  rc = sched_getparam(0, &sp);
+#if defined(__linux__) && !defined(__GLIBC__)
+  ASSERT(rc == 0 || (rc == -1 && errno == ENOSYS));
+#else
+  ASSERT_EQ(0, rc);
+#endif
   (void)sched_setscheduler(0, SCHED_OTHER, &sp);
   ASSERT_EQ(-1, sched_setscheduler(-1, SCHED_OTHER, &sp));
   ASSERT_EQ(-1, sched_setscheduler(0, -1, &sp));
+#if !defined(__linux__)
   ASSERT_EQ(-1, sched_setscheduler(0, SCHED_OTHER, NULL));
+#endif
 #endif
   PASS();
 }

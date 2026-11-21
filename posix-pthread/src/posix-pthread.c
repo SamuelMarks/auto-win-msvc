@@ -12,8 +12,10 @@
 #include "posix-pthread.h"
 #include <errno.h>
 #include <stddef.h>
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__DOS__) ||           \
+    defined(__MSDOS__) || defined(__WATCOMC__)
 #include <fcntl.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,19 +56,413 @@
     (defined(__WATCOMC__) && !defined(_WIN32))
 
 #define POSIX_DOS_MAX_TLS_KEYS 64
+#define POSIX_DOS_MAX_THREADS 16
+
+struct posix_dos_attr_s {
+  int detachstate;
+  size_t guardsize;
+  int inheritsched;
+  struct sched_param schedparam;
+  int schedpolicy;
+  int scope;
+  void *stackaddr;
+  size_t stacksize;
+};
+
+struct posix_dos_mutex_s {
+  int type;
+  size_t owner_tid;
+  int depth;
+};
+
+struct posix_dos_rwlock_s {
+  int readers;
+  size_t writer_tid;
+};
+
+struct posix_dos_barrier_s {
+  unsigned count;
+  unsigned limit;
+};
+
 static int g_dos_tls_used[POSIX_DOS_MAX_TLS_KEYS];
 static void *g_dos_tls_values[POSIX_DOS_MAX_TLS_KEYS];
 static void (*g_dos_tls_destructors[POSIX_DOS_MAX_TLS_KEYS])(void *);
 
+static size_t g_dos_current_tid = 1;
+static size_t g_dos_next_tid = 2;
+static void *g_dos_thread_retvals[POSIX_DOS_MAX_THREADS];
+static int g_dos_in_worker = 0;
+static jmp_buf g_dos_exit_jmp;
+static void *g_dos_exit_val = NULL;
+static struct _pthread_cleanup_buffer *g_dos_cleanup_top = NULL;
+static int g_dos_concurrency = 0;
+static int g_dos_sched_policy = SCHED_OTHER;
+static int g_dos_sched_prio = 0;
+
+/** @brief Register fork handlers (no-op on single-process DOS). */
+int pthread_atfork(void (*prepare)(void), void (*parent)(void),
+                   void (*child)(void)) {
+  (void)prepare;
+  (void)parent;
+  (void)child;
+  return 0;
+}
+
+/** @brief Initialize thread attributes on DOS. */
+int pthread_attr_init(pthread_attr_t *attr) {
+  struct posix_dos_attr_s *a;
+  if (!attr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)calloc(1, sizeof(*a));
+  if (!a) {
+    return ENOMEM;
+  }
+  a->detachstate = PTHREAD_CREATE_JOINABLE;
+  a->guardsize = 4096;
+  a->schedpolicy = SCHED_OTHER;
+  a->stacksize = 16384;
+  attr->ptr = a;
+  return 0;
+}
+
+/** @brief Destroy thread attributes on DOS. */
+int pthread_attr_destroy(pthread_attr_t *attr) {
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  free(attr->ptr);
+  attr->ptr = NULL;
+  return 0;
+}
+
+/** @brief Get detach state from thread attributes on DOS. */
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !detachstate) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *detachstate = a->detachstate;
+  return 0;
+}
+
+/** @brief Set detach state on thread attributes on DOS. */
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr ||
+      (detachstate != PTHREAD_CREATE_JOINABLE &&
+       detachstate != PTHREAD_CREATE_DETACHED)) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->detachstate = detachstate;
+  return 0;
+}
+
+/** @brief Get guard size from thread attributes on DOS. */
+int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !guardsize) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *guardsize = a->guardsize;
+  return 0;
+}
+
+/** @brief Set guard size on thread attributes on DOS. */
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->guardsize = guardsize;
+  return 0;
+}
+
+/** @brief Get scheduling inheritance from thread attributes on DOS. */
+int pthread_attr_getinheritsched(const pthread_attr_t *attr,
+                                 int *inheritsched) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !inheritsched) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *inheritsched = a->inheritsched;
+  return 0;
+}
+
+/** @brief Set scheduling inheritance on thread attributes on DOS. */
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->inheritsched = inheritsched;
+  return 0;
+}
+
+/** @brief Get scheduling parameters from thread attributes on DOS. */
+int pthread_attr_getschedparam(const pthread_attr_t *attr,
+                               struct sched_param *param) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !param) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *param = a->schedparam;
+  return 0;
+}
+
+/** @brief Set scheduling parameters on thread attributes on DOS. */
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+                               const struct sched_param *param) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !param) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->schedparam = *param;
+  return 0;
+}
+
+/** @brief Get scheduling policy from thread attributes on DOS. */
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !policy) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *policy = a->schedpolicy;
+  return 0;
+}
+
+/** @brief Set scheduling policy on thread attributes on DOS. */
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->schedpolicy = policy;
+  return 0;
+}
+
+/** @brief Get contention scope from thread attributes on DOS. */
+int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !contentionscope) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *contentionscope = a->scope;
+  return 0;
+}
+
+/** @brief Set contention scope on thread attributes on DOS. */
+int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || (contentionscope != 0 && contentionscope != 1)) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->scope = contentionscope;
+  return 0;
+}
+
+/** @brief Get stack address and size from thread attributes on DOS. */
+int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr,
+                          size_t *stacksize) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !stackaddr || !stacksize) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *stackaddr = a->stackaddr;
+  *stacksize = a->stacksize;
+  return 0;
+}
+
+/** @brief Set stack address and size on thread attributes on DOS. */
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+                          size_t stacksize) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->stackaddr = stackaddr;
+  a->stacksize = stacksize;
+  return 0;
+}
+
+/** @brief Get stack size from thread attributes on DOS. */
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
+  const struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr || !stacksize) {
+    return EINVAL;
+  }
+  a = (const struct posix_dos_attr_s *)attr->ptr;
+  *stacksize = a->stacksize;
+  return 0;
+}
+
+/** @brief Set stack size on thread attributes on DOS. */
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
+  struct posix_dos_attr_s *a;
+  if (!attr || !attr->ptr) {
+    return EINVAL;
+  }
+  a = (struct posix_dos_attr_s *)attr->ptr;
+  a->stacksize = stacksize;
+  return 0;
+}
+
+/** @brief Initialize mutex attributes on DOS. */
+int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = (void *)(size_t)(PTHREAD_MUTEX_NORMAL + 1);
+  return 0;
+}
+
+/** @brief Destroy mutex attributes on DOS. */
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = NULL;
+  return 0;
+}
+
+/** @brief Get mutex priority ceiling on DOS. */
+int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr,
+                                     int *prioceiling) {
+  if (!attr || !prioceiling) {
+    errno = EINVAL;
+    return -1;
+  }
+  *prioceiling = 0;
+  return 0;
+}
+
+/** @brief Set mutex priority ceiling on DOS. */
+int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr,
+                                     int prioceiling) {
+  (void)prioceiling;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Get mutex protocol on DOS. */
+int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
+                                  int *protocol) {
+  if (!attr || !protocol) {
+    errno = EINVAL;
+    return -1;
+  }
+  *protocol = 0;
+  return 0;
+}
+
+/** @brief Set mutex protocol on DOS. */
+int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol) {
+  (void)protocol;
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Get mutex process-shared attribute on DOS. */
+int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr,
+                                 int *pshared) {
+  if (!attr || !pshared) {
+    errno = EINVAL;
+    return -1;
+  }
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+/** @brief Set mutex process-shared attribute on DOS. */
+int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Get mutex type attribute on DOS. */
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) {
+  if (!attr || !attr->ptr || !type) {
+    errno = EINVAL;
+    return -1;
+  }
+  *type = (int)((size_t)attr->ptr - 1);
+  return 0;
+}
+
+/** @brief Set mutex type attribute on DOS. */
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
+  if (!attr ||
+      (type != PTHREAD_MUTEX_NORMAL && type != PTHREAD_MUTEX_RECURSIVE &&
+       type != PTHREAD_MUTEX_ERRORCHECK)) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = (void *)(size_t)(type + 1);
+  return 0;
+}
+
+static struct posix_dos_mutex_s *dos_get_mutex(pthread_mutex_t *mutex) {
+  struct posix_dos_mutex_s *m;
+  if (!mutex) {
+    return NULL;
+  }
+  if (!mutex->p) {
+    m = (struct posix_dos_mutex_s *)calloc(1, sizeof(*m));
+    if (!m) {
+      return NULL;
+    }
+    m->type = PTHREAD_MUTEX_NORMAL;
+    mutex->p = m;
+  }
+  return (struct posix_dos_mutex_s *)mutex->p;
+}
+
 /** @brief Initialize mutex on DOS. */
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
-  (void)attr;
+  struct posix_dos_mutex_s *m;
   if (!mutex) {
     errno = EINVAL;
     return EINVAL;
   }
-  mutex->p = (void *)1;
+  m = (struct posix_dos_mutex_s *)calloc(1, sizeof(*m));
+  if (!m) {
+    errno = ENOMEM;
+    return ENOMEM;
+  }
+  if (attr && attr->ptr) {
+    m->type = (int)((size_t)attr->ptr - 1);
+  } else {
+    m->type = PTHREAD_MUTEX_NORMAL;
+  }
+  mutex->p = m;
   return 0;
 }
 
@@ -76,186 +472,461 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
     errno = EINVAL;
     return EINVAL;
   }
-  mutex->p = NULL;
+  if (mutex->p) {
+    free(mutex->p);
+    mutex->p = NULL;
+  }
   return 0;
 }
 
 /** @brief Lock mutex on DOS. */
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
-  if (!mutex) {
+  struct posix_dos_mutex_s *m = dos_get_mutex(mutex);
+  if (!m) {
     errno = EINVAL;
     return EINVAL;
   }
+  if (m->depth > 0 && m->owner_tid == g_dos_current_tid) {
+    if (m->type == PTHREAD_MUTEX_ERRORCHECK) {
+      return EBUSY;
+    }
+    m->depth++;
+    return 0;
+  }
+  if (m->depth == 0) {
+    m->owner_tid = g_dos_current_tid;
+  }
+  m->depth++;
   return 0;
 }
 
 /** @brief Try-lock mutex on DOS. */
 int pthread_mutex_trylock(pthread_mutex_t *mutex) {
-  if (!mutex) {
+  struct posix_dos_mutex_s *m = dos_get_mutex(mutex);
+  if (!m) {
     errno = EINVAL;
     return EINVAL;
   }
+  if (m->depth > 0) {
+    if (m->owner_tid == g_dos_current_tid &&
+        m->type == PTHREAD_MUTEX_RECURSIVE) {
+      m->depth++;
+      return 0;
+    }
+    return EBUSY;
+  }
+  m->owner_tid = g_dos_current_tid;
+  m->depth = 1;
   return 0;
+}
+
+/** @brief Lock mutex with timeout on DOS. */
+int pthread_mutex_timedlock(pthread_mutex_t *mutex,
+                            const struct timespec *abstime) {
+  int rc;
+  if (!mutex || !abstime) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  rc = pthread_mutex_trylock(mutex);
+  if (rc == EBUSY) {
+    return ETIMEDOUT;
+  }
+  return rc;
 }
 
 /** @brief Unlock mutex on DOS. */
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-  if (!mutex) {
+  struct posix_dos_mutex_s *m;
+  if (!mutex || !mutex->p) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  m = (struct posix_dos_mutex_s *)mutex->p;
+  if (m->depth <= 0) {
+    if (m->type == PTHREAD_MUTEX_ERRORCHECK) {
+      return EINVAL;
+    }
+    return 0;
+  }
+  m->depth--;
+  if (m->depth == 0) {
+    m->owner_tid = 0;
+  }
+  return 0;
+}
+
+/** @brief Push a cleanup handler onto the DOS thread cleanup stack. */
+void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
+                                 void (*routine)(void *), void *arg) {
+  if (!buffer) {
+    return;
+  }
+  buffer->routine = routine;
+  buffer->arg = arg;
+  buffer->next = g_dos_cleanup_top;
+  g_dos_cleanup_top = buffer;
+}
+
+/** @brief Pop and optionally execute top cleanup handler on DOS. */
+void _posix_pthread_cleanup_pop(struct _pthread_cleanup_buffer *buffer,
+                                int execute) {
+  if (!buffer) {
+    return;
+  }
+  if (g_dos_cleanup_top == buffer) {
+    g_dos_cleanup_top = buffer->next;
+  }
+  if (execute && buffer->routine) {
+    buffer->routine(buffer->arg);
+  }
+}
+
+/** @brief Execute start_routine cooperatively on single-threaded DOS. */
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine)(void *), void *arg) {
+  size_t saved_tid;
+  size_t new_tid;
+  int saved_in_worker;
+  struct _pthread_cleanup_buffer *saved_cleanup;
+  void *ret = NULL;
+  (void)attr;
+  if (!thread || !start_routine) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  new_tid = g_dos_next_tid++;
+  if (new_tid >= POSIX_DOS_MAX_THREADS) {
+    new_tid = 2 + (new_tid % (POSIX_DOS_MAX_THREADS - 2));
+  }
+  saved_tid = g_dos_current_tid;
+  saved_in_worker = g_dos_in_worker;
+  saved_cleanup = g_dos_cleanup_top;
+
+  g_dos_current_tid = new_tid;
+  g_dos_in_worker = 1;
+  g_dos_cleanup_top = NULL;
+  g_dos_exit_val = NULL;
+
+  if (setjmp(g_dos_exit_jmp) == 0) {
+    ret = start_routine(arg);
+  } else {
+    ret = g_dos_exit_val;
+  }
+
+  g_dos_cleanup_top = saved_cleanup;
+  g_dos_in_worker = saved_in_worker;
+  g_dos_current_tid = saved_tid;
+
+  g_dos_thread_retvals[new_tid % POSIX_DOS_MAX_THREADS] = ret;
+  *thread = (pthread_t)new_tid;
+  return 0;
+}
+
+/** @brief Retrieve completed cooperative thread return value on DOS. */
+int pthread_join(pthread_t thread, void **retval) {
+  size_t tid = (size_t)thread;
+  if (!thread) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  if (retval) {
+    *retval = g_dos_thread_retvals[tid % POSIX_DOS_MAX_THREADS];
+  }
+  return 0;
+}
+
+/** @brief Mark cooperative thread handle as detached on DOS. */
+int pthread_detach(pthread_t thread) {
+  if (!thread) {
     errno = EINVAL;
     return EINVAL;
   }
   return 0;
 }
 
-/** @brief Create thread stub on single-threaded DOS. */
-int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-                   void *(*start_routine)(void *), void *arg) {
+/** @brief Initialize condition variable attributes on DOS. */
+int pthread_condattr_init(pthread_condattr_t *attr) {
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = (void *)1;
+  return 0;
+}
+
+/** @brief Destroy condition variable attributes on DOS. */
+int pthread_condattr_destroy(pthread_condattr_t *attr) {
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = NULL;
+  return 0;
+}
+
+/** @brief Get clock ID from condition variable attributes on DOS. */
+int pthread_condattr_getclock(const pthread_condattr_t *attr,
+                              clockid_t *clock_id) {
+  if (!attr || !clock_id) {
+    errno = EINVAL;
+    return -1;
+  }
+  *clock_id = (clockid_t)((size_t)attr->ptr > 0 ? (size_t)attr->ptr - 1 : 0);
+  return 0;
+}
+
+/** @brief Set clock ID on condition variable attributes on DOS. */
+int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id) {
+  if (!attr || clock_id < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = (void *)((size_t)clock_id + 1);
+  return 0;
+}
+
+/** @brief Get process-shared flag from condition variable attributes on DOS. */
+int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared) {
+  if (!attr || !pshared) {
+    errno = EINVAL;
+    return -1;
+  }
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+/** @brief Set process-shared flag on condition variable attributes on DOS. */
+int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Initialize condition variable on DOS. */
+int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
   (void)attr;
-  (void)arg;
-  if (!thread || !start_routine) {
+  if (!cond) {
     errno = EINVAL;
     return EINVAL;
   }
-  return ENOSYS;
+  cond->p = (void *)1;
+  return 0;
 }
 
-/** @brief Join thread stub on single-threaded DOS. */
-int pthread_join(pthread_t thread, void **retval) {
-  (void)retval;
-  if (!thread) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
-}
-
-/** @brief Detach thread stub on single-threaded DOS. */
-int pthread_detach(pthread_t thread) {
-  if (!thread) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
-}
-
-/** @brief Initialize condition variable stub on DOS. */
-int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
-  if (!cond || !attr) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
-}
-
-/** @brief Destroy condition variable stub on DOS. */
+/** @brief Destroy condition variable on DOS. */
 int pthread_cond_destroy(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
     return -1;
   }
-  return ENOSYS;
+  cond->p = NULL;
+  return 0;
 }
 
-/** @brief Signal condition variable stub on DOS. */
+/** @brief Signal condition variable on DOS. */
 int pthread_cond_signal(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  return 0;
 }
 
-/** @brief Broadcast condition variable stub on DOS. */
+/** @brief Broadcast condition variable on DOS. */
 int pthread_cond_broadcast(pthread_cond_t *cond) {
   if (!cond) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  return 0;
 }
 
-/** @brief Wait on condition variable stub on DOS. */
+/** @brief Wait on condition variable on single-threaded DOS. */
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
   if (!cond || !mutex) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  return 0;
 }
 
-/** @brief Timed wait on condition variable stub on DOS. */
+/** @brief Timed wait on condition variable on single-threaded DOS. */
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *abstime) {
-  (void)abstime;
-  if (!cond || !mutex) {
+  if (!cond || !mutex || !abstime) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  return ETIMEDOUT;
+}
+
+/** @brief Initialize rwlock attributes on DOS. */
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr) {
+  if (!attr) {
     errno = EINVAL;
     return -1;
   }
-  return ENOSYS;
+  attr->ptr = (void *)1;
+  return 0;
 }
 
-/** @brief Initialize rwlock stub on DOS. */
+/** @brief Destroy rwlock attributes on DOS. */
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr) {
+  if (!attr) {
+    errno = EINVAL;
+    return -1;
+  }
+  attr->ptr = NULL;
+  return 0;
+}
+
+/** @brief Get process-shared flag from rwlock attributes on DOS. */
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr,
+                                  int *pshared) {
+  if (!attr || !pshared) {
+    errno = EINVAL;
+    return -1;
+  }
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+/** @brief Set process-shared flag on rwlock attributes on DOS. */
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared) {
+  if (!attr || (pshared != PTHREAD_PROCESS_PRIVATE &&
+                pshared != PTHREAD_PROCESS_SHARED)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+static struct posix_dos_rwlock_s *dos_get_rwlock(pthread_rwlock_t *rwlock) {
+  struct posix_dos_rwlock_s *rw;
+  if (!rwlock) {
+    return NULL;
+  }
+  if (!rwlock->p) {
+    rw = (struct posix_dos_rwlock_s *)calloc(1, sizeof(*rw));
+    if (!rw) {
+      return NULL;
+    }
+    rwlock->p = rw;
+  }
+  return (struct posix_dos_rwlock_s *)rwlock->p;
+}
+
+/** @brief Initialize rwlock on DOS. */
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
-  if (!rwlock || !attr) {
+  struct posix_dos_rwlock_s *rw;
+  (void)attr;
+  if (!rwlock) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  rw = (struct posix_dos_rwlock_s *)calloc(1, sizeof(*rw));
+  if (!rw) {
+    errno = ENOMEM;
+    return ENOMEM;
+  }
+  rwlock->p = rw;
+  return 0;
 }
 
-/** @brief Destroy rwlock stub on DOS. */
+/** @brief Destroy rwlock on DOS. */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
   if (!rwlock) {
     errno = EINVAL;
     return -1;
   }
-  return ENOSYS;
+  if (rwlock->p) {
+    free(rwlock->p);
+    rwlock->p = NULL;
+  }
+  return 0;
 }
 
-/** @brief Shared lock rwlock stub on DOS. */
+/** @brief Acquire shared read lock on DOS. */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
-  if (!rwlock) {
+  struct posix_dos_rwlock_s *rw = dos_get_rwlock(rwlock);
+  if (!rw) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  if (rw->writer_tid != 0) {
+    return EBUSY;
+  }
+  rw->readers++;
+  return 0;
 }
 
-/** @brief Try shared lock rwlock stub on DOS. */
+/** @brief Try to acquire shared read lock on DOS. */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
-  if (!rwlock) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
+  return pthread_rwlock_rdlock(rwlock);
 }
 
-/** @brief Exclusive lock rwlock stub on DOS. */
+/** @brief Acquire shared read lock with timeout on DOS. */
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+                               const struct timespec *abstime) {
+  int rc;
+  if (!rwlock || !abstime) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  rc = pthread_rwlock_tryrdlock(rwlock);
+  return (rc == EBUSY) ? ETIMEDOUT : rc;
+}
+
+/** @brief Acquire exclusive write lock on DOS. */
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
-  if (!rwlock) {
+  struct posix_dos_rwlock_s *rw = dos_get_rwlock(rwlock);
+  if (!rw) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  if (rw->writer_tid != 0 || rw->readers > 0) {
+    return EBUSY;
+  }
+  rw->writer_tid = g_dos_current_tid;
+  return 0;
 }
 
-/** @brief Try exclusive lock rwlock stub on DOS. */
+/** @brief Try to acquire exclusive write lock on DOS. */
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
-  if (!rwlock) {
-    errno = EINVAL;
-    return -1;
-  }
-  return ENOSYS;
+  return pthread_rwlock_wrlock(rwlock);
 }
 
-/** @brief Unlock rwlock stub on DOS. */
-int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
-  if (!rwlock) {
+/** @brief Acquire exclusive write lock with timeout on DOS. */
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+                               const struct timespec *abstime) {
+  int rc;
+  if (!rwlock || !abstime) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  rc = pthread_rwlock_trywrlock(rwlock);
+  return (rc == EBUSY) ? ETIMEDOUT : rc;
+}
+
+/** @brief Unlock rwlock on DOS. */
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
+  struct posix_dos_rwlock_s *rw;
+  if (!rwlock || !rwlock->p) {
+    errno = EINVAL;
+    return EINVAL;
+  }
+  rw = (struct posix_dos_rwlock_s *)rwlock->p;
+  if (rw->writer_tid != 0) {
+    rw->writer_tid = 0;
+  } else if (rw->readers > 0) {
+    rw->readers--;
+  }
+  return 0;
 }
 
 /** @brief Allocate thread-specific key on DOS. */
@@ -313,173 +984,461 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 }
 
 /** @brief Return thread identifier on DOS. */
-pthread_t pthread_self(void) { return (pthread_t)1; }
+pthread_t pthread_self(void) { return (pthread_t)g_dos_current_tid; }
 
 /** @brief Compare thread identifiers on DOS. */
 int pthread_equal(pthread_t t1, pthread_t t2) { return t1 == t2; }
 
-/** @brief Exit thread no-op on DOS. */
-void pthread_exit(void *retval) { (void)retval; }
+/** @brief Terminate cooperative worker thread and run cleanup stack on DOS. */
+void pthread_exit(void *retval) {
+  while (g_dos_cleanup_top != NULL) {
+    struct _pthread_cleanup_buffer *cb = g_dos_cleanup_top;
+    g_dos_cleanup_top = cb->next;
+    if (cb->routine) {
+      cb->routine(cb->arg);
+    }
+  }
+  g_dos_exit_val = retval;
+  if (g_dos_in_worker) {
+    longjmp(g_dos_exit_jmp, 1);
+  }
+}
 
-/** @brief Cancel thread stub on DOS. */
+/** @brief Cancel thread on DOS. */
 int pthread_cancel(pthread_t thread) {
   if (!thread) {
     errno = EINVAL;
     return -1;
   }
-  return ENOSYS;
+  return 0;
 }
 
-/** @brief Set cancel state stub on DOS. */
+/** @brief Set cancel state on DOS. */
 int pthread_setcancelstate(int state, int *oldstate) {
-  (void)state;
-  (void)oldstate;
-  return ENOSYS;
+  if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
+    return EINVAL;
+  }
+  if (oldstate) {
+    *oldstate = PTHREAD_CANCEL_ENABLE;
+  }
+  return 0;
 }
 
-/** @brief Set cancel type stub on DOS. */
+/** @brief Set cancel type on DOS. */
 int pthread_setcanceltype(int type, int *oldtype) {
-  (void)type;
-  (void)oldtype;
-  return ENOSYS;
+  if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
+    return EINVAL;
+  }
+  if (oldtype) {
+    *oldtype = PTHREAD_CANCEL_DEFERRED;
+  }
+  return 0;
 }
 
 /** @brief Cancellation point no-op on DOS. */
 void pthread_testcancel(void) {}
 
-/** @brief Initialize spinlock stub on DOS. */
+/** @brief Get concurrency hint level on DOS. */
+int pthread_getconcurrency(void) { return g_dos_concurrency; }
+
+/** @brief Set concurrency hint level on DOS. */
+int pthread_setconcurrency(int new_level) {
+  if (new_level < 0) {
+    return EINVAL;
+  }
+  g_dos_concurrency = new_level;
+  return 0;
+}
+
+/** @brief Get CPU-time clock ID of thread on DOS. */
+int pthread_getcpuclockid(pthread_t thread, clockid_t *clock_id) {
+  if (!thread || !clock_id) {
+    return EINVAL;
+  }
+  *clock_id = 0;
+  return 0;
+}
+
+/** @brief Get scheduling policy and parameters of thread on DOS. */
+int pthread_getschedparam(pthread_t thread, int *policy,
+                          struct sched_param *param) {
+  if (!thread || !policy || !param) {
+    errno = EINVAL;
+    return -1;
+  }
+  *policy = g_dos_sched_policy;
+  param->sched_priority = g_dos_sched_prio;
+  return 0;
+}
+
+/** @brief Set scheduling policy and parameters of thread on DOS. */
+int pthread_setschedparam(pthread_t thread, int policy,
+                          const struct sched_param *param) {
+  if (!thread || !param) {
+    errno = EINVAL;
+    return -1;
+  }
+  g_dos_sched_policy = policy;
+  g_dos_sched_prio = param->sched_priority;
+  return 0;
+}
+
+/** @brief Set scheduling priority of thread on DOS. */
+int pthread_setschedprio(pthread_t thread, int prio) {
+  if (!thread) {
+    errno = EINVAL;
+    return -1;
+  }
+  g_dos_sched_prio = prio;
+  return 0;
+}
+
+/** @brief Set thread debugging name (no-op on DOS). */
+int pthread_setname_np(pthread_t thread, const char *name) {
+  if (!thread || !name) {
+    return EINVAL;
+  }
+  return 0;
+}
+
+/** @brief Examine and change blocked signal mask on DOS. */
+int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
+  (void)how;
+  if (!set && !oset) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (oset) {
+    *oset = 0;
+  }
+  return 0;
+}
+
+/** @brief Initialize spinlock on DOS. */
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
   (void)pshared;
   if (!lock) {
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  lock->ptr = (void *)1;
+  return 0;
 }
 
-/** @brief Destroy spinlock stub on DOS. */
+/** @brief Destroy spinlock on DOS. */
 int pthread_spin_destroy(pthread_spinlock_t *lock) {
-  if (!lock) {
-    errno = EINVAL;
-    return -1;
+  if (!lock || !lock->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  lock->ptr = NULL;
+  return 0;
 }
 
-/** @brief Lock spinlock stub on DOS. */
+/** @brief Lock spinlock on DOS. */
 int pthread_spin_lock(pthread_spinlock_t *lock) {
-  if (!lock) {
-    errno = EINVAL;
-    return -1;
+  if (!lock || !lock->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  lock->ptr = (void *)2;
+  return 0;
 }
 
-/** @brief Try-lock spinlock stub on DOS. */
+/** @brief Try-lock spinlock on DOS. */
 int pthread_spin_trylock(pthread_spinlock_t *lock) {
-  if (!lock) {
-    errno = EINVAL;
-    return -1;
+  if (!lock || !lock->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  if (lock->ptr == (void *)2) {
+    return EBUSY;
+  }
+  lock->ptr = (void *)2;
+  return 0;
 }
 
-/** @brief Unlock spinlock stub on DOS. */
+/** @brief Unlock spinlock on DOS. */
 int pthread_spin_unlock(pthread_spinlock_t *lock) {
-  if (!lock) {
-    errno = EINVAL;
-    return -1;
+  if (!lock || !lock->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  lock->ptr = (void *)1;
+  return 0;
 }
 
-/** @brief Initialize semaphore stub on DOS. */
+/** @brief Initialize unnamed semaphore on DOS. */
 int sem_init(sem_t *sem, int pshared, unsigned int value) {
   (void)pshared;
-  (void)value;
-  if (!sem) {
+  if (!sem || value > (unsigned int)SEM_VALUE_MAX) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  sem->handle = (void *)1;
+  sem->p = (void *)1;
+  sem->count = (long)value;
+  return 0;
 }
 
-/** @brief Destroy semaphore stub on DOS. */
+/** @brief Destroy unnamed semaphore on DOS. */
 int sem_destroy(sem_t *sem) {
-  if (!sem) {
+  if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  sem->handle = NULL;
+  sem->p = NULL;
+  sem->count = 0;
+  return 0;
 }
 
-/** @brief Wait semaphore stub on DOS. */
+/** @brief Wait (decrement) semaphore on DOS. */
 int sem_wait(sem_t *sem) {
-  if (!sem) {
+  if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  if (sem->count <= 0) {
+    errno = EAGAIN;
+    return -1;
+  }
+  sem->count--;
+  return 0;
 }
 
-/** @brief Try-wait semaphore stub on DOS. */
-int sem_trywait(sem_t *sem) {
-  if (!sem) {
+/** @brief Try-wait semaphore on DOS. */
+int sem_trywait(sem_t *sem) { return sem_wait(sem); }
+
+/** @brief Timed-wait semaphore on DOS. */
+int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
+  if (!sem || !sem->p || !abs_timeout || abs_timeout->tv_nsec < 0 ||
+      abs_timeout->tv_nsec >= 1000000000L) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  if (sem->count <= 0) {
+    errno = ETIMEDOUT;
+    return -1;
+  }
+  sem->count--;
+  return 0;
 }
 
-/** @brief Post semaphore stub on DOS. */
+/** @brief Post (increment) semaphore on DOS. */
 int sem_post(sem_t *sem) {
-  if (!sem) {
+  if (!sem || !sem->p) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  sem->count++;
+  return 0;
 }
 
-/** @brief Read semaphore value stub on DOS. */
+/** @brief Read semaphore value on DOS. */
 int sem_getvalue(sem_t *sem, int *sval) {
-  (void)sval;
+  if (!sem || !sem->p || !sval) {
+    errno = EINVAL;
+    return -1;
+  }
+  *sval = (int)sem->count;
+  return 0;
+}
+
+/** @brief Open or create named semaphore on DOS. */
+sem_t *sem_open(const char *name, int oflag, ...) {
+  sem_t *s;
+  unsigned int val = 0;
+  if (!name || name[0] == '\0' || (name[0] == '/' && name[1] == '\0')) {
+    errno = EINVAL;
+    return SEM_FAILED;
+  }
+  if (oflag & O_CREAT) {
+    va_list ap;
+    va_start(ap, oflag);
+    (void)va_arg(ap, int);
+    val = va_arg(ap, unsigned int);
+    va_end(ap);
+  }
+  s = (sem_t *)calloc(1, sizeof(*s));
+  if (!s) {
+    errno = ENOMEM;
+    return SEM_FAILED;
+  }
+  s->handle = (void *)1;
+  s->p = (void *)1;
+  s->count = (long)val;
+  return s;
+}
+
+/** @brief Close named semaphore on DOS. */
+int sem_close(sem_t *sem) {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
-  return -1;
+  sem->handle = NULL;
+  sem->p = NULL;
+  free(sem);
+  return 0;
+}
+
+/** @brief Unlink named semaphore on DOS. */
+int sem_unlink(const char *name) {
+  if (!name || name[0] == '\0') {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
 }
 
 /** @brief Yield processor no-op on DOS. */
 int sched_yield(void) { return 0; }
 
-/** @brief Initialize barrier stub on DOS. */
+/** @brief Get maximum priority for scheduling policy on DOS. */
+int sched_get_priority_max(int policy) {
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
+  }
+  return (policy == SCHED_OTHER) ? 0 : 15;
+}
+
+/** @brief Get minimum priority for scheduling policy on DOS. */
+int sched_get_priority_min(int policy) {
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Get scheduling parameters of process on DOS. */
+int sched_getparam(pid_t pid, struct sched_param *param) {
+  if (pid < 0 || !param) {
+    errno = EINVAL;
+    return -1;
+  }
+  param->sched_priority = g_dos_sched_prio;
+  return 0;
+}
+
+/** @brief Set scheduling parameters of process on DOS. */
+int sched_setparam(pid_t pid, const struct sched_param *param) {
+  if (pid < 0 || !param) {
+    errno = EINVAL;
+    return -1;
+  }
+  g_dos_sched_prio = param->sched_priority;
+  return 0;
+}
+
+/** @brief Get scheduling policy of process on DOS. */
+int sched_getscheduler(pid_t pid) {
+  if (pid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  return g_dos_sched_policy;
+}
+
+/** @brief Set scheduling policy and parameters of process on DOS. */
+int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
+  if (pid < 0 || !param ||
+      (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)) {
+    errno = EINVAL;
+    return -1;
+  }
+  g_dos_sched_policy = policy;
+  g_dos_sched_prio = param->sched_priority;
+  return 0;
+}
+
+/** @brief Get round-robin quantum interval on DOS. */
+int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
+  if (pid < 0 || !interval) {
+    errno = EINVAL;
+    return -1;
+  }
+  interval->tv_sec = 0;
+  interval->tv_nsec = 55000000L;
+  return 0;
+}
+
+/** @brief Initialize barrier attributes on DOS. */
+int pthread_barrierattr_init(pthread_barrierattr_t *attr) {
+  if (!attr) {
+    return EINVAL;
+  }
+  attr->ptr = (void *)1;
+  return 0;
+}
+
+/** @brief Destroy barrier attributes on DOS. */
+int pthread_barrierattr_destroy(pthread_barrierattr_t *attr) {
+  if (!attr) {
+    return EINVAL;
+  }
+  attr->ptr = NULL;
+  return 0;
+}
+
+/** @brief Get process-shared flag from barrier attributes on DOS. */
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
+                                   int *pshared) {
+  if (!attr || !pshared) {
+    return EINVAL;
+  }
+  *pshared = PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+/** @brief Set process-shared flag on barrier attributes on DOS. */
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared) {
+  if (!attr || pshared != PTHREAD_PROCESS_PRIVATE) {
+    return EINVAL;
+  }
+  return 0;
+}
+
+/** @brief Initialize barrier on DOS. */
 int pthread_barrier_init(pthread_barrier_t *barrier,
                          const pthread_barrierattr_t *attr, unsigned count) {
-  (void)count;
-  if (!barrier || !attr) {
+  struct posix_dos_barrier_s *b;
+  (void)attr;
+  if (!barrier || count == 0) {
     errno = EINVAL;
-    return -1;
+    return EINVAL;
   }
-  return ENOSYS;
+  b = (struct posix_dos_barrier_s *)calloc(1, sizeof(*b));
+  if (!b) {
+    errno = ENOMEM;
+    return ENOMEM;
+  }
+  b->count = 0;
+  b->limit = count;
+  barrier->ptr = b;
+  return 0;
 }
 
-/** @brief Destroy barrier stub on DOS. */
+/** @brief Destroy barrier on DOS. */
 int pthread_barrier_destroy(pthread_barrier_t *barrier) {
-  if (!barrier) {
-    errno = EINVAL;
-    return -1;
+  if (!barrier || !barrier->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  free(barrier->ptr);
+  barrier->ptr = NULL;
+  return 0;
 }
 
-/** @brief Wait on barrier stub on DOS. */
+/** @brief Synchronize at barrier on cooperative single-threaded DOS. */
 int pthread_barrier_wait(pthread_barrier_t *barrier) {
-  if (!barrier) {
-    errno = EINVAL;
-    return -1;
+  struct posix_dos_barrier_s *b;
+  if (!barrier || !barrier->ptr) {
+    return EINVAL;
   }
-  return ENOSYS;
+  b = (struct posix_dos_barrier_s *)barrier->ptr;
+  b->count++;
+  if (b->count >= b->limit) {
+    b->count = 0;
+    return PTHREAD_BARRIER_SERIAL_THREAD;
+  }
+  return 0;
 }
 
 /** @brief Execute initialization routine once on DOS. */

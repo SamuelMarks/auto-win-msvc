@@ -13,6 +13,7 @@
 #include <sys/procdesc.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +24,8 @@
 #else
 #include <io.h>
 #endif
+#elif defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+#include <io.h>
 #else
 #include <signal.h>
 #include <sys/wait.h>
@@ -190,7 +193,11 @@ TEST test_bsd_casper_fileargs_and_procdesc(void) {
   int fd = -1;
   FILE *fp;
   struct stat sb;
-  char resolved[1024];
+#ifdef PATH_MAX
+  char resolved[PATH_MAX];
+#else
+  char resolved[4096];
+#endif
 
   /* Casper channel lifecycle & NULL branches */
   ch = cap_init();

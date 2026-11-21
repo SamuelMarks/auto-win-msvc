@@ -33,6 +33,8 @@ static void *(*g_libproc_calloc)(size_t, size_t) = default_libproc_calloc;
  * @brief Sets custom allocator hooks for OOM testing in posix-libproc.
  */
 void posix_libproc_set_alloc_hooks(void *(*malloc_fn)(size_t),
+                                   void *(*calloc_fn)(size_t, size_t));
+void posix_libproc_set_alloc_hooks(void *(*malloc_fn)(size_t),
                                    void *(*calloc_fn)(size_t, size_t)) {
   g_libproc_malloc = malloc_fn;
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -121,6 +123,12 @@ void posix_libproc_set_win32_hooks(
     LIBPROC_WIN_BOOL (*first_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
     LIBPROC_WIN_BOOL (*next_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
     LIBPROC_WIN_BOOL (*close_fn)(LIBPROC_WIN_HANDLE),
+    LIBPROC_WIN_DWORD (*modname_fn)(void *, char *, LIBPROC_WIN_DWORD));
+void posix_libproc_set_win32_hooks(
+    LIBPROC_WIN_HANDLE (*snap_fn)(LIBPROC_WIN_DWORD, LIBPROC_WIN_DWORD),
+    LIBPROC_WIN_BOOL (*first_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
+    LIBPROC_WIN_BOOL (*next_fn)(LIBPROC_WIN_HANDLE, LIBPROC_PROCESSENTRY32 *),
+    LIBPROC_WIN_BOOL (*close_fn)(LIBPROC_WIN_HANDLE),
     LIBPROC_WIN_DWORD (*modname_fn)(void *, char *, LIBPROC_WIN_DWORD)) {
   g_libproc_snapshot = snap_fn;
   g_libproc_first = first_fn;
@@ -132,6 +140,7 @@ void posix_libproc_set_win32_hooks(
 /**
  * @brief Resets allocator and Win32 hooks to defaults.
  */
+void posix_libproc_reset_hooks(void);
 void posix_libproc_reset_hooks(void) {
   g_libproc_malloc = default_libproc_malloc;
   g_libproc_snapshot = default_libproc_snapshot;
@@ -289,6 +298,8 @@ static int (*g_libproc_sysctl)(int *, unsigned int, void *, size_t *, void *,
  * @brief Sets custom sysctl hook for testing posix-libproc on macOS.
  */
 void posix_libproc_set_sysctl_hook(int (*sysctl_fn)(int *, unsigned int, void *,
+                                                    size_t *, void *, size_t));
+void posix_libproc_set_sysctl_hook(int (*sysctl_fn)(int *, unsigned int, void *,
                                                     size_t *, void *, size_t)) {
   g_libproc_sysctl = sysctl_fn;
 }
@@ -297,6 +308,7 @@ void posix_libproc_set_sysctl_hook(int (*sysctl_fn)(int *, unsigned int, void *,
 /**
  * @brief Resets allocator and OS hooks to defaults.
  */
+void posix_libproc_reset_hooks(void);
 void posix_libproc_reset_hooks(void) {
   g_libproc_malloc = default_libproc_malloc;
   g_libproc_calloc = default_libproc_calloc;

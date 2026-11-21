@@ -29,6 +29,22 @@ extern "C" {
 
 #if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
 struct sockaddr;
+#ifndef SOCK_STREAM
+/** @brief Sequenced, reliable, connection-based byte streams. */
+#define SOCK_STREAM 1
+#endif
+#ifndef SOCK_DGRAM
+/** @brief Connectionless, unreliable datagrams. */
+#define SOCK_DGRAM 2
+#endif
+#ifndef AF_UNSPEC
+/** @brief Unspecified address family. */
+#define AF_UNSPEC 0
+#endif
+#ifndef AF_INET
+/** @brief IPv4 Internet protocols. */
+#define AF_INET 2
+#endif
 #ifndef _ADDRINFO_DEFINED
 #define _ADDRINFO_DEFINED
 /** @brief Address information structure for getaddrinfo on DOS. */

@@ -137,6 +137,17 @@ void _ReadWriteBarrier(void);
 #endif
 #endif
 
+#if !defined(_WIN32) && !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__WATCOMC__) && (defined(BB_VER) || defined(AUTO_WIN_MSVC_INCLUDE_AUTOCONF_H))
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+#endif
 #include <stdlib.h>
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 #ifdef itoa
@@ -302,7 +313,30 @@ extern struct mntent *find_mount_point(const char *name, int subdir_too);
 #define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : sleep(s))
 #undef nanosleep
 #define nanosleep(req, rem) (((req) && (req)->tv_sec >= 2147483647) ? (exit(0), 0) : nanosleep((req), (rem)))
+#include <poll.h>
+#include <sys/ioctl.h>
 #if defined(__GNUC__) || defined(__clang__)
+/**
+ * @brief Polls file descriptors, clamping escape-sequence pipe timeouts and preventing EOF spin loops in BusyBox read_key.
+ * @param[in,out] fds Array of pollfd structures.
+ * @param[in] nfds Number of file descriptors.
+ * @param[in] timeout Timeout in milliseconds.
+ * @return Number of ready descriptors, 0 on timeout or drained EOF, or -1 on error.
+ */
+static __inline__ int awm_bb_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+    int eff_timeout = (timeout == 50 && nfds == 1 && fds != NULL && !isatty(fds[0].fd)) ? 5 : timeout;
+    int r = posix_poll(fds, (unsigned long)nfds, eff_timeout);
+    if (r > 0 && timeout == 50 && nfds == 1 && fds != NULL && (fds[0].revents & POLLHUP)) {
+        int avail = 0;
+        if (ioctl(fds[0].fd, FIONREAD, &avail) == 0 && avail <= 0) {
+            fds[0].revents = 0;
+            return 0;
+        }
+    }
+    return r;
+}
+#undef poll
+#define poll awm_bb_poll
 /** @brief Weak pointer slot tracking the active 10240-byte BusyBox vi text buffer. */
 void *__attribute__((weak)) awm_bb_vi_buf = NULL;
 /**
@@ -424,6 +458,48 @@ extern struct mntent *find_mount_point(const char *name, int subdir_too);
 #define mktemp(tmpl) (mktemp(tmpl) ? (tmpl) : ((tmpl)[0] = '\0', (tmpl)))
 #undef sleep
 #define sleep(s) ((s) == 2147483647 ? (exit(0), 0U) : posix_core_sleep(s))
+#include <poll.h>
+__declspec(dllimport) unsigned long __stdcall GetFileType(void *hFile);
+__declspec(dllimport) int __stdcall PeekNamedPipe(
+    void *hNamedPipe, void *lpBuffer, unsigned long nBufferSize,
+    unsigned long *lpBytesRead, unsigned long *lpTotalBytesAvail,
+    unsigned long *lpBytesLeftThisMessage);
+/**
+ * @brief Polls file descriptors on Windows, clamping escape-sequence pipe timeouts and preventing EOF spin loops in BusyBox read_key.
+ * @param[in,out] fds Array of pollfd structures.
+ * @param[in] nfds Number of file descriptors.
+ * @param[in] timeout Timeout in milliseconds.
+ * @return Number of ready descriptors, 0 on timeout or broken pipe, or -1 on error.
+ */
+static __inline int awm_bb_win_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+    int eff_timeout = timeout;
+    if (timeout == 50 && nfds == 1 && fds != NULL && fds[0].fd >= 0 && !_isatty(fds[0].fd)) {
+        void *h = (void *)_get_osfhandle(fds[0].fd);
+        if (h != (void *)(intptr_t)-1 && GetFileType(h) == 3) {
+            unsigned long avail = 0;
+            if (!PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL)) {
+                fds[0].revents = 0;
+                return 0;
+            }
+            if (avail == 0) {
+                Sleep(5);
+                if (!PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL) || avail == 0) {
+                    fds[0].revents = 0;
+                    return 0;
+                }
+            }
+        }
+        eff_timeout = 5;
+    }
+    return posix_poll(fds, (unsigned long)nfds, eff_timeout);
+}
+#undef poll
+#define poll awm_bb_win_poll
+/**
+ * @brief Executes a shell command via the current BusyBox binary on Windows.
+ * @param[in] cmd Null-terminated command string.
+ * @return Wait status of the command, or 1 if cmd is NULL.
+ */
 static __inline int auto_win_msvc_bb_system(const char *cmd) {
     char self_exe[512];
     char quoted_cmd[1024];
@@ -432,8 +508,12 @@ static __inline int auto_win_msvc_bb_system(const char *cmd) {
     if (!cmd) return 1;
     fflush(NULL);
     if (GetModuleFileNameA(NULL, self_exe, sizeof(self_exe)) > 0) {
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        _snprintf_s(quoted_cmd, sizeof(quoted_cmd), _TRUNCATE, "\"%s\"", cmd);
+#else
         _snprintf(quoted_cmd, sizeof(quoted_cmd) - 1, "\"%s\"", cmd);
         quoted_cmd[sizeof(quoted_cmd) - 1] = '\0';
+#endif
         args[0] = self_exe;
         args[1] = "sh";
         args[2] = "-c";
@@ -451,6 +531,11 @@ static __inline int auto_win_msvc_bb_system(const char *cmd) {
 }
 #undef system
 #define system auto_win_msvc_bb_system
+/**
+ * @brief Unlinks a file on Windows, renaming locked files aside before deletion and handling .lnk fallbacks.
+ * @param[in] pathname Null-terminated path to remove.
+ * @return 0 on success, or -1 on error.
+ */
 static __inline int auto_win_msvc_bb_unlink(const char *pathname) {
     static unsigned int s_unlink_seq = 0;
     char tmp_del[560];
@@ -458,9 +543,14 @@ static __inline int auto_win_msvc_bb_unlink(const char *pathname) {
         errno = EINVAL;
         return -1;
     }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    _snprintf_s(tmp_del, sizeof(tmp_del), _TRUNCATE, "%s.awm_del_%lu_%u",
+                pathname, (unsigned long)GetCurrentProcessId(), ++s_unlink_seq);
+#else
     _snprintf(tmp_del, sizeof(tmp_del) - 1, "%s.awm_del_%lu_%u",
               pathname, (unsigned long)GetCurrentProcessId(), ++s_unlink_seq);
     tmp_del[sizeof(tmp_del) - 1] = '\0';
+#endif
     if (MoveFileExA(pathname, tmp_del, 1)) {
         _unlink(tmp_del);
         return 0;
@@ -468,8 +558,12 @@ static __inline int auto_win_msvc_bb_unlink(const char *pathname) {
     if (_unlink(pathname) == 0) {
         return 0;
     }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    _snprintf_s(tmp_del, sizeof(tmp_del), _TRUNCATE, "%s.lnk", pathname);
+#else
     _snprintf(tmp_del, sizeof(tmp_del) - 1, "%s.lnk", pathname);
     tmp_del[sizeof(tmp_del) - 1] = '\0';
+#endif
     if (_unlink(tmp_del) == 0) {
         return 0;
     }
@@ -479,7 +573,23 @@ static __inline int auto_win_msvc_bb_unlink(const char *pathname) {
 #define unlink auto_win_msvc_bb_unlink
 #include <setjmp.h>
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))
-static __inline int awm_cfg_clear_jmp_frame(_JBTYPE *env, int rc) { ((unsigned __int64 *)env)[0] = 0; return rc; }
+#if _MSC_VER >= 1900
+#if defined(__cplusplus)
+extern "C" int __cdecl _guard_icall_checks_enforced(void);
+#else
+extern int __cdecl _guard_icall_checks_enforced(void);
+#endif
+#endif
+static __inline int awm_cfg_clear_jmp_frame(_JBTYPE *env, int rc) {
+    if (rc == 0
+#if _MSC_VER >= 1900
+        && !_guard_icall_checks_enforced()
+#endif
+    ) {
+        ((unsigned __int64 *)env)[0] = 0;
+    }
+    return rc;
+}
 #undef setjmp
 #define setjmp(env) awm_cfg_clear_jmp_frame((env), _setjmp(env))
 #endif
@@ -921,6 +1031,7 @@ static __inline pid_t auto_win_msvc_waitpid(pid_t pid, int *status, int options)
 #undef waitpid
 #define waitpid auto_win_msvc_waitpid
 
+#ifndef POSIX_CORE_H
 /**
  * @brief Parses suboptions from a string.
  * @param[in,out] optionp Option string pointer.
@@ -1013,6 +1124,7 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     (*lineptr)[pos] = '\0';
     return (ssize_t)pos;
 }
+#endif /* !POSIX_CORE_H */
 
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
@@ -1068,8 +1180,17 @@ static __inline ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 #endif
 
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64))
+#if _MSC_VER >= 1900
+extern int __cdecl _guard_icall_checks_enforced(void);
+#endif
 static __inline int auto_win_msvc_clear_jmp_frame(_JBTYPE *env, int rc) {
-    ((unsigned __int64 *)env)[0] = 0;
+    if (rc == 0
+#if _MSC_VER >= 1900
+        && !_guard_icall_checks_enforced()
+#endif
+    ) {
+        ((unsigned __int64 *)env)[0] = 0;
+    }
     return rc;
 }
 #undef setjmp

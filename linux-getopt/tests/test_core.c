@@ -7,8 +7,46 @@
 #include <string.h>
 /* clang-format on */
 
+static char g_arg_s0[] = "prog";
+static char g_arg_s1[] = "-a";
+static char g_arg_s2[] = "-b";
+static char g_arg_s3[] = "foo";
+static char g_arg_s4[] = "-c";
+static char g_arg_s5[] = "--";
+static char g_arg_s6[] = "extra";
+static char g_arg_s7[] = "-z";
+static char g_arg_s8[] = "-bbar";
+static char g_arg_s9[] = "notopt";
+static char g_arg_s10[] = "--help";
+static char g_arg_s11[] = "--file=foo.txt";
+static char g_arg_s12[] = "--output";
+static char g_arg_s13[] = "--flag";
+static char g_arg_s14[] = "--file";
+static char g_arg_s15[] = "bar.txt";
+static char g_arg_s16[] = "--output=baz.txt";
+static char g_arg_s17[] = "--unknown";
+static char g_arg_s18[] = "--help=unexpected";
+static char g_arg_s19[] = "-h";
+static char g_arg_s20[] = "-f";
+#if defined(_WIN32) || defined(_MSC_VER)
+static char g_arg_s21[] = "foo.txt";
+#endif
+static char g_arg_s22[] = "-";
+static char g_arg_s23[] = "-abc";
+static char g_arg_s24[] = "-za";
+static char g_arg_s25[] = "-:";
+static char g_arg_s26[] = "-o";
+static char g_arg_s27[] = "--req";
+static char g_arg_s28[] = "--opt";
+static char g_arg_s29[] = "--none=extra";
+static char g_arg_s30[] = "--r";
+static char g_arg_s31[] = "-no";
+static char g_arg_s32[] = "val";
+static char g_arg_s33[] = "--none";
+static char g_arg_s34[] = "-n";
+
 TEST test_linux_getopt_init(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int status = 0;
   (void)rc;
   (void)status;
@@ -23,15 +61,16 @@ TEST test_linux_getopt_init(void) {
 }
 
 TEST test_linux_getopt_parsing(void) {
-  char *argv1[] = {"prog", "-a", "-b", "foo", "-c", "--", "extra", NULL};
-  char *argv2[] = {"prog", "-b", NULL};
-  char *argv3[] = {"prog", "-z", NULL};
-  char *argv4[] = {"prog", "-bbar", NULL};
-  char *argv5[] = {"prog", NULL};
-  char *argv6[] = {"prog", "notopt", NULL};
+  char *argv1[] = {g_arg_s0, g_arg_s1, g_arg_s2, g_arg_s3,
+                   g_arg_s4, g_arg_s5, g_arg_s6, NULL};
+  char *argv2[] = {g_arg_s0, g_arg_s2, NULL};
+  char *argv3[] = {g_arg_s0, g_arg_s7, NULL};
+  char *argv4[] = {g_arg_s0, g_arg_s8, NULL};
+  char *argv5[] = {g_arg_s0, NULL};
+  char *argv6[] = {g_arg_s0, g_arg_s9, NULL};
   int status = 0;
   int opt = 0;
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   (void)status;
   (void)opt;
   (void)rc;
@@ -83,20 +122,19 @@ TEST test_linux_getopt_parsing(void) {
 TEST test_linux_getopt_long_parsing(void) {
   int flag_var;
   struct option longopts[5];
-  char *argv1[] = {"prog",     "--help", "--file=foo.txt",
-                   "--output", "--flag", NULL};
-  char *argv2[] = {"prog", "--file", "bar.txt", "--output=baz.txt", NULL};
-  char *argv3[] = {"prog", "--unknown", NULL};
-  char *argv4[] = {"prog", "--help=unexpected", NULL};
-  char *argv5[] = {"prog", "--file", NULL};
-  char *argv6[] = {"prog", "-h", NULL};
-  char *argv7[] = {"prog", "notopt", NULL};
-  char *argv8[] = {"prog", "-f", NULL};
-  char *argv9[] = {"prog", "-h", NULL};
+  char *argv1[] = {g_arg_s0, g_arg_s10, g_arg_s11, g_arg_s12, g_arg_s13, NULL};
+  char *argv2[] = {g_arg_s0, g_arg_s14, g_arg_s15, g_arg_s16, NULL};
+  char *argv3[] = {g_arg_s0, g_arg_s17, NULL};
+  char *argv4[] = {g_arg_s0, g_arg_s18, NULL};
+  char *argv5[] = {g_arg_s0, g_arg_s14, NULL};
+  char *argv6[] = {g_arg_s0, g_arg_s19, NULL};
+  char *argv7[] = {g_arg_s0, g_arg_s9, NULL};
+  char *argv8[] = {g_arg_s0, g_arg_s20, NULL};
+  char *argv9[] = {g_arg_s0, g_arg_s19, NULL};
   int status = 0;
   int longindex = 0;
   int opt = 0;
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   (void)status;
   (void)longindex;
   (void)opt;
@@ -196,7 +234,7 @@ TEST test_linux_getopt_long_parsing(void) {
 
 #if defined(_WIN32) || defined(_MSC_VER)
   {
-    char *argv_alias[] = {"prog", "-h", "-f", "foo.txt", NULL};
+    char *argv_alias[] = {g_arg_s0, g_arg_s19, g_arg_s20, g_arg_s21, NULL};
     rc = linux_getopt_init(&status);
 
     opt = getopt(4, argv_alias, "hf:o:");
@@ -217,13 +255,13 @@ SUITE(suite_linux_getopt_core) {
 }
 
 TEST test_linux_getopt_extra_branches(void) {
-  char *argv_dash[] = {"prog", "-", NULL};
-  char *argv_multi[] = {"prog", "-abc", NULL};
-  char *argv_missing_arg[] = {"prog", "-b", NULL};
-  char *argv_illegal[] = {"prog", "-z", NULL};
-  char *argv_null_in_mid[] = {"prog", NULL};
-  char *argv_illegal_concat[] = {"prog", "-za", NULL};
-  char *argv_colon[] = {"prog", "-:", NULL};
+  char *argv_dash[] = {g_arg_s0, g_arg_s22, NULL};
+  char *argv_multi[] = {g_arg_s0, g_arg_s23, NULL};
+  char *argv_missing_arg[] = {g_arg_s0, g_arg_s2, NULL};
+  char *argv_illegal[] = {g_arg_s0, g_arg_s7, NULL};
+  char *argv_null_in_mid[] = {g_arg_s0, NULL};
+  char *argv_illegal_concat[] = {g_arg_s0, g_arg_s24, NULL};
+  char *argv_colon[] = {g_arg_s0, g_arg_s25, NULL};
   int status = 0;
   int opt = 0;
   (void)status;
@@ -279,7 +317,7 @@ TEST test_linux_getopt_extra_branches(void) {
 
   /* optional short argument (cp[2] == ':') without attached arg */
   {
-    char *argv_opt_short[] = {"prog", "-o", NULL};
+    char *argv_opt_short[] = {g_arg_s0, g_arg_s26, NULL};
     (void)linux_getopt_init(&status);
     opt = linux_getopt(2, argv_opt_short, "o::");
     ASSERT_EQ('o', opt);
@@ -296,14 +334,15 @@ TEST test_linux_getopt_long_extra_branches(void) {
                               {"none", no_argument, NULL, 'n'},
                               {"flag", no_argument, NULL, 1},
                               {NULL, 0, NULL, 0}};
-  char *argv_req_missing[] = {"prog", "--req", NULL};
-  char *argv_opt_noarg[] = {"prog", "--opt", NULL};
-  char *argv_none_hasarg[] = {"prog", "--none=extra", NULL};
-  char *argv_ambig[] = {"prog", "--r", NULL}; /* matches req */
-  char *argv_null_in_mid[] = {"prog", NULL};
-  char *argv_empty[] = {"prog", NULL};
-  char *argv_dashdash[] = {"prog", "--", "extra", NULL};
-  char *argv_short_cluster[] = {"prog", "-no", "val", "--none", NULL};
+  char *argv_req_missing[] = {g_arg_s0, g_arg_s27, NULL};
+  char *argv_opt_noarg[] = {g_arg_s0, g_arg_s28, NULL};
+  char *argv_none_hasarg[] = {g_arg_s0, g_arg_s29, NULL};
+  char *argv_ambig[] = {g_arg_s0, g_arg_s30, NULL}; /* matches req */
+  char *argv_null_in_mid[] = {g_arg_s0, NULL};
+  char *argv_empty[] = {g_arg_s0, NULL};
+  char *argv_dashdash[] = {g_arg_s0, g_arg_s5, g_arg_s6, NULL};
+  char *argv_short_cluster[] = {g_arg_s0, g_arg_s31, g_arg_s32, g_arg_s33,
+                                NULL};
   int status = 0;
   int opt = 0;
   (void)status;
@@ -327,7 +366,7 @@ TEST test_linux_getopt_long_extra_branches(void) {
   /* Also test single short opt followed by long opt so nextchar != NULL &&
    * *nextchar == '\0' */
   {
-    char *argv_short_then_long[] = {"prog", "-n", "--none", NULL};
+    char *argv_short_then_long[] = {g_arg_s0, g_arg_s34, g_arg_s33, NULL};
     (void)linux_getopt_init(&status);
     ASSERT_EQ('n',
               linux_getopt_long(3, argv_short_then_long, "n", longopts, NULL));
@@ -338,7 +377,7 @@ TEST test_linux_getopt_long_extra_branches(void) {
 #if defined(_WIN32) || defined(_MSC_VER)
   /* optind != linux_optind synchronization in getopt and getopt_long */
   {
-    char *argv_sync[] = {"prog", "-n", "--none", NULL};
+    char *argv_sync[] = {g_arg_s0, g_arg_s34, g_arg_s33, NULL};
     (void)linux_getopt_init(&status);
     (void)getopt(3, argv_sync, "n");
     optind = 1;

@@ -200,7 +200,7 @@ const char *hid_usage_page(int i) {
 }
 
 /** @brief Format USB HID usage value within page as human-readable name. */
-const char *hid_usage_in_page(unsigned int u) {
+const char *hid_usage_in_page(awm_hid_usage_t u) {
   return (HID_USAGE(u) == 1U) ? "Pointer" : "Usage";
 }
 
@@ -210,8 +210,10 @@ int hid_parse_usage_page(const char *name) {
 }
 
 /** @brief Parse USB HID usage name into combined page/usage ID. */
-int hid_parse_usage_in_page(const char *name) {
-  return (name != NULL && strcmp(name, "Pointer") == 0) ? 0x00010001 : -1;
+awm_hid_susage_t hid_parse_usage_in_page(const char *name) {
+  return (name != NULL && strcmp(name, "Pointer") == 0)
+             ? (awm_hid_susage_t)0x00010001UL
+             : (awm_hid_susage_t)-1;
 }
 
 /** @brief Extract bitfield value described by hid_item_t from report buffer. */

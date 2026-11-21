@@ -19,6 +19,7 @@ static int mock_uname(struct utsname *name) {
 #endif
 }
 
+int uname_main(int argc, char **argv);
 #define main uname_main
 #define uname mock_uname
 #include "../src/uname_main.c"
@@ -100,6 +101,8 @@ static void MOCK_UTS_WINAPI mock_uts_GetSystemInfo(void *si_ptr) {
 #define UTS_MOCK_GetSystemInfo mock_uts_GetSystemInfo
 #define UTS_MOCK_GetVersionExA mock_uts_GetVersionExA
 
+int mocked_win_uname(struct utsname *name);
+auto_win_msvc_error_t mocked_posix_utsname_get_info(int *out_available);
 #define uname mocked_win_uname
 #define posix_utsname_get_info mocked_posix_utsname_get_info
 
@@ -130,12 +133,12 @@ TEST test_posix_utsname_get_info(void) {
 TEST test_uname_null(void) {
   errno = 0;
   ASSERT_EQ(-1, uname(NULL));
-  ASSERT_EQ(14, errno);
+  ASSERT_EQ(EFAULT, errno);
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
   errno = 0;
   ASSERT_EQ(-1, mocked_win_uname(NULL));
-  ASSERT_EQ(14, errno);
+  ASSERT_EQ(EFAULT, errno);
 #endif
 
   PASS();
@@ -209,7 +212,10 @@ TEST test_uname(void) {
 }
 
 TEST test_uname_main_func(void) {
-  char *argv[] = {"uname", NULL};
+  char arg0[] = "uname";
+  char *argv[2];
+  argv[0] = arg0;
+  argv[1] = NULL;
 
   uname_fail_mock = 0;
   ASSERT_EQ(0, uname_main(1, argv));

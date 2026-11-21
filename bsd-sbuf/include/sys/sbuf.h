@@ -16,6 +16,18 @@
 extern "C" {
 #endif
 
+#if defined(__I86__)
+typedef long awm_sbuf_flags_t;
+#define SBUF_FIXEDLEN 0x00000000L
+#define SBUF_AUTOEXTEND 0x00000001L
+#define SBUF_USRFLAGMSK 0x0000ffffL
+#define SBUF_DYNAMIC 0x00010000L
+#define SBUF_FINISHED 0x00020000L
+#define SBUF_DYNSTRUCT 0x00080000L
+#define SBUF_INCLUDENUL 0x00000002L
+#define SBUF_DRAINTOEOR 0x00000004L
+#else
+typedef int awm_sbuf_flags_t;
 #define SBUF_FIXEDLEN 0x00000000
 #define SBUF_AUTOEXTEND 0x00000001
 #define SBUF_USRFLAGMSK 0x0000ffff
@@ -24,6 +36,7 @@ extern "C" {
 #define SBUF_DYNSTRUCT 0x00080000
 #define SBUF_INCLUDENUL 0x00000002
 #define SBUF_DRAINTOEOR 0x00000004
+#endif
 
 typedef int(sbuf_drain_func)(void *, const char *, int);
 
@@ -32,14 +45,16 @@ struct sbuf {
   char *s_buf;
   sbuf_drain_func *s_drain_func;
   void *s_drain_arg;
+  void *s_dyn_self;
   int s_error;
   ssize_t s_size;
   ssize_t s_len;
-  int s_flags;
+  awm_sbuf_flags_t s_flags;
 };
 
 /** @brief Initialize or allocate a safe string buffer. */
-struct sbuf *sbuf_new(struct sbuf *s, char *buf, int length, int flags);
+struct sbuf *sbuf_new(struct sbuf *s, char *buf, int length,
+                      awm_sbuf_flags_t flags);
 /** @brief Allocate an auto-extending sbuf. */
 #define sbuf_new_auto() sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND)
 /** @brief Clear contents of an sbuf. */

@@ -3,7 +3,7 @@ project(test_greatest)
 include(FetchContent)
 FetchContent_Declare(
     greatest
-    URL https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h
+    URL https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h
     DOWNLOAD_NO_EXTRACT TRUE
 )
 FetchContent_MakeAvailable(greatest)

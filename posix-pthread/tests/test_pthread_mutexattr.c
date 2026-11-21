@@ -4,6 +4,9 @@
 #include "posix-pthread.h"
 #include <errno.h>
 #include <stddef.h>
+#if !defined(_WIN32) && !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+#include <unistd.h>
+#endif
 /* clang-format on */
 
 TEST test_pthread_mutexattr_init(void) {
@@ -34,8 +37,10 @@ TEST test_pthread_mutexattr_getprioceiling(void) {
   ASSERT_EQ(0, pthread_mutexattr_getprioceiling(&attr, &ceil_val));
   ASSERT_EQ(-1, pthread_mutexattr_getprioceiling(NULL, &ceil_val));
   ASSERT_EQ(-1, pthread_mutexattr_getprioceiling(&attr, NULL));
-#else
+#elif defined(_POSIX_THREAD_PRIO_PROTECT) && _POSIX_THREAD_PRIO_PROTECT > 0
   (void)pthread_mutexattr_getprioceiling(&attr, &ceil_val);
+#else
+  (void)ceil_val;
 #endif
   ASSERT_EQ(0, pthread_mutexattr_destroy(&attr));
   PASS();

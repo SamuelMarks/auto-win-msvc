@@ -18,6 +18,11 @@
 #include <sys/types.h>
 #include <time.h>
 
+#if defined(__CYGWIN__) && !defined(__cplusplus) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L)
+#undef pthread_cleanup_push
+#define pthread_cleanup_push(_fn, _arg) do { __pthread_cleanup_handler __cleanup_handler; __cleanup_handler.function = (_fn); __cleanup_handler.arg = (_arg); __cleanup_handler.next = NULL; _pthread_cleanup_push(&__cleanup_handler)
+#endif
+
 #if defined(__APPLE__)
 #ifndef _PTHREAD_BARRIER_T_DEFINED
 #define _PTHREAD_BARRIER_T_DEFINED

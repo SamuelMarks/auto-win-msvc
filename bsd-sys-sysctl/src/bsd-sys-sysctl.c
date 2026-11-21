@@ -111,10 +111,18 @@ int sysctl(const int *name, unsigned int namelen, void *oldp, size_t *oldlenp,
       return sysctl_write_str("15.0-CURRENT", oldp, oldlenp);
     }
     if (name[1] == KERN_OSRELDATE) {
+#if defined(__I86__)
+      return sysctl_write_int(15000, oldp, oldlenp);
+#else
       return sysctl_write_int(1500000, oldp, oldlenp);
+#endif
     }
     if (name[1] == KERN_ARGMAX) {
+#if defined(__I86__)
+      return sysctl_write_int(4096, oldp, oldlenp);
+#else
       return sysctl_write_int(262144, oldp, oldlenp);
+#endif
     }
     if (name[1] == KERN_NGROUPS) {
       return sysctl_write_int(1024, oldp, oldlenp);

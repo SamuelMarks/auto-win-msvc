@@ -79,6 +79,11 @@ static BOOL mock_cpuset_CloseHandle(HANDLE h) {
 #define BSD_SYS_CPUSET_MOCK_OpenThread mock_cpuset_OpenThread
 #define BSD_SYS_CPUSET_MOCK_CloseHandle mock_cpuset_CloseHandle
 
+int mocked_cpuset_getaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                              size_t setsize, cpuset_t *mask);
+int mocked_cpuset_setaffinity(cpulevel_t level, cpuwhich_t which, id_t id,
+                              size_t setsize, const cpuset_t *mask);
+auto_win_msvc_error_t mocked_bsd_sys_cpuset_init(int *out_status);
 #define cpuset_getaffinity mocked_cpuset_getaffinity
 #define cpuset_setaffinity mocked_cpuset_setaffinity
 #define bsd_sys_cpuset_init mocked_bsd_sys_cpuset_init

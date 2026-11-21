@@ -22,13 +22,15 @@ TEST test_core_getpid(void) {
 }
 
 TEST test_fexecve(void) {
+  static char s_env0[] = "PATH=/bin";
+  static char s_arg0[] = "test";
   char *argv[2];
   char *envp[2];
   char *const *null_argv = NULL;
   char *const *null_envp = NULL;
-  envp[0] = "PATH=/bin";
+  envp[0] = s_env0;
   envp[1] = NULL;
-  argv[0] = "test";
+  argv[0] = s_arg0;
   argv[1] = NULL;
 
   /* Hit the error branch */
@@ -91,7 +93,7 @@ TEST test_vfork(void) {
   /* RtlCloneUserProcess requires dynamic CRT */
   PASS();
 #elif defined(_WIN32)
-  int pid = vfork();
+  pid_t pid = vfork();
   if (pid == 0) {
     _exit(0);
   } else if (pid > 0) {

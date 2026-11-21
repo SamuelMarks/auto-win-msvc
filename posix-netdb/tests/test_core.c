@@ -35,7 +35,7 @@ TEST test_posix_netdb_get_info(void) {
 TEST test_posix_netdb_addrinfo(void) {
   struct addrinfo *ai = NULL;
   struct addrinfo hints;
-  int res;
+  int res = 0;
 #if defined(_WIN32) || defined(_MSC_VER)
   WSADATA wsa;
   WSAStartup(MAKEWORD(2, 2), &wsa);

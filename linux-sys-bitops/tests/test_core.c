@@ -7,7 +7,7 @@
 /* clang-format on */
 
 TEST test_linux_sys_bitops_init(void) {
-  auto_win_msvc_error_t rc;
+  auto_win_msvc_error_t rc = AUTO_WIN_MSVC_SUCCESS;
   int status = 0;
   (void)rc;
   (void)status;
@@ -19,7 +19,7 @@ TEST test_linux_sys_bitops_init(void) {
 }
 
 TEST test_bitops_basic(void) {
-  unsigned long out_idx;
+  unsigned long out_idx = 0;
   (void)out_idx;
 
   /* ffs */
@@ -36,7 +36,7 @@ TEST test_bitops_basic(void) {
 #if defined(__I86__)
   ASSERT_EQ(15, posix_fls(0x4000));
 #else
-  ASSERT_EQ(32, posix_fls(0x80000000));
+  ASSERT_EQ(32, posix_fls((int)0x80000000U));
 #endif
 
   /* __ffs */
@@ -159,7 +159,7 @@ SUITE(suite_linux_sys_bitops_core) {
 }
 
 TEST test_posix___ffs_null_out_index(void) {
-  error_type_t err;
+  error_type_t err = 0;
   (void)err;
   err = posix___ffs(0x10, NULL);
 

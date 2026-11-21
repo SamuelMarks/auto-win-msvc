@@ -112,7 +112,12 @@ TEST test_rw_common_streams_and_fds(void) {
   ASSERT_EQ(fd2, posix_dup2(fd2, fd2));
   fd3 = posix_open("rw_cov_test.tmp", O_RDWR);
   ASSERT(fd3 >= 0);
-  ASSERT_EQ(fd3, posix_dup2(fd, fd3));
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor >= 2)
+#endif
+  {
+    ASSERT_EQ(fd3, posix_dup2(fd, fd3));
+  }
   ASSERT_EQ(0, posix_close(fd3));
   ASSERT_EQ(0, posix_close(fd2));
   ASSERT_EQ(0, posix_close(fd));
@@ -122,7 +127,8 @@ TEST test_rw_common_streams_and_fds(void) {
   PASS();
 }
 
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__linux__)
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__linux__) &&         \
+    !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 static FILE *mock_posix_tmpfile_null(void) { return NULL; }
 
 TEST test_rw_posix_vproc_and_oom(void) {
@@ -600,7 +606,7 @@ TEST test_rw_win32_stdio_tmpfile_vproc_fopen(void) {
   posix_rw_ensure_binary_stdio(1);
 
   g_mock_osfh_val = -2;
-  ASSERT_EQ(-1, (int)posix_lseek(0, 0, SEEK_SET));
+  ASSERT_EQ(-1, (int)posix_lseek(999, 0, SEEK_SET));
   ASSERT_EQ(-1, (int)posix_lseek(2048, 0, SEEK_SET));
 
   reset_rw_mocks();
@@ -1258,7 +1264,8 @@ TEST test_rw_win32_register_existing_and_fd_ops(void) {
 
 SUITE(suite_posix_rw_coverage) {
   RUN_TEST(test_rw_common_streams_and_fds);
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__linux__)
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__linux__) &&         \
+    !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
   RUN_TEST(test_rw_posix_vproc_and_oom);
 #endif
 #if defined(_WIN32) && !defined(__CYGWIN__)

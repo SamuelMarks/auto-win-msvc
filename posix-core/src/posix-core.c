@@ -35,7 +35,7 @@
 #include <process.h>
 #else
 #include <fcntl.h>
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) || defined(__linux__)
 #include <stdio_ext.h>
 #endif
 #endif
@@ -46,6 +46,25 @@ static void default_common_free(void *ptr) { free(ptr); }
 
 static int default_common_open_scratch(const char *path) {
   int fd;
+#if defined(__WATCOMC__) && (defined(__DOS__) || defined(__MSDOS__))
+  if (_osmajor < 2 && path != NULL) {
+    const char *p = path;
+    if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) &&
+        p[1] == ':') {
+      p += 2;
+    }
+    if (p[0] == '/' || p[0] == '\\') {
+      p++;
+    }
+    if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) {
+      p += 2;
+    }
+    if (strchr(p, '/') != NULL || strchr(p, '\\') != NULL) {
+      errno = ENOENT;
+      return -1;
+    }
+  }
+#endif
 #if defined(_MSC_VER) && _MSC_VER >= 1400
   if (_sopen_s(&fd, path, _O_CREAT | _O_TRUNC | _O_RDWR | _O_BINARY, _SH_DENYNO,
                _S_IREAD | _S_IWRITE) != 0) {
@@ -815,7 +834,17 @@ static ptrdiff_t safe_get_osfhandle(intptr_t fd) {
   if (fd < 0 || fd >= 2048) {
     return -1;
   }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  {
+    _invalid_parameter_handler old =
+        _set_invalid_parameter_handler(null_invalid_param_handler);
+    AUTO_WIN_MSVC_SUPPRESS_CRT_REPORT();
+    h = (ptrdiff_t)g_core_win32_hooks.get_osfhandle_fn((int)fd);
+    (void)_set_invalid_parameter_handler(old);
+  }
+#else
   h = (ptrdiff_t)g_core_win32_hooks.get_osfhandle_fn((int)fd);
+#endif
   errno = saved_err;
   if (h == -2) {
     return -1;
@@ -916,7 +945,9 @@ static auto_win_msvc_error_t get_current_rid(int is_group,
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
-#define FIONBIO 0x8004667E
+#ifndef FIONBIO
+#define FIONBIO ((long)0x8004667EUL)
+#endif
 
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0x4000
@@ -2102,7 +2133,7 @@ int fork(void) {
       g_core_win32_hooks.close_handle_fn(info.Process);
     }
     g_core_win32_hooks.close_handle_fn(info.Thread);
-    return (pid_t)(size_t)info.ClientId.UniqueProcess;
+    return (int)(size_t)info.ClientId.UniqueProcess;
   } else if (status == STATUS_PROCESS_CLONED) {
     void *ucrt;
     (void)g_core_win32_hooks.set_current_dir_fn(parent_cwd);
@@ -3027,8 +3058,9 @@ int truncate(const char *path, off_t length) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief Returns the name of the terminal associated with fd. */
 char *ttyname(intptr_t fd) {
+  static char s_con_name[] = "CON";
   if (posix_isatty(fd)) {
-    return "CON";
+    return s_con_name;
   }
   errno = ENOTTY;
   return NULL;
@@ -3187,7 +3219,8 @@ int awm_vfork_push(void **globals_slot) {
 
 /** @brief Retrieves the active jmp_buf pointer for the current vfork frame. */
 void *awm_vfork_jb(void) {
-  return (void *)&g_awm_vfork_frames[g_awm_vfork_depth - 1].jb;
+  int idx = (g_awm_vfork_depth > 0) ? (g_awm_vfork_depth - 1) : 0;
+  return (void *)&g_awm_vfork_frames[idx].jb;
 }
 
 /** @brief Returns the simulated child PID to the parent after vfork longjmp. */
@@ -3942,7 +3975,7 @@ char *realpath(const char *path, char *resolved_path) {
   if (resolved_path == NULL) {
     return g_core_win32_hooks.fullpath_fn(NULL, path, 4096);
   }
-  return g_core_win32_hooks.fullpath_fn(resolved_path, path, 4096);
+  return g_core_win32_hooks.fullpath_fn(resolved_path, path, 260);
 }
 
 /** \brief fchdir function. */
@@ -4731,6 +4764,7 @@ int setgroups(size_t size, const gid_t *list) {
   return 0;
 }
 
+#ifndef strnlen
 /** @brief Determine the length of a fixed-size string. */
 size_t strnlen(const char *s, size_t maxlen) {
   size_t len = 0;
@@ -4742,6 +4776,7 @@ size_t strnlen(const char *s, size_t maxlen) {
   }
   return len;
 }
+#endif
 
 /** @brief Reposition a file-position indicator in a stream. */
 int fseeko(FILE *stream, off_t offset, int whence) {
@@ -4810,7 +4845,8 @@ int awm_vfork_push(void **globals_slot) {
 
 /** @brief Retrieve the active jmp_buf pointer for the current vfork frame. */
 void *awm_vfork_jb(void) {
-  return (void *)&g_awm_dos_vfork_frames[g_awm_dos_vfork_depth - 1].jb;
+  int idx = (g_awm_dos_vfork_depth > 0) ? (g_awm_dos_vfork_depth - 1) : 0;
+  return (void *)&g_awm_dos_vfork_frames[idx].jb;
 }
 
 /** @brief Return the simulated child PID to the parent after vfork longjmp. */
@@ -4987,12 +5023,24 @@ int awm_dos_mkstemp_format_83(char *out_buf, size_t out_cap, const char *tmpl,
   size_t keep;
   size_t i;
 
-  if (!out_buf || !tmpl) {
+  if (!out_buf) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (!tmpl) {
     errno = EINVAL;
     return -1;
   }
   len = strlen(tmpl);
-  if (len < 6U || out_cap <= len || strcmp(tmpl + len - 6U, "XXXXXX") != 0) {
+  if (len < 6U) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (out_cap <= len) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (strcmp(tmpl + len - 6U, "XXXXXX") != 0) {
     errno = EINVAL;
     return -1;
   }
@@ -5218,10 +5266,10 @@ int awm_fwriting(FILE *stream) {
   }
 #if defined(__WATCOMC__)
   return ((stream->_flag & _WRITE) != 0) ? 1 : 0;
-#elif defined(__GLIBC__)
+#elif defined(__GLIBC__) || defined(__linux__)
   return __fwriting(stream) ? 1 : 0;
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||    \
-    defined(__NetBSD__) || defined(__DragonFly__)
+    defined(__NetBSD__) || defined(__DragonFly__) || defined(__CYGWIN__)
   return ((stream->_flags & 0x0008) != 0) ? 1 : 0;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
 #if defined(_UCRT)

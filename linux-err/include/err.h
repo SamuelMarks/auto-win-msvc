@@ -132,11 +132,14 @@ void err_set_exit(void (*ef)(int));
  */
 int linux_err_dummy_for_coverage(void);
 
+/** @brief Callback signature for low-level err*() termination override. */
+typedef void (*linux_err_terminate_fn_t)(int);
+
 /**
  * @brief Overrides the low-level termination handler used by err*() functions.
  * @param[in] fn Replacement termination callback.
  */
-void linux_err_set_terminate_for_test(void (*fn)(int));
+void linux_err_set_terminate_for_test(linux_err_terminate_fn_t fn);
 
 /**
  * @brief Restores the default termination handler used by err*() functions.

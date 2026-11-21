@@ -21,8 +21,8 @@ TEST test_sendmsg_scatter_gather(void) {
   char part1[8];
   char part2[8];
   char recvbuf[32];
-  posix_ssize_t sent;
-  posix_ssize_t r;
+  posix_ssize_t sent = 0;
+  posix_ssize_t r = 0;
   (void)sent;
   (void)r;
 
@@ -60,7 +60,7 @@ TEST test_sendmsg_native(void) {
   struct iovec iov[1];
   struct msghdr msg;
   char buf[16];
-  posix_ssize_t sent;
+  posix_ssize_t sent = 0;
   (void)sent;
 
 #if defined(_MSC_VER)

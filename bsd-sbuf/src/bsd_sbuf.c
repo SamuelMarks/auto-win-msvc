@@ -124,13 +124,15 @@ static int sbuf_extend(struct sbuf *s, size_t addlen) {
  * @param[in] flags Bitmask of SBUF_* flags.
  * @return Initialized sbuf pointer, or NULL on allocation failure.
  */
-struct sbuf *sbuf_new(struct sbuf *s, char *buf, int length, int flags) {
+struct sbuf *sbuf_new(struct sbuf *s, char *buf, int length,
+                      awm_sbuf_flags_t flags) {
   int dynstruct = 0;
   if (s == NULL) {
     s = (struct sbuf *)g_bsd_sbuf_calloc(1, sizeof(*s));
     if (s == NULL) {
       return NULL;
     }
+    s->s_dyn_self = s;
     dynstruct = 1;
   } else {
     memset(s, 0, sizeof(*s));
@@ -147,7 +149,7 @@ struct sbuf *sbuf_new(struct sbuf *s, char *buf, int length, int flags) {
     s->s_buf = (char *)g_bsd_sbuf_malloc((size_t)alloc_len);
     if (s->s_buf == NULL) {
       if (dynstruct) {
-        free(s);
+        free(s->s_dyn_self);
       }
       return NULL;
     }
@@ -398,7 +400,7 @@ void sbuf_delete(struct sbuf *s) {
     free(s->s_buf);
   }
   if (s->s_flags & SBUF_DYNSTRUCT) {
-    free(s);
+    free(s->s_dyn_self);
   }
 }
 

@@ -127,7 +127,12 @@ auto_win_msvc_error_t posix_arpa_inet_parse_ipv4(const char *cp,
     val = (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
   }
 
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
   out_addr->s_addr = (unsigned long)htonl((unsigned long)val);
+#else
+  out_addr->s_addr = (in_addr_t)htonl((uint32_t)val);
+#endif
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
