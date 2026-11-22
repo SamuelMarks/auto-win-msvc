@@ -774,7 +774,7 @@ struct protoent *bt_getprotobyname(const char *name) {
 #endif
       s_bt_proto.p_name = s_bt_proto_name;
       s_bt_proto.p_aliases = s_bt_proto_aliases;
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
       s_bt_proto.p_proto = (short)s_bt_psm_table[i].num;
 #else
       s_bt_proto.p_proto = s_bt_psm_table[i].num;
@@ -798,7 +798,7 @@ struct protoent *bt_getprotobynumber(int proto) {
 #endif
       s_bt_proto.p_name = s_bt_proto_name;
       s_bt_proto.p_aliases = s_bt_proto_aliases;
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
       s_bt_proto.p_proto = (short)s_bt_psm_table[i].num;
 #else
       s_bt_proto.p_proto = s_bt_psm_table[i].num;

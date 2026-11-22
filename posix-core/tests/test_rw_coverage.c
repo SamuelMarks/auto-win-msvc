@@ -141,8 +141,12 @@ TEST test_rw_posix_vproc_and_oom(void) {
                             "/proc/self/comm", "/proc/self/status",
                             "/proc/42/stat",   "/proc/42/cmdline",
                             "/proc/42/comm",   "/proc/42/status"};
-  const char *miss_paths[] = {"/proc/self", "/proc/self/unknown", "/proc/!bad",
-                              "/proc/zbad", "nonexistent_rw_vproc_file.txt"};
+  const char *miss_paths[] = {
+#if !defined(__EMSCRIPTEN__)
+      "/proc/self",
+#endif
+      "/proc/self/unknown", "/proc/!bad", "/proc/zbad",
+      "nonexistent_rw_vproc_file.txt"};
   size_t i;
 
   posix_rw_get_default_posix_hooks(NULL);

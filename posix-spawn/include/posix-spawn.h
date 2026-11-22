@@ -93,7 +93,8 @@ struct sched_param {
 
 #if !defined(__sigset_t_defined) && !defined(_SIGSET_T_DEFINED) &&             \
     !defined(_SIGSET_T) && !defined(_DEFINED_sigset_t) &&                      \
-    !defined(__linux__) && !defined(__CYGWIN__)
+    !defined(__DEFINED_sigset_t) && !defined(__linux__) &&                     \
+    !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
 #define _SIGSET_T_DEFINED
 #define _SIGSET_T 1
 #define __sigset_t_defined 1

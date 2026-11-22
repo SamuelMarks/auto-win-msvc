@@ -203,6 +203,7 @@ TEST test_pthread_exit(void) {
   ASSERT_EQ(0, pthread_create(&th, NULL, exiting_worker_fn, &cleaned));
   ASSERT_EQ(0, pthread_join(th, NULL));
   ASSERT_EQ(1, cleaned);
+  ASSERT_EQ(1, g_exit_cleanup_count);
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
   {
@@ -247,7 +248,7 @@ TEST test_pthread_getconcurrency(void) {
 }
 
 TEST test_pthread_getcpuclockid(void) {
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
   clockid_t cid = 0;
   int rc = pthread_getcpuclockid(pthread_self(), &cid);
   ASSERT_EQ(0, rc);
@@ -382,7 +383,9 @@ TEST test_pthread_setcanceltype(void) {
 
 TEST test_pthread_setconcurrency(void) {
   ASSERT_EQ(0, pthread_setconcurrency(0));
+#if !defined(__EMSCRIPTEN__)
   ASSERT_EQ(EINVAL, pthread_setconcurrency(-1));
+#endif
   PASS();
 }
 

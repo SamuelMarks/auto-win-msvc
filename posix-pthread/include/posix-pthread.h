@@ -53,6 +53,11 @@ extern "C" {
 /** @brief Dummy function to prevent empty translation units. */
 int dummy_posix_pthread(void);
 
+#if defined(__EMSCRIPTEN__) && !defined(_GNU_SOURCE)
+/** @brief Set thread debugging name on Emscripten. */
+int pthread_setname_np(pthread_t thread, const char *name);
+#endif
+
 #if (defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||              \
      defined(__WATCOMC__)) &&                                                  \
     !defined(__CYGWIN__)

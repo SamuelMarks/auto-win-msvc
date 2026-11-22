@@ -154,6 +154,69 @@ exit \$rc
             file(CHMOD "${CMAKE_BINARY_DIR}/wine_retry.sh" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
             set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "/bin/sh \"${CMAKE_BINARY_DIR}/wine_retry.sh\"")
             set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "/bin/sh \"${CMAKE_BINARY_DIR}/wine_retry.sh\"")
+            if(CMAKE_CROSSCOMPILING_EMULATOR)
+                list(GET CMAKE_CROSSCOMPILING_EMULATOR 0 _awm_emu_cmd)
+                if(_awm_emu_cmd MATCHES "(^|/)wine(64)?(\\.exe)?$")
+                    find_program(_AWM_WINE_BIN NAMES "${_awm_emu_cmd}" wine wine64 NO_CACHE)
+                    if(NOT _AWM_WINE_BIN)
+                        set(_AWM_WINE_BIN "${_awm_emu_cmd}")
+                    endif()
+                    get_filename_component(_AWM_WINE_REAL "${_AWM_WINE_BIN}" REALPATH)
+                    get_filename_component(_AWM_WINE_REAL_DIR "${_AWM_WINE_REAL}" DIRECTORY)
+                    find_program(_AWM_WINESERVER_BIN NAMES wineserver HINTS "${_AWM_WINE_REAL_DIR}" NO_DEFAULT_PATH NO_CACHE)
+                    if(NOT _AWM_WINESERVER_BIN)
+                        find_program(_AWM_WINESERVER_BIN NAMES wineserver NO_CACHE)
+                    endif()
+                    if(_AWM_WINESERVER_BIN)
+                        get_filename_component(_AWM_WINESERVER_REAL "${_AWM_WINESERVER_BIN}" REALPATH)
+                    else()
+                        set(_AWM_WINESERVER_REAL "")
+                    endif()
+                    file(WRITE "${CMAKE_BINARY_DIR}/wine_test_runner.sh"
+"#!/bin/sh
+WINE_BIN=\"${_AWM_WINE_REAL}\"
+WINESERVER_BIN=\"${_AWM_WINESERVER_REAL}\"
+if [ -n \"\$WINESERVER_BIN\" ] && [ -x \"\$WINESERVER_BIN\" ]; then
+  if ! \"\$WINESERVER_BIN\" -k0 >/dev/null 2>&1; then
+    \"\$WINESERVER_BIN\" -p15 </dev/null >/dev/null 2>&1 || true
+    \"\$WINE_BIN\" cmd /c exit </dev/null >/dev/null 2>&1 || true
+  else
+    \"\$WINESERVER_BIN\" -p15 </dev/null >/dev/null 2>&1 || true
+  fi
+fi
+tmp_out=\"\${TMPDIR:-/tmp}/awm_wine_test_\$\$.out\"
+trap 'rm -f \"\$tmp_out\"' EXIT INT TERM
+attempt=0
+rc=1
+while [ \$attempt -lt 3 ]; do
+  \"\$WINE_BIN\" \"\$@\" </dev/null >\"\$tmp_out\" 2>&1
+  rc=\$?
+  if [ \$rc -eq 0 ]; then
+    cat \"\$tmp_out\"
+    rm -f \"\$tmp_out\"
+    exit 0
+  fi
+  if grep -q \"FAIL \" \"\$tmp_out\" 2>/dev/null; then
+    break
+  fi
+  attempt=\$((attempt + 1))
+  if [ \$attempt -lt 3 ]; then
+    if [ -n \"\$WINESERVER_BIN\" ] && [ -x \"\$WINESERVER_BIN\" ]; then
+      \"\$WINESERVER_BIN\" -p15 </dev/null >/dev/null 2>&1 || true
+      \"\$WINE_BIN\" cmd /c exit </dev/null >/dev/null 2>&1 || true
+    fi
+    sleep 1
+  fi
+done
+cat \"\$tmp_out\" 2>/dev/null || true
+rm -f \"\$tmp_out\"
+exit \$rc
+")
+                    file(CHMOD "${CMAKE_BINARY_DIR}/wine_test_runner.sh" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                    list(REMOVE_AT CMAKE_CROSSCOMPILING_EMULATOR 0)
+                    list(INSERT CMAKE_CROSSCOMPILING_EMULATOR 0 "${CMAKE_BINARY_DIR}/wine_test_runner.sh")
+                endif()
+            endif()
         endif()
     else()
         add_compile_options(/W4 /WX /FS)
@@ -189,7 +252,12 @@ else()
         -Wvla
         -fno-common
     )
-    add_compile_definitions(_DEFAULT_SOURCE _XOPEN_SOURCE=700 _DARWIN_C_SOURCE)
+    add_compile_definitions(_BSD_SOURCE _DEFAULT_SOURCE _XOPEN_SOURCE=700 _DARWIN_C_SOURCE)
+endif()
+
+find_program(MEMORYCHECK_COMMAND NAMES valgrind)
+if(MEMORYCHECK_COMMAND)
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes -q --error-exitcode=1" CACHE STRING "Valgrind options for CTest memcheck" FORCE)
 endif()
 
 include(CTest)
@@ -287,6 +355,9 @@ endif()
 option(AUTO_WIN_MSVC_SINGLE_THREADED "Build single-threaded (no thread safety/CRT threading)" OFF)
 if(AUTO_WIN_MSVC_SINGLE_THREADED)
     add_compile_definitions(_SINGLE_THREAD)
+elseif(EMSCRIPTEN)
+    add_compile_options(-pthread)
+    add_link_options(-pthread -sPTHREAD_POOL_SIZE=8)
 endif()
 # -------------------------------------
 
@@ -693,12 +764,6 @@ endif()
 
 # --- Advanced Tooling & Strictest Compile Options ---
 include(CheckCCompilerFlag)
-
-# Valgrind memory check setup for CTest
-find_program(MEMORYCHECK_COMMAND NAMES valgrind)
-if(MEMORYCHECK_COMMAND)
-    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes -q --error-exitcode=1")
-endif()
 
 # Clang Static Analyzer via clang-tidy
 find_program(CLANG_TIDY_EXE NAMES clang-tidy)

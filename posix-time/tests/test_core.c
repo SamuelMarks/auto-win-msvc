@@ -281,14 +281,18 @@ TEST test_getitimer_setitimer_utimes_macros(void) {
   FILE *f;
   const char *test_path = "test_posix_time_tmp.txt";
 
+#if !defined(__EMSCRIPTEN__)
   ASSERT_EQ(-1, getitimer(-1, &itv));
   ASSERT_EQ(-1, getitimer(99, &itv));
 #if !defined(__linux__)
   ASSERT_EQ(-1, getitimer(ITIMER_REAL, NULL));
 #endif
+#endif
   ASSERT_EQ(0, getitimer(ITIMER_REAL, &itv));
 
+#if !defined(__EMSCRIPTEN__)
   ASSERT_EQ(-1, setitimer(-1, &itv, NULL));
+#endif
 #if defined(_WIN32) || defined(_MSC_VER)
   ASSERT_EQ(-1, setitimer(99, &itv, NULL));
   ASSERT_EQ(-1, setitimer(ITIMER_REAL, NULL, NULL));

@@ -40,10 +40,10 @@ ReportEventA(WIN_HANDLE hEventLog, WIN_WORD wType, WIN_WORD wCategory,
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
 #if defined(_WIN32)
 static WIN_HANDLE g_EventSource = NULL;
+static int g_Facility = LOG_USER;
 #endif
 static char *g_Ident = NULL;
 static int g_LogOpt = 0;
-static int g_Facility = LOG_USER;
 static int g_LogMask = 0xFF;
 
 #if defined(_WIN32) && !defined(DEFINED_WIN32_FOR_TEST)
@@ -97,13 +97,14 @@ void openlog(const char *ident, int option, int facility) {
   }
 
   g_LogOpt = option;
-  g_Facility = facility;
-
 #if defined(_WIN32)
+  g_Facility = facility;
   if (g_LogOpt & LOG_NDELAY) {
     g_EventSource =
         RegisterEventSourceA(NULL, g_Ident != NULL ? g_Ident : "Application");
   }
+#else
+  (void)facility;
 #endif
 }
 

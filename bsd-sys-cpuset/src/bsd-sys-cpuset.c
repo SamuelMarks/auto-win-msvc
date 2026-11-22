@@ -52,6 +52,9 @@
 static void convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
   CPU_ZERO(set);
   set->__bits[0] = (unsigned long)mask;
+#if defined(_WIN64)
+  set->__bits[1] = (unsigned long)(mask >> 32);
+#endif
 }
 
 /**
@@ -60,7 +63,11 @@ static void convert_mask_to_cpuset(DWORD_PTR mask, cpuset_t *set) {
  * @return The constructed Windows affinity mask.
  */
 static DWORD_PTR convert_cpuset_to_mask(const cpuset_t *set) {
+#if defined(_WIN64)
+  return ((DWORD_PTR)set->__bits[0]) | (((DWORD_PTR)set->__bits[1]) << 32);
+#else
   return (DWORD_PTR)set->__bits[0];
+#endif
 }
 
 /**

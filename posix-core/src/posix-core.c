@@ -35,7 +35,7 @@
 #include <process.h>
 #else
 #include <fcntl.h>
-#if defined(__GLIBC__) || defined(__linux__)
+#if defined(__GLIBC__) || defined(__linux__) || defined(__EMSCRIPTEN__)
 #include <stdio_ext.h>
 #endif
 #endif
@@ -1450,7 +1450,7 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   return 0;
 }
 #elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
-    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+    !defined(__EMSCRIPTEN__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** @brief Advises the kernel on expected file data access patterns. */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice) {
   if (fd < 0) {
@@ -1514,7 +1514,7 @@ int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   return 0;
 }
 #elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
-    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+    !defined(__EMSCRIPTEN__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** @brief Ensures disk space is allocated for a file range. */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len) {
   if (fd < 0) {
@@ -1989,7 +1989,7 @@ int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   return -1;
 }
 #elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
-    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+    !defined(__EMSCRIPTEN__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
 /** @brief Executes a program specified via an open file descriptor. */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]) {
   if (fd < 0 || !argv || !envp) {
@@ -5266,7 +5266,7 @@ int awm_fwriting(FILE *stream) {
   }
 #if defined(__WATCOMC__)
   return ((stream->_flag & _WRITE) != 0) ? 1 : 0;
-#elif defined(__GLIBC__) || defined(__linux__)
+#elif defined(__GLIBC__) || defined(__linux__) || defined(__EMSCRIPTEN__)
   return __fwriting(stream) ? 1 : 0;
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||    \
     defined(__NetBSD__) || defined(__DragonFly__) || defined(__CYGWIN__)

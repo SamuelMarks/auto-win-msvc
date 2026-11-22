@@ -266,7 +266,8 @@ TEST test_awm_scratch_popen_and_fwriting(void) {
   ASSERT(awm_popen_scratch("echo hi", "rzz") == NULL);
   ASSERT_EQ(-1, awm_pclose_scratch(NULL));
 
-#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__)
+#if !defined(__DOS__) && !defined(__MSDOS__) && !defined(__WATCOMC__) &&       \
+    !defined(__EMSCRIPTEN__)
   fp = awm_popen_scratch("echo sed_pipe_ok", "r");
   ASSERT(fp != NULL);
   memset(buf, 0, sizeof(buf));

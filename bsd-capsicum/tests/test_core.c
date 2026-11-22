@@ -292,7 +292,9 @@ TEST test_bsd_casper_fileargs_and_procdesc(void) {
     !defined(__WATCOMC__)
   (void)0;
   {
+#if !defined(__EMSCRIPTEN__)
     pid_t cpid;
+#endif
     pid_t got_pid = 0;
     int wstatus = 0;
     size_t idx;
@@ -306,6 +308,7 @@ TEST test_bsd_casper_fileargs_and_procdesc(void) {
     ASSERT_EQ(-1, pdwait4(9999, &wstatus, 0, NULL));
     ASSERT_EQ(-1, pdwait(9999, &wstatus, 0, NULL, NULL));
 
+#if !defined(__EMSCRIPTEN__)
     cpid = pdfork(&fd, 0);
     if (cpid == 0) {
       _exit(0);
@@ -317,6 +320,7 @@ TEST test_bsd_casper_fileargs_and_procdesc(void) {
     ASSERT_EQ(0, pdkill(fd, 0));
     ASSERT_EQ(0, pdwait(fd, &wstatus, WEXITED, NULL, NULL));
     close(fd);
+#endif
 
     /* Mocked POSIX pdfork/pdgetpid/pdkill/pdwait4 edge cases */
     g_bsd_capsicum_pipe = mock_capsicum_pipe;

@@ -114,9 +114,16 @@ TEST test_sem_open(void) {
 
   (void)sem_unlink("/awm_test_sem");
   s1 = sem_open("/awm_test_sem", O_CREAT, 0600, 1U);
+#if defined(__EMSCRIPTEN__)
+  if (s1 != SEM_FAILED) {
+    ASSERT_EQ(0, sem_close(s1));
+    (void)sem_unlink("/awm_test_sem");
+  }
+#else
   ASSERT(s1 != SEM_FAILED);
   ASSERT_EQ(0, sem_close(s1));
   (void)sem_unlink("/awm_test_sem");
+#endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
   {

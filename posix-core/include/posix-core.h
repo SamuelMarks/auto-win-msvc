@@ -858,7 +858,8 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd,
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fadvise */
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(__EMSCRIPTEN__)
 int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #else
 /* posix_fadvise */
@@ -867,7 +868,8 @@ int posix_fadvise(intptr_t fd, off_t offset, off_t len, int advice);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief posix_fallocate */
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(__EMSCRIPTEN__)
 int posix_fallocate(intptr_t fd, off_t offset, off_t len);
 #else
 /* posix_fallocate */
@@ -959,7 +961,8 @@ int fdatasync(intptr_t fd);
 #if defined(_WIN32) && !defined(__CYGWIN__)
 /** @brief fexecve */
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
-#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__)
+#elif (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&   \
+    !defined(__EMSCRIPTEN__)
 int fexecve(intptr_t fd, char *const argv[], char *const envp[]);
 #else
 /* fexecve */

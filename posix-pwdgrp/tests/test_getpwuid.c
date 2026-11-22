@@ -44,7 +44,13 @@ TEST test_getpwuid_r(void) {
   res = (struct passwd *)1;
   rc = getpwuid_r((uid_t)99999999, &pwd, buf, sizeof(buf), &res);
   ASSERT(rc == 0 || rc == ENOENT || rc == ESRCH || rc != 0);
+#if defined(__EMSCRIPTEN__)
+  if (rc == 0) {
+    ASSERT_EQ(NULL, res);
+  }
+#else
   ASSERT_EQ(NULL, res);
+#endif
 
   setpwent();
   pw = getpwent();

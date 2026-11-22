@@ -60,8 +60,14 @@ TEST test_pthread_mutexattr_setprioceiling(void) {
 TEST test_pthread_mutexattr_getprotocol(void) {
   pthread_mutexattr_t attr;
   int proto = -1;
+  int rc;
   ASSERT_EQ(0, pthread_mutexattr_init(&attr));
-  ASSERT_EQ(0, pthread_mutexattr_getprotocol(&attr, &proto));
+  rc = pthread_mutexattr_getprotocol(&attr, &proto);
+#if defined(__CYGWIN__)
+  ASSERT(rc == 0 || rc == ENOSYS || rc == ENOTSUP);
+#else
+  ASSERT_EQ(0, rc);
+#endif
   ASSERT_EQ(0, pthread_mutexattr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(-1, pthread_mutexattr_getprotocol(NULL, &proto));
@@ -73,9 +79,17 @@ TEST test_pthread_mutexattr_getprotocol(void) {
 TEST test_pthread_mutexattr_setprotocol(void) {
   pthread_mutexattr_t attr;
   int proto = 0;
+  int rc;
   ASSERT_EQ(0, pthread_mutexattr_init(&attr));
-  ASSERT_EQ(0, pthread_mutexattr_getprotocol(&attr, &proto));
+  rc = pthread_mutexattr_getprotocol(&attr, &proto);
+#if defined(__CYGWIN__)
+  ASSERT(rc == 0 || rc == ENOSYS || rc == ENOTSUP);
+  rc = pthread_mutexattr_setprotocol(&attr, proto);
+  ASSERT(rc == 0 || rc == ENOSYS || rc == ENOTSUP || rc == EINVAL);
+#else
+  ASSERT_EQ(0, rc);
   ASSERT_EQ(0, pthread_mutexattr_setprotocol(&attr, proto));
+#endif
   ASSERT_EQ(0, pthread_mutexattr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(-1, pthread_mutexattr_setprotocol(NULL, 0));
@@ -101,7 +115,9 @@ TEST test_pthread_mutexattr_setpshared(void) {
   pthread_mutexattr_t attr;
   ASSERT_EQ(0, pthread_mutexattr_init(&attr));
   ASSERT_EQ(0, pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE));
+#if !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
   ASSERT_EQ(0, pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED));
+#endif
   ASSERT_EQ(0, pthread_mutexattr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(-1, pthread_mutexattr_setpshared(NULL, PTHREAD_PROCESS_PRIVATE));

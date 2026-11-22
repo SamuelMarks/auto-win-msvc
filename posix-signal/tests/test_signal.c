@@ -377,6 +377,7 @@ TEST test_posix_signal_sigaction(void) {
   res = sigaction(SIGPIPE, &sa, &oldsa);
   ASSERT_EQ(0, res);
   sigaction(SIGPIPE, &oldsa, NULL);
+  ASSERT(g_test_handler_called >= 0);
 #endif
 
   PASS();

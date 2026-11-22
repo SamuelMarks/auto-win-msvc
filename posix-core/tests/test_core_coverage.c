@@ -259,7 +259,7 @@ TEST test_core_posix_branches(void) {
   char tmpl_bad[64];
   int fd;
 #if (defined(__APPLE__) || !defined(__linux__)) && !defined(__CYGWIN__) &&     \
-    !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
+    !defined(__EMSCRIPTEN__) && !defined(AUTO_WIN_MSVC_MEGA_LIBRARY)
   char sh_name[] = "sh";
   char *argv[2];
   char *envp[1];

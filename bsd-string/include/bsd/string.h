@@ -33,7 +33,7 @@ typedef unsigned short mode_t;
 
 #if defined(_MSC_VER) || defined(_WIN32) || defined(__DOS__) || \
     defined(__MSDOS__) || defined(__WATCOMC__) || defined(__linux__) || \
-    defined(__CYGWIN__) || defined(__APPLE__)
+    defined(__CYGWIN__) || defined(__APPLE__) || defined(__EMSCRIPTEN__)
 
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && \
     !defined(__NetBSD__)

@@ -10,10 +10,10 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__EMSCRIPTEN__)
 #include <sys/statfs.h>
 #endif
-#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(__CYGWIN__)
+#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(__CYGWIN__) || defined(__EMSCRIPTEN__)
 #include <sys/statvfs.h>
 #endif
 /* clang-format on */

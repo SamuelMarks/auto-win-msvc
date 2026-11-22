@@ -1,5 +1,5 @@
 /* clang-format off */
-#if defined(__linux__) && !defined(_GNU_SOURCE)
+#if (defined(__linux__) || defined(__CYGWIN__)) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
 #endif
 #include "greatest.h"
@@ -12,7 +12,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__CYGWIN__)
 #include <sched.h>
 #endif
 /* clang-format on */
@@ -33,12 +33,15 @@ TEST test_bsd_pthread_np_init(void) {
 TEST test_pthread_setaffinity_np(void) {
   int ret;
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
   {
     cpu_set_t cpuset;
 #if defined(__GLIBC__)
     __CPU_ZERO_S(sizeof(cpuset), &cpuset);
     __CPU_SET_S(0, sizeof(cpuset), &cpuset);
+#elif defined(__CYGWIN__)
+    memset(&cpuset, 0, sizeof(cpuset));
+    CPU_SET(0, &cpuset);
 #else
     memset(&cpuset, 0, sizeof(cpuset));
 #endif

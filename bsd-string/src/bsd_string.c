@@ -1,6 +1,7 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
     defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__) ||          \
-    defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__)
+    defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__) ||         \
+    defined(__EMSCRIPTEN__)
 /**
  * @file bsd_string.c
  * @brief Implementation of BSD string and mode manipulation functions.

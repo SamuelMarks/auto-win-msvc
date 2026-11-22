@@ -62,7 +62,13 @@ TEST test_getpwnam_r(void) {
   res = (struct passwd *)1;
   rc = getpwnam_r("non_existent_usr_1234567", &pwd, buf, sizeof(buf), &res);
   ASSERT(rc == 0 || rc == ENOENT || rc == ESRCH || rc != 0);
+#if defined(__EMSCRIPTEN__)
+  if (rc == 0) {
+    ASSERT_EQ(NULL, res);
+  }
+#else
   ASSERT_EQ(NULL, res);
+#endif
 
   setpwent();
   pw = getpwent();

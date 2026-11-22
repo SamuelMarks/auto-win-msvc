@@ -21,11 +21,12 @@ static HANDLE g_mock_open_proc_ret = (HANDLE)2;
 static HANDLE g_mock_open_thread_ret = (HANDLE)3;
 static int g_mock_close_ok = 1;
 
-static HANDLE mock_cpuset_GetCurrentProcess(void) { return (HANDLE)10; }
-static HANDLE mock_cpuset_GetCurrentThread(void) { return (HANDLE)11; }
+static HANDLE WINAPI mock_cpuset_GetCurrentProcess(void) { return (HANDLE)10; }
+static HANDLE WINAPI mock_cpuset_GetCurrentThread(void) { return (HANDLE)11; }
 
-static BOOL mock_cpuset_GetProcessAffinityMask(HANDLE hProc, DWORD_PTR *pMask,
-                                               DWORD_PTR *sMask) {
+static BOOL WINAPI mock_cpuset_GetProcessAffinityMask(HANDLE hProc,
+                                                      DWORD_PTR *pMask,
+                                                      DWORD_PTR *sMask) {
   (void)hProc;
   if (g_mock_get_proc_aff_ok) {
     *pMask = 1;
@@ -35,34 +36,37 @@ static BOOL mock_cpuset_GetProcessAffinityMask(HANDLE hProc, DWORD_PTR *pMask,
   return FALSE;
 }
 
-static BOOL mock_cpuset_SetProcessAffinityMask(HANDLE hProc, DWORD_PTR mask) {
+static BOOL WINAPI mock_cpuset_SetProcessAffinityMask(HANDLE hProc,
+                                                      DWORD_PTR mask) {
   (void)hProc;
   (void)mask;
   return g_mock_set_proc_aff_ok ? TRUE : FALSE;
 }
 
-static DWORD_PTR mock_cpuset_SetThreadAffinityMask(HANDLE hThr,
-                                                   DWORD_PTR mask) {
+static DWORD_PTR WINAPI mock_cpuset_SetThreadAffinityMask(HANDLE hThr,
+                                                          DWORD_PTR mask) {
   (void)hThr;
   (void)mask;
   return g_mock_set_thread_aff_ret;
 }
 
-static HANDLE mock_cpuset_OpenProcess(DWORD access, BOOL inherit, DWORD pid) {
+static HANDLE WINAPI mock_cpuset_OpenProcess(DWORD access, BOOL inherit,
+                                             DWORD pid) {
   (void)access;
   (void)inherit;
   (void)pid;
   return g_mock_open_proc_ret;
 }
 
-static HANDLE mock_cpuset_OpenThread(DWORD access, BOOL inherit, DWORD tid) {
+static HANDLE WINAPI mock_cpuset_OpenThread(DWORD access, BOOL inherit,
+                                            DWORD tid) {
   (void)access;
   (void)inherit;
   (void)tid;
   return g_mock_open_thread_ret;
 }
 
-static BOOL mock_cpuset_CloseHandle(HANDLE h) {
+static BOOL WINAPI mock_cpuset_CloseHandle(HANDLE h) {
   (void)h;
   return g_mock_close_ok ? TRUE : FALSE;
 }
@@ -249,6 +253,14 @@ TEST test_cpuset_getaffinity(void) {
                                           &mask));
   ASSERT_EQ(-1, mocked_cpuset_getaffinity(999, CPU_WHICH_PID, 0, sizeof(mask),
                                           &mask));
+#if defined(_WIN64)
+  g_mock_set_thread_aff_ret = ((DWORD_PTR)1) << 33;
+  ASSERT_EQ(ERR_NONE, mocked_cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID,
+                                                0, sizeof(mask), &mask));
+  ASSERT_EQ(0, CPU_ISSET(0, &mask));
+  ASSERT_EQ(1, CPU_ISSET(33, &mask));
+  g_mock_set_thread_aff_ret = 1;
+#endif
 #endif
 
   PASS();
@@ -366,6 +378,12 @@ TEST test_cpuset_setaffinity(void) {
                                           &mask));
   ASSERT_EQ(-1, mocked_cpuset_setaffinity(999, CPU_WHICH_PID, 0, sizeof(mask),
                                           &mask));
+#if defined(_WIN64)
+  CPU_ZERO(&mask);
+  CPU_SET(33, &mask);
+  ASSERT_EQ(ERR_NONE, mocked_cpuset_setaffinity(CPU_LEVEL_CPUSET, CPU_WHICH_PID,
+                                                0, sizeof(mask), &mask));
+#endif
 #endif
 
   PASS();

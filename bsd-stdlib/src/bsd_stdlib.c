@@ -557,7 +557,7 @@ wchar_t *fgetwln(FILE *stream, size_t *lenp) {
     }
     return NULL;
   }
-  while ((wc = fgetwc(stream)) != WEOF) {
+  while ((wc = fgetwc(stream)) != (wint_t)WEOF) {
     if (pos + 2 > g_fgetwln_cap) {
       size_t newcap = (g_fgetwln_cap == 0) ? 128 : (g_fgetwln_cap * 2);
       wchar_t *nb = (wchar_t *)g_bsd_stdlib_realloc(g_fgetwln_buf,

@@ -1,6 +1,7 @@
 /* posix-pthread.c - Strict C89 Implementation */
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
-    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__)
+    defined(__DOS__) || defined(__MSDOS__) || defined(__WATCOMC__) ||          \
+    defined(__EMSCRIPTEN__)
 
 /**
  * @file posix-pthread.c
@@ -13,7 +14,7 @@
 #include <errno.h>
 #include <stddef.h>
 #if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__DOS__) ||           \
-    defined(__MSDOS__) || defined(__WATCOMC__)
+    defined(__MSDOS__) || defined(__WATCOMC__) || defined(__EMSCRIPTEN__)
 #include <fcntl.h>
 #include <setjmp.h>
 #include <stdarg.h>
@@ -51,6 +52,176 @@
      !defined(__WATCOMC__)) ||                                                 \
     defined(__CYGWIN__)
 /* Native POSIX threads used on Unix and Cygwin */
+#if defined(__EMSCRIPTEN__)
+/** @brief Set thread scheduling policy and parameters on Emscripten. */
+int pthread_setschedparam(pthread_t thread, int policy,
+                          const struct sched_param *param) {
+  (void)thread;
+  if (!param ||
+      (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)) {
+    return EINVAL;
+  }
+  return 0;
+}
+
+/** @brief Set thread debugging name on Emscripten. */
+int pthread_setname_np(pthread_t thread, const char *name) {
+  if (!thread || !name) {
+    return EINVAL;
+  }
+  return 0;
+}
+
+#if !defined(__EMSCRIPTEN_PTHREADS__)
+/** @brief Get maximum priority for scheduling policy on Emscripten. */
+int sched_get_priority_max(int policy) {
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
+  }
+  return (policy == SCHED_OTHER) ? 0 : 15;
+}
+
+/** @brief Get minimum priority for scheduling policy on Emscripten. */
+int sched_get_priority_min(int policy) {
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR) {
+    errno = EINVAL;
+    return -1;
+  }
+  return (policy == SCHED_OTHER) ? 0 : 1;
+}
+#endif /* !__EMSCRIPTEN_PTHREADS__ */
+
+/** @brief Get process scheduling parameters on Emscripten. */
+int sched_getparam(pid_t pid, struct sched_param *param) {
+  if (pid < 0 || !param) {
+    errno = (pid < 0) ? ESRCH : EINVAL;
+    return -1;
+  }
+  param->sched_priority = 0;
+  return 0;
+}
+
+/** @brief Get process scheduling policy on Emscripten. */
+int sched_getscheduler(pid_t pid) {
+  if (pid < 0) {
+    errno = ESRCH;
+    return -1;
+  }
+  return SCHED_OTHER;
+}
+
+/** @brief Get round-robin time quantum on Emscripten. */
+int sched_rr_get_interval(pid_t pid, struct timespec *interval) {
+  if (pid < 0 || !interval) {
+    errno = (pid < 0) ? ESRCH : EINVAL;
+    return -1;
+  }
+  interval->tv_sec = 0;
+  interval->tv_nsec = 15000000L;
+  return 0;
+}
+
+/** @brief Set process scheduling parameters on Emscripten. */
+int sched_setparam(pid_t pid, const struct sched_param *param) {
+  if (pid < 0 || !param) {
+    errno = (pid < 0) ? ESRCH : EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+/** @brief Set process scheduling policy and parameters on Emscripten. */
+int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param) {
+  if (pid < 0 || !param ||
+      (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)) {
+    errno = (pid < 0) ? ESRCH : EINVAL;
+    return -1;
+  }
+  return 0;
+}
+
+#if !defined(__EMSCRIPTEN_PTHREADS__)
+/** @brief Query semaphore count on Emscripten. */
+int sem_getvalue(sem_t *sem, int *sval) {
+  int count = 0;
+  int i;
+  if (!sem || !sval) {
+    errno = EINVAL;
+    return -1;
+  }
+  while (count < 32767 && sem_trywait(sem) == 0) {
+    count++;
+  }
+  for (i = 0; i < count; ++i) {
+    (void)sem_post(sem);
+  }
+  *sval = count;
+  return 0;
+}
+
+/** @brief Decrement semaphore with timeout on Emscripten. */
+int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
+  if (!sem || !abs_timeout || abs_timeout->tv_nsec < 0L ||
+      abs_timeout->tv_nsec >= 1000000000L) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (sem_trywait(sem) == 0) {
+    return 0;
+  }
+  errno = ETIMEDOUT;
+  return -1;
+}
+
+/** @brief Open or create a named semaphore on Emscripten. */
+sem_t *sem_open(const char *name, int oflag, ...) {
+  sem_t *s;
+  unsigned int val = 0;
+  if (!name || name[0] == '\0' || (name[0] == '/' && name[1] == '\0')) {
+    errno = EINVAL;
+    return SEM_FAILED;
+  }
+  if (oflag & O_CREAT) {
+    va_list ap;
+    va_start(ap, oflag);
+    (void)va_arg(ap, int);
+    val = va_arg(ap, unsigned int);
+    va_end(ap);
+  }
+  s = (sem_t *)calloc(1, sizeof(*s));
+  if (!s) {
+    errno = ENOMEM;
+    return SEM_FAILED;
+  }
+  if (sem_init(s, 0, val) != 0) {
+    free(s);
+    return SEM_FAILED;
+  }
+  return s;
+}
+
+/** @brief Close a named semaphore on Emscripten. */
+int sem_close(sem_t *sem) {
+  if (!sem) {
+    errno = EINVAL;
+    return -1;
+  }
+  (void)sem_destroy(sem);
+  free(sem);
+  return 0;
+}
+
+/** @brief Unlink a named semaphore on Emscripten. */
+int sem_unlink(const char *name) {
+  if (!name || name[0] == '\0') {
+    errno = EINVAL;
+    return -1;
+  }
+  return 0;
+}
+#endif /* !__EMSCRIPTEN_PTHREADS__ */
+#endif /* __EMSCRIPTEN__ */
 
 #elif defined(__DOS__) || defined(__MSDOS__) ||                                \
     (defined(__WATCOMC__) && !defined(_WIN32))

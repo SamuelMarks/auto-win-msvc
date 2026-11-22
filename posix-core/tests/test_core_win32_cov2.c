@@ -1118,7 +1118,7 @@ TEST test_core_win32_fork_vfork_exec(void) {
 TEST test_core_win32_misc_env_and_str(void) {
   char optbuf[64];
   char *optp;
-  char *valp;
+  char *valp = NULL;
   char *tokens[3];
   char *line = NULL;
   size_t cap = 0;

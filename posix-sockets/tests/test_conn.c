@@ -133,7 +133,8 @@ TEST test_posix_socketpair(void) {
   int rc;
   char sbuf[4];
 
-#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#if defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) ||          \
+    defined(__EMSCRIPTEN__)
   rc = posix_socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
   ASSERT_EQ(-1, rc);
   ASSERT_EQ(-1, (int)posix_send(0, "hi", 2, 0));

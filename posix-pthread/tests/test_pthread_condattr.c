@@ -74,7 +74,9 @@ TEST test_pthread_condattr_setpshared(void) {
   pthread_condattr_t attr;
   ASSERT_EQ(0, pthread_condattr_init(&attr));
   ASSERT_EQ(0, pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE));
+#if !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
   ASSERT_EQ(0, pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_SHARED));
+#endif
   ASSERT_EQ(0, pthread_condattr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(-1, pthread_condattr_setpshared(NULL, PTHREAD_PROCESS_PRIVATE));

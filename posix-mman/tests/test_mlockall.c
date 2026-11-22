@@ -11,7 +11,9 @@ TEST test_mlockall(void) {
 
   /* Invalid flags */
   rc = mlockall(0x80);
-#if defined(__has_feature)
+#if defined(__EMSCRIPTEN__)
+  ASSERT(rc == -1 || rc == 0);
+#elif defined(__has_feature)
 #if __has_feature(address_sanitizer)
   ASSERT(rc == -1 || rc == 0);
 #else

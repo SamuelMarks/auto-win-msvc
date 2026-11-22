@@ -520,8 +520,8 @@ typedef intptr_t register_t;
 
 #endif /* _WIN32 || DOS || WATCOMC || strict Linux/Cygwin */
 
-#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__MSDOS__) ||         \
-    defined(__DOS__) || defined(__WATCOMC__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__CYGWIN__) ||        \
+    defined(__MSDOS__) || defined(__DOS__) || defined(__WATCOMC__)
 
 #if !defined(_IDTYPE_T_DEFINED) && !defined(_IDTYPE_T_DECLARED)
 #define _IDTYPE_T_DEFINED

@@ -13,7 +13,8 @@ struct timespec {
   long tv_nsec;
 };
 #endif
-#if !defined(__linux__) && !defined(__MINGW32__)
+#if !defined(__linux__) && !defined(__MINGW32__) && !defined(__EMSCRIPTEN__) && \
+    !defined(__DEFINED_struct_itimerspec)
 #ifndef _ITIMERSPEC_DEFINED
 #define _ITIMERSPEC_DEFINED
 struct itimerspec {

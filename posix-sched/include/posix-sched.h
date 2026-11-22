@@ -98,24 +98,26 @@ typedef struct cpu_set {
     (set)->bits = 0;                                                           \
   } while ((void)0, 0)
 
+#undef CPU_SET
 /**
  * @brief Add CPU cpu to set.
  */
-#undef CPU_SET
 #define CPU_SET(cpu, set)                                                      \
   do {                                                                         \
-    if ((size_t)(cpu) < 64)                                                    \
-      (set)->bits |= (((mask_bit_type)1) << ((cpu) < 64 ? (cpu) : 0));         \
+    (set)->bits |= ((size_t)(cpu) < 64)                                        \
+                       ? (((mask_bit_type)1) << ((size_t)(cpu) & 63U))         \
+                       : (mask_bit_type)0;                                     \
   } while ((void)0, 0)
 
+#undef CPU_CLR
 /**
  * @brief Remove CPU cpu from set.
  */
-#undef CPU_CLR
 #define CPU_CLR(cpu, set)                                                      \
   do {                                                                         \
-    if ((size_t)(cpu) < 64)                                                    \
-      (set)->bits &= ~(((mask_bit_type)1) << ((cpu) < 64 ? (cpu) : 0));        \
+    (set)->bits &=                                                             \
+        ~(((size_t)(cpu) < 64) ? (((mask_bit_type)1) << ((size_t)(cpu) & 63U)) \
+                               : (mask_bit_type)0);                            \
   } while ((void)0, 0)
 
 /**

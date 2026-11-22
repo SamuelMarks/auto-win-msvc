@@ -84,7 +84,8 @@ auto_win_msvc_error_t posix_stat_get_info(int *out_available);
 #if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_STRUCT_TIMESPEC) &&           \
     !defined(__timespec_defined) && !defined(_STRUCT_TIMESPEC) &&              \
     !defined(_SYS__TIMESPEC_H_) && !defined(_DEFINED_struct_timespec) &&       \
-    !defined(__linux__) && !defined(__CYGWIN__)
+    !defined(__DEFINED_struct_timespec) && !defined(__linux__) &&              \
+    !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 /* VS2015+ provides struct timespec in time.h */
 #else

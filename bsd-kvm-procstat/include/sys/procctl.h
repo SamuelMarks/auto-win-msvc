@@ -17,13 +17,22 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) || defined(__WATCOMC__) || defined(__DOS__) ||             \
-    defined(__MSDOS__)
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__WATCOMC__) ||          \
+    defined(__DOS__) || defined(__MSDOS__)
+#if !defined(_IDTYPE_T_DEFINED) && !defined(_IDTYPE_T_DECLARED)
+#define _IDTYPE_T_DEFINED
+#define _IDTYPE_T_DECLARED
+/** @brief Identifier type selector for procctl and waitid. */
+typedef enum { P_ALL, P_PID, P_PGID } idtype_t;
+#ifndef P_ALL
+#define P_ALL P_ALL
+#endif
 #ifndef P_PID
-#define P_PID 1
+#define P_PID P_PID
 #endif
 #ifndef P_PGID
-#define P_PGID 2
+#define P_PGID P_PGID
+#endif
 #endif
 #endif
 

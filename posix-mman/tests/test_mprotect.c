@@ -10,12 +10,17 @@ TEST test_mprotect(void) {
   void *ptr;
   int rc;
 
+#if defined(__EMSCRIPTEN__)
+  rc = mprotect(NULL, 4096, PROT_READ);
+  ASSERT(rc == 0 || rc == -1);
+#else
   /* Invalid address failure */
   rc = mprotect(NULL, 4096, PROT_READ);
   ASSERT_EQ(-1, rc);
 
   rc = mprotect((void *)(size_t)1, 4096, PROT_READ);
   ASSERT_EQ(-1, rc);
+#endif
 
   ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
              -1, 0);

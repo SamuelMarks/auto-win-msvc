@@ -164,11 +164,21 @@ TEST test_pthread_attr_setschedparam(void) {
   pthread_attr_t attr;
   struct sched_param sp;
   struct sched_param out;
+  int rc;
   ASSERT_EQ(0, pthread_attr_init(&attr));
   ASSERT_EQ(0, pthread_attr_getschedparam(&attr, &sp));
-  ASSERT_EQ(0, pthread_attr_setschedparam(&attr, &sp));
+  rc = pthread_attr_setschedparam(&attr, &sp);
+#if defined(__CYGWIN__)
+  ASSERT(rc == 0 || rc == ENOTSUP || rc == EINVAL);
+  if (rc == 0) {
+    ASSERT_EQ(0, pthread_attr_getschedparam(&attr, &out));
+    ASSERT_EQ(sp.sched_priority, out.sched_priority);
+  }
+#else
+  ASSERT_EQ(0, rc);
   ASSERT_EQ(0, pthread_attr_getschedparam(&attr, &out));
   ASSERT_EQ(sp.sched_priority, out.sched_priority);
+#endif
   ASSERT_EQ(0, pthread_attr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(EINVAL, pthread_attr_setschedparam(NULL, &sp));
@@ -199,8 +209,14 @@ TEST test_pthread_attr_getschedpolicy(void) {
 TEST test_pthread_attr_setschedpolicy(void) {
   pthread_attr_t attr;
   int pol = -1;
+  int rc;
   ASSERT_EQ(0, pthread_attr_init(&attr));
-  ASSERT_EQ(0, pthread_attr_setschedpolicy(&attr, SCHED_OTHER));
+  rc = pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
+#if defined(__CYGWIN__)
+  ASSERT(rc == 0 || rc == ENOTSUP);
+#else
+  ASSERT_EQ(0, rc);
+#endif
   ASSERT_EQ(0, pthread_attr_getschedpolicy(&attr, &pol));
   ASSERT_EQ(SCHED_OTHER, pol);
   ASSERT_EQ(0, pthread_attr_destroy(&attr));

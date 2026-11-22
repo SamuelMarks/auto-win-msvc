@@ -33,7 +33,7 @@ auto_win_msvc_error_t bsd_pthread_np_init(int *out_status) {
 }
 
 #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) &&    \
-    !defined(__OpenBSD__)
+    !defined(__OpenBSD__) && !defined(__CYGWIN__)
 #if defined(_MSC_VER) || defined(_WIN32)
 /**
  * @brief Sets CPU affinity mask for a thread on Windows.

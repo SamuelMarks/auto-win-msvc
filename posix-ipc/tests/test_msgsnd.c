@@ -7,10 +7,14 @@
 /* clang-format on */
 
 TEST test_msgsnd(void) {
-  char buf[16];
+  struct {
+    long mtype;
+    char mtext[8];
+  } msg;
   int res;
-  memset(buf, 0, sizeof(buf));
-  res = msgsnd(-1, buf, sizeof(buf), IPC_NOWAIT);
+  memset(&msg, 0, sizeof(msg));
+  msg.mtype = 1L;
+  res = msgsnd(-1, &msg, sizeof(msg.mtext), IPC_NOWAIT);
   ASSERT_EQ(-1, res);
   PASS();
 }

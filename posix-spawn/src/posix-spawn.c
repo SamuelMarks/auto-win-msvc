@@ -1,4 +1,5 @@
-#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32)
+#if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
+    defined(__MSDOS__) || defined(__WATCOMC__) || defined(__EMSCRIPTEN__)
 /**
  * @file posix-spawn.c
  * @brief Strict C89 POSIX spawn implementation for Windows and POSIX.
@@ -957,7 +958,7 @@ int posix_spawnp(pid_t *pid, const char *file,
   return rc;
 }
 
-#elif defined(__MSDOS__) || defined(__WATCOMC__)
+#elif defined(__MSDOS__) || defined(__WATCOMC__) || defined(__EMSCRIPTEN__)
 
 #ifndef ENOSYS
 #define ENOSYS 38

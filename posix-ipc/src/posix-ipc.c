@@ -1,5 +1,6 @@
 #if !defined(AUTO_WIN_MSVC_MEGA_LIBRARY) || defined(_WIN32) ||                 \
-    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+    defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) ||          \
+    defined(__EMSCRIPTEN__)
 /**
  * @file posix-ipc.c
  * @brief Strict C89 implementation of System V POSIX IPC on Windows and DOS.
@@ -35,6 +36,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#elif defined(__EMSCRIPTEN__)
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #endif /* _WIN32 */
 /* clang-format on */
 
@@ -870,7 +877,8 @@ int msgctl(int msqid, int cmd, struct msqid_ds *buf) {
   }
   return -1;
 }
-#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__)
+#elif defined(__WATCOMC__) || defined(__MSDOS__) || defined(__DOS__) ||        \
+    defined(__EMSCRIPTEN__)
 
 key_t ftok(const char *path, int id) {
   unsigned long h = 5381UL;
