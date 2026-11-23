@@ -82,13 +82,7 @@ typedef int error_type_t;
 #include <sys/types.h>
 #include <sys/wait.h>
 #if !defined(_MSC_VER)
-#ifdef __CYGWIN__
-#define posix_close _cygwin_orig_posix_close
 #include <unistd.h>
-#undef posix_close
-#else
-#include <unistd.h>
-#endif
 #endif
 #endif
 #include "auto-win-msvc-error.h"

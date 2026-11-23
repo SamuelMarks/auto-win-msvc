@@ -11,14 +11,17 @@
 #ifndef DEFINED_MSC_VER_FOR_TEST
 #include "posix-types.h"
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 #if !defined(_OFF_T) && !defined(_OFF_T_DEFINED) &&                            \
+    !defined(_OFF_T_DECLARED) && !defined(__off_t_defined) &&                  \
     !defined(__DEFINED_off_t) && !defined(__WATCOMC__)
 typedef long off_t;
 #endif
 #if !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED) &&                        \
-    !defined(__DEFINED_ssize_t) && !defined(__WATCOMC__)
+    !defined(_SSIZE_T_DECLARED) && !defined(__ssize_t_defined) &&              \
+    !defined(_SSIZE_T_) && !defined(__DEFINED_ssize_t) &&                      \
+    !defined(__WATCOMC__)
 typedef long ssize_t;
 #endif
 #endif

@@ -410,7 +410,7 @@ TEST test_native_mntent(void) {
 
   memset(&empty_mnt, 0, sizeof(empty_mnt));
 
-#if !defined(__linux__) && !defined(__GLIBC__)
+#if !defined(__linux__) && !defined(__GLIBC__) && !defined(__CYGWIN__)
   f = setmntent(NULL, "r");
   ASSERT(f == NULL);
   f = setmntent("/etc/mtab", NULL);
@@ -423,7 +423,7 @@ TEST test_native_mntent(void) {
       ASSERT(m->mnt_dir != NULL);
       (void)hasmntopt(m, "rw");
     }
-#if !defined(__linux__) && !defined(__GLIBC__)
+#if !defined(__linux__) && !defined(__GLIBC__) && !defined(__CYGWIN__)
     ASSERT(getmntent(NULL) == NULL);
     ASSERT(hasmntopt(NULL, "rw") == NULL);
     ASSERT(hasmntopt(&empty_mnt, NULL) == NULL);
@@ -431,7 +431,7 @@ TEST test_native_mntent(void) {
 #endif
     ASSERT_EQ(1, endmntent(f));
   }
-#if !defined(__linux__) && !defined(__GLIBC__)
+#if !defined(__linux__) && !defined(__GLIBC__) && !defined(__CYGWIN__)
   ASSERT_EQ(1, endmntent(NULL));
 #endif
   PASS();

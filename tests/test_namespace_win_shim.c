@@ -52,9 +52,17 @@ TEST test_auto_win_msvc_error_helpers(void) {
   PASS();
 }
 
+TEST test_namespace_win_posix_close_coexistence(void) {
+  errno = 0;
+  ASSERT_EQ(-1, posix_close((intptr_t)-1));
+  ASSERT_EQ(EBADF, errno);
+  PASS();
+}
+
 SUITE(suite_namespace_win_shim) {
   RUN_TEST(test_namespace_win_intrinsics);
   RUN_TEST(test_auto_win_msvc_error_helpers);
+  RUN_TEST(test_namespace_win_posix_close_coexistence);
 }
 
 GREATEST_MAIN_DEFS();

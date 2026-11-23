@@ -334,13 +334,7 @@ typedef unsigned short sa_family_t;
 #include <poll.h>
 #include <stddef.h>
 #include <errno.h>
-#ifdef __CYGWIN__
-#define posix_close _cygwin_orig_posix_close
 #include <unistd.h>
-#undef posix_close
-#else
-#include <unistd.h>
-#endif
 #endif
 
 /* POSIX types that need to be defined safely for our stubs */

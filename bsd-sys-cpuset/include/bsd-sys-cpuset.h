@@ -66,6 +66,7 @@ typedef struct {
  * @brief Initialize CPU set to zero
  * @param set Pointer to cpuset_t
  */
+#undef CPU_ZERO
 #define CPU_ZERO(set)                                                          \
   do {                                                                         \
     size_t _i;                                                                 \
@@ -78,6 +79,7 @@ typedef struct {
  * @param cpu CPU index
  * @param set Pointer to cpuset_t
  */
+#undef CPU_SET
 #define CPU_SET(cpu, set)                                                      \
   do {                                                                         \
     size_t _cpu_idx = (size_t)(cpu);                                           \
@@ -91,6 +93,7 @@ typedef struct {
  * @param cpu CPU index
  * @param set Pointer to cpuset_t
  */
+#undef CPU_CLR
 #define CPU_CLR(cpu, set)                                                      \
   do {                                                                         \
     size_t _cpu_idx = (size_t)(cpu);                                           \
@@ -105,6 +108,7 @@ typedef struct {
  * @param set Pointer to cpuset_t
  * @return 1 if set, 0 otherwise
  */
+#undef CPU_ISSET
 #define CPU_ISSET(cpu, set)                                                    \
   (((size_t)(cpu) < (size_t)CPU_SETSIZE)                                       \
        ? (((set)->__bits[(((size_t)(cpu)) / _CPU_SET_ULONG_BITS) %             \
