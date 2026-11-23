@@ -11,6 +11,9 @@
 #if !defined(_WIN32) && !defined(__WATCOMC__) && !defined(__MSDOS__) && !defined(__DOS__) && (defined(__GNUC__) || defined(__clang__))
 #pragma GCC system_header
 #include_next <semaphore.h>
+#if defined(__CYGWIN__)
+#include <errno.h>
+#endif
 #else
 #include <sys/types.h>
 #include <time.h>
@@ -19,6 +22,22 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(__CYGWIN__) && !defined(_AWM_CYGWIN_SEM_TIMEDWAIT_SHIM)
+#define _AWM_CYGWIN_SEM_TIMEDWAIT_SHIM 1
+/** @brief Normalize Cygwin sem_timedwait positive error codes to -1 + errno. */
+static __inline__ int
+posix_cygwin_sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
+  int rc = (sem_timedwait)(sem, abs_timeout);
+  if (rc > 0) {
+    errno = rc;
+    return -1;
+  }
+  return rc;
+}
+#undef sem_timedwait
+#define sem_timedwait posix_cygwin_sem_timedwait
 #endif
 
 #if defined(_WIN32) || defined(__WATCOMC__) || defined(__MSDOS__) ||           \

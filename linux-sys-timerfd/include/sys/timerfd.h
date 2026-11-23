@@ -7,6 +7,9 @@
 
 #include <sys/types.h>
 #include <time.h>
+#if defined(__CYGWIN__)
+#include <sys/timespec.h>
+#endif
 #if defined(_MSC_VER) && !defined(DEFINED_MSC_VER_FOR_TEST) && _MSC_VER < 1900
 struct timespec {
   long tv_sec;
@@ -14,7 +17,7 @@ struct timespec {
 };
 #endif
 #if !defined(__linux__) && !defined(__MINGW32__) && !defined(__EMSCRIPTEN__) && \
-    !defined(__DEFINED_struct_itimerspec)
+    !defined(__CYGWIN__) && !defined(__DEFINED_struct_itimerspec)
 #ifndef _ITIMERSPEC_DEFINED
 #define _ITIMERSPEC_DEFINED
 struct itimerspec {

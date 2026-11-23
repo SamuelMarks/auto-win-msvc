@@ -196,10 +196,10 @@ int posix_sched_setaffinity(int pid, size_t cpusetsize, const cpu_set_t *mask) {
  */
 int posix_sched_getaffinity(int pid, size_t cpusetsize, cpu_set_t *mask) {
   if (pid < 0 || mask == NULL || cpusetsize < sizeof(cpu_set_t)) {
-    errno = EINVAL;
+    errno = (pid < 0) ? ESRCH : EINVAL;
     return -1;
   }
-#if defined(_BITS_CPU_SET_H)
+#if defined(_BITS_CPU_SET_H) || defined(_SYS_CPUSET_H_)
   memset(mask, 0, sizeof(*mask));
   mask->__bits[0] = 1UL;
 #else

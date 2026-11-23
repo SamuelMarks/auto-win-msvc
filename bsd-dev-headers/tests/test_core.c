@@ -166,16 +166,16 @@ TEST test_bsd_dev_headers_ioctl(void) {
   ASSERT_EQ(1, sysdecode_open_flags(NULL, 0, &rem));
   ASSERT_EQ(0, rem);
 #if defined(_MSC_VER)
-  if (fopen_s(&tmp_fp, "test_sysdecode_tmp.txt", "wb") != 0) {
+  if (fopen_s(&tmp_fp, "tsysdec.txt", "wb") != 0) {
     tmp_fp = NULL;
   }
 #else
-  tmp_fp = fopen("test_sysdecode_tmp.txt", "wb");
+  tmp_fp = fopen("tsysdec.txt", "wb");
 #endif
   ASSERT(tmp_fp != NULL);
   ASSERT_EQ(1, sysdecode_open_flags(tmp_fp, 3, &rem));
   fclose(tmp_fp);
-  remove("test_sysdecode_tmp.txt");
+  remove("tsysdec.txt");
   ASSERT_EQ(1, sysdecode_mmap_prot(NULL, 0, &rem));
   ASSERT_EQ(1, sysdecode_mmap_flags(NULL, 0, &rem));
 
@@ -191,7 +191,7 @@ TEST test_bsd_dev_mac_ipsec_hesiod_mq_bt_sdp_kld(void) {
   bdaddr_t ba;
   char bt_buf[24];
   struct protoent *pe;
-  struct kld_file_stat kst;
+  static struct kld_file_stat kst;
 
   /* MAC shims */
   ASSERT_EQ(-1, mac_prepare_process_label(NULL));

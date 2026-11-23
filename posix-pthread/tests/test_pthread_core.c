@@ -222,11 +222,14 @@ TEST test_pthread_exit(void) {
     _posix_pthread_cleanup_push(&b_fn, exit_cleanup_cb, &cval);
     g_mock_exit_code = 999UL;
     pthread_exit((void *)1);
+    posix_pthread_set_win32_hooks(NULL);
     ASSERT_EQ(1UL, g_mock_exit_code);
     ASSERT_EQ(1, cval);
 
+    posix_pthread_set_win32_hooks(&hooks);
     g_mock_exit_code = 999UL;
     pthread_exit(NULL);
+    posix_pthread_set_win32_hooks(NULL);
     ASSERT_EQ(0UL, g_mock_exit_code);
 
     /* TLS_OUT_OF_INDEXES branch in pthread_exit */
@@ -234,9 +237,8 @@ TEST test_pthread_exit(void) {
     posix_pthread_set_win32_hooks(&hooks);
     g_mock_exit_code = 999UL;
     pthread_exit(NULL);
-    ASSERT_EQ(0UL, g_mock_exit_code);
-
     posix_pthread_set_win32_hooks(NULL);
+    ASSERT_EQ(0UL, g_mock_exit_code);
   }
 #endif
   PASS();

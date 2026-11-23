@@ -58,7 +58,7 @@ else()
     set(_AWM_SIBLING_INCLUDES ${MEGA_INCLUDES})
 endif()
 
-if(NOT TARGET posix-core AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-core/CMakeLists.txt")
+if(WIN32 AND NOT TARGET posix-core AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../posix-core/CMakeLists.txt")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../posix-core" "${CMAKE_BINARY_DIR}/posix-core_build")
     foreach(_pc_dep posix-core posix-sys-uio posix-sys-ioctl posix-poll posix-sockets linux-epoll)
         if(TARGET ${_pc_dep})
@@ -86,10 +86,10 @@ target_include_directories(bsd-dev-headers PUBLIC
     ${_AWM_SIBLING_INCLUDES}
 )
 
-if(TARGET posix-core)
-    target_link_libraries(bsd-dev-headers PUBLIC posix-core)
-endif()
 if(WIN32)
+    if(TARGET posix-core)
+        target_link_libraries(bsd-dev-headers PUBLIC posix-core)
+    endif()
     target_link_libraries(bsd-dev-headers PUBLIC ws2_32)
 endif()
 

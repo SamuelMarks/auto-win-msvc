@@ -1882,21 +1882,30 @@ static struct posix_pthread_dyn_cache g_dyn_cache;
 static unsigned long g_real_cleanup_tls_index = POSIX_WIN_TLS_OUT_OF_INDEXES;
 static unsigned long g_cleanup_tls_index = POSIX_WIN_TLS_OUT_OF_INDEXES;
 
+static void ensure_cleanup_tls_index(void) {
+  if (g_real_cleanup_tls_index == POSIX_WIN_TLS_OUT_OF_INDEXES &&
+      g_hooks.tls_alloc == default_tls_alloc) {
+    g_real_cleanup_tls_index = default_tls_alloc();
+    g_cleanup_tls_index = g_real_cleanup_tls_index;
+  }
+}
+
 #ifdef _MSC_VER
 #pragma push_macro("read")
 #undef read
 #pragma section(".CRT$XCU", read)
 #pragma pop_macro("read")
-static void __cdecl __init_pthread_cleanup(void) {
-  g_real_cleanup_tls_index = default_tls_alloc();
-  g_cleanup_tls_index = g_real_cleanup_tls_index;
-}
+static void __cdecl __init_pthread_cleanup(void) { ensure_cleanup_tls_index(); }
 __declspec(allocate(".CRT$XCU")) void(__cdecl *__init_pthread_cleanup_ptr)(
     void) = __init_pthread_cleanup;
+#ifdef _M_IX86
+#pragma comment(linker, "/INCLUDE:___init_pthread_cleanup_ptr")
+#else
+#pragma comment(linker, "/INCLUDE:__init_pthread_cleanup_ptr")
+#endif
 #elif defined(__GNUC__) || defined(__clang__)
 __attribute__((constructor)) static void __init_pthread_cleanup(void) {
-  g_real_cleanup_tls_index = default_tls_alloc();
-  g_cleanup_tls_index = g_real_cleanup_tls_index;
+  ensure_cleanup_tls_index();
 }
 #endif
 
@@ -1915,12 +1924,14 @@ void posix_pthread_set_win32_hooks(
   memset(&g_dyn_cache, 0, sizeof(g_dyn_cache));
   if (hooks == NULL) {
     g_hooks = g_default_hooks;
+    ensure_cleanup_tls_index();
     g_cleanup_tls_index = g_real_cleanup_tls_index;
   } else {
     g_hooks = *hooks;
     if (g_hooks.tls_alloc != default_tls_alloc) {
       g_cleanup_tls_index = g_hooks.tls_alloc();
     } else {
+      ensure_cleanup_tls_index();
       g_cleanup_tls_index = g_real_cleanup_tls_index;
     }
   }
@@ -2513,13 +2524,18 @@ int pthread_cancel(pthread_t thread) {
 void _posix_pthread_cleanup_push(struct _pthread_cleanup_buffer *buffer,
                                  void (*routine)(void *), void *arg) {
   struct _pthread_cleanup_buffer *top;
-  if (!buffer || g_cleanup_tls_index == POSIX_WIN_TLS_OUT_OF_INDEXES) {
+  if (!buffer) {
+    return;
+  }
+  buffer->routine = routine;
+  buffer->arg = arg;
+  buffer->next = NULL;
+  ensure_cleanup_tls_index();
+  if (g_cleanup_tls_index == POSIX_WIN_TLS_OUT_OF_INDEXES) {
     return;
   }
   top = (struct _pthread_cleanup_buffer *)g_hooks.tls_get_value(
       g_cleanup_tls_index);
-  buffer->routine = routine;
-  buffer->arg = arg;
   buffer->next = top;
   g_hooks.tls_set_value(g_cleanup_tls_index, buffer);
 }
@@ -2737,6 +2753,7 @@ int pthread_equal(pthread_t t1, pthread_t t2) { return t1 == t2; }
 
 /** @brief Terminate the calling thread and run cleanup handlers. */
 void pthread_exit(void *value_ptr) {
+  ensure_cleanup_tls_index();
   if (g_cleanup_tls_index != POSIX_WIN_TLS_OUT_OF_INDEXES) {
     struct _pthread_cleanup_buffer *top =
         (struct _pthread_cleanup_buffer *)g_hooks.tls_get_value(

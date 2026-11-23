@@ -17,6 +17,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <time.h>
+#if defined(__CYGWIN__)
+#include <errno.h>
+#endif
 
 #if defined(__CYGWIN__) && !defined(__cplusplus) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L)
 #undef pthread_cleanup_push
@@ -48,6 +51,22 @@ typedef int pthread_spinlock_t;
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(__CYGWIN__) && !defined(_AWM_CYGWIN_SEM_TIMEDWAIT_SHIM)
+#define _AWM_CYGWIN_SEM_TIMEDWAIT_SHIM 1
+/** @brief Normalize Cygwin sem_timedwait positive error codes to -1 + errno. */
+static __inline__ int
+posix_cygwin_sem_timedwait(sem_t *sem, const struct timespec *abs_timeout) {
+  int rc = (sem_timedwait)(sem, abs_timeout);
+  if (rc > 0) {
+    errno = rc;
+    return -1;
+  }
+  return rc;
+}
+#undef sem_timedwait
+#define sem_timedwait posix_cygwin_sem_timedwait
 #endif
 
 /** @brief Dummy function to prevent empty translation units. */

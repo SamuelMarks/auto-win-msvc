@@ -214,11 +214,19 @@ TEST test_pthread_attr_setschedpolicy(void) {
   rc = pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
 #if defined(__CYGWIN__)
   ASSERT(rc == 0 || rc == ENOTSUP);
+  ASSERT_EQ(0, pthread_attr_getschedpolicy(&attr, &pol));
+  if (rc == 0) {
+    ASSERT_EQ(SCHED_OTHER, pol);
+  } else {
+    ASSERT_EQ(0, pthread_attr_setschedpolicy(&attr, SCHED_FIFO));
+    ASSERT_EQ(0, pthread_attr_getschedpolicy(&attr, &pol));
+    ASSERT_EQ(SCHED_FIFO, pol);
+  }
 #else
   ASSERT_EQ(0, rc);
-#endif
   ASSERT_EQ(0, pthread_attr_getschedpolicy(&attr, &pol));
   ASSERT_EQ(SCHED_OTHER, pol);
+#endif
   ASSERT_EQ(0, pthread_attr_destroy(&attr));
 #if defined(_WIN32) && !defined(__CYGWIN__)
   ASSERT_EQ(EINVAL, pthread_attr_setschedpolicy(NULL, SCHED_OTHER));

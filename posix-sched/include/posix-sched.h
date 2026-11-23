@@ -12,6 +12,7 @@
 /* clang-format off */
 #include "auto-win-msvc-error.h"
 #include <stddef.h>
+#include <string.h>
 #if !defined(_MSC_VER) && !defined(_WIN32) && !defined(__MSDOS__) && !defined(__WATCOMC__)
 #include <sched.h>
 #endif
@@ -37,7 +38,8 @@ typedef unsigned __int64 mask_bit_type;
 typedef unsigned long long mask_bit_type;
 #endif
 
-#if !defined(_BITS_CPU_SET_H) && !defined(_CPU_SET_T_DEFINED)
+#if !defined(_BITS_CPU_SET_H) && !defined(_SYS_CPUSET_H_) &&                   \
+    !defined(_CPU_SET_T_DEFINED)
 /** @brief Guard macro indicating cpu_set_t has been defined. */
 #define _CPU_SET_T_DEFINED
 /**
@@ -86,6 +88,58 @@ typedef struct cpu_set {
  */
 #define CPU_ISSET(cpu, set) __CPU_ISSET_S(cpu, sizeof(cpu_set_t), set)
 #endif
+
+#elif defined(_SYS_CPUSET_H_)
+
+/**
+ * @brief Clears set, so that it contains no CPUs.
+ */
+#undef CPU_ZERO
+#define CPU_ZERO(set)                                                          \
+  do {                                                                         \
+    memset((set), 0, sizeof(*(set)));                                          \
+  } while ((void)0, 0)
+
+#undef CPU_SET
+/**
+ * @brief Add CPU cpu to set.
+ */
+#define CPU_SET(cpu, set)                                                      \
+  do {                                                                         \
+    size_t _awm_sched_cpu = (size_t)(cpu);                                     \
+    if (_awm_sched_cpu < sizeof((set)->__bits) * 8U) {                         \
+      (set)->__bits[_awm_sched_cpu / (sizeof((set)->__bits[0]) * 8U)] |=       \
+          ((__cpu_mask)1 << (_awm_sched_cpu %                                  \
+                             (sizeof((set)->__bits[0]) * 8U)));                \
+    }                                                                          \
+  } while ((void)0, 0)
+
+#undef CPU_CLR
+/**
+ * @brief Remove CPU cpu from set.
+ */
+#define CPU_CLR(cpu, set)                                                      \
+  do {                                                                         \
+    size_t _awm_sched_cpu = (size_t)(cpu);                                     \
+    if (_awm_sched_cpu < sizeof((set)->__bits) * 8U) {                         \
+      (set)->__bits[_awm_sched_cpu / (sizeof((set)->__bits[0]) * 8U)] &=       \
+          ~((__cpu_mask)1 << (_awm_sched_cpu %                                 \
+                              (sizeof((set)->__bits[0]) * 8U)));               \
+    }                                                                          \
+  } while ((void)0, 0)
+
+/**
+ * @brief Test to see if CPU cpu is a member of set.
+ */
+#undef CPU_ISSET
+#define CPU_ISSET(cpu, set)                                                    \
+  (((size_t)(cpu) < sizeof((set)->__bits) * 8U)                                \
+       ? (((set)->__bits[(size_t)(cpu) / (sizeof((set)->__bits[0]) * 8U)] &    \
+           ((__cpu_mask)1 << (((size_t)(cpu) < sizeof((set)->__bits) * 8U      \
+                                   ? (size_t)(cpu)                             \
+                                   : 0U) %                                     \
+                              (sizeof((set)->__bits[0]) * 8U)))) != 0)         \
+       : 0)
 
 #else
 
