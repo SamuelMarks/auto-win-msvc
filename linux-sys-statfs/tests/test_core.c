@@ -425,6 +425,8 @@ TEST test_native_mntent(void) {
     }
 #if !defined(__linux__) && !defined(__GLIBC__) && !defined(__CYGWIN__)
     ASSERT(getmntent(NULL) == NULL);
+#endif
+#if !defined(__linux__) && !defined(__GLIBC__)
     ASSERT(hasmntopt(NULL, "rw") == NULL);
     ASSERT(hasmntopt(&empty_mnt, NULL) == NULL);
     ASSERT(hasmntopt(&empty_mnt, "rw") == NULL);

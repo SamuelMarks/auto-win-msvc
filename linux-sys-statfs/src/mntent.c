@@ -225,6 +225,21 @@ char *hasmntopt(const struct mntent *mnt, const char *opt) {
 }
 #endif
 
+#elif defined(__CYGWIN__)
+
+/**
+ * @brief Scans mnt_opts for a matching substring option on Cygwin.
+ * @param[in] mnt Mount table entry.
+ * @param[in] opt Option substring to locate.
+ * @return Pointer to match within mnt_opts, or NULL if absent.
+ */
+char *hasmntopt(const struct mntent *mnt, const char *opt) {
+  if (mnt == NULL || opt == NULL || mnt->mnt_opts == NULL) {
+    return NULL;
+  }
+  return strstr(mnt->mnt_opts, opt);
+}
+
 #endif
 
 typedef int make_iso_compilers_happy_tu_mntent;
