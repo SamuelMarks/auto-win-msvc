@@ -31,36 +31,45 @@ auto_win_msvc_error_t posix_libgen_get_info(int *out_available);
 /**
  * @brief Returns the last component of a pathname.
  *
- * The basename() function takes the pathname pointed to by path and returns a
- * pointer to the final component of the pathname, deleting any trailing
- * '/' or '\\' characters.
+ * The posix_basename() function takes the pathname pointed to by path and
+ * returns a pointer to the final component of the pathname, deleting any
+ * trailing '/' or '\\' characters.
  *
- * If the string consists entirely of the '/' or '\\' character, basename()
- * returns a pointer to the string "/" or "\\".
- * If path is a null pointer or points to an empty string, basename() returns
- * a pointer to the string ".".
+ * If the string consists entirely of the '/' or '\\' character,
+ * posix_basename() returns a pointer to the string "/".
+ * If path is a null pointer or points to an empty string, posix_basename()
+ * returns a pointer to the string ".".
  *
  * @param path The pathname to parse. This string may be modified.
  * @return A pointer to the final component of the path.
  */
-char *basename(char *path);
+char *posix_basename(char *path);
 
 /**
  * @brief Returns the directory name of a pathname.
  *
- * The dirname() function takes a pointer to a character string that contains
- * a pathname, and returns a pointer to a string that is a pathname of the
- * parent directory of that file. Trailing '/' or '\\' characters in the path
- * are not counted as part of the path.
+ * The posix_dirname() function takes a pointer to a character string that
+ * contains a pathname, and returns a pointer to a string that is a pathname of
+ * the parent directory of that file. Trailing '/' or '\\' characters in the
+ * path are not counted as part of the path.
  *
- * If path does not contain a '/' or '\\', then dirname() returns a pointer to
- * the string ".". If path is a null pointer or points to an empty string,
- * dirname() returns a pointer to the string ".".
+ * If path does not contain a '/' or '\\', then posix_dirname() returns a
+ * pointer to the string ".". If path is a null pointer or points to an empty
+ * string, posix_dirname() returns a pointer to the string ".".
  *
  * @param path The pathname to parse. This string may be modified.
  * @return A pointer to the parent directory of the path.
  */
-char *dirname(char *path);
+char *posix_dirname(char *path);
+
+#undef basename
+/** @brief POSIX basename macro alias preventing _GNU_SOURCE <string.h> clashes.
+ */
+#define basename posix_basename
+
+#undef dirname
+/** @brief POSIX dirname macro alias. */
+#define dirname posix_dirname
 
 #ifdef __cplusplus
 }

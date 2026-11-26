@@ -33,7 +33,8 @@ static void get_path_len(const char *path, size_t *out_len) {
 #endif
 }
 
-char *basename(char *path) {
+/** @brief Returns the last component of a pathname. */
+char *posix_basename(char *path) {
   static char result[_MAX_PATH];
   char *p;
   size_t len = 0;
@@ -103,7 +104,8 @@ char *basename(char *path) {
   return result;
 }
 
-char *dirname(char *path) {
+/** @brief Returns the directory name of a pathname. */
+char *posix_dirname(char *path) {
   static char result[_MAX_PATH];
   char *p;
   size_t len = 0;
@@ -193,9 +195,7 @@ char *dirname(char *path) {
 /* Prevent empty translation unit */
 typedef int make_iso_compilers_happy_tu;
 
-/**
- * @brief Retrieves information on posix-libgen availability.
- */
+/** @brief Retrieves information on posix-libgen availability. */
 auto_win_msvc_error_t posix_libgen_get_info(int *out_available) {
   if (out_available == NULL) {
     return AUTO_WIN_MSVC_ERROR_INVALID_ARGUMENT;
@@ -204,5 +204,19 @@ auto_win_msvc_error_t posix_libgen_get_info(int *out_available) {
   return AUTO_WIN_MSVC_SUCCESS;
 }
 
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
+#undef basename
+/** @brief ABI wrapper for basename on Windows and DOS. */
+char *basename(char *path);
+char *basename(char *path) { return posix_basename(path); }
+
+#undef dirname
+/** @brief ABI wrapper for dirname on Windows and DOS. */
+char *dirname(char *path);
+char *dirname(char *path) { return posix_dirname(path); }
 #endif
+
+#endif
+/** @brief Dummy typedef preventing empty translation unit warnings. */
 typedef int make_iso_compilers_happy_tu_posix_libgen;

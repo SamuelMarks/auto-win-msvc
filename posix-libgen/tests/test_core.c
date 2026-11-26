@@ -298,8 +298,40 @@ TEST test_dirname(void) {
   PASS();
 }
 
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
+#undef basename
+#undef dirname
+extern char *basename(char *path);
+extern char *dirname(char *path);
+
+TEST test_win32_abi_wrappers(void) {
+  char buf[32];
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "/usr/bin");
+#else
+  strcpy(buf, "/usr/bin");
+#endif
+  ASSERT_STR_EQ("bin", basename(buf));
+
+#if defined(_MSC_VER)
+  strcpy_s(buf, sizeof(buf), "/usr/bin");
+#else
+  strcpy(buf, "/usr/bin");
+#endif
+  ASSERT_STR_EQ("/usr", dirname(buf));
+
+  PASS();
+}
+#endif
+
 SUITE(suite_posix_libgen_core) {
   RUN_TEST(test_posix_libgen_get_info);
   RUN_TEST(test_basename);
   RUN_TEST(test_dirname);
+#if defined(_WIN32) || defined(__DOS__) || defined(__MSDOS__) ||               \
+    defined(__WATCOMC__)
+  RUN_TEST(test_win32_abi_wrappers);
+#endif
 }

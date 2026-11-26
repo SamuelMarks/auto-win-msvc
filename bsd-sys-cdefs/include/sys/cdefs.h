@@ -324,6 +324,11 @@
 #define __rangeof(type, start, end) (__offsetof(type, end) - __offsetof(type, start))
 #endif
 
+#if defined(__clang__) &&                                                      \
+    (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L)
+#undef __containerof
+#endif
+
 #ifndef __containerof
 /** @brief Obtain pointer to enclosing structure from member pointer. */
 #define __containerof(x, s, m)                                                 \
